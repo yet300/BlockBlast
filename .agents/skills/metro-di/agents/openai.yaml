@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metro DI"
+  short_description: "Metro setup, KMP, and multi-module DI"
+  default_prompt: "Use $metro-di to set up or modify Metro DI correctly for this Kotlin project."
