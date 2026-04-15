@@ -3,6 +3,7 @@ import org.gradle.api.JavaVersion
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.metro)
 }
 
 android {
@@ -35,6 +36,8 @@ android {
 
 dependencies {
     implementation(projects.composeApp)
+
+    implementation(libs.bundles.decompose)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.uiToolingPreview)

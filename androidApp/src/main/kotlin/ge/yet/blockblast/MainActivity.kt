@@ -4,8 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import com.arkivanov.decompose.defaultComponentContext
 import ge.yet3.blokblast.screen.App
 
 class MainActivity : ComponentActivity() {
@@ -13,14 +12,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        val appGraph = (application as BlockBlastApp).appGraph
+        val rootComponent = appGraph.rootFactory.create(
+            componentContext = defaultComponentContext()
+        )
+
         setContent {
-            App()
+            App(rootComponent = rootComponent)
         }
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }
