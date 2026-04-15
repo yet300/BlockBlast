@@ -106,15 +106,15 @@ class GameEngine(
 
         // 3. Detect full rows & columns. A cell at an intersection is unioned via Set
         //    so it cannot be cleared twice and never causes IndexOutOfBounds.
-        val fullRows = (0 until Grid.Companion.SIZE).filter { row ->
-            (0 until Grid.Companion.SIZE).all { col -> !newGrid.isEmpty(col, row) }
+        val fullRows = (0 until Grid.SIZE).filter { row ->
+            (0 until Grid.SIZE).all { col -> !newGrid.isEmpty(col, row) }
         }
-        val fullCols = (0 until Grid.Companion.SIZE).filter { col ->
-            (0 until Grid.Companion.SIZE).all { row -> !newGrid.isEmpty(col, row) }
+        val fullCols = (0 until Grid.SIZE).filter { col ->
+            (0 until Grid.SIZE).all { row -> !newGrid.isEmpty(col, row) }
         }
         val clearedCells: Set<Position> = buildSet {
-            for (row in fullRows) for (col in 0 until Grid.Companion.SIZE) add(Position(col, row))
-            for (col in fullCols) for (row in 0 until Grid.Companion.SIZE) add(Position(col, row))
+            for (row in fullRows) for (col in 0 until Grid.SIZE) add(Position(col, row))
+            for (col in fullCols) for (row in 0 until Grid.SIZE) add(Position(col, row))
         }
         val totalLines = fullRows.size + fullCols.size
         val isCrossClear = fullRows.isNotEmpty() && fullCols.isNotEmpty()
@@ -207,7 +207,7 @@ class GameEngine(
 
     private fun anyPieceFits(pieces: List<Piece>, grid: Grid): Boolean {
         for (piece in pieces) {
-            for (y in 0 until Grid.Companion.SIZE) for (x in 0 until Grid.Companion.SIZE) {
+            for (y in 0 until Grid.SIZE) for (x in 0 until Grid.SIZE) {
                 if (canPlace(piece.shape, x, y, grid)) return true
             }
         }

@@ -1,7 +1,11 @@
 package ge.yet.blokblast.data.platform
 
-import android.content.Contextimport android.media.AudioAttributes
+import android.content.Context
+import android.media.AudioAttributes
 import android.media.SoundPool
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.FeedbackType
 
 /**
@@ -9,8 +13,11 @@ import ge.yet.blokblast.domain.model.FeedbackType
  * at `res/raw/block_place.ogg`, `res/raw/line_clear.ogg`, etc. Missing assets are
  * silently ignored so the engine never crashes in dev.
  *
- * `internal` — invisible to composeApp/feature modules.
+ * `internal` — invisible to composeApp/feature modules. [Context] is supplied
+ * by the Metro graph via `@BindsInstance` on the top-level graph factory.
  */
+@SingleIn(AppScope::class)
+@Inject
 internal class AndroidPlatformSoundPlayer(
     private val ctx: Context,
 ) : PlatformSoundPlayer {

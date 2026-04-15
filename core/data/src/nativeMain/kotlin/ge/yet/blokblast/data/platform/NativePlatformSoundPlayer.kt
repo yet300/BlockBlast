@@ -1,5 +1,8 @@
 package ge.yet.blokblast.data.platform
 
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.FeedbackType
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AVFAudio.AVAudioPlayer
@@ -12,6 +15,8 @@ import platform.Foundation.NSURL
  *
  * `internal` — never leaks out of `:shared`.
  */
+@SingleIn(AppScope::class)
+@Inject
 internal class NativePlatformSoundPlayer() : PlatformSoundPlayer {
 
     private val cache: MutableMap<String, AVAudioPlayer> = mutableMapOf()

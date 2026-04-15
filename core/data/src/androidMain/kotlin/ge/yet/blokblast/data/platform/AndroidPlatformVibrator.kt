@@ -5,13 +5,19 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 
 /**
  * Android actual — dispatches one-shot [VibrationEffect]s via the platform vibrator.
  * Handles both the modern [VibratorManager] (API 31+) and the legacy API.
  *
- * `internal` — only used by [ge.yet.blokblast.data.repository.DefaultVibrationRepository] inside `:shared`.
+ * `internal` — only used by [ge.yet.blokblast.data.repository.DefaultVibrationRepository].
+ * [Context] is supplied by the Metro graph via `@BindsInstance`.
  */
+@SingleIn(AppScope::class)
+@Inject
 internal class AndroidPlatformVibrator(
     private val ctx: Context,
 ) : PlatformVibrator {

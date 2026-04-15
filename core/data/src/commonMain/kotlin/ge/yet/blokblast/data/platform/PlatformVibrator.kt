@@ -1,6 +1,6 @@
 package ge.yet.blokblast.data.platform
 
-interface PlatformVibrator {
+internal interface PlatformVibrator {
     fun light()
     fun heavy()
 }

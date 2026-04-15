@@ -1,8 +1,10 @@
 package ge.yet.blokblast.data.platform
 
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
-import kotlin.getValue
 
 /**
  * iOS actual — uses [UIImpactFeedbackGenerator] for taptic feedback.
@@ -10,6 +12,8 @@ import kotlin.getValue
  *
  * `internal` — only consumed by [ge.yet.blokblast.data.repository.DefaultVibrationRepository] inside `:shared`.
  */
+@SingleIn(AppScope::class)
+@Inject
 internal class NativePlatformVibrator() : PlatformVibrator {
 
     private val lightGenerator by lazy {
