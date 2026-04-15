@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.composeCompiler)
 
     alias(libs.plugins.metro)
-    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -32,6 +31,8 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            export(libs.bundles.decompose)
+            export(projects.feature.root)
         }
     }
 
@@ -41,6 +42,17 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation(projects.core.common)
+            implementation(projects.core.domain)
+            implementation(projects.core.data)
+
+            api(projects.feature.root)
+            implementation(projects.feature.home)
+            implementation(projects.feature.home)
+            implementation(projects.feature.game)
+            implementation(projects.feature.settings)
+
+
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -50,15 +62,11 @@ kotlin {
 
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
-            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.bundles.decompose)
             implementation(libs.decompose.compose)
 
-            implementation(libs.bundles.mvi)
-            implementation(libs.bundles.multiplatform.settings)
         }
         commonTest.dependencies {
             implementation(libs.bundles.testing)
