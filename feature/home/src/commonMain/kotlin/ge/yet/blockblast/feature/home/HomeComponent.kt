@@ -11,7 +11,6 @@ interface HomeComponent {
     val model: Value<Model>
 
     fun onPlayClicked()
-    fun onSettingsClicked()
 
     data class Model(
         val bestScore: Long,
@@ -22,7 +21,6 @@ interface HomeComponent {
         fun create(
             componentContext: ComponentContext,
             onPlayClicked: () -> Unit,
-            onSettingsClicked: () -> Unit,
         ): HomeComponent
     }
 }

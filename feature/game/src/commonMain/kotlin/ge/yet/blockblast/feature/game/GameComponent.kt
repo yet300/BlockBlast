@@ -1,7 +1,9 @@
 package ge.yet.blockblast.feature.game
 
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
+import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 
 /**
@@ -14,6 +16,7 @@ import ge.yet.blokblast.domain.model.GameState
 interface GameComponent {
 
     val model: Value<GameState>
+    val sheetSlot: Value<ChildSlot<*, SheetChild>>
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
     fun onReviveClicked()
@@ -21,10 +24,17 @@ interface GameComponent {
     fun onSettingsClicked()
     fun onExitClicked()
 
+    fun onDismissSheet()
+
+    sealed interface SheetChild {
+        class Settings(
+            val component: SettingsComponent,
+        ) : SheetChild
+    }
+
     fun interface Factory {
         fun create(
             componentContext: ComponentContext,
-            onSettingsClicked: () -> Unit,
             onExitClicked: () -> Unit,
         ): GameComponent
     }

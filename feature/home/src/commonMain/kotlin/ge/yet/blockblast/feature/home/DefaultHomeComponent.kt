@@ -15,7 +15,6 @@ internal class DefaultHomeComponent(
     componentContext: ComponentContext,
     private val homeStoreFactory: HomeStoreFactory,
     private val onPlayClickedCb: () -> Unit,
-    private val onSettingsClickedCb: () -> Unit,
 ) : ComponentContext by componentContext,
     HomeComponent {
     private val store = instanceKeeper.getStore { homeStoreFactory.create() }
@@ -29,7 +28,6 @@ internal class DefaultHomeComponent(
     }
 
     override fun onPlayClicked() = onPlayClickedCb()
-    override fun onSettingsClicked() = onSettingsClickedCb()
 }
 
 @Inject
@@ -39,11 +37,9 @@ internal class DefaultHomeComponentFactory(
     override fun create(
         componentContext: ComponentContext,
         onPlayClicked: () -> Unit,
-        onSettingsClicked: () -> Unit,
     ): HomeComponent = DefaultHomeComponent(
         componentContext = componentContext,
         homeStoreFactory = homeStoreFactory,
         onPlayClickedCb = onPlayClicked,
-        onSettingsClickedCb = onSettingsClicked,
     )
 }

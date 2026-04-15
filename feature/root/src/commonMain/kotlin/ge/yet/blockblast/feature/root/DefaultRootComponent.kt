@@ -46,14 +46,12 @@ internal class DefaultRootComponent(
             homeFactory.create(
                 componentContext = componentContext,
                 onPlayClicked = { navigation.push(Config.Game) },
-                onSettingsClicked = { navigation.push(Config.Settings) },
             )
         )
 
         Config.Game -> RootComponent.Child.Game(
             gameFactory.create(
                 componentContext = componentContext,
-                onSettingsClicked = { navigation.push(Config.Settings) },
                 onExitClicked = { navigation.pop() },
             )
         )
@@ -66,9 +64,6 @@ internal class DefaultRootComponent(
 
         @Serializable
         data object Game : Config
-
-        @Serializable
-        data object Settings : Config
     }
 }
 
