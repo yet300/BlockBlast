@@ -19,6 +19,10 @@ internal interface SettingsStore : Store<SettingsStore.Intent, SettingsStore.Sta
         data class SetDark(val enabled: Boolean) : Intent
     }
 
+    sealed interface Action {
+        object Init : Action
+    }
+
     sealed interface Msg {
         data class Snapshot(
             val sound: Boolean,

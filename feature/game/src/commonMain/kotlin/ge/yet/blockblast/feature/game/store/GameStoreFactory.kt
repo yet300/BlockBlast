@@ -5,12 +5,13 @@ import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
+import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameState
 import kotlinx.coroutines.launch
 
-internal class GameStoreFactory
-constructor(
+@Inject
+internal class GameStoreFactory(
     private val storeFactory: StoreFactory,
     private val engine: GameEngine,
 ) {
@@ -20,10 +21,10 @@ constructor(
             Store<GameStore.Intent, GameState, Nothing> by storeFactory.create(
                 name = "GameStore",
                 initialState = engine.state.value,
-                executorFactory = coroutineExecutorFactory<GameStore.Intent, Nothing, GameState, GameStore.Msg, Nothing> {
-                    onAction<Unit>(Unit) {
+                executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameState, GameStore.Msg, Nothing> {
+                    onAction<GameStore.Action> {
                         launch {
-                            engine.state.collect { dispatct(GameStore.Msg.Snapshot(it)) }
+                            engine.state.collect { dispatch(GameStore.Msg.Snapshot(it)) }
                         }
                     }
                     onIntent<GameStore.Intent.Start> {
@@ -40,7 +41,7 @@ constructor(
                     }
                 },
                 reducer = GameReducer,
-                bootstrapper = SimpleBootstrapper(Unit),
+                bootstrapper = SimpleBootstrapper(GameStore.Action.Init),
             ) {}
 
 

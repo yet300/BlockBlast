@@ -1,14 +1,17 @@
 package ge.yet.blockblast.feature.settings.store
 
 import com.arkivanov.mvikotlin.core.store.Reducer
+import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
+import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-internal class SettingsStoreFactory constructor(
+@Inject
+internal class SettingsStoreFactory(
     private val storeFactory: StoreFactory,
     private val settingsRepository: SettingsRepository,
 ) {
@@ -22,8 +25,9 @@ internal class SettingsStoreFactory constructor(
                     vibration = settingsRepository.vibrationEnabled.value,
                     dark = settingsRepository.darkTheme.value,
                 ),
-                executorFactory = coroutineExecutorFactory<SettingsStore.Intent, Nothing, SettingsStore.State, SettingsStore.Msg, Nothing> {
-                    onAction<Unit>(Unit) {
+                bootstrapper = SimpleBootstrapper(SettingsStore.Action.Init),
+                executorFactory = coroutineExecutorFactory<SettingsStore.Intent, SettingsStore.Action, SettingsStore.State, SettingsStore.Msg, Nothing> {
+                    onAction<SettingsStore.Action.Init> {
                         launch {
                             combine(
                                 settingsRepository.soundEnabled,

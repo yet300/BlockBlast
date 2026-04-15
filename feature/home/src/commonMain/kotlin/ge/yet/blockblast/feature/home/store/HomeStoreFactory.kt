@@ -4,9 +4,11 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
+import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import kotlinx.coroutines.launch
 
+@Inject
 internal class HomeStoreFactory(
     private val storeFactory: StoreFactory,
     private val saveRepository: GameSaveRepository,

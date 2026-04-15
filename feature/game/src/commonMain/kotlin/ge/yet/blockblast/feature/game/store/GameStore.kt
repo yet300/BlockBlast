@@ -12,6 +12,10 @@ internal interface GameStore : Store<GameStore.Intent, GameState, Nothing> {
         data object Restart : Intent
     }
 
+    sealed interface Action {
+        data object Init : Action
+    }
+
     sealed interface Msg {
         data class Snapshot(val state: GameState) : Msg
     }

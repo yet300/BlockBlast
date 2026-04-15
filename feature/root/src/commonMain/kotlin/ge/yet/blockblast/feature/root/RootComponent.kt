@@ -9,10 +9,9 @@ import ge.yet.blockblast.feature.home.HomeComponent
 
 /**
  * Top-level navigation host. Owns the [ChildStack] and routes between
- * [HomeComponent], [GameComponent] and [SettingsComponent].
+ * [HomeComponent], [GameComponent]
  *
  * Settings is reachable from BOTH Home and Game by pushing
- * [Child.Settings] onto the stack and popping on back.
  */
 interface RootComponent : BackHandlerOwner {
 
