@@ -10,7 +10,10 @@ import ge.yet.blokblast.domain.repository.GameSaveRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import ge.yet.blokblast.domain.model.ClearEvent
+import ge.yet.blokblast.domain.model.FeedbackEvent
 import ge.yet.blokblast.domain.model.FeedbackType
+import ge.yet.blokblast.domain.model.PointsEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -145,6 +148,15 @@ class GameEngine(
             comboLevel = newCombo,
             currentPieces = nextTray,
             isGameOver = gameOver,
+            lastClearedCells = if (clearedCells.isNotEmpty()) {
+                ClearEvent(clearedCells.toList(), current.lastClearedCells.nonce + 1)
+            } else current.lastClearedCells,
+            lastFeedback = feedbackFor(totalLines)?.let {
+                FeedbackEvent(it, current.lastFeedback.nonce + 1)
+            } ?: current.lastFeedback,
+            lastPointsAwarded = if (placementPts + clearPts > 0) {
+                PointsEvent(placementPts + clearPts, current.lastPointsAwarded.nonce + 1)
+            } else current.lastPointsAwarded,
         )
         _state.value = newState
 
