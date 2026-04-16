@@ -29,7 +29,7 @@ fun RootContent(
         stack = childStack,
         animation = predictiveBackAnimation(
             backHandler = component.backHandler,
-            fallbackAnimation = stackAnimation(fade() + scale()),
+            fallbackAnimation = stackAnimation(fade() + scale(frontFactor = 0.75f, backFactor = 0.95f)),
             onBack = component::onBackClicked,
         ),
     ) { child ->
