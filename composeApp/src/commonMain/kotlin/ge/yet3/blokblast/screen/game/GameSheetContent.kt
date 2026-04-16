@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.GameComponent
-import ge.yet3.blokblast.component.sheet.ModalBottomSheet
+import ge.yet3.blokblast.component.sheet.ClaudeBottomSheet
 import ge.yet3.blokblast.screen.settings.SettingsContent
 
 
@@ -13,7 +13,7 @@ fun GameSheet(component: GameComponent) {
     val dialogSheetSlot by component.sheetSlot.subscribeAsState()
 
     dialogSheetSlot.child?.instance?.let { child ->
-        ModalBottomSheet(
+        ClaudeBottomSheet(
             onDismiss = component::onDismissSheet,
         ) {
             when (child) {

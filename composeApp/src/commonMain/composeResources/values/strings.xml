@@ -1,0 +1,36 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Play</string>
+    <string name="continue_game">Continue</string>
+    <string name="new_game">New game</string>
+    <string name="best_score_label">Best score</string>
+    <string name="home_tagline">A quiet little puzzle</string>
+
+    <!-- Game Screen -->
+    <string name="score">Score</string>
+    <string name="best">Best</string>
+    <string name="game_over">Game over</string>
+    <string name="game_over_subtitle">No moves left on the board</string>
+    <string name="new_best">New best score</string>
+    <string name="revive">Continue</string>
+    <string name="restart">New game</string>
+    <string name="exit_to_home">Exit</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="sound">Sound</string>
+    <string name="sound_subtitle">Game sound effects</string>
+    <string name="vibration">Vibration</string>
+    <string name="vibration_subtitle">Haptic feedback on placement</string>
+    <string name="dark_theme">Dark theme</string>
+    <string name="dark_theme_subtitle">Always-on dark mode</string>
+
+    <!-- Common -->
+    <string name="exit">Exit</string>
+</resources>
