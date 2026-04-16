@@ -23,13 +23,19 @@ import androidx.compose.ui.graphics.Color
  */
 class ComboStripesState {
     val progress = Animatable(0f)
+    var activeRows = emptyList<Int>()
+    var activeCols = emptyList<Int>()
 
-    suspend fun sweep(durationMillis: Int = 350) {
+    suspend fun sweep(rows: List<Int>, cols: List<Int>, durationMillis: Int = 350) {
+        activeRows = rows
+        activeCols = cols
         progress.snapTo(0f)
         progress.animateTo(
             targetValue = 1f,
             animationSpec = tween(durationMillis, easing = LinearEasing),
         )
+        activeRows = emptyList()
+        activeCols = emptyList()
     }
 }
 
@@ -47,14 +53,31 @@ fun Modifier.comboStripes(
     drawContent()
 
     val p = state.progress.value
-    if (p <= 0f || p >= 1f) return@drawWithContent
+    if (p <= 0f || p >= 1f || (state.activeRows.isEmpty() && state.activeCols.isEmpty())) return@drawWithContent
 
-    val barWidth = size.width * 0.15f
-    val barX = p * (size.width + barWidth) - barWidth
+    val cellWidth = size.width / 8f // Grid.SIZE
+    val cellHeight = size.height / 8f
+    val sweepAlpha = 0.6f * (if (p > 0.5f) (1f - p) * 2 else 1f)
 
-    drawRect(
-        color = stripeColor.copy(alpha = 0.35f * (1f - p)),
-        topLeft = Offset(barX, 0f),
-        size = Size(barWidth, size.height),
-    )
+    for (row in state.activeRows) {
+        val y = row * cellHeight
+        val barWidth = cellWidth * 3f
+        val barX = p * (size.width + barWidth) - barWidth
+        drawRect(
+            color = stripeColor.copy(alpha = sweepAlpha),
+            topLeft = Offset(barX, y),
+            size = Size(barWidth, cellHeight),
+        )
+    }
+
+    for (col in state.activeCols) {
+        val x = col * cellWidth
+        val barHeight = cellHeight * 3f
+        val barY = p * (size.height + barHeight) - barHeight
+        drawRect(
+            color = stripeColor.copy(alpha = sweepAlpha),
+            topLeft = Offset(x, barY),
+            size = Size(cellWidth, barHeight),
+        )
+    }
 }
