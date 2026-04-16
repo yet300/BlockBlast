@@ -59,6 +59,7 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
+            implementation(libs.confettikit)
 
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
