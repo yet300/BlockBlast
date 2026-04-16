@@ -1,9 +1,13 @@
 package ge.yet3.blokblast.screen.game
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -61,19 +65,39 @@ fun PieceTray(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val trayKey = remember(pieces) { pieces.map { it.pieceId }.joinToString() }
+
         repeat(3) { index ->
             val piece = pieces.getOrNull(index)
             val isSelected = piece != null && piece.pieceId == selectedPieceId
 
-            TraySlot(
-                piece = piece,
-                isSelected = isSelected,
-                onTap = { if (piece != null) onPieceSelected(piece.pieceId) },
-                onDragStart = onDragStart,
-                onDragMove = onDragMove,
-                onDragEnd = onDragEnd,
+            var visible by remember(trayKey) { mutableStateOf(false) }
+            androidx.compose.runtime.LaunchedEffect(trayKey) {
+                visible = true
+            }
+
+            AnimatedVisibility(
+                visible = visible,
                 modifier = Modifier.weight(1f),
-            )
+                enter = slideInVertically(
+                    animationSpec = tween(350, delayMillis = index * 80)
+                ) { it / 2 } + fadeIn(tween(350, delayMillis = index * 80)) + scaleIn(
+                    initialScale = 0.7f,
+                    animationSpec = tween(350, delayMillis = index * 80)
+                )
+            ) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TraySlot(
+                        piece = piece,
+                        isSelected = isSelected,
+                        onTap = { if (piece != null) onPieceSelected(piece.pieceId) },
+                        onDragStart = onDragStart,
+                        onDragMove = onDragMove,
+                        onDragEnd = onDragEnd,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         }
     }
 }
