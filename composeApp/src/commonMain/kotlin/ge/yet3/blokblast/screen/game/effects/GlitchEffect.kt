@@ -11,8 +11,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import kotlin.random.Random
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /**
  * CRT / Glitch effect overlay inspired by Sina Samaki's "Glitch Effect"
@@ -48,8 +46,7 @@ fun Modifier.glitchEffect(state: GlitchState): Modifier =
         val i = state.intensity.value
         if (i <= 0.01f) return@drawWithContent
 
-        @OptIn(ExperimentalTime::class)
-        val rng = Random(Clock.System.now().toEpochMilliseconds())
+        val rng = Random(i.hashCode() + size.height.toInt())
         val sliceCount = (6 * i).toInt().coerceAtLeast(1)
 
         // Chromatic aberration tinted overlays

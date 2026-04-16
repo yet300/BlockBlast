@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
@@ -25,17 +26,9 @@ import ge.yet3.blokblast.theme.pieceColor
 import ge.yet3.blokblast.theme.pieceColorPreview
 
 private const val COLS = Grid.SIZE // 8
+private val GAP_DP = 2.dp
+private val GRID_PADDING_DP = 6.dp
 
-/**
- * Renders the 8×8 game board using [BlockPiece] composables.
- *
- * @param grid            Current board state.
- * @param selectedPiece   Piece selected by tap (null if none).
- * @param dragDropState   Current drag-and-drop state (null if not active).
- * @param onCellTapped    Called with (x, y) when the player taps a cell.
- * @param comboStripes    Optional combo stripe effect state.
- * @param onGridMeasured  Callback with grid origin (window coords), cell size, and gap in px.
- */
 @Composable
 fun GameGrid(
     grid: Grid,
@@ -48,6 +41,8 @@ fun GameGrid(
 ) {
     val surfaceColor = MaterialTheme.colorScheme.surface
     val emptyColor = MaterialTheme.colorScheme.surfaceVariant
+    val density = LocalDensity.current
+    val gapPx = with(density) { GAP_DP.toPx() }
 
     BoxWithConstraints(
         modifier = modifier
@@ -55,22 +50,19 @@ fun GameGrid(
             .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
             .background(surfaceColor)
-            .padding(6.dp)
+            .padding(GRID_PADDING_DP)
             .then(
                 if (comboStripes != null) Modifier.comboStripes(comboStripes) else Modifier,
             )
             .onGloballyPositioned { coords ->
                 val pos = coords.positionInWindow()
                 val widthPx = coords.size.width.toFloat()
-                val gapPx = 2f * coords.size.width / (coords.size.width.toFloat()) // ~2dp scaled
                 val cellPx = (widthPx - (COLS - 1) * gapPx) / COLS
                 onGridMeasured?.invoke(pos.x, pos.y, cellPx, gapPx)
             },
     ) {
-        val cellSize: Dp = (maxWidth - (COLS - 1) * 2.dp) / COLS
-        val gapDp = 2.dp
+        val cellSize: Dp = (maxWidth - (COLS - 1) * GAP_DP) / COLS
 
-        // Compute hover ghost cells from drag state
         val hoverCells: Set<Pair<Int, Int>> = if (dragDropState?.isDragging == true && dragDropState.hoverAnchor != null) {
             val (ax, ay) = dragDropState.hoverAnchor!!
             val piece = dragDropState.draggedPiece!!
@@ -105,8 +97,8 @@ fun GameGrid(
                     filled = isFilled || (isHoverGhost && hoverValid),
                     modifier = Modifier
                         .offset(
-                            x = col * (cellSize + gapDp),
-                            y = row * (cellSize + gapDp),
+                            x = col * (cellSize + GAP_DP),
+                            y = row * (cellSize + GAP_DP),
                         )
                         .clickable(enabled = selectedPiece != null) {
                             onCellTapped(x, y)
