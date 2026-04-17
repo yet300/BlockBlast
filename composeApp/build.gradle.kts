@@ -40,6 +40,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.play.services.ads)
         }
         commonMain.dependencies {
             implementation(projects.core.common)
