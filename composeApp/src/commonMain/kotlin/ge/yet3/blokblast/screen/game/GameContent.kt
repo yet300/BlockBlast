@@ -59,6 +59,8 @@ import blockblast.composeapp.generated.resources.revive
 import blockblast.composeapp.generated.resources.score
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.GameComponent
+import ge.yet3.blokblast.ads.AdBanner
+import ge.yet3.blokblast.ads.rememberGameOverInterstitial
 import ge.yet3.blokblast.component.background.AmbientMeshBackground
 import ge.yet3.blokblast.component.icon.ArrowBack
 import ge.yet3.blokblast.component.icon.Settings
@@ -163,6 +165,15 @@ fun GameContent(component: GameComponent) {
         }
     }
 
+    // ── Game Over: interstitial (on Continue click). The countdown timer is
+    // owned by the GameStore (see GameStoreFactory) and projected onto a
+    // Value<Int> via DefaultGameComponent. ──
+    val interstitial = rememberGameOverInterstitial()
+    val continueCountdownRaw by component.continueCountdown.subscribeAsState()
+    // Store emits -1 (COUNTDOWN_INACTIVE) when no game-over countdown is
+    // active; the overlay API uses a nullable Int for the same concept.
+    val continueCountdown: Int? = continueCountdownRaw.takeIf { it >= 0 }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -241,7 +252,7 @@ fun GameContent(component: GameComponent) {
                 PieceTray(
                     pieces = model.currentPieces,
                     selectedPieceId = selectedPieceId,
-                    modifier = Modifier.widthIn(max = 500.dp).padding(bottom = 16.dp),
+                    modifier = Modifier.widthIn(max = 500.dp).padding(bottom = 8.dp),
                     onPieceSelected = { id ->
                         if (!dragDrop.isDragging) {
                             selectedPieceId = if (selectedPieceId == id) null else id
@@ -279,7 +290,23 @@ fun GameContent(component: GameComponent) {
                     },
                 )
 
-                Spacer(Modifier.height(24.dp))
+                // Bottom banner ad. 50dp slot is reserved always so drag /
+                // settings visibility toggling never shifts the grid above.
+                val sheetSlot by component.sheetSlot.subscribeAsState()
+                val hideBanner = dragDrop.isDragging ||
+                    sheetSlot.child != null ||
+                    model.isGameOver
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (!hideBanner) {
+                        AdBanner(modifier = Modifier.fillMaxWidth())
+                    }
+                }
             }
 
             // ── Floating dragged piece overlay ───────────────────────────
@@ -347,9 +374,13 @@ fun GameContent(component: GameComponent) {
                 bestScore = model.bestScore,
                 isNewBest = isNewBest,
                 canRevive = model.revivesUsed < 1,
+                continueCountdownSeconds = continueCountdown,
                 onReviveClicked = {
                     selectedPieceId = null
-                    component.onReviveClicked()
+                    // Show interstitial; revive fires only after it's dismissed.
+                    interstitial.show {
+                        component.onReviveClicked()
+                    }
                 },
                 onRestartClicked = {
                     selectedPieceId = null

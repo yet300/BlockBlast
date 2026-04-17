@@ -72,6 +72,11 @@ fun GameOverOverlay(
     reviveLabel: String,
     restartLabel: String,
     exitLabel: String,
+    /**
+     * Seconds remaining on the Continue button. When `null` or ≤ 0 the primary
+     * button morphs from "Continue (N)" into the restart action.
+     */
+    continueCountdownSeconds: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -119,6 +124,7 @@ fun GameOverOverlay(
                     reviveLabel = reviveLabel,
                     restartLabel = restartLabel,
                     exitLabel = exitLabel,
+                    continueCountdownSeconds = continueCountdownSeconds,
                 )
             }
         }
@@ -142,6 +148,7 @@ private fun GameOverCard(
     reviveLabel: String,
     restartLabel: String,
     exitLabel: String,
+    continueCountdownSeconds: Int?,
 ) {
     val shape = RoundedCornerShape(32.dp)
     Column(
@@ -199,22 +206,40 @@ private fun GameOverCard(
 
         Spacer(Modifier.height(28.dp))
 
+        // Primary button morphs based on the countdown:
+        //   canRevive && countdown > 0  → "Continue (N)" → onReviveClicked
+        //   canRevive && countdown <= 0 → restartLabel   → onRestartClicked
+        //   !canRevive                  → primary button hidden; secondary restart shown
+        val countdownActive = canRevive &&
+            continueCountdownSeconds != null &&
+            continueCountdownSeconds > 0
+        val primaryActsAsRestart = canRevive && !countdownActive
+
         if (canRevive) {
+            val primaryText = if (countdownActive) {
+                "$reviveLabel ($continueCountdownSeconds)"
+            } else {
+                restartLabel
+            }
+            val primaryAction = if (countdownActive) onReviveClicked else onRestartClicked
             PrimaryTerracottaButton(
-                text = reviveLabel,
-                onClick = onReviveClicked,
+                text = primaryText,
+                onClick = primaryAction,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
         }
 
-        SecondaryWarmSandButton(
-            text = restartLabel,
-            onClick = onRestartClicked,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(Modifier.height(12.dp))
+        // Hide the secondary restart when the primary has already morphed into restart
+        // (would be a duplicate button otherwise).
+        if (!primaryActsAsRestart) {
+            SecondaryWarmSandButton(
+                text = restartLabel,
+                onClick = onRestartClicked,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+        }
 
         Text(
             text = exitLabel,

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.home.HomeComponent
+import ge.yet3.blokblast.ads.AdBanner
 import ge.yet3.blokblast.component.background.AmbientMeshBackground
 import ge.yet3.blokblast.component.button.PrimaryTerracottaButton
 import ge.yet3.blokblast.component.button.SecondaryWarmSandButton
@@ -112,6 +113,15 @@ fun HomeContent(component: HomeComponent) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(innerPadding),
+            ) {
+                AdBanner(modifier = Modifier.fillMaxWidth())
             }
         }
     }
