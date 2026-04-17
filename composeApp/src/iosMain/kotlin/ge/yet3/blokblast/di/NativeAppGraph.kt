@@ -21,6 +21,7 @@ import ge.yet.blokblast.domain.di.DomainBindings
         DomainBindings::class,
         DataBindings::class,
         NativeDataBindings::class,
+        ComposeAppBindings::class,
         RootBindings::class,
         HomeBindings::class,
         GameBindings::class,
