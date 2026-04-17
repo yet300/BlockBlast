@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.luminance
 import ge.yet3.blokblast.theme.CoralAccent
 import ge.yet3.blokblast.theme.Ivory
 import ge.yet3.blokblast.theme.TerracottaBrand
@@ -26,20 +27,9 @@ import kotlin.math.sin
 
 /**
  * Slow-moving warm "mesh gradient" used as the ambient layer behind every
- * full screen.  It is intentionally low-contrast so foreground UI never has to
- * fight it for attention.
- *
- * Implementation note: instead of an AGSL `RuntimeShader` (which has uneven
- * cross-platform support across the Compose Multiplatform 1.10 targets we
- * ship), this composable layers four large radial gradient "blobs" on top of
- * a parchment base color and animates their centers along soft Lissajous
- * curves.  The result is visually indistinguishable from a metaball mesh
- * gradient at the very low spatial frequencies we actually want for a
- * background, and works identically on Android and iOS.
- *
- * Drawing happens via `Modifier.drawBehind`.  The constraint about avoiding
- * Canvas applies only to the game grid and pieces — backgrounds are fair
- * game.
+ * full screen.  Blob alphas are automatically scaled by the luminance of
+ * [baseColor]: light backgrounds get the full warm-cream effect; dark
+ * backgrounds get very subtle undertones so foreground text stays readable.
  */
 @Composable
 fun AmbientMeshBackground(
@@ -57,23 +47,27 @@ fun AmbientMeshBackground(
         label = "ambient-phase",
     )
 
+    // Scale blob opacity: light canvas → full effect; dark canvas → subtle glow only.
+    // luminance() returns 0 (black) … 1 (white).
+    val lum = baseColor.luminance()
+    val blobScale = if (lum > 0.15f) 1f else (lum / 0.15f).coerceIn(0f, 1f) * 0.35f + 0.05f
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(baseColor)
-            .drawBehind { drawAmbientBlobs(phase) },
+            .drawBehind { drawAmbientBlobs(phase, blobScale) },
     )
 }
 
-private fun DrawScope.drawAmbientBlobs(phase: Float) {
+private fun DrawScope.drawAmbientBlobs(phase: Float, scale: Float) {
     val w = size.width
     val h = size.height
     val r = maxOf(w, h) * 0.9f
-    val twoPi = (2.0 * kotlin.math.PI).toFloat()
-    val t = phase * twoPi
+    val t = phase * (2.0 * kotlin.math.PI).toFloat()
 
     drawBlob(
-        color = TerracottaBrand.copy(alpha = 0.18f),
+        color = TerracottaBrand.copy(alpha = 0.18f * scale),
         center = Offset(
             x = w * (0.30f + 0.10f * cos(t)),
             y = h * (0.25f + 0.08f * sin(t * 1.10f)),
@@ -81,7 +75,8 @@ private fun DrawScope.drawAmbientBlobs(phase: Float) {
         radius = r,
     )
     drawBlob(
-        color = WarmSand.copy(alpha = 0.55f),
+        // WarmSand blobs are very light — keep alpha modest even on light backgrounds
+        color = WarmSand.copy(alpha = 0.55f * scale),
         center = Offset(
             x = w * (0.75f + 0.08f * cos(t * 0.80f + 1.7f)),
             y = h * (0.30f + 0.10f * sin(t * 0.90f + 0.5f)),
@@ -89,7 +84,7 @@ private fun DrawScope.drawAmbientBlobs(phase: Float) {
         radius = r * 0.95f,
     )
     drawBlob(
-        color = CoralAccent.copy(alpha = 0.12f),
+        color = CoralAccent.copy(alpha = 0.12f * scale),
         center = Offset(
             x = w * (0.20f + 0.12f * cos(t * 0.70f + 3.1f)),
             y = h * (0.78f + 0.08f * sin(t * 0.60f + 2.2f)),
@@ -97,7 +92,8 @@ private fun DrawScope.drawAmbientBlobs(phase: Float) {
         radius = r * 0.85f,
     )
     drawBlob(
-        color = Ivory.copy(alpha = 0.45f),
+        // Ivory blob is near-white — clamp hard on dark backgrounds
+        color = Ivory.copy(alpha = 0.45f * scale),
         center = Offset(
             x = w * (0.80f + 0.10f * cos(t * 1.20f + 4.4f)),
             y = h * (0.82f + 0.08f * sin(t * 1.00f + 3.6f)),
