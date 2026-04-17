@@ -8,6 +8,7 @@ import com.arkivanov.decompose.router.slot.activate
 import com.arkivanov.decompose.router.slot.childSlot
 import com.arkivanov.decompose.router.slot.dismiss
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
@@ -36,7 +37,12 @@ internal class DefaultGameComponent(
     private val sheetNavigation = SlotNavigation<SheetConfig>()
     private val lifecycleScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    override val model: Value<GameState> = store.asValue()
+    // Single source of truth = the store's combined state. The two public
+    // Values are plain projections so consumers recompose only on the slice
+    // they care about.
+    private val storeState = store.asValue()
+    override val model: Value<GameState> = storeState.map { it.game }
+    override val continueCountdown: Value<Int> = storeState.map { it.continueCountdown }
 
     override val sheetSlot: Value<ChildSlot<*, GameComponent.SheetChild>> =
         childSlot(

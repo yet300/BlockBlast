@@ -16,6 +16,19 @@ import ge.yet.blokblast.domain.model.GameState
 interface GameComponent {
 
     val model: Value<GameState>
+
+    /**
+     * Seconds remaining on the Game Over "Continue" button. Starts at
+     * [CONTINUE_COUNTDOWN_SECONDS] the moment the game ends and counts down to
+     * zero. The sentinel [COUNTDOWN_INACTIVE] (= -1) is emitted whenever the
+     * game is not in the game-over state. Owned by the component so it
+     * survives configuration changes and is unit-testable.
+     *
+     * Decompose's `Value<T>` requires `T : Any`, which is why we use a sentinel
+     * instead of `Value<Int?>`.
+     */
+    val continueCountdown: Value<Int>
+
     val sheetSlot: Value<ChildSlot<*, SheetChild>>
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
@@ -38,4 +51,5 @@ interface GameComponent {
             onExitClicked: () -> Unit,
         ): GameComponent
     }
+
 }

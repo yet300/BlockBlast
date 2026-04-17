@@ -8,8 +8,9 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameEvent
-import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AudioRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Inject
@@ -21,15 +22,54 @@ internal class GameStoreFactory(
     fun create(): GameStore =
         object :
             GameStore,
-            Store<GameStore.Intent, GameState, Nothing> by storeFactory.create(
+            Store<GameStore.Intent, GameStoreState, Nothing> by storeFactory.create(
                 name = "GameStore",
-                initialState = engine.state.value,
-                executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameState, GameStore.Msg, Nothing> {
+                initialState = GameStoreState(
+                    game = engine.state.value,
+                    continueCountdown = GameStoreState.COUNTDOWN_INACTIVE,
+                ),
+                executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, Nothing> {
                     onAction<GameStore.Action> {
+                        // Mirror engine state into the store + drive the
+                        // Continue-button countdown off game-over transitions.
                         launch {
-                            engine.state.collect { dispatch(GameStore.Msg.Snapshot(it)) }
+                            var countdownJob: Job? = null
+                            var wasGameOver = engine.state.value.isGameOver
+
+                            engine.state.collect { gameState ->
+                                dispatch(GameStore.Msg.Snapshot(gameState))
+
+                                val isNowGameOver = gameState.isGameOver
+                                when {
+                                    // false → true: start fresh countdown
+                                    !wasGameOver && isNowGameOver -> {
+                                        countdownJob?.cancel()
+                                        countdownJob = launch {
+                                            var seconds = GameStoreState.CONTINUE_COUNTDOWN_SECONDS
+                                            dispatch(GameStore.Msg.CountdownTick(seconds))
+                                            while (seconds > 0) {
+                                                delay(1000)
+                                                seconds -= 1
+                                                dispatch(GameStore.Msg.CountdownTick(seconds))
+                                            }
+                                        }
+                                    }
+                                    // true → false: cancel & clear
+                                    wasGameOver && !isNowGameOver -> {
+                                        countdownJob?.cancel()
+                                        countdownJob = null
+                                        dispatch(
+                                            GameStore.Msg.CountdownTick(
+                                                GameStoreState.COUNTDOWN_INACTIVE,
+                                            ),
+                                        )
+                                    }
+                                }
+                                wasGameOver = isNowGameOver
+                            }
                         }
-                        // Collect one-shot events → trigger audio
+
+                        // Collect one-shot domain events → trigger audio
                         launch {
                             engine.events.collect { event ->
                                 when (event) {
@@ -77,9 +117,10 @@ internal class GameStoreFactory(
                 bootstrapper = SimpleBootstrapper(GameStore.Action.Init),
             ) {}
 
-    internal object GameReducer : Reducer<GameState, GameStore.Msg> {
-        override fun GameState.reduce(msg: GameStore.Msg): GameState = when (msg) {
-            is GameStore.Msg.Snapshot -> msg.state
+    internal object GameReducer : Reducer<GameStoreState, GameStore.Msg> {
+        override fun GameStoreState.reduce(msg: GameStore.Msg): GameStoreState = when (msg) {
+            is GameStore.Msg.Snapshot -> copy(game = msg.state)
+            is GameStore.Msg.CountdownTick -> copy(continueCountdown = msg.secondsRemaining)
         }
     }
 }

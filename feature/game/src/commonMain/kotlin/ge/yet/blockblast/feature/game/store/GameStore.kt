@@ -3,7 +3,7 @@ package ge.yet.blockblast.feature.game.store
 import com.arkivanov.mvikotlin.core.store.Store
 import ge.yet.blokblast.domain.model.GameState
 
-internal interface GameStore : Store<GameStore.Intent, GameState, Nothing> {
+internal interface GameStore : Store<GameStore.Intent, GameStoreState, Nothing> {
 
     sealed interface Intent {
         data object Start : Intent
@@ -18,6 +18,7 @@ internal interface GameStore : Store<GameStore.Intent, GameState, Nothing> {
 
     sealed interface Msg {
         data class Snapshot(val state: GameState) : Msg
+        data class CountdownTick(val secondsRemaining: Int) : Msg
     }
 
 }
