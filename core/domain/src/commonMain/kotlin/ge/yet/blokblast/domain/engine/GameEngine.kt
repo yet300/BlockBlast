@@ -126,6 +126,9 @@ class GameEngine(
             newGrid = newGrid.clearedAt(clearedCells)
         }
 
+        val isBoardEmpty = clearedCells.isNotEmpty() &&
+            newGrid.cells.all { row -> row.all { it == Grid.EMPTY } }
+
         // 4. Combo: +1 if cleared, reset to 0 if not.
         val newCombo = if (totalLines > 0) current.comboLevel + 1 else 0
 
@@ -151,7 +154,7 @@ class GameEngine(
             lastClearedCells = if (clearedCells.isNotEmpty()) {
                 ClearEvent(clearedCells.toList(), current.lastClearedCells.nonce + 1)
             } else current.lastClearedCells,
-            lastFeedback = feedbackFor(totalLines)?.let {
+            lastFeedback = feedbackFor(fullRows, fullCols, isBoardEmpty)?.let {
                 FeedbackEvent(it, current.lastFeedback.nonce + 1)
             } ?: current.lastFeedback,
             lastPointsAwarded = if (placementPts + clearPts > 0) {
@@ -171,7 +174,7 @@ class GameEngine(
                         isCrossClear = isCrossClear,
                     )
                 )
-                feedbackFor(totalLines)?.let { _events.emit(GameEvent.Feedback(it)) }
+                feedbackFor(fullRows, fullCols, isBoardEmpty)?.let { _events.emit(GameEvent.Feedback(it)) }
                 if (newCombo >= 2) _events.emit(GameEvent.ComboActive(newCombo))
             }
             if (gameOver) _events.emit(GameEvent.GameOver)
@@ -226,11 +229,29 @@ class GameEngine(
         return false
     }
 
-    private fun feedbackFor(lines: Int): FeedbackType? = when {
-        lines >= 4 -> FeedbackType.PERFECT
-        lines == 3 -> FeedbackType.GREAT
-        lines == 2 -> FeedbackType.GOOD
-        else -> null
+    /**
+     * Rules (checked in priority order):
+     *   UNBELIEVABLE — entire board wiped clean in one move
+     *   EXCELLENT    — cross-clear (both rows AND cols) or 4+ lines at once
+     *   GREAT        — exactly 3 columns cleared (no rows involved)
+     *   GOOD         — any 2+ lines cleared
+     *   null         — 0-1 lines: no voice
+     */
+    private fun feedbackFor(
+        fullRows: List<Int>,
+        fullCols: List<Int>,
+        isBoardEmpty: Boolean,
+    ): FeedbackType? {
+        val totalLines = fullRows.size + fullCols.size
+        val isCross = fullRows.isNotEmpty() && fullCols.isNotEmpty()
+        return when {
+            totalLines == 0 -> null
+            isBoardEmpty -> FeedbackType.UNBELIEVABLE
+            isCross || totalLines >= 4 -> FeedbackType.EXCELLENT
+            fullCols.size == 3 && fullRows.isEmpty() -> FeedbackType.GREAT
+            totalLines >= 2 -> FeedbackType.GOOD
+            else -> null
+        }
     }
 
     private fun autoSave() {

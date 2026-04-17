@@ -9,4 +9,10 @@ interface AudioRepository {
     suspend fun playClearSound(lines: Int)
     suspend fun playVoiceFeedback(type: FeedbackType)
     suspend fun playVoiceCombo(combo: Int)
+
+    /** Starts looping background music. Safe to call multiple times. */
+    suspend fun startMusic()
+
+    /** Stops background music immediately. */
+    suspend fun stopMusic()
 }

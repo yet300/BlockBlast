@@ -7,11 +7,13 @@ import ge.yet.blokblast.data.platform.PlatformSoundPlayer
 import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
- * Guards every call with the live `soundEnabled` flag, then delegates to the
- * platform bridge. Completely replaces the old no-op stub.
+ * Guards every SFX call with the live `soundEnabled` flag, then delegates to the
+ * platform bridge. Observes settings reactively so toggling sound off stops music
+ * immediately, and toggling back on restarts it if a game is active.
  *
  * `internal` — hidden from composeApp/features; only the [AudioRepository]
  * interface is visible through the DI graph.
@@ -21,7 +23,26 @@ import ge.yet.blokblast.domain.repository.SettingsRepository
 internal class DefaultAudioRepository(
     private val player: PlatformSoundPlayer,
     private val settings: SettingsRepository,
+    private val scope: CoroutineScope,
 ) : AudioRepository {
+
+    /** True while a game session has called [startMusic] and not yet called [stopMusic]. */
+    private var musicRequested = false
+
+    init {
+        // React to sound toggle changes:
+        //   sound off → stop music immediately
+        //   sound on  → restart music if a game session is active
+        scope.launch {
+            settings.soundEnabled.collect { enabled ->
+                if (!enabled) {
+                    player.stopMusic()
+                } else if (musicRequested) {
+                    player.startMusic()
+                }
+            }
+        }
+    }
 
     private inline fun ifEnabled(block: () -> Unit) {
         if (settings.soundEnabled.value) block()
@@ -36,4 +57,14 @@ internal class DefaultAudioRepository(
 
     override suspend fun playVoiceCombo(combo: Int) =
         ifEnabled { player.playVoiceCombo(combo) }
+
+    override suspend fun startMusic() {
+        musicRequested = true
+        ifEnabled { player.startMusic() }
+    }
+
+    override suspend fun stopMusic() {
+        musicRequested = false
+        player.stopMusic() // always stop regardless of setting
+    }
 }
