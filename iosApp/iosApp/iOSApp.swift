@@ -1,4 +1,5 @@
 import ComposeApp
+import GoogleMobileAds
 import SwiftUI
 
 @main
@@ -21,6 +22,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
     private let appGraph = NativeAppGraphKt.getNativeAppGraph()
 
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        // Initialise Google Mobile Ads once per process, then wire the Kotlin
+        // bridge so commonMain Compose code can request banner / interstitial.
+        MobileAds.shared.start(completionHandler: nil)
+        Task { @MainActor in
+            AdCoordinator.shared.configureBridge()
+            await AdCoordinator.shared.loadInterstitial()
+        }
+        return true
+    }
 
     lazy var root: RootComponent = {
         let context = DefaultComponentContext(

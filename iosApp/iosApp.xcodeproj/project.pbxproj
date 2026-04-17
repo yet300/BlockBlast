@@ -60,11 +60,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		D4BA343E2F929C6800B6046A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		EF533B4ED3A0B8E9E0F278FC = {
 			isa = PBXGroup;
 			children = (
 				579D2B8C39FEA377CDA7A83D /* Configuration */,
 				60A4874C7569EC8C279C5EC6 /* iosApp */,
+				D4BA343E2F929C6800B6046A /* Frameworks */,
 				870219FDE2381E1046B97948 /* Products */,
 			);
 			sourceTree = "<group>";
