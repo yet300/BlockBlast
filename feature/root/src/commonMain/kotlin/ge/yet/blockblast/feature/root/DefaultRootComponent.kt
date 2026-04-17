@@ -7,26 +7,39 @@ import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.lifecycle.doOnDestroy
+import com.arkivanov.essenty.lifecycle.doOnStart
+import com.arkivanov.essenty.lifecycle.doOnStop
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.home.HomeComponent
+import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 /**
  * Default implementation of [RootComponent].
  *
- * `internal` — consumers only see [RootComponent] through [RootComponent.Factory]
- * exposed by the feature DI graph.
+ * Hooks into the process-level lifecycle so audio pauses when the app is
+ * backgrounded (home button / app switcher / incoming call) and resumes
+ * automatically when the user returns — on both Android and iOS, Decompose's
+ * [ApplicationLifecycle] maps those OS events to `onStart`/`onStop`.
  */
 internal class DefaultRootComponent(
     componentContext: ComponentContext,
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
+    private val audio: AudioRepository,
     settingsRepository: SettingsRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val navigation = StackNavigation<Config>()
 
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
@@ -40,6 +53,18 @@ internal class DefaultRootComponent(
         handleBackButton = true,
         childFactory = ::createChild,
     )
+
+    init {
+        // App goes to background → pause audio immediately
+        lifecycle.doOnStop {
+            scope.launch { audio.onAppBackground() }
+        }
+        // App returns to foreground → resume if a game session was active
+        lifecycle.doOnStart {
+            scope.launch { audio.onAppForeground() }
+        }
+        lifecycle.doOnDestroy { scope.cancel() } // clean up scope on final destroy
+    }
 
     override fun onBackClicked() {
         navigation.pop()
@@ -74,14 +99,11 @@ internal class DefaultRootComponent(
     }
 }
 
-/**
- * Metro-injectable factory wiring the Decompose [RootComponent] to the child
- * component factories. Exposed through [RootComponent.Factory] in the graph.
- */
 @Inject
 internal class DefaultRootComponentFactory(
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
+    private val audio: AudioRepository,
     private val settingsRepository: SettingsRepository,
 ) : RootComponent.Factory {
     override fun create(componentContext: ComponentContext): RootComponent =
@@ -89,6 +111,7 @@ internal class DefaultRootComponentFactory(
             componentContext = componentContext,
             homeFactory = homeFactory,
             gameFactory = gameFactory,
+            audio = audio,
             settingsRepository = settingsRepository,
         )
 }

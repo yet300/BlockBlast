@@ -67,4 +67,14 @@ internal class DefaultAudioRepository(
         musicRequested = false
         player.stopMusic() // always stop regardless of setting
     }
+
+    override suspend fun onAppBackground() {
+        // Stop audio immediately; keep musicRequested so foreground can resume.
+        player.stopMusic()
+    }
+
+    override suspend fun onAppForeground() {
+        // Resume music only if a game session had it running and sound is on.
+        if (musicRequested) ifEnabled { player.startMusic() }
+    }
 }
