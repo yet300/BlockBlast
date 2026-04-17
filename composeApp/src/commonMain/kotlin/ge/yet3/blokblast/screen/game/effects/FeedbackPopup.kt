@@ -30,9 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.feedback_combo
+import blockblast.composeapp.generated.resources.feedback_excellent
 import blockblast.composeapp.generated.resources.feedback_good
 import blockblast.composeapp.generated.resources.feedback_great
-import blockblast.composeapp.generated.resources.feedback_perfect
+import blockblast.composeapp.generated.resources.feedback_unbelievable
 import ge.yet.blokblast.domain.model.FeedbackType
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
@@ -90,7 +91,7 @@ private fun FeedbackPopupItem(
                 ComboText(item.comboLevel)
             } else if (item.type != null) {
                 FeedbackText(item.type)
-                if (item.type == FeedbackType.PERFECT) {
+                if (item.type == FeedbackType.UNBELIEVABLE) {
                     ConfettiEffect()
                 }
             }
@@ -124,10 +125,11 @@ private fun FeedbackText(type: FeedbackType) {
     val text = when (type) {
         FeedbackType.GOOD -> stringResource(Res.string.feedback_good)
         FeedbackType.GREAT -> stringResource(Res.string.feedback_great)
-        FeedbackType.PERFECT -> stringResource(Res.string.feedback_perfect)
+        FeedbackType.EXCELLENT -> stringResource(Res.string.feedback_excellent)
+        FeedbackType.UNBELIEVABLE -> stringResource(Res.string.feedback_unbelievable)
     }
 
-    val brush = if (type == FeedbackType.PERFECT) {
+    val brush = if (type == FeedbackType.UNBELIEVABLE || type == FeedbackType.EXCELLENT) {
         Brush.linearGradient(
             colors = listOf(
                 MaterialTheme.colorScheme.primary,

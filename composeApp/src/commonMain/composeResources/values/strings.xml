@@ -37,6 +37,7 @@
     <!-- Feedback Popups -->
     <string name="feedback_good">Good</string>
     <string name="feedback_great">Great!</string>
-    <string name="feedback_perfect">Perfect!</string>
+    <string name="feedback_excellent">Excellent!</string>
+    <string name="feedback_unbelievable">Unbelievable!</string>
     <string name="feedback_combo">Combo</string>
 </resources>
