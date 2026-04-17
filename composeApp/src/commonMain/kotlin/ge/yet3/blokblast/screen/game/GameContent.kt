@@ -243,12 +243,16 @@ fun GameContent(component: GameComponent) {
                     selectedPieceId = selectedPieceId,
                     modifier = Modifier.widthIn(max = 500.dp).padding(bottom = 16.dp),
                     onPieceSelected = { id ->
-                        selectedPieceId = if (selectedPieceId == id) null else id
+                        if (!dragDrop.isDragging) {
+                            selectedPieceId = if (selectedPieceId == id) null else id
+                        }
                     },
                     onDragStart = { piece, startPos, offset ->
-                        selectedPieceId = null
-                        dragDrop.startDrag(piece, startPos, offset)
-                        haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+                        if (!dragDrop.isDragging) {
+                            selectedPieceId = null
+                            dragDrop.startDrag(piece, startPos, offset)
+                            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+                        }
                     },
                     onDragMove = { position ->
                         dragDrop.updateDrag(

@@ -43,6 +43,7 @@ class DragDropState {
     val isDragging: Boolean get() = draggedPiece != null
 
     fun startDrag(piece: Piece, startPosition: Offset, pieceOriginOffset: Offset) {
+        if (isDragging) return          // never hijack an active drag with a second finger
         draggedPiece = piece
         dragPosition = startPosition
         fingerOffset = pieceOriginOffset
