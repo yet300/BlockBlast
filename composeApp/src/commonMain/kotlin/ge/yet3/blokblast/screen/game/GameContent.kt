@@ -38,9 +38,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import ge.yet3.blokblast.theme.LocalVibrationEnabled
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
@@ -88,6 +90,7 @@ fun GameContent(component: GameComponent) {
     val floatingScore = remember { FloatingScoreState() }
     val feedbackPopups = remember { FeedbackPopupState() }
     val haptic = LocalHapticFeedback.current
+    val vibrationEnabled = LocalVibrationEnabled.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
@@ -100,12 +103,30 @@ fun GameContent(component: GameComponent) {
     var prevComboLevel by remember { mutableStateOf(model.comboLevel) }
     LaunchedEffect(model.comboLevel) {
         if (model.comboLevel > prevComboLevel && model.comboLevel > 0) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            // First pulse — always fires
+            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+            // Second pulse for combo ≥ 3 — double-tap feel
+            if (model.comboLevel >= 3) {
+                kotlinx.coroutines.delay(90)
+                haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+            }
+            // Third pulse for combo ≥ 6 — triple-tap feel
+            if (model.comboLevel >= 6) {
+                kotlinx.coroutines.delay(90)
+                haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+            }
             if (model.comboLevel >= 2) {
                 feedbackPopups.add(type = null, comboLevel = model.comboLevel)
             }
         }
         prevComboLevel = model.comboLevel
+    }
+
+    // ── Directional haptic: tick each time drag crosses a grid cell ───────
+    LaunchedEffect(dragDrop.hoverAnchor) {
+        if (dragDrop.isDragging && dragDrop.hoverAnchor != null) {
+            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.TextHandleMove)
+        }
     }
 
     LaunchedEffect(model.lastFeedback) {
@@ -138,7 +159,7 @@ fun GameContent(component: GameComponent) {
     LaunchedEffect(model.isGameOver) {
         if (model.isGameOver) {
             glitchState.trigger()
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
         }
     }
 
@@ -227,7 +248,7 @@ fun GameContent(component: GameComponent) {
                     onDragStart = { piece, startPos, offset ->
                         selectedPieceId = null
                         dragDrop.startDrag(piece, startPos, offset)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
                     },
                     onDragMove = { position ->
                         dragDrop.updateDrag(
@@ -244,11 +265,11 @@ fun GameContent(component: GameComponent) {
                         if (piece != null && anchor != null && dragDrop.isValidPlacement) {
                             // Valid drop — place piece
                             component.onCellClicked(piece.pieceId, anchor.first, anchor.second)
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.TextHandleMove)
                         } else if (piece != null) {
                             // Invalid drop — shake + haptic reject
                             scope.launch { shakeState.shake() }
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
                         }
                         dragDrop.endDrag()
                     },
@@ -407,6 +428,11 @@ private fun GameTopBar(
             containerColor = Color.Transparent,
         ),
     )
+}
+
+/** Fires haptic feedback only when [enabled] is true. */
+private fun HapticFeedback.vibrateIf(enabled: Boolean, type: HapticFeedbackType) {
+    if (enabled) performHapticFeedback(type)
 }
 
 @Composable

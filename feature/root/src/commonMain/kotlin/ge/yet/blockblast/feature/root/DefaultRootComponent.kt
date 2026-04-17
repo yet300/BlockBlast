@@ -29,8 +29,9 @@ internal class DefaultRootComponent(
 
     private val navigation = StackNavigation<Config>()
 
-    /** Expose the persisted dark-theme preference directly as a StateFlow. */
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
+    override val vibrationEnabled: StateFlow<Boolean> = settingsRepository.vibrationEnabled
+    override val soundEnabled: StateFlow<Boolean> = settingsRepository.soundEnabled
 
     override val stack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,

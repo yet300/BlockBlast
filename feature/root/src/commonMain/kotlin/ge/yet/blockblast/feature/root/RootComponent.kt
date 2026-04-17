@@ -21,6 +21,12 @@ interface RootComponent : BackHandlerOwner {
     /** Reflects the user's dark-theme preference so [App] can pass it to BlockBlastTheme. */
     val darkTheme: StateFlow<Boolean>
 
+    /** Whether haptic feedback is enabled (mirrors Settings toggle). */
+    val vibrationEnabled: StateFlow<Boolean>
+
+    /** Whether sound effects are enabled (mirrors Settings toggle). */
+    val soundEnabled: StateFlow<Boolean>
+
     fun onBackClicked()
 
     sealed interface Child {
