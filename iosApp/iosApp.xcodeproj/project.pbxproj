@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D4C179142F9267B80057A6F8 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = D4C179132F9267B80057A6F8 /* GoogleMobileAds */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlockBlast.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -21,17 +25,17 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		579D2B8C39FEA377CDA7A83D /* Configuration */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Configuration;
+			sourceTree = "<group>";
+		};
 		60A4874C7569EC8C279C5EC6 /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				2C443D6E8484D9CB89405959 /* Exceptions for "iosApp" folder in "iosApp" target */,
 			);
 			path = iosApp;
-			sourceTree = "<group>";
-		};
-		579D2B8C39FEA377CDA7A83D /* Configuration */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Configuration;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -41,12 +45,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4C179142F9267B80057A6F8 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		870219FDE2381E1046B97948 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		EF533B4ED3A0B8E9E0F278FC = {
 			isa = PBXGroup;
 			children = (
@@ -54,14 +67,6 @@
 				60A4874C7569EC8C279C5EC6 /* iosApp */,
 				870219FDE2381E1046B97948 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		870219FDE2381E1046B97948 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -85,6 +90,7 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				D4C179132F9267B80057A6F8 /* GoogleMobileAds */,
 			);
 			productName = iosApp;
 			productReference = 71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */;
@@ -114,6 +120,9 @@
 			);
 			mainGroup = EF533B4ED3A0B8E9E0F278FC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D4C179122F9267B80057A6F8 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 870219FDE2381E1046B97948 /* Products */;
 			projectDirPath = "";
@@ -299,7 +308,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				DEVELOPMENT_TEAM = 3KKQ642Q9H;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -327,7 +336,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				DEVELOPMENT_TEAM = 3KKQ642Q9H;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -349,15 +358,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		87A9B00EC0E70311CAA53887 /* Build configuration list for PBXProject "iosApp" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				2B36CBB7271A9757CCB80529 /* Debug */,
-				58A6CADBD3FF97B7692BF422 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		2E812FBB9DA6CA3E46C1CFC4 /* Build configuration list for PBXNativeTarget "iosApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -367,7 +367,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		87A9B00EC0E70311CAA53887 /* Build configuration list for PBXProject "iosApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2B36CBB7271A9757CCB80529 /* Debug */,
+				58A6CADBD3FF97B7692BF422 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D4C179122F9267B80057A6F8 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D4C179132F9267B80057A6F8 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4C179122F9267B80057A6F8 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BEA5ED22568B8C55D8D5276C /* Project object */;
 }
