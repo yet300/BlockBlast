@@ -6,6 +6,7 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.home.HomeComponent
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Top-level navigation host. Owns the [ChildStack] and routes between
@@ -16,6 +17,9 @@ import ge.yet.blockblast.feature.home.HomeComponent
 interface RootComponent : BackHandlerOwner {
 
     val stack: Value<ChildStack<*, Child>>
+
+    /** Reflects the user's dark-theme preference so [App] can pass it to BlockBlastTheme. */
+    val darkTheme: StateFlow<Boolean>
 
     fun onBackClicked()
 

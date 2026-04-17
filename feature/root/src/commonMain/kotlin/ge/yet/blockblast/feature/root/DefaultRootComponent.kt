@@ -10,6 +10,8 @@ import com.arkivanov.decompose.value.Value
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.home.HomeComponent
+import ge.yet.blokblast.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,9 +24,13 @@ internal class DefaultRootComponent(
     componentContext: ComponentContext,
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
+    settingsRepository: SettingsRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
+
+    /** Expose the persisted dark-theme preference directly as a StateFlow. */
+    override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
 
     override val stack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
@@ -75,11 +81,13 @@ internal class DefaultRootComponent(
 internal class DefaultRootComponentFactory(
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
+    private val settingsRepository: SettingsRepository,
 ) : RootComponent.Factory {
     override fun create(componentContext: ComponentContext): RootComponent =
         DefaultRootComponent(
             componentContext = componentContext,
             homeFactory = homeFactory,
             gameFactory = gameFactory,
+            settingsRepository = settingsRepository,
         )
 }
