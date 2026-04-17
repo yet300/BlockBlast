@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.interop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.unit.dp
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIView
@@ -29,6 +29,7 @@ actual fun AdBanner(modifier: Modifier) {
                     ?: UIView()
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
+            update = { _ -> },
         )
     }
 }
