@@ -5,7 +5,11 @@ android-minSdk = "24"
 android-targetSdk = "36"
 
 playServicesAds = "25.2.0"
-
+firebase-android-bom = "34.12.0"
+gradlePlugins-crashlytics = "3.0.7"
+gradlePlugins-google-services = "4.4.4"
+#Gitlive
+firebase-gitlive-sdk = "2.4.0"
 
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.10.0"
@@ -93,7 +97,12 @@ androidx-testExt-junit = { module = "androidx.test.ext:junit", version.ref = "an
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-espresso" }
 
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
-
+#Firebase
+firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-android-bom" }
+firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics" }
+#Gitlive
+gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
+gitlive-firebase-kotlin-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-gitlive-sdk" }
 
 #build
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
@@ -147,5 +156,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
+google-services = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }
 
 local-kotlin-multiplatform = { id = "com.plugins.kotlinMultiplatformPlugin", version = "unspecified" }
