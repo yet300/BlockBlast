@@ -1,5 +1,6 @@
 import ComposeApp
 import GoogleMobileAds
+import FirebaseCore
 import SwiftUI
 
 @main
@@ -28,6 +29,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         // Initialise Google Mobile Ads once per process, then wire the Kotlin
         // bridge so commonMain Compose code can request banner / interstitial.
+        FirebaseApp.configure()
         MobileAds.shared.start(completionHandler: nil)
         Task { @MainActor in
             AdCoordinator.shared.configureBridge()
