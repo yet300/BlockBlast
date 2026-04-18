@@ -4,11 +4,13 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.app.common.config.AppConfig
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameEvent
 import ge.yet.blokblast.domain.repository.AudioRepository
+import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -18,6 +20,7 @@ internal class GameStoreFactory(
     private val storeFactory: StoreFactory,
     private val engine: GameEngine,
     private val audio: AudioRepository,
+    private val storeReview: StoreReviewRepository,
 ) {
     fun create(): GameStore =
         object :
@@ -35,6 +38,11 @@ internal class GameStoreFactory(
                         launch {
                             var countdownJob: Job? = null
                             var wasGameOver = engine.state.value.isGameOver
+                            // Track the best score heading into this game-over
+                            // transition so a "new personal best" is detectable
+                            // even after the engine has already updated bestScore.
+                            var bestBeforeGameOver = engine.state.value.bestScore
+                            var reviewRequested = false
 
                             engine.state.collect { gameState ->
                                 dispatch(GameStore.Msg.Snapshot(gameState))
@@ -43,6 +51,23 @@ internal class GameStoreFactory(
                                 when {
                                     // false → true: start fresh countdown
                                     !wasGameOver && isNowGameOver -> {
+                                        // Ask for an in-app review when the
+                                        // player just set a new personal best
+                                        // that clears the configured threshold.
+                                        // Stores throttle the actual prompt, so
+                                        // this is safe to fire each qualifying
+                                        // game-over; the session-local guard
+                                        // just avoids spamming the Flow.
+                                        val score = gameState.score
+                                        val beatPrevBest = score > bestBeforeGameOver
+                                        if (
+                                            !reviewRequested &&
+                                            beatPrevBest &&
+                                            score >= AppConfig.REVIEW_MIN_SCORE
+                                        ) {
+                                            reviewRequested = true
+                                            launch { storeReview.requestInAppReview().collect {} }
+                                        }
                                         countdownJob?.cancel()
                                         countdownJob = launch {
                                             var seconds = GameStoreState.CONTINUE_COUNTDOWN_SECONDS
@@ -58,12 +83,26 @@ internal class GameStoreFactory(
                                     wasGameOver && !isNowGameOver -> {
                                         countdownJob?.cancel()
                                         countdownJob = null
+                                        // New round starts — arm the review
+                                        // trigger again and snapshot the best
+                                        // score to beat.
+                                        reviewRequested = false
+                                        bestBeforeGameOver = gameState.bestScore
                                         dispatch(
                                             GameStore.Msg.CountdownTick(
                                                 GameStoreState.COUNTDOWN_INACTIVE,
                                             ),
                                         )
                                     }
+                                }
+                                if (!isNowGameOver) {
+                                    // Keep tracking the current best so the
+                                    // next game-over has an accurate baseline
+                                    // (engine bumps bestScore mid-game).
+                                    bestBeforeGameOver = maxOf(
+                                        bestBeforeGameOver,
+                                        gameState.bestScore,
+                                    )
                                 }
                                 wasGameOver = isNowGameOver
                             }

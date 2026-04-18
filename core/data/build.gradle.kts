@@ -18,6 +18,7 @@ kotlin {
             implementation(libs.bundles.multiplatform.settings)
 
             implementation(libs.gitlive.firebase.kotlin.crashlytics)
+            implementation(libs.inappreview.kmp.google.play)
 
         }
         commonTest.dependencies {
