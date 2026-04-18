@@ -79,6 +79,12 @@ import ge.yet3.blokblast.theme.pieceColor
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
+// Ghost-piece visual constants. Shared with DragDropState so the snap
+// target always matches where the floating ghost is rendered.
+private val DRAG_GHOST_CELL_SIZE = 36.dp
+private val DRAG_GHOST_GAP = 2.dp
+private const val DRAG_GHOST_VERTICAL_LIFT_PX: Float = 80f
+
 @Composable
 fun GameContent(component: GameComponent) {
     val model by component.model.subscribeAsState()
@@ -273,6 +279,9 @@ fun GameContent(component: GameComponent) {
                             cellSizePx = cellSizePx,
                             gapPx = gapPx,
                             grid = model.grid,
+                            ghostCellSizePx = with(density) { DRAG_GHOST_CELL_SIZE.toPx() },
+                            ghostGapPx = with(density) { DRAG_GHOST_GAP.toPx() },
+                            verticalLiftPx = DRAG_GHOST_VERTICAL_LIFT_PX,
                         )
                     },
                     onDragEnd = {
@@ -315,17 +324,21 @@ fun GameContent(component: GameComponent) {
             if (dragDrop.isDragging) {
                 val piece = dragDrop.draggedPiece!!
                 val color = pieceColor(piece.colorId)
-                val dragCellSize = 36.dp
-                val dragGap = 2.dp
+                val dragCellSize = DRAG_GHOST_CELL_SIZE
+                val dragGap = DRAG_GHOST_GAP
 
                 Box(
                     modifier = Modifier
                         .offset {
                             val pos = dragDrop.dragPosition
                             val fingerOff = dragDrop.fingerOffset
+                            val ghostW = dragCellSize.toPx() * piece.shape.width +
+                                dragGap.toPx() * (piece.shape.width - 1).coerceAtLeast(0)
+                            val ghostH = dragCellSize.toPx() * piece.shape.height +
+                                dragGap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
                             IntOffset(
-                                x = (pos.x - fingerOff.x - dragCellSize.toPx() * piece.shape.width / 2f).toInt(),
-                                y = (pos.y - fingerOff.y - dragCellSize.toPx() * piece.shape.height - 80f).toInt(),
+                                x = (pos.x - fingerOff.x - ghostW / 2f).toInt(),
+                                y = (pos.y - fingerOff.y - ghostH - DRAG_GHOST_VERTICAL_LIFT_PX).toInt(),
                             )
                         }
                         .graphicsLayer {
