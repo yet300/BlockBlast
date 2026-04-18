@@ -19,7 +19,7 @@ internal class AndroidStoreReviewRepository(
 ) : StoreReviewRepository {
 
     override fun init() {
-        // Google Play delegate has no init step; no-op kept for API parity.
+        delegate().init()
     }
 
     override fun requestInAppReview(): Flow<ReviewCode> =
