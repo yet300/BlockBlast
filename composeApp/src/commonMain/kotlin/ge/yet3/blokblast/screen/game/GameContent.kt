@@ -297,9 +297,7 @@ fun GameContent(component: GameComponent) {
             // user is dragging, the Settings sheet is open, or the Game Over
             // overlay is visible.
             val sheetSlot by component.sheetSlot.subscribeAsState()
-            val hideBanner = dragDrop.isDragging ||
-                sheetSlot.child != null ||
-                model.isGameOver
+            val hideBanner = sheetSlot.child != null || model.isGameOver
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
