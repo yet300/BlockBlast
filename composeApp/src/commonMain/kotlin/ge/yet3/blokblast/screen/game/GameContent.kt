@@ -202,7 +202,8 @@ fun GameContent(component: GameComponent) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 58.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(20.dp))
@@ -289,23 +290,26 @@ fun GameContent(component: GameComponent) {
                         dragDrop.endDrag()
                     },
                 )
+            }
 
-                // Bottom banner ad. 50dp slot is reserved always so drag /
-                // settings visibility toggling never shifts the grid above.
-                val sheetSlot by component.sheetSlot.subscribeAsState()
-                val hideBanner = dragDrop.isDragging ||
-                    sheetSlot.child != null ||
-                    model.isGameOver
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .padding(bottom = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (!hideBanner) {
-                        AdBanner(modifier = Modifier.fillMaxWidth())
-                    }
+            // Bottom banner ad — pinned to the actual bottom of the screen
+            // (above system bars thanks to innerPadding). Hidden while the
+            // user is dragging, the Settings sheet is open, or the Game Over
+            // overlay is visible.
+            val sheetSlot by component.sheetSlot.subscribeAsState()
+            val hideBanner = dragDrop.isDragging ||
+                sheetSlot.child != null ||
+                model.isGameOver
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(innerPadding)
+                    .padding(bottom = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!hideBanner) {
+                    AdBanner(modifier = Modifier.fillMaxWidth())
                 }
             }
 
