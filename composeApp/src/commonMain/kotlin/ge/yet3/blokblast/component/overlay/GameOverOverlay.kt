@@ -42,7 +42,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ge.yet3.blokblast.component.button.PrimaryTerracottaButton
-import ge.yet3.blokblast.component.button.SecondaryWarmSandButton
 import ge.yet3.blokblast.component.modifier.ringShadow
 import ge.yet3.blokblast.component.modifier.whisperShadow
 import ge.yet3.blokblast.component.score.AnimatedCounter
@@ -206,34 +205,22 @@ private fun GameOverCard(
 
         Spacer(Modifier.height(28.dp))
 
-        // Primary button morphs based on the countdown:
-        //   canRevive && countdown > 0  → "Continue (N)" → onReviveClicked
-        //   canRevive && countdown <= 0 → restartLabel   → onRestartClicked
-        //   !canRevive                  → primary button hidden; secondary restart shown
+        // Two-phase CTA:
+        //   canRevive && countdown > 0 → only "Continue (N)" is visible
+        //   countdown has expired (or !canRevive) → only "New game" (restart) is visible
         val countdownActive = canRevive &&
             continueCountdownSeconds != null &&
             continueCountdownSeconds > 0
-        val primaryActsAsRestart = canRevive && !countdownActive
 
-        if (canRevive) {
-            val primaryText = if (countdownActive) {
-                "$reviveLabel ($continueCountdownSeconds)"
-            } else {
-                restartLabel
-            }
-            val primaryAction = if (countdownActive) onReviveClicked else onRestartClicked
+        if (countdownActive) {
             PrimaryTerracottaButton(
-                text = primaryText,
-                onClick = primaryAction,
+                text = "$reviveLabel ($continueCountdownSeconds)",
+                onClick = onReviveClicked,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-        }
-
-        // Hide the secondary restart when the primary has already morphed into restart
-        // (would be a duplicate button otherwise).
-        if (!primaryActsAsRestart) {
-            SecondaryWarmSandButton(
+        } else {
+            PrimaryTerracottaButton(
                 text = restartLabel,
                 onClick = onRestartClicked,
                 modifier = Modifier.fillMaxWidth(),
