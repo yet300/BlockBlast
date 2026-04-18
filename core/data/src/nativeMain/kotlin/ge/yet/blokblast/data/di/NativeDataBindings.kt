@@ -1,8 +1,6 @@
 package ge.yet.blokblast.data.di
 
 import com.russhwolf.settings.ExperimentalSettingsApi
-import com.russhwolf.settings.NSUserDefaultsSettings
-import com.russhwolf.settings.ObservableSettings
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -12,6 +10,8 @@ import ge.yet.blokblast.data.platform.NativePlatformSoundPlayer
 import ge.yet.blokblast.data.platform.NativePlatformVibrator
 import ge.yet.blokblast.data.platform.PlatformSoundPlayer
 import ge.yet.blokblast.data.platform.PlatformVibrator
+import ge.yet.blokblast.data.repository.IosStoreReviewRepository
+import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import platform.Foundation.NSUserDefaults
 
 /**
@@ -36,4 +36,9 @@ object NativeDataBindings {
         impl: NativePlatformVibrator,
     ): PlatformVibrator = impl
 
+    @Provides
+    @SingleIn(AppScope::class)
+    internal fun provideStoreReviewRepository(
+        impl: IosStoreReviewRepository,
+    ): StoreReviewRepository = impl
 }
