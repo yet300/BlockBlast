@@ -7,13 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.app.common.config.AppConfig
 import com.google.android.gms.ads.MobileAds
 
 @Composable
 actual fun rememberGameOverInterstitial(): GameOverInterstitial {
     val context = LocalContext.current
     val manager = remember {
-        InterstitialAdManager(AdConfig.GAME_OVER_INTERSTITIAL_UNIT_ID)
+        InterstitialAdManager(AppConfig.GAME_OVER_INTERSTITIAL_UNIT_ID_ANDROID)
     }
 
     // One-time MobileAds init per process; safe to call repeatedly.

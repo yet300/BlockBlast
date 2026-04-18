@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.unit.dp
+import com.app.common.config.AppConfig
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIView
 
@@ -25,7 +26,7 @@ actual fun AdBanner(modifier: Modifier) {
     ) {
         UIKitView(
             factory = {
-                IosAdBridge.makeBannerView?.invoke(AdConfig.HOME_BANNER_UNIT_ID)
+                IosAdBridge.makeBannerView?.invoke(AppConfig.BANNER_UNIT_ID_IOS)
                     ?: UIView()
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
