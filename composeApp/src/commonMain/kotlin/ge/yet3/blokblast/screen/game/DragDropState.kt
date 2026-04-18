@@ -57,17 +57,34 @@ class DragDropState {
         cellSizePx: Float,
         gapPx: Float,
         grid: Grid,
+        ghostCellSizePx: Float,
+        ghostGapPx: Float,
+        verticalLiftPx: Float,
     ) {
         dragPosition = position
         val piece = draggedPiece ?: return
 
-        // Map finger position to grid cell
-        val relX = position.x - fingerOffset.x - gridOrigin.x
-        val relY = position.y - fingerOffset.y - gridOrigin.y
-        val step = cellSizePx + gapPx
+        // The floating ghost is drawn with its top-left at
+        //   (finger - fingerOffset) - (ghostW/2, ghostH) - (0, verticalLift)
+        // so the snap anchor must be computed from that same top-left,
+        // otherwise the piece lands below/beside where the user sees it.
+        val ghostW = piece.shape.width * ghostCellSizePx +
+            (piece.shape.width - 1).coerceAtLeast(0) * ghostGapPx
+        val ghostH = piece.shape.height * ghostCellSizePx +
+            (piece.shape.height - 1).coerceAtLeast(0) * ghostGapPx
 
-        val anchorX = (relX / step).toInt()
-        val anchorY = (relY / step).toInt()
+        val ghostTopLeftX = position.x - fingerOffset.x - ghostW / 2f
+        val ghostTopLeftY = position.y - fingerOffset.y - ghostH - verticalLiftPx
+
+        // Snap by rounding the ghost's top-left to the nearest grid cell
+        // — rounding (not floor) so half-cell overlaps jump to the closer
+        // column/row, which matches user expectation.
+        val step = cellSizePx + gapPx
+        val relX = ghostTopLeftX - gridOrigin.x
+        val relY = ghostTopLeftY - gridOrigin.y
+
+        val anchorX = kotlin.math.round(relX / step).toInt()
+        val anchorY = kotlin.math.round(relY / step).toInt()
 
         hoverAnchor = anchorX to anchorY
         isValidPlacement = canPlacePiece(piece.shape, anchorX, anchorY, grid)
