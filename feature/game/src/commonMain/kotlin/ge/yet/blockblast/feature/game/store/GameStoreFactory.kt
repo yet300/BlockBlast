@@ -10,6 +10,7 @@ import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameEvent
 import ge.yet.blokblast.domain.repository.AudioRepository
+import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,6 +22,7 @@ internal class GameStoreFactory(
     private val engine: GameEngine,
     private val audio: AudioRepository,
     private val storeReview: StoreReviewRepository,
+    private val settings: SettingsRepository,
 ) {
     fun create(): GameStore =
         object :
@@ -28,7 +30,10 @@ internal class GameStoreFactory(
             Store<GameStore.Intent, GameStoreState, Nothing> by storeFactory.create(
                 name = "GameStore",
                 initialState = GameStoreState(
-                    game = engine.state.value,
+                    // Seed in-engine best score from persisted settings so a
+                    // fresh process knows the player's lifetime best before any
+                    // game has finished this session.
+                    game = engine.state.value.copy(bestScore = settings.bestScore.value),
                     continueCountdown = GameStoreState.COUNTDOWN_INACTIVE,
                 ),
                 executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, Nothing> {
@@ -41,32 +46,53 @@ internal class GameStoreFactory(
                             // Track the best score heading into this game-over
                             // transition so a "new personal best" is detectable
                             // even after the engine has already updated bestScore.
-                            var bestBeforeGameOver = engine.state.value.bestScore
+                            // Use the persisted best as the baseline so a
+                            // brand-new process still measures "new personal
+                            // best" against the player's lifetime peak.
+                            var bestBeforeGameOver = maxOf(
+                                engine.state.value.bestScore,
+                                settings.bestScore.value,
+                            )
                             var reviewRequested = false
 
                             engine.state.collect { gameState ->
                                 dispatch(GameStore.Msg.Snapshot(gameState))
 
+                                // Persist any new personal best as soon as the
+                                // engine bumps it (mid-game, not just on
+                                // game-over) so a crash never loses progress.
+                                if (gameState.bestScore > settings.bestScore.value) {
+                                    launch { settings.setBestScore(gameState.bestScore) }
+                                }
+
                                 val isNowGameOver = gameState.isGameOver
                                 when {
                                     // false → true: start fresh countdown
                                     !wasGameOver && isNowGameOver -> {
-                                        // Ask for an in-app review when the
-                                        // player just set a new personal best
-                                        // that clears the configured threshold.
-                                        // Stores throttle the actual prompt, so
-                                        // this is safe to fire each qualifying
-                                        // game-over; the session-local guard
-                                        // just avoids spamming the Flow.
+                                        // In-app review is intentionally rare:
+                                        //   1. score must clear REVIEW_MIN_SCORE
+                                        //   2. score must beat the previous
+                                        //      best by at least REVIEW_BEST_SCORE_DELTA
+                                        //   3. lifetime prompt count must still
+                                        //      be below REVIEW_MAX_PROMPTS
+                                        // The OS SDK throttles further on top
+                                        // of this, but the lifetime cap is the
+                                        // hard ceiling — the dialog will never
+                                        // appear more than REVIEW_MAX_PROMPTS
+                                        // times for one user.
                                         val score = gameState.score
-                                        val beatPrevBest = score > bestBeforeGameOver
-                                        if (
-                                            !reviewRequested &&
-                                            beatPrevBest &&
-                                            score >= AppConfig.REVIEW_MIN_SCORE
-                                        ) {
+                                        val beatBy = score - bestBeforeGameOver
+                                        val qualifies =
+                                            score >= AppConfig.REVIEW_MIN_SCORE &&
+                                                beatBy >= AppConfig.REVIEW_BEST_SCORE_DELTA &&
+                                                settings.reviewPromptCount.value <
+                                                AppConfig.REVIEW_MAX_PROMPTS
+                                        if (!reviewRequested && qualifies) {
                                             reviewRequested = true
-                                            launch { storeReview.requestInAppReview().collect {} }
+                                            launch {
+                                                settings.incrementReviewPromptCount()
+                                                storeReview.requestInAppReview().collect {}
+                                            }
                                         }
                                         countdownJob?.cancel()
                                         countdownJob = launch {

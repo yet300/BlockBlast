@@ -6,12 +6,14 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.repository.GameSaveRepository
+import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.launch
 
 @Inject
 internal class HomeStoreFactory(
     private val storeFactory: StoreFactory,
     private val saveRepository: GameSaveRepository,
+    private val settings: SettingsRepository,
 ) {
     fun create(): HomeStore =
         object :
@@ -23,9 +25,17 @@ internal class HomeStoreFactory(
                     onIntent<HomeStore.Intent.Refresh> {
                         launch {
                             val saved = saveRepository.load()
+                            // Prefer the persisted settings best score — it
+                            // survives clears of the in-memory save and is the
+                            // true lifetime peak.
+                            val persistedBest = settings.bestScore.value
+                            val bestScore = maxOf(
+                                persistedBest,
+                                saved?.bestScore ?: 0L,
+                            )
                             dispatch(
                                 HomeStore.Msg.Loaded(
-                                    bestScore = saved?.bestScore ?: 0L,
+                                    bestScore = bestScore,
                                     hasSavedGame = saved != null && !saved.isGameOver,
                                 )
                             )
