@@ -40,4 +40,19 @@ object AppConfig {
      * so crossing this threshold often will not spam the user.
      */
     const val REVIEW_MIN_SCORE: Int = 500
+
+    /**
+     * Additional score the user must beat their previous best by before the
+     * in-app review prompt is requested again. Combined with [REVIEW_MIN_SCORE]
+     * and [REVIEW_MAX_PROMPTS], this keeps the dialog from feeling pushy.
+     */
+    const val REVIEW_BEST_SCORE_DELTA: Long = 1000L
+
+    /**
+     * Hard lifetime cap on how many times the in-app review prompt may be
+     * triggered for a given user. The OS SDK already throttles further, but
+     * this guarantees we never ask more than this many times even on devices
+     * where its quota has reset.
+     */
+    const val REVIEW_MAX_PROMPTS: Int = 2
 }

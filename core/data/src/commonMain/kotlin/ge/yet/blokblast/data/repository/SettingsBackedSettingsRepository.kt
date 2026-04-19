@@ -3,6 +3,8 @@ package ge.yet.blokblast.data.repository
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.coroutines.getBooleanStateFlow
+import com.russhwolf.settings.coroutines.getIntStateFlow
+import com.russhwolf.settings.coroutines.getLongStateFlow
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -37,6 +39,12 @@ internal class SettingsBackedSettingsRepository(
     override val darkTheme: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_DARK, defaultValue = false)
 
+    override val bestScore: StateFlow<Long> =
+        settings.getLongStateFlow(scope, KEY_BEST_SCORE, defaultValue = 0L)
+
+    override val reviewPromptCount: StateFlow<Int> =
+        settings.getIntStateFlow(scope, KEY_REVIEW_PROMPT_COUNT, defaultValue = 0)
+
     override suspend fun setSoundEnabled(enabled: Boolean) {
         settings.putBoolean(KEY_SOUND, enabled)
     }
@@ -49,9 +57,23 @@ internal class SettingsBackedSettingsRepository(
         settings.putBoolean(KEY_DARK, enabled)
     }
 
+    override suspend fun setBestScore(score: Long) {
+        // Monotonic — never overwrite a higher persisted best with a lower one.
+        if (score > settings.getLong(KEY_BEST_SCORE, 0L)) {
+            settings.putLong(KEY_BEST_SCORE, score)
+        }
+    }
+
+    override suspend fun incrementReviewPromptCount() {
+        val next = settings.getInt(KEY_REVIEW_PROMPT_COUNT, 0) + 1
+        settings.putInt(KEY_REVIEW_PROMPT_COUNT, next)
+    }
+
     private companion object {
         const val KEY_SOUND = "blockblast.sound"
         const val KEY_VIBRATION = "blockblast.vibration"
         const val KEY_DARK = "blockblast.dark_theme"
+        const val KEY_BEST_SCORE = "blockblast.best_score"
+        const val KEY_REVIEW_PROMPT_COUNT = "blockblast.review_prompt_count"
     }
 }
