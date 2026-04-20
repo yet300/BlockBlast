@@ -6,8 +6,8 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
+import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.essenty.lifecycle.doOnStop
 import dev.zacsweers.metro.Inject
@@ -15,10 +15,6 @@ import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.home.HomeComponent
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -39,7 +35,7 @@ internal class DefaultRootComponent(
     settingsRepository: SettingsRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val scope = coroutineScope()
     private val navigation = StackNavigation<Config>()
 
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
@@ -63,7 +59,6 @@ internal class DefaultRootComponent(
         lifecycle.doOnStart {
             scope.launch { audio.onAppForeground() }
         }
-        lifecycle.doOnDestroy { scope.cancel() } // clean up scope on final destroy
     }
 
     override fun onBackClicked() {

@@ -1,6 +1,7 @@
 package ge.yet.blockblast.feature.game
 
 import com.app.common.decompose.asValue
+import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.router.slot.SlotNavigation
@@ -18,10 +19,6 @@ import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AudioRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -35,7 +32,7 @@ internal class DefaultGameComponent(
     GameComponent {
     private val store = instanceKeeper.getStore { gameStoreFactory.create() }
     private val sheetNavigation = SlotNavigation<SheetConfig>()
-    private val lifecycleScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val lifecycleScope = coroutineScope()
 
     // Single source of truth = the store's combined state. The two public
     // Values are plain projections so consumers recompose only on the slice
@@ -56,10 +53,7 @@ internal class DefaultGameComponent(
     init {
         lifecycle.doOnStart { store.accept(GameStore.Intent.Start) }
         // Stop music when the user navigates away (back button or exit)
-        lifecycle.doOnDestroy {
-            lifecycleScope.launch { audio.stopMusic() }
-            lifecycleScope.cancel()
-        }
+        lifecycle.doOnDestroy { lifecycleScope.launch { audio.stopMusic() } }
     }
 
 
