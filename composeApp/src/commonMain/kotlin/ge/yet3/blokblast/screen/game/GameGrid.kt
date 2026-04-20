@@ -111,14 +111,15 @@ fun GameGrid(
                 val cellAnim = remember { CellAnimState() }
                 
                 var isClearing by remember { mutableStateOf(false) }
-                var displayColor by remember(grid.cells[y][x]) { 
-                    mutableIntStateOf(if (grid.cells[y][x] != -1) grid.cells[y][x] else -1)
+                val cellId = grid.colorAt(x, y)
+                var displayColor by remember(cellId) {
+                    mutableIntStateOf(cellId)
                 }
 
                 // Placement animation detection
-                LaunchedEffect(grid.cells[y][x]) {
-                    val currentId = grid.cells[y][x]
-                    val prevId = prevGrid.cells[y][x]
+                LaunchedEffect(cellId) {
+                    val currentId = cellId
+                    val prevId = prevGrid.colorAt(x, y)
                     if (currentId != -1 && prevId == -1) {
                         cellAnim.popIn(delayMs = (x + y) * 25L)
                     }
@@ -136,7 +137,7 @@ fun GameGrid(
                 }
 
                 if (!isClearing) {
-                    displayColor = grid.cells[y][x]
+                    displayColor = cellId
                 }
 
                 val isFilled = displayColor != -1

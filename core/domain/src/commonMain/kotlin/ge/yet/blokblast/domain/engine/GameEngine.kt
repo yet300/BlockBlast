@@ -15,6 +15,8 @@ import ge.yet.blokblast.domain.model.FeedbackEvent
 import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.model.PointsEvent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -47,6 +49,7 @@ class GameEngine(
 
     private var pieceIdCounter: Long = 0
     private var deterministicSeed: Long? = null
+    private var saveJob: Job? = null
 
     // ---------- Lifecycle ----------
 
@@ -126,8 +129,7 @@ class GameEngine(
             newGrid = newGrid.clearedAt(clearedCells)
         }
 
-        val isBoardEmpty = clearedCells.isNotEmpty() &&
-            newGrid.cells.all { row -> row.all { it == Grid.EMPTY } }
+        val isBoardEmpty = clearedCells.isNotEmpty() && newGrid.isBoardEmpty()
 
         // 4. Combo: +1 if cleared, reset to 0 if not.
         val newCombo = if (totalLines > 0) current.comboLevel + 1 else 0
@@ -144,6 +146,11 @@ class GameEngine(
         // 7. Game-over detection: no remaining piece can be placed anywhere.
         val gameOver = !anyPieceFits(nextTray, newGrid)
 
+        // Precompute once — used in both the state copy and the event emissions below.
+        val clearedList = if (clearedCells.isNotEmpty()) clearedCells.toList() else null
+        val feedback = feedbackFor(fullRows, fullCols, isBoardEmpty)
+        val totalPoints = placementPts + clearPts
+
         val newState = current.copy(
             grid = newGrid,
             score = newScore,
@@ -151,34 +158,34 @@ class GameEngine(
             comboLevel = newCombo,
             currentPieces = nextTray,
             isGameOver = gameOver,
-            lastClearedCells = if (clearedCells.isNotEmpty()) {
-                ClearEvent(clearedCells.toList(), current.lastClearedCells.nonce + 1)
+            lastClearedCells = if (clearedList != null) {
+                ClearEvent(clearedList, current.lastClearedCells.nonce + 1)
             } else current.lastClearedCells,
-            lastFeedback = feedbackFor(fullRows, fullCols, isBoardEmpty)?.let {
+            lastFeedback = feedback?.let {
                 FeedbackEvent(it, current.lastFeedback.nonce + 1)
             } ?: current.lastFeedback,
-            lastPointsAwarded = if (placementPts + clearPts > 0) {
-                PointsEvent(placementPts + clearPts, current.lastPointsAwarded.nonce + 1)
+            lastPointsAwarded = if (totalPoints > 0) {
+                PointsEvent(totalPoints, current.lastPointsAwarded.nonce + 1)
             } else current.lastPointsAwarded,
         )
         _state.value = newState
 
-        // 8. Emit events in narrative order.
-        externalScope.launch {
-            _events.emit(GameEvent.PiecePlaced(placementPts + clearPts))
-            if (clearedCells.isNotEmpty()) {
-                _events.emit(
-                    GameEvent.LinesCleared(
-                        clearedCells = clearedCells.toList(),
-                        linesCount = totalLines,
-                        isCrossClear = isCrossClear,
-                    )
+        // 8. Emit events in narrative order via tryEmit (buffer = 16, always room).
+        // tryEmit is synchronous and preserves FIFO; launch{emit} could re-order
+        // events if the coroutine scheduler interleaves two placePiece calls.
+        _events.tryEmit(GameEvent.PiecePlaced(totalPoints))
+        if (clearedList != null) {
+            _events.tryEmit(
+                GameEvent.LinesCleared(
+                    clearedCells = clearedList,
+                    linesCount = totalLines,
+                    isCrossClear = isCrossClear,
                 )
-                feedbackFor(fullRows, fullCols, isBoardEmpty)?.let { _events.emit(GameEvent.Feedback(it)) }
-                if (newCombo >= 2) _events.emit(GameEvent.ComboActive(newCombo))
-            }
-            if (gameOver) _events.emit(GameEvent.GameOver)
+            )
+            feedback?.let { _events.tryEmit(GameEvent.Feedback(it)) }
+            if (newCombo >= 2) _events.tryEmit(GameEvent.ComboActive(newCombo))
         }
+        if (gameOver) _events.tryEmit(GameEvent.GameOver)
 
         autoSave()
         return true
@@ -255,6 +262,12 @@ class GameEngine(
     }
 
     private fun autoSave() {
-        externalScope.launch { saveRepository.save(_state.value) }
+        // Debounce: cancel any pending save and reschedule. During rapid placements
+        // this coalesces N disk writes into one, fired 300 ms after the last move.
+        saveJob?.cancel()
+        saveJob = externalScope.launch {
+            delay(300)
+            saveRepository.save(_state.value)
+        }
     }
 }
