@@ -26,7 +26,7 @@ class GooglePlayInAppReviewManager(private val params: GooglePlayInAppReviewInit
         if (e is ReviewException) {
             emit(ReviewCode.fromCode(e.errorCode))
         } else {
-            throw e
+            emit(ReviewCode.INTERNAL_ERROR)
         }
     }
 
