@@ -11,7 +11,7 @@ import ge.yet.blokblast.domain.repository.CrashlyticsRepository
 @SingleIn(AppScope::class)
 @Inject
 internal class CrashlyticsRepositoryImpl : CrashlyticsRepository {
-    private val crashlytics = Firebase.crashlytics
+    private val crashlytics by lazy { Firebase.crashlytics }
 
     override fun setUserID(id: String) {
         crashlytics.setUserId(id)

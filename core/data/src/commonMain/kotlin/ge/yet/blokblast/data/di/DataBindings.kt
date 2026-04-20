@@ -68,6 +68,7 @@ object DataBindings {
      * duplicate stores, no lost writes.
      */
     @Provides
+    @SingleIn(AppScope::class)
     internal fun provideSettings(): Settings = Settings()
 
     @Provides
