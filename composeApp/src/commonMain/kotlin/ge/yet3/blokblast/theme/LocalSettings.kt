@@ -1,6 +1,6 @@
 package ge.yet3.blokblast.theme
 
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
  * CompositionLocals that carry the user's Settings preferences down the tree
@@ -9,5 +9,7 @@ import androidx.compose.runtime.compositionLocalOf
  * Default values are permissive (both enabled) so previews and tests work
  * without needing a provider.
  */
-val LocalVibrationEnabled = compositionLocalOf { true }
-val LocalSoundEnabled = compositionLocalOf { true }
+// staticCompositionLocalOf: these flip rarely; avoiding the per-read observer cost
+// of compositionLocalOf is worth the full-subtree recomposition on flip.
+val LocalVibrationEnabled = staticCompositionLocalOf { true }
+val LocalSoundEnabled = staticCompositionLocalOf { true }
