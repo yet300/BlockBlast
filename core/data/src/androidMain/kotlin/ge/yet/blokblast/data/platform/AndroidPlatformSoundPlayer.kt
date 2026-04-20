@@ -41,6 +41,15 @@ internal class AndroidPlatformSoundPlayer(
     private val ids: MutableMap<String, Int> = mutableMapOf()
     private var musicPlayer: MediaPlayer? = null
 
+    init {
+        // Preload common SFX so the first placement/clear isn't dropped —
+        // SoundPool.load is async and samples can't be played until loaded.
+        listOf(
+            "block_place",
+            "line_clear_1", "line_clear_2", "line_clear_3", "line_clear_4",
+        ).forEach { resolve(it).also { id -> if (id != 0) ids[it] = id } }
+    }
+
     override fun playPlacement() = safePlay("block_place")
 
     override fun playClear(lines: Int) = safePlay("line_clear_${lines.coerceAtMost(4)}")
@@ -75,8 +84,11 @@ internal class AndroidPlatformSoundPlayer(
                 afd.close()
                 isLooping = true
                 setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
-                prepare()
-                start()
+                // prepareAsync instead of prepare: MP3 decode/setup can block the
+                // caller thread for hundreds of ms. Start playback from the
+                // OnPreparedListener so we never stall the UI.
+                setOnPreparedListener { start() }
+                prepareAsync()
             }
         }
     }
@@ -104,7 +116,7 @@ internal class AndroidPlatformSoundPlayer(
      * Tries `.wav` then `.mp3`; returns 0 if not found.
      */
     private fun resolve(resName: String): Int {
-        for (ext in listOf("wav", "mp3")) {
+        for (ext in AUDIO_EXTENSIONS) {
             val path = "$AUDIO_DIR$resName.$ext"
             runCatching {
                 val afd = ctx.assets.openFd(path)
@@ -119,6 +131,8 @@ internal class AndroidPlatformSoundPlayer(
     private companion object {
         const val MAX_STREAMS = 6
         const val MUSIC_VOLUME = 0.4f
+        // Hoisted to avoid per-call listOf(...) allocation in resolve().
+        private val AUDIO_EXTENSIONS = arrayOf("wav", "mp3")
 
         /**
          * CMP packages `composeResources/files/` into the APK assets under this prefix.

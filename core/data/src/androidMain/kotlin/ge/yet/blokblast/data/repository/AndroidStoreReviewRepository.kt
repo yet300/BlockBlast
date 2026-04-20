@@ -1,5 +1,6 @@
 package ge.yet.blokblast.data.repository
 
+import android.app.Activity
 import com.mikhailovskii.inappreview.googlePlay.GooglePlayInAppReviewInitParams
 import com.mikhailovskii.inappreview.googlePlay.GooglePlayInAppReviewManager
 import dev.zacsweers.metro.AppScope
@@ -18,6 +19,13 @@ internal class AndroidStoreReviewRepository(
     private val activityProvider: ActivityProvider,
 ) : StoreReviewRepository {
 
+    // Cache the delegate keyed by Activity identity so init() and subsequent
+    // request*() calls target the same manager instance. Allocating a fresh
+    // manager per call (the previous behaviour) meant init() seeded a different
+    // instance than the one request*() used, so the review flow could stall.
+    private var cachedDelegate: GooglePlayInAppReviewManager? = null
+    private var cachedActivity: Activity? = null
+
     override fun init() {
         delegate().init()
     }
@@ -28,9 +36,16 @@ internal class AndroidStoreReviewRepository(
     override fun requestInMarketReview(): Flow<ReviewCode> =
         delegate().requestInMarketReview().map { it.toDomain() }
 
-    private fun delegate() = GooglePlayInAppReviewManager(
-        GooglePlayInAppReviewInitParams(activityProvider.current()),
-    )
+    private fun delegate(): GooglePlayInAppReviewManager {
+        val act = activityProvider.current()
+        val cached = cachedDelegate
+        if (cached != null && cachedActivity === act) return cached
+        return GooglePlayInAppReviewManager(GooglePlayInAppReviewInitParams(act))
+            .also {
+                cachedDelegate = it
+                cachedActivity = act
+            }
+    }
 
     private fun LibraryReviewCode.toDomain(): ReviewCode =
         runCatching { ReviewCode.valueOf(name) }.getOrDefault(ReviewCode.INTERNAL_ERROR)
