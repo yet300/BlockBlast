@@ -1,5 +1,6 @@
 package ge.yet.blokblast.data.repository
 
+import com.app.common.AppDispatchers
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.coroutines.getBooleanStateFlow
@@ -11,6 +12,9 @@ import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * User-preference storage backed by multiplatform-settings' [ObservableSettings].
@@ -20,6 +24,11 @@ import kotlinx.coroutines.flow.StateFlow
  * mirror required, and external writes (e.g. from a platform Settings screen)
  * propagate to observers too.
  *
+ * All writes are funnelled through [dispatchers.io] + [mutex]: the IO dispatcher
+ * keeps disk-backed puts off Main, and the mutex serialises the read-modify-write
+ * pairs in [incrementReviewPromptCount] / [setBestScore] so concurrent callers
+ * never lose an update.
+ *
  * `internal` — only the [SettingsRepository] interface is exposed through DI.
  */
 @OptIn(ExperimentalSettingsApi::class)
@@ -28,7 +37,10 @@ import kotlinx.coroutines.flow.StateFlow
 internal class SettingsBackedSettingsRepository(
     private val settings: ObservableSettings,
     private val scope: CoroutineScope,
+    private val dispatchers: AppDispatchers,
 ) : SettingsRepository {
+
+    private val writeMutex = Mutex()
 
     override val soundEnabled: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_SOUND, defaultValue = true)
@@ -45,28 +57,32 @@ internal class SettingsBackedSettingsRepository(
     override val reviewPromptCount: StateFlow<Int> =
         settings.getIntStateFlow(scope, KEY_REVIEW_PROMPT_COUNT, defaultValue = 0)
 
-    override suspend fun setSoundEnabled(enabled: Boolean) {
+    override suspend fun setSoundEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_SOUND, enabled)
     }
 
-    override suspend fun setVibrationEnabled(enabled: Boolean) {
+    override suspend fun setVibrationEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_VIBRATION, enabled)
     }
 
-    override suspend fun setDarkTheme(enabled: Boolean) {
+    override suspend fun setDarkTheme(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_DARK, enabled)
     }
 
-    override suspend fun setBestScore(score: Long) {
-        // Monotonic — never overwrite a higher persisted best with a lower one.
-        if (score > settings.getLong(KEY_BEST_SCORE, 0L)) {
-            settings.putLong(KEY_BEST_SCORE, score)
+    override suspend fun setBestScore(score: Long) = withContext(dispatchers.io) {
+        writeMutex.withLock {
+            // Monotonic — never overwrite a higher persisted best with a lower one.
+            if (score > settings.getLong(KEY_BEST_SCORE, 0L)) {
+                settings.putLong(KEY_BEST_SCORE, score)
+            }
         }
     }
 
-    override suspend fun incrementReviewPromptCount() {
-        val next = settings.getInt(KEY_REVIEW_PROMPT_COUNT, 0) + 1
-        settings.putInt(KEY_REVIEW_PROMPT_COUNT, next)
+    override suspend fun incrementReviewPromptCount() = withContext(dispatchers.io) {
+        writeMutex.withLock {
+            val next = settings.getInt(KEY_REVIEW_PROMPT_COUNT, 0) + 1
+            settings.putInt(KEY_REVIEW_PROMPT_COUNT, next)
+        }
     }
 
     private companion object {

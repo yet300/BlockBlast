@@ -12,7 +12,7 @@ import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.data.repository.CrashlyticsRepositoryImpl
 import ge.yet.blokblast.data.repository.DefaultAudioRepository
 import ge.yet.blokblast.data.repository.DefaultVibrationRepository
-import ge.yet.blokblast.data.repository.LocalGameSaveRepository
+import ge.yet.blokblast.data.repository.SettingsBackedGameSaveRepository
 import ge.yet.blokblast.data.repository.SettingsBackedSettingsRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.CrashlyticsRepository
@@ -38,7 +38,7 @@ object DataBindings {
     @Provides
     @SingleIn(AppScope::class)
     internal fun provideGameSaveRepository(
-        impl: LocalGameSaveRepository,
+        impl: SettingsBackedGameSaveRepository,
     ): GameSaveRepository = impl
 
     @Provides
