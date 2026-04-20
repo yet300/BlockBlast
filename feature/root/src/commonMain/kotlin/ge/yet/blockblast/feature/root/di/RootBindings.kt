@@ -4,7 +4,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
 import ge.yet.blockblast.feature.root.DefaultRootComponentFactory
 import ge.yet.blockblast.feature.root.RootComponent
 
@@ -12,7 +11,6 @@ import ge.yet.blockblast.feature.root.RootComponent
 @BindingContainer
 object RootBindings {
     @Provides
-    @SingleIn(AppScope::class)
     internal fun provideRootComponentFactory(
         impl: DefaultRootComponentFactory,
     ): RootComponent.Factory = impl
