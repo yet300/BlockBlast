@@ -13,14 +13,13 @@ import ge.yet3.blokblast.theme.LocalVibrationEnabled
 @Composable
 fun App(rootComponent: RootComponent) {
     val darkTheme by rootComponent.darkTheme.collectAsState()
-    val vibrationEnabled by rootComponent.vibrationEnabled.collectAsState()
-    val soundEnabled by rootComponent.soundEnabled.collectAsState()
-
-    CompositionLocalProvider(
-        LocalVibrationEnabled provides vibrationEnabled,
-        LocalSoundEnabled provides soundEnabled,
-    ) {
-        BlockBlastTheme(darkTheme = darkTheme) {
+    BlockBlastTheme(darkTheme = darkTheme) {
+        val vibrationEnabled by rootComponent.vibrationEnabled.collectAsState()
+        val soundEnabled by rootComponent.soundEnabled.collectAsState()
+        CompositionLocalProvider(
+            LocalVibrationEnabled provides vibrationEnabled,
+            LocalSoundEnabled provides soundEnabled,
+        ) {
             RootContent(component = rootComponent)
         }
     }
