@@ -30,6 +30,8 @@
     <string name="vibration_subtitle">Haptic feedback on placement</string>
     <string name="dark_theme">Dark theme</string>
     <string name="dark_theme_subtitle">Always-on dark mode</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="privacy_policy_subtitle">How we handle your data</string>
 
     <!-- Common -->
     <string name="exit">Exit</string>

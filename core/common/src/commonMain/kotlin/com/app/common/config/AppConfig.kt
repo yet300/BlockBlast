@@ -55,4 +55,9 @@ object AppConfig {
      * where its quota has reset.
      */
     const val REVIEW_MAX_PROMPTS: Int = 2
+
+    // ── Legal ──────────────────────────────────────────────────────────────
+    /** Public privacy-policy URL linked from the Settings screen. */
+    const val PRIVACY_POLICY_URL: String =
+        "https://github.com/yet300/block_blast/blob/main/privacy_policy.md"
 }
