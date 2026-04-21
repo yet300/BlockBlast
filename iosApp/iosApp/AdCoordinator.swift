@@ -23,10 +23,7 @@ import ComposeApp
 final class AdCoordinator: NSObject, FullScreenContentDelegate {
     static let shared = AdCoordinator()
 
-    // TODO: replace with production ad unit IDs before release.
-    // These are Google-provided TEST IDs for iOS.
-    private let interstitialUnitId = "ca-app-pub-3940256099942544/4411468910"
-    // Banner unit ID comes from Kotlin via IosAdBridge.makeBannerView(adUnitId:).
+    private let interstitialUnitId = AppConfig.shared.GAME_OVER_INTERSTITIAL_UNIT_ID_IOS
 
     private var interstitial: InterstitialAd?
     private var pendingDismissCallback: (() -> Void)?
