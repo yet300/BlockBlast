@@ -1,6 +1,7 @@
 package ge.yet3.blokblast.screen.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +23,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.app.common.config.AppConfig
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet3.blokblast.component.icon.DarkMode
@@ -34,15 +37,20 @@ import org.jetbrains.compose.resources.stringResource
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.dark_theme
 import blockblast.composeapp.generated.resources.dark_theme_subtitle
+import blockblast.composeapp.generated.resources.privacy_policy
+import blockblast.composeapp.generated.resources.privacy_policy_subtitle
 import blockblast.composeapp.generated.resources.settings
 import blockblast.composeapp.generated.resources.sound
 import blockblast.composeapp.generated.resources.sound_subtitle
 import blockblast.composeapp.generated.resources.vibration
 import blockblast.composeapp.generated.resources.vibration_subtitle
+import ge.yet3.blokblast.component.icon.OpenInNew
+import ge.yet3.blokblast.component.icon.PrivacyTip
 
 @Composable
 fun SettingsContent(component: SettingsComponent) {
     val model by component.model.subscribeAsState()
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
@@ -84,6 +92,15 @@ fun SettingsContent(component: SettingsComponent) {
             subtitle = stringResource(Res.string.dark_theme_subtitle),
             checked = model.darkTheme,
             onCheckedChange = component::onDarkThemeToggled,
+        )
+
+        SettingsDivider()
+
+        SettingsLinkRow(
+            icon = PrivacyTip,
+            title = stringResource(Res.string.privacy_policy),
+            subtitle = stringResource(Res.string.privacy_policy_subtitle),
+            onClick = { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) },
         )
 
         Spacer(Modifier.height(28.dp))
@@ -151,6 +168,72 @@ private fun SettingsToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+        )
+    }
+}
+
+@Composable
+private fun SettingsLinkRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .ringShadow(
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    .background(
+                        MaterialTheme.colorScheme.secondary,
+                        RoundedCornerShape(12.dp),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        Icon(
+            imageVector = OpenInNew,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
         )
     }
 }
