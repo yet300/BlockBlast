@@ -33,6 +33,7 @@ kotlin {
             isStatic = true
             export(libs.bundles.decompose)
             export(projects.feature.root)
+            export(projects.core.common)
         }
     }
 
@@ -43,7 +44,7 @@ kotlin {
             implementation(libs.play.services.ads)
         }
         commonMain.dependencies {
-            implementation(projects.core.common)
+            api(projects.core.common)
             implementation(projects.core.domain)
             implementation(projects.core.data)
 
