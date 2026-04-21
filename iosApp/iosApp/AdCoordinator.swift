@@ -54,6 +54,10 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
     // MARK: - Interstitial
 
     func loadInterstitial() async {
+        // UMP gate — Google requires no ad requests fire before consent
+        // is gathered. `ConsentManager` flips this to true after the form
+        // closes (or immediately if previously granted / not required).
+        guard ConsentManager.shared.canRequestAds else { return }
         do {
             interstitial = try await InterstitialAd.load(
                 with: interstitialUnitId,
@@ -83,7 +87,12 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitId
         bannerView.rootViewController = Self.rootViewController()
-        bannerView.load(Request())
+        // Only fire the request if UMP has cleared us. If consent is still
+        // pending the banner just reserves its layout space silently; the
+        // caller can recreate it once consent arrives.
+        if ConsentManager.shared.canRequestAds {
+            bannerView.load(Request())
+        }
         return bannerView
     }
 

@@ -14,6 +14,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import ge.yet3.blokblast.ads.consent.ConsentManager
 
 /**
  * Wraps a [com.google.android.gms.ads.AdView] inside a 50dp-tall [Box]. Height
@@ -48,7 +49,12 @@ fun AdMobBanner(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                     )
-                    loadAd(AdRequest.Builder().build())
+                    // Only fire the request if UMP says we can. If consent
+                    // is still pending, the banner just renders the reserved
+                    // 50dp space — users won't see a stale/failed ad slot.
+                    if (ConsentManager.canRequestAds(ctx)) {
+                        loadAd(AdRequest.Builder().build())
+                    }
                     adView.value = this
                 }
             },
