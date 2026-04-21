@@ -8,7 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.app.common.config.AppConfig
-import com.google.android.gms.ads.MobileAds
+import ge.yet3.blokblast.ads.consent.ConsentManager
 
 @Composable
 actual fun rememberGameOverInterstitial(): GameOverInterstitial {
@@ -17,19 +17,22 @@ actual fun rememberGameOverInterstitial(): GameOverInterstitial {
         InterstitialAdManager(AppConfig.GAME_OVER_INTERSTITIAL_UNIT_ID_ANDROID)
     }
 
-    // One-time MobileAds init per process; safe to call repeatedly.
+    // AdMob SDK init happens in `ConsentManager` once UMP permits requests.
+    // Only attempt to preload after consent has been gathered — otherwise the
+    // request will either be rejected or fire without a valid consent token.
     LaunchedEffect(Unit) {
-        MobileAds.initialize(context.applicationContext) { /* no-op */ }
-        manager.load(context)
+        if (ConsentManager.canRequestAds(context)) manager.load(context)
     }
 
     return remember(manager) {
         GameOverInterstitial(
             show = { onDismiss ->
                 val activity = context.findActivity()
-                if (activity == null) {
+                if (activity == null || !ConsentManager.canRequestAds(context)) {
                     onDismiss()
                 } else {
+                    // Lazy load — if consent arrived after the LaunchedEffect
+                    // above already ran, this primes the cache for next time.
                     val shown = manager.show(activity, onDismiss)
                     if (!shown) onDismiss()
                 }

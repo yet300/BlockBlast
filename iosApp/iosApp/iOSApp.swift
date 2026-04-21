@@ -27,13 +27,26 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // Initialise Google Mobile Ads once per process, then wire the Kotlin
-        // bridge so commonMain Compose code can request banner / interstitial.
+        // Wire the Kotlin ad bridge up-front; banner creation works even
+        // before an ad request fires. Google Mobile Ads is started *inside*
+        // `ConsentManager.gather` once UMP confirms requests are permitted —
+        // initialising earlier would violate UMP's GDPR requirements.
         FirebaseApp.configure()
-        MobileAds.shared.start(completionHandler: nil)
         Task { @MainActor in
             AdCoordinator.shared.configureBridge()
-            await AdCoordinator.shared.loadInterstitial()
+
+            let rootVC = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first(where: { $0.isKeyWindow })?
+                .rootViewController
+
+            ConsentManager.shared.gather(from: rootVC) {
+                // Ads may now be requested — preload the game-over interstitial.
+                Task { @MainActor in
+                    await AdCoordinator.shared.loadInterstitial()
+                }
+            }
         }
         return true
     }

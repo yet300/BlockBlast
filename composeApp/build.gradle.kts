@@ -42,6 +42,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.play.services.ads)
+            implementation(libs.user.messaging.platform)
         }
         commonMain.dependencies {
             api(projects.core.common)
