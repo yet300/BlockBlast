@@ -21,13 +21,10 @@ object AppConfig {
     const val IOS_APP_STORE_ID: String = "0000000000"
 
     // ── AdMob ──────────────────────────────────────────────────────────────
-    /** Bottom banner on the Home screen. TEST unit. */
-    // TODO: replace with production banner unit ID
-    const val BANNER_UNIT_ID_ANDROID: String = "ca-app-pub-1829375480261561/8435427783"
+    const val BANNER_UNIT_ID_ANDROID: String = "ca-app-pub-1829375480261561/8506212995"
     const val BANNER_UNIT_ID_IOS: String = "ca-app-pub-1829375480261561/7226287891"
 
     /** Interstitial shown after Game Over. TEST unit. */
-    // TODO: replace with production interstitial unit ID
     const val GAME_OVER_INTERSTITIAL_UNIT_ID_ANDROID: String =
         "ca-app-pub-1829375480261561/8963087579"
     const val GAME_OVER_INTERSTITIAL_UNIT_ID_IOS: String =
