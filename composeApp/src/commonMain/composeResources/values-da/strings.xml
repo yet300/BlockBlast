@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Spil</string>
+    <string name="continue_game">Fortsæt</string>
+    <string name="new_game">Nyt spil</string>
+    <string name="best_score_label">Bedste score</string>
+    <string name="home_tagline">Et roligt lille puslespil</string>
+
+    <!-- Game Screen -->
+    <string name="score">Point</string>
+    <string name="best">Bedste</string>
+    <string name="game_over">Spillet er slut</string>
+    <string name="game_over_subtitle">Ingen træk tilbage på brættet</string>
+    <string name="new_best">Ny rekord</string>
+    <string name="revive">Fortsæt</string>
+    <string name="restart">Nyt spil</string>
+    <string name="exit_to_home">Afslut</string>
+    <string name="cd_settings">Indstillinger</string>
+    <string name="cd_back">Tilbage</string>
+    <string name="cd_close">Luk</string>
+
+    <!-- Settings -->
+    <string name="settings">Indstillinger</string>
+    <string name="sound">Lyd</string>
+    <string name="sound_subtitle">Lydeffekter i spillet</string>
+    <string name="vibration">Vibration</string>
+    <string name="vibration_subtitle">Haptisk feedback ved placering</string>
+    <string name="dark_theme">Mørkt tema</string>
+    <string name="dark_theme_subtitle">Altid mørkt tilstand</string>
+    <string name="privacy_policy">Privatlivspolitik</string>
+    <string name="privacy_policy_subtitle">Hvordan vi håndterer dine data</string>
+
+    <!-- Common -->
+    <string name="exit">Afslut</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Godt</string>
+    <string name="feedback_great">Fantastisk!</string>
+    <string name="feedback_excellent">Fremragende!</string>
+    <string name="feedback_unbelievable">Utroligt!</string>
+    <string name="feedback_combo">Combo</string>
+</resources>

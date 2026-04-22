@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">თამაში</string>
+    <string name="continue_game">გაგრძელება</string>
+    <string name="new_game">ახალი თამაში</string>
+    <string name="best_score_label">საუკეთესო ქულა</string>
+    <string name="home_tagline">პატარა მშვიდი თავსატეხი</string>
+
+    <!-- Game Screen -->
+    <string name="score">ქულა</string>
+    <string name="best">საუკეთესო</string>
+    <string name="game_over">თამაში დასრულდა</string>
+    <string name="game_over_subtitle">დაფაზე სვლები აღარ დარჩა</string>
+    <string name="new_best">ახალი რეკორდი</string>
+    <string name="revive">გაგრძელება</string>
+    <string name="restart">ახალი თამაში</string>
+    <string name="exit_to_home">გასვლა</string>
+    <string name="cd_settings">პარამეტრები</string>
+    <string name="cd_back">უკან</string>
+    <string name="cd_close">დახურვა</string>
+
+    <!-- Settings -->
+    <string name="settings">პარამეტრები</string>
+    <string name="sound">ხმა</string>
+    <string name="sound_subtitle">თამაშის ხმოვანი ეფექტები</string>
+    <string name="vibration">ვიბრაცია</string>
+    <string name="vibration_subtitle">ვიბრაცია ბლოკის დასმისას</string>
+    <string name="dark_theme">მუქი თემა</string>
+    <string name="dark_theme_subtitle">მუდმივი მუქი რეჟიმი</string>
+    <string name="privacy_policy">კონფიდენციალურობის პოლიტიკა</string>
+    <string name="privacy_policy_subtitle">როგორ ვიყენებთ თქვენს მონაცემებს</string>
+
+    <!-- Common -->
+    <string name="exit">გასვლა</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">კარგი</string>
+    <string name="feedback_great">ძალიან კარგი!</string>
+    <string name="feedback_excellent">შესანიშნავი!</string>
+    <string name="feedback_unbelievable">დაუჯერებელია!</string>
+    <string name="feedback_combo">კომბო</string>
+</resources>

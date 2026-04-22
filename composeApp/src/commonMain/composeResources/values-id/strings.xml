@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Main</string>
+    <string name="continue_game">Lanjutkan</string>
+    <string name="new_game">Permainan Baru</string>
+    <string name="best_score_label">Skor Terbaik</string>
+    <string name="home_tagline">Tekan-teki kecil yang menenangkan</string>
+
+    <!-- Game Screen -->
+    <string name="score">Skor</string>
+    <string name="best">Terbaik</string>
+    <string name="game_over">Permainan Berakhir</string>
+    <string name="game_over_subtitle">Tidak ada langkah tersisa di papan</string>
+    <string name="new_best">Rekor Baru</string>
+    <string name="revive">Lanjutkan</string>
+    <string name="restart">Permainan Baru</string>
+    <string name="exit_to_home">Keluar</string>
+    <string name="cd_settings">Pengaturan</string>
+    <string name="cd_back">Kembali</string>
+    <string name="cd_close">Tutup</string>
+
+    <!-- Settings -->
+    <string name="settings">Pengaturan</string>
+    <string name="sound">Suara</string>
+    <string name="sound_subtitle">Efek suara permainan</string>
+    <string name="vibration">Getaran</string>
+    <string name="vibration_subtitle">Umpan balik haptik saat menaruh</string>
+    <string name="dark_theme">Tema Gelap</string>
+    <string name="dark_theme_subtitle">Mode gelap selalu aktif</string>
+    <string name="privacy_policy">Kebijakan Privasi</string>
+    <string name="privacy_policy_subtitle">Cara kami mengelola data Anda</string>
+
+    <!-- Common -->
+    <string name="exit">Keluar</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Bagus</string>
+    <string name="feedback_great">Luar Biasa!</string>
+    <string name="feedback_excellent">Sempurna!</string>
+    <string name="feedback_unbelievable">Luar Biasa!</string>
+    <string name="feedback_combo">Kombo</string>
+</resources>

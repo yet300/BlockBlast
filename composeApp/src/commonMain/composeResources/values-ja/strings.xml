@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">プレイ</string>
+    <string name="continue_game">つづける</string>
+    <string name="new_game">はじめから</string>
+    <string name="best_score_label">ベストスコア</string>
+    <string name="home_tagline">静かなパズルゲーム</string>
+
+    <!-- Game Screen -->
+    <string name="score">スコア</string>
+    <string name="best">ベスト</string>
+    <string name="game_over">ゲームオーバー</string>
+    <string name="game_over_subtitle">ボードに空きがありません</string>
+    <string name="new_best">新記録</string>
+    <string name="revive">つづける</string>
+    <string name="restart">はじめから</string>
+    <string name="exit_to_home">終了</string>
+    <string name="cd_settings">設定</string>
+    <string name="cd_back">戻る</string>
+    <string name="cd_close">閉じる</string>
+
+    <!-- Settings -->
+    <string name="settings">設定</string>
+    <string name="sound">サウンド</string>
+    <string name="sound_subtitle">ゲームの音響効果</string>
+    <string name="vibration">バイブレーション</string>
+    <string name="vibration_subtitle">ブロック配置時の振動</string>
+    <string name="dark_theme">ダークテーマ</string>
+    <string name="dark_theme_subtitle">常時ダークモード</string>
+    <string name="privacy_policy">プライバシーポリシー</string>
+    <string name="privacy_policy_subtitle">データの取り扱いについて</string>
+
+    <!-- Common -->
+    <string name="exit">終了</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Good</string>
+    <string name="feedback_great">Great!</string>
+    <string name="feedback_excellent">Excellent!</string>
+    <string name="feedback_unbelievable">Unbelievable!</string>
+    <string name="feedback_combo">コンボ</string>
+</resources>

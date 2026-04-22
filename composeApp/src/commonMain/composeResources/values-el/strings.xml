@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Παίξε</string>
+    <string name="continue_game">Συνέχεια</string>
+    <string name="new_game">Νέο παιχνίδι</string>
+    <string name="best_score_label">Καλύτερη βαθμολογία</string>
+    <string name="home_tagline">Ένα ήσυχο μικρό παζλ</string>
+
+    <!-- Game Screen -->
+    <string name="score">Βαθμολογία</string>
+    <string name="best">Καλύτερο</string>
+    <string name="game_over">Τέλος παιχνιδιού</string>
+    <string name="game_over_subtitle">Δεν έμειναν κινήσεις στο ταμπλό</string>
+    <string name="new_best">Νέο ρεκόρ</string>
+    <string name="revive">Συνέχεια</string>
+    <string name="restart">Νέο παιχνίδι</string>
+    <string name="exit_to_home">Έξοδος</string>
+    <string name="cd_settings">Ρυθμίσεις</string>
+    <string name="cd_back">Πίσω</string>
+    <string name="cd_close">Κλείσιμο</string>
+
+    <!-- Settings -->
+    <string name="settings">Ρυθμίσεις</string>
+    <string name="sound">Ήχος</string>
+    <string name="sound_subtitle">Ηχητικά εφέ παιχνιδιού</string>
+    <string name="vibration">Δόνηση</string>
+    <string name="vibration_subtitle">Απτική ανάδραση κατά την τοποθέτηση</string>
+    <string name="dark_theme">Σκούρο θέμα</string>
+    <string name="dark_theme_subtitle">Πάντα ενεργή σκούρα λειτουργία</string>
+    <string name="privacy_policy">Πολιτική απορρήτου</string>
+    <string name="privacy_policy_subtitle">Πώς διαχειριζόμαστε τα δεδομένα σας</string>
+
+    <!-- Common -->
+    <string name="exit">Έξοδος</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Καλά</string>
+    <string name="feedback_great">Υπέροχα!</string>
+    <string name="feedback_excellent">Εξαιρετικά!</string>
+    <string name="feedback_unbelievable">Απίστευτο!</string>
+    <string name="feedback_combo">Combo</string>
+</resources>

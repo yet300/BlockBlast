@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Pelaa</string>
+    <string name="continue_game">Jatka</string>
+    <string name="new_game">Uusi peli</string>
+    <string name="best_score_label">Paras tulos</string>
+    <string name="home_tagline">Rauhallinen pieni palapeli</string>
+
+    <!-- Game Screen -->
+    <string name="score">Pisteet</string>
+    <string name="best">Paras</string>
+    <string name="game_over">Peli ohi</string>
+    <string name="game_over_subtitle">Ei siirtoja jäljellä laudalla</string>
+    <string name="new_best">Uusi ennätys</string>
+    <string name="revive">Jatka</string>
+    <string name="restart">Uusi peli</string>
+    <string name="exit_to_home">Poistu</string>
+    <string name="cd_settings">Asetukset</string>
+    <string name="cd_back">Takaisin</string>
+    <string name="cd_close">Sulje</string>
+
+    <!-- Settings -->
+    <string name="settings">Asetukset</string>
+    <string name="sound">Ääni</string>
+    <string name="sound_subtitle">Pelin äänitehosteet</string>
+    <string name="vibration">Värinä</string>
+    <string name="vibration_subtitle">Haptinen palaute asetettaessa</string>
+    <string name="dark_theme">Tumma teema</string>
+    <string name="dark_theme_subtitle">Aina käytössä oleva tumma tila</string>
+    <string name="privacy_policy">Tietosuojakäytäntö</string>
+    <string name="privacy_policy_subtitle">Kuinka käsittelemme tietojasi</string>
+
+    <!-- Common -->
+    <string name="exit">Poistu</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Hyvä</string>
+    <string name="feedback_great">Hienoa!</string>
+    <string name="feedback_excellent">Erinomaista!</string>
+    <string name="feedback_unbelievable">Uskomatonta!</string>
+    <string name="feedback_combo">Kombo</string>
+</resources>

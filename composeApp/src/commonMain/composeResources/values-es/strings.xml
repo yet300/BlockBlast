@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Jugar</string>
+    <string name="continue_game">Continuar</string>
+    <string name="new_game">Nuevo juego</string>
+    <string name="best_score_label">Mejor puntuación</string>
+    <string name="home_tagline">Un pequeño y tranquilo rompecabezas</string>
+
+    <!-- Game Screen -->
+    <string name="score">Puntuación</string>
+    <string name="best">Mejor</string>
+    <string name="game_over">Fin del juego</string>
+    <string name="game_over_subtitle">No hay más movimientos en el tablero</string>
+    <string name="new_best">Nueva mejor puntuación</string>
+    <string name="revive">Continuar</string>
+    <string name="restart">Nuevo juego</string>
+    <string name="exit_to_home">Salir</string>
+    <string name="cd_settings">Ajustes</string>
+    <string name="cd_back">Atrás</string>
+    <string name="cd_close">Cerrar</string>
+
+    <!-- Settings -->
+    <string name="settings">Ajustes</string>
+    <string name="sound">Sonido</string>
+    <string name="sound_subtitle">Efectos de sonido del juego</string>
+    <string name="vibration">Vibración</string>
+    <string name="vibration_subtitle">Respuesta háptica al colocar</string>
+    <string name="dark_theme">Tema oscuro</string>
+    <string name="dark_theme_subtitle">Modo oscuro siempre activo</string>
+    <string name="privacy_policy">Política de privacidad</string>
+    <string name="privacy_policy_subtitle">Cómo manejamos tus datos</string>
+
+    <!-- Common -->
+    <string name="exit">Salir</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">¡Bien!</string>
+    <string name="feedback_great">¡Genial!</string>
+    <string name="feedback_excellent">¡Excelente!</string>
+    <string name="feedback_unbelievable">¡Increíble!</string>
+    <string name="feedback_combo">Combo</string>
+</resources>

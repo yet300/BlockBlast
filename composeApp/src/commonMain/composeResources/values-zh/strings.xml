@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">开始</string>
+    <string name="continue_game">继续</string>
+    <string name="new_game">新游戏</string>
+    <string name="best_score_label">最高分</string>
+    <string name="home_tagline">一个安静的小拼图</string>
+
+    <!-- Game Screen -->
+    <string name="score">分数</string>
+    <string name="best">最高</string>
+    <string name="game_over">游戏结束</string>
+    <string name="game_over_subtitle">棋盘上没有可移动的方块了</string>
+    <string name="new_best">新纪录</string>
+    <string name="revive">继续</string>
+    <string name="restart">新游戏</string>
+    <string name="exit_to_home">退出</string>
+    <string name="cd_settings">设置</string>
+    <string name="cd_back">返回</string>
+    <string name="cd_close">关闭</string>
+
+    <!-- Settings -->
+    <string name="settings">设置</string>
+    <string name="sound">声音</string>
+    <string name="sound_subtitle">游戏音效</string>
+    <string name="vibration">振动</string>
+    <string name="vibration_subtitle">放置方块时的触感反馈</string>
+    <string name="dark_theme">深色主题</string>
+    <string name="dark_theme_subtitle">始终开启深色模式</string>
+    <string name="privacy_policy">隐私政策</string>
+    <string name="privacy_policy_subtitle">我们如何处理您的数据</string>
+
+    <!-- Common -->
+    <string name="exit">退出</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">好</string>
+    <string name="feedback_great">太棒了！</string>
+    <string name="feedback_excellent">卓越！</string>
+    <string name="feedback_unbelievable">难以置信！</string>
+    <string name="feedback_combo">连击</string>
+</resources>

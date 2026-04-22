@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Spelen</string>
+    <string name="continue_game">Doorgaan</string>
+    <string name="new_game">Nieuw spel</string>
+    <string name="best_score_label">Beste score</string>
+    <string name="home_tagline">Een rustige kleine puzzel</string>
+
+    <!-- Game Screen -->
+    <string name="score">Score</string>
+    <string name="best">Beste</string>
+    <string name="game_over">Game over</string>
+    <string name="game_over_subtitle">Geen zetten meer mogelijk op het bord</string>
+    <string name="new_best">Nieuwe beste score</string>
+    <string name="revive">Doorgaan</string>
+    <string name="restart">Nieuw spel</string>
+    <string name="exit_to_home">Afsluiten</string>
+    <string name="cd_settings">Instellingen</string>
+    <string name="cd_back">Terug</string>
+    <string name="cd_close">Sluiten</string>
+
+    <!-- Settings -->
+    <string name="settings">Instellingen</string>
+    <string name="sound">Geluid</string>
+    <string name="sound_subtitle">Geluidseffecten van het spel</string>
+    <string name="vibration">Trillen</string>
+    <string name="vibration_subtitle">Haptische feedback bij plaatsen</string>
+    <string name="dark_theme">Donker thema</string>
+    <string name="dark_theme_subtitle">Altijd donkere modus</string>
+    <string name="privacy_policy">Privacybeleid</string>
+    <string name="privacy_policy_subtitle">Hoe we met uw gegevens omgaan</string>
+
+    <!-- Common -->
+    <string name="exit">Afsluiten</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Goed</string>
+    <string name="feedback_great">Geweldig!</string>
+    <string name="feedback_excellent">Uitstekend!</string>
+    <string name="feedback_unbelievable">Ongelooflijk!</string>
+    <string name="feedback_combo">Combo</string>
+</resources>

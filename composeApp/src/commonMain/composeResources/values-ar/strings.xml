@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">العب</string>
+    <string name="continue_game">استمرار</string>
+    <string name="new_game">لعبة جديدة</string>
+    <string name="best_score_label">أفضل نتيجة</string>
+    <string name="home_tagline">لغز صغير هادئ</string>
+
+    <!-- Game Screen -->
+    <string name="score">النتيجة</string>
+    <string name="best">الأفضل</string>
+    <string name="game_over">انتهت اللعبة</string>
+    <string name="game_over_subtitle">لا توجد حركات متبقية على اللوحة</string>
+    <string name="new_best">نتيجة قياسية جديدة</string>
+    <string name="revive">استمرار</string>
+    <string name="restart">لعبة جديدة</string>
+    <string name="exit_to_home">خروج</string>
+    <string name="cd_settings">الإعدادات</string>
+    <string name="cd_back">رجوع</string>
+    <string name="cd_close">إغلاق</string>
+
+    <!-- Settings -->
+    <string name="settings">الإعدادات</string>
+    <string name="sound">الصوت</string>
+    <string name="sound_subtitle">المؤثرات الصوتية للعبة</string>
+    <string name="vibration">الاهتزاز</string>
+    <string name="vibration_subtitle">ردود فعل لمسية عند الوضع</string>
+    <string name="dark_theme">المظهر الداكن</string>
+    <string name="dark_theme_subtitle">وضع داكن دائم</string>
+    <string name="privacy_policy">سياسة الخصوصية</string>
+    <string name="privacy_policy_subtitle">كيف نتعامل مع بياناتك</string>
+
+    <!-- Common -->
+    <string name="exit">خروج</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">جيد</string>
+    <string name="feedback_great">رائع!</string>
+    <string name="feedback_excellent">ممتاز!</string>
+    <string name="feedback_unbelievable">لا يصدق!</string>
+    <string name="feedback_combo">كومبو</string>
+</resources>

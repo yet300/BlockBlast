@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Joacă</string>
+    <string name="continue_game">Continuă</string>
+    <string name="new_game">Joc nou</string>
+    <string name="best_score_label">Cel mai bun scor</string>
+    <string name="home_tagline">Un mic puzzle liniștit</string>
+
+    <!-- Game Screen -->
+    <string name="score">Scor</string>
+    <string name="best">Record</string>
+    <string name="game_over">Joc terminat</string>
+    <string name="game_over_subtitle">Nu mai există mutări pe tablă</string>
+    <string name="new_best">Nou record</string>
+    <string name="revive">Continuă</string>
+    <string name="restart">Joc nou</string>
+    <string name="exit_to_home">Ieșire</string>
+    <string name="cd_settings">Setări</string>
+    <string name="cd_back">Înapoi</string>
+    <string name="cd_close">Închide</string>
+
+    <!-- Settings -->
+    <string name="settings">Setări</string>
+    <string name="sound">Sunet</string>
+    <string name="sound_subtitle">Efecte sonore ale jocului</string>
+    <string name="vibration">Vibrație</string>
+    <string name="vibration_subtitle">Feedback haptic la plasare</string>
+    <string name="dark_theme">Temă întunecată</string>
+    <string name="dark_theme_subtitle">Mod întunecat mereu activ</string>
+    <string name="privacy_policy">Politica de confidențialitate</string>
+    <string name="privacy_policy_subtitle">Cum gestionăm datele tale</string>
+
+    <!-- Common -->
+    <string name="exit">Ieșire</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Bine</string>
+    <string name="feedback_great">Grozav!</string>
+    <string name="feedback_excellent">Excelent!</string>
+    <string name="feedback_unbelievable">Incredibil!</string>
+    <string name="feedback_combo">Combo</string>
+</resources>

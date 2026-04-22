@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">เล่น</string>
+    <string name="continue_game">เล่นต่อ</string>
+    <string name="new_game">เกมใหม่</string>
+    <string name="best_score_label">คะแนนสูงสุด</string>
+    <string name="home_tagline">ปริศนาเล็กๆ ที่แสนสงบ</string>
+
+    <!-- Game Screen -->
+    <string name="score">คะแนน</string>
+    <string name="best">สูงสุด</string>
+    <string name="game_over">จบเกม</string>
+    <string name="game_over_subtitle">ไม่มีพื้นที่เหลือบนกระดานแล้ว</string>
+    <string name="new_best">สถิติใหม่</string>
+    <string name="revive">เล่นต่อ</string>
+    <string name="restart">เกมใหม่</string>
+    <string name="exit_to_home">ออก</string>
+    <string name="cd_settings">ตั้งค่า</string>
+    <string name="cd_back">ย้อนกลับ</string>
+    <string name="cd_close">ปิด</string>
+
+    <!-- Settings -->
+    <string name="settings">ตั้งค่า</string>
+    <string name="sound">เสียง</string>
+    <string name="sound_subtitle">เอฟเฟกต์เสียงในเกม</string>
+    <string name="vibration">การสั่น</string>
+    <string name="vibration_subtitle">การสั่นตอบสนองเมื่อวางบล็อก</string>
+    <string name="dark_theme">ธีมมืด</string>
+    <string name="dark_theme_subtitle">เปิดโหมดมืดตลอดเวลา</string>
+    <string name="privacy_policy">นโยบายความเป็นส่วนตัว</string>
+    <string name="privacy_policy_subtitle">วิธีที่เราจัดการข้อมูลของคุณ</string>
+
+    <!-- Common -->
+    <string name="exit">ออก</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">ดี</string>
+    <string name="feedback_great">เยี่ยม!</string>
+    <string name="feedback_excellent">ยอดเยี่ยม!</string>
+    <string name="feedback_unbelievable">เหลือเชื่อ!</string>
+    <string name="feedback_combo">คอมโบ</string>
+</resources>
