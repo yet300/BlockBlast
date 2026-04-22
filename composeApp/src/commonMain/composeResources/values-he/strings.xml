@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">שחק</string>
+    <string name="continue_game">המשך</string>
+    <string name="new_game">משחק חדש</string>
+    <string name="best_score_label">השיא שלי</string>
+    <string name="home_tagline">פאזל קטן ושקט</string>
+
+    <!-- Game Screen -->
+    <string name="score">ניקוד</string>
+    <string name="best">שיא</string>
+    <string name="game_over">המשחק נגמר</string>
+    <string name="game_over_subtitle">לא נשארו מהלכים על הלוח</string>
+    <string name="new_best">שיא חדש</string>
+    <string name="revive">המשך</string>
+    <string name="restart">משחק חדש</string>
+    <string name="exit_to_home">יציאה</string>
+    <string name="cd_settings">הגדרות</string>
+    <string name="cd_back">חזור</string>
+    <string name="cd_close">סגור</string>
+
+    <!-- Settings -->
+    <string name="settings">הגדרות</string>
+    <string name="sound">צליל</string>
+    <string name="sound_subtitle">אפקטים קוליים של המשחק</string>
+    <string name="vibration">רטט</string>
+    <string name="vibration_subtitle">משוב רטט בעת הנחה</string>
+    <string name="dark_theme">ערכת נושא כהה</string>
+    <string name="dark_theme_subtitle">מצב כהה תמידי</string>
+    <string name="privacy_policy">מדיניות פרטיות</string>
+    <string name="privacy_policy_subtitle">כיצד אנו מטפלים בנתונים שלך</string>
+
+    <!-- Common -->
+    <string name="exit">יציאה</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">טוב</string>
+    <string name="feedback_great">נהדר!</string>
+    <string name="feedback_excellent">מצוין!</string>
+    <string name="feedback_unbelievable">לא ייאמן!</string>
+    <string name="feedback_combo">קומבו</string>
+</resources>

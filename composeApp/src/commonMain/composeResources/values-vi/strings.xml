@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Chơi</string>
+    <string name="continue_game">Tiếp tục</string>
+    <string name="new_game">Trò chơi mới</string>
+    <string name="best_score_label">Điểm cao nhất</string>
+    <string name="home_tagline">Một trò chơi giải đố nhẹ nhàng</string>
+
+    <!-- Game Screen -->
+    <string name="score">Điểm</string>
+    <string name="best">Cao nhất</string>
+    <string name="game_over">Trò chơi kết thúc</string>
+    <string name="game_over_subtitle">Không còn nước đi nào trên bàn</string>
+    <string name="new_best">Kỷ lục mới</string>
+    <string name="revive">Tiếp tục</string>
+    <string name="restart">Trò chơi mới</string>
+    <string name="exit_to_home">Thoát</string>
+    <string name="cd_settings">Cài đặt</string>
+    <string name="cd_back">Quay lại</string>
+    <string name="cd_close">Đóng</string>
+
+    <!-- Settings -->
+    <string name="settings">Cài đặt</string>
+    <string name="sound">Âm thanh</string>
+    <string name="sound_subtitle">Hiệu ứng âm thanh trò chơi</string>
+    <string name="vibration">Rung</string>
+    <string name="vibration_subtitle">Phản hồi rung khi đặt khối</string>
+    <string name="dark_theme">Giao diện tối</string>
+    <string name="dark_theme_subtitle">Luôn bật chế độ tối</string>
+    <string name="privacy_policy">Chính sách bảo mật</string>
+    <string name="privacy_policy_subtitle">Cách chúng tôi xử lý dữ liệu của bạn</string>
+
+    <!-- Common -->
+    <string name="exit">Thoát</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Tốt</string>
+    <string name="feedback_great">Tuyệt vời!</string>
+    <string name="feedback_excellent">Xuất sắc!</string>
+    <string name="feedback_unbelievable">Không thể tin được!</string>
+    <string name="feedback_combo">Combo</string>
+</resources>

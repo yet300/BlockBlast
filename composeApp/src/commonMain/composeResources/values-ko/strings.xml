@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">플레이</string>
+    <string name="continue_game">계속하기</string>
+    <string name="new_game">새 게임</string>
+    <string name="best_score_label">최고 점수</string>
+    <string name="home_tagline">조용한 작은 퍼즐</string>
+
+    <!-- Game Screen -->
+    <string name="score">점수</string>
+    <string name="best">최고</string>
+    <string name="game_over">게임 오버</string>
+    <string name="game_over_subtitle">보드에 움직일 수 있는 공간이 없습니다</string>
+    <string name="new_best">신기록</string>
+    <string name="revive">계속하기</string>
+    <string name="restart">새 게임</string>
+    <string name="exit_to_home">나가기</string>
+    <string name="cd_settings">설정</string>
+    <string name="cd_back">뒤로</string>
+    <string name="cd_close">닫기</string>
+
+    <!-- Settings -->
+    <string name="settings">설정</string>
+    <string name="sound">소리</string>
+    <string name="sound_subtitle">게임 음향 효과</string>
+    <string name="vibration">진동</string>
+    <string name="vibration_subtitle">블록 배치 시 진동 피드백</string>
+    <string name="dark_theme">다크 테마</string>
+    <string name="dark_theme_subtitle">항상 다크 모드</string>
+    <string name="privacy_policy">개인정보 처리방침</string>
+    <string name="privacy_policy_subtitle">데이터 처리 방법</string>
+
+    <!-- Common -->
+    <string name="exit">나가기</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">좋음</string>
+    <string name="feedback_great">대단함!</string>
+    <string name="feedback_excellent">탁월함!</string>
+    <string name="feedback_unbelievable">믿을 수 없음!</string>
+    <string name="feedback_combo">콤보</string>
+</resources>

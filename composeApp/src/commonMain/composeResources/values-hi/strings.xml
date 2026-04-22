@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">खेलें</string>
+    <string name="continue_game">जारी रखें</string>
+    <string name="new_game">नया खेल</string>
+    <string name="best_score_label">सर्वश्रेष्ठ स्कोर</string>
+    <string name="home_tagline">एक शांत छोटी पहेली</string>
+
+    <!-- Game Screen -->
+    <string name="score">स्कोर</string>
+    <string name="best">सर्वश्रेष्ठ</string>
+    <string name="game_over">खेल खत्म</string>
+    <string name="game_over_subtitle">बोर्ड पर कोई चाल नहीं बची है</string>
+    <string name="new_best">नया रिकॉर्ड</string>
+    <string name="revive">जारी रखें</string>
+    <string name="restart">नया खेल</string>
+    <string name="exit_to_home">बाहर निकलें</string>
+    <string name="cd_settings">सेटिंग</string>
+    <string name="cd_back">पीछे</string>
+    <string name="cd_close">बंद करें</string>
+
+    <!-- Settings -->
+    <string name="settings">सेटिंग</string>
+    <string name="sound">ध्वनि</string>
+    <string name="sound_subtitle">खेल ध्वनि प्रभाव</string>
+    <string name="vibration">कंपन</string>
+    <string name="vibration_subtitle">रखने पर हैप्टिक फीडबैक</string>
+    <string name="dark_theme">डार्क थीम</string>
+    <string name="dark_theme_subtitle">हमेशा डार्क मोड चालू</string>
+    <string name="privacy_policy">गोपनीयता नीति</string>
+    <string name="privacy_policy_subtitle">हम आपके डेटा को कैसे संभालते हैं</string>
+
+    <!-- Common -->
+    <string name="exit">बाहर निकलें</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">अच्छा</string>
+    <string name="feedback_great">बहुत बढ़िया!</string>
+    <string name="feedback_excellent">उत्कृष्ट!</string>
+    <string name="feedback_unbelievable">अविश्वसनीय!</string>
+    <string name="feedback_combo">कॉम्बो</string>
+</resources>

@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Играть</string>
+    <string name="continue_game">Продолжить</string>
+    <string name="new_game">Новая игра</string>
+    <string name="best_score_label">Лучший результат</string>
+    <string name="home_tagline">Спокойная маленькая головоломка</string>
+
+    <!-- Game Screen -->
+    <string name="score">Счет</string>
+    <string name="best">Рекорд</string>
+    <string name="game_over">Игра окончена</string>
+    <string name="game_over_subtitle">На доске не осталось ходов</string>
+    <string name="new_best">Новый рекорд</string>
+    <string name="revive">Продолжить</string>
+    <string name="restart">Новая игра</string>
+    <string name="exit_to_home">Выйти</string>
+    <string name="cd_settings">Настройки</string>
+    <string name="cd_back">Назад</string>
+    <string name="cd_close">Закрыть</string>
+
+    <!-- Settings -->
+    <string name="settings">Настройки</string>
+    <string name="sound">Звук</string>
+    <string name="sound_subtitle">Звуковые эффекты игры</string>
+    <string name="vibration">Вибрация</string>
+    <string name="vibration_subtitle">Тактильный отклик при установке</string>
+    <string name="dark_theme">Темная тема</string>
+    <string name="dark_theme_subtitle">Всегда темный режим</string>
+    <string name="privacy_policy">Политика конфиденциальности</string>
+    <string name="privacy_policy_subtitle">Как мы обрабатываем ваши данные</string>
+
+    <!-- Common -->
+    <string name="exit">Выйти</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Хорошо</string>
+    <string name="feedback_great">Отлично!</string>
+    <string name="feedback_excellent">Замечательно!</string>
+    <string name="feedback_unbelievable">Невероятно!</string>
+    <string name="feedback_combo">Комбо</string>
+</resources>

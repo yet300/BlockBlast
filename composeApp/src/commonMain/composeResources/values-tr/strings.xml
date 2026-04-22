@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Oyna</string>
+    <string name="continue_game">Devam Et</string>
+    <string name="new_game">Yeni Oyun</string>
+    <string name="best_score_label">En İyi Skor</string>
+    <string name="home_tagline">Sessiz küçük bir bulmaca</string>
+
+    <!-- Game Screen -->
+    <string name="score">Skor</string>
+    <string name="best">En İyi</string>
+    <string name="game_over">Oyun Bitti</string>
+    <string name="game_over_subtitle">Tahtada hamle kalmadı</string>
+    <string name="new_best">Yeni Rekor</string>
+    <string name="revive">Devam Et</string>
+    <string name="restart">Yeni Oyun</string>
+    <string name="exit_to_home">Çıkış</string>
+    <string name="cd_settings">Ayarlar</string>
+    <string name="cd_back">Geri</string>
+    <string name="cd_close">Kapat</string>
+
+    <!-- Settings -->
+    <string name="settings">Ayarlar</string>
+    <string name="sound">Ses</string>
+    <string name="sound_subtitle">Oyun ses efektleri</string>
+    <string name="vibration">Titreşim</string>
+    <string name="vibration_subtitle">Yerleştirme sırasında dokunsal geri bildirim</string>
+    <string name="dark_theme">Koyu Tema</string>
+    <string name="dark_theme_subtitle">Her zaman koyu mod</string>
+    <string name="privacy_policy">Gizlilik Politikası</string>
+    <string name="privacy_policy_subtitle">Verilerinizi nasıl işliyoruz</string>
+
+    <!-- Common -->
+    <string name="exit">Çıkış</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Güzel</string>
+    <string name="feedback_great">Harika!</string>
+    <string name="feedback_excellent">Mükemmel!</string>
+    <string name="feedback_unbelievable">İnanılmaz!</string>
+    <string name="feedback_combo">Kombo</string>
+</resources>

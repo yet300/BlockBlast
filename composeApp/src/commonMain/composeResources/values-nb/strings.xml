@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Spill</string>
+    <string name="continue_game">Fortsett</string>
+    <string name="new_game">Nytt spill</string>
+    <string name="best_score_label">Beste poengsum</string>
+    <string name="home_tagline">Et rolig lite puslespill</string>
+
+    <!-- Game Screen -->
+    <string name="score">Poeng</string>
+    <string name="best">Beste</string>
+    <string name="game_over">Spillet er slutt</string>
+    <string name="game_over_subtitle">Ingen trekk igjen på brettet</string>
+    <string name="new_best">Ny rekord</string>
+    <string name="revive">Fortsett</string>
+    <string name="restart">Nytt spill</string>
+    <string name="exit_to_home">Avslutt</string>
+    <string name="cd_settings">Innstillinger</string>
+    <string name="cd_back">Tilbake</string>
+    <string name="cd_close">Lukk</string>
+
+    <!-- Settings -->
+    <string name="settings">Innstillinger</string>
+    <string name="sound">Lyd</string>
+    <string name="sound_subtitle">Lydeffekter i spillet</string>
+    <string name="vibration">Vibrasjon</string>
+    <string name="vibration_subtitle">Haptisk tilbakemelding ved plassering</string>
+    <string name="dark_theme">Mørkt tema</string>
+    <string name="dark_theme_subtitle">Alltid mørk modus</string>
+    <string name="privacy_policy">Personvernregler</string>
+    <string name="privacy_policy_subtitle">Hvordan vi håndterer dine data</string>
+
+    <!-- Common -->
+    <string name="exit">Avslutt</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Bra</string>
+    <string name="feedback_great">Kjempebra!</string>
+    <string name="feedback_excellent">Utmerket!</string>
+    <string name="feedback_unbelievable">Utrolig!</string>
+    <string name="feedback_combo">Kombo</string>
+</resources>

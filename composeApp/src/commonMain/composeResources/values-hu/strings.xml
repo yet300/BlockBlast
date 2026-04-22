@@ -1,0 +1,45 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Játék</string>
+    <string name="continue_game">Folytatás</string>
+    <string name="new_game">Új játék</string>
+    <string name="best_score_label">Legjobb pontszám</string>
+    <string name="home_tagline">Egy csendes kis kirakó</string>
+
+    <!-- Game Screen -->
+    <string name="score">Pontszám</string>
+    <string name="best">Legjobb</string>
+    <string name="game_over">Játék vége</string>
+    <string name="game_over_subtitle">Nincs több lépés a táblán</string>
+    <string name="new_best">Új rekord</string>
+    <string name="revive">Folytatás</string>
+    <string name="restart">Új játék</string>
+    <string name="exit_to_home">Kilépés</string>
+    <string name="cd_settings">Beállítások</string>
+    <string name="cd_back">Vissza</string>
+    <string name="cd_close">Bezárás</string>
+
+    <!-- Settings -->
+    <string name="settings">Beállítások</string>
+    <string name="sound">Hang</string>
+    <string name="sound_subtitle">Játék hanghatások</string>
+    <string name="vibration">Rezgés</string>
+    <string name="vibration_subtitle">Haptikus visszajelzés elhelyezéskor</string>
+    <string name="dark_theme">Sötét téma</string>
+    <string name="dark_theme_subtitle">Mindig bekapcsolt sötét mód</string>
+    <string name="privacy_policy">Adatvédelmi irányelvek</string>
+    <string name="privacy_policy_subtitle">Hogyan kezeljük az adatait</string>
+
+    <!-- Common -->
+    <string name="exit">Kilépés</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Jó</string>
+    <string name="feedback_great">Nagyszerű!</string>
+    <string name="feedback_excellent">Kiváló!</string>
+    <string name="feedback_unbelievable">Hihetetlen!</string>
+    <string name="feedback_combo">Kombó</string>
+</resources>
