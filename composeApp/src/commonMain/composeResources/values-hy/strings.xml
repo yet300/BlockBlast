@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Խաղալ</string>
+    <string name="continue_game">Շարունակել</string>
+    <string name="new_game">Նոր խաղ</string>
+    <string name="best_score_label">Լավագույն արդյունք</string>
+    <string name="home_tagline">Հանգիստ փոքրիկ գլուխկոտրուկ</string>
+
+    <!-- Game Screen -->
+    <string name="score">Միավոր</string>
+    <string name="best">Ռեկորդ</string>
+    <string name="game_over">Խաղն ավարտվեց</string>
+    <string name="game_over_subtitle">Տախտակի վրա քայլեր չեն մնացել</string>
+    <string name="new_best">Նոր ռեկորդ</string>
+    <string name="revive">Շարունակել</string>
+    <string name="restart">Նոր խաղ</string>
+    <string name="exit_to_home">Ելք</string>
+    <string name="cd_settings">Կարգավորումներ</string>
+    <string name="cd_back">Հետ</string>
+    <string name="cd_close">Փակել</string>
+
+    <!-- Settings -->
+    <string name="settings">Կարգավորումներ</string>
+    <string name="sound">Ձայն</string>
+    <string name="sound_subtitle">Խաղի ձայնային էֆեկտներ</string>
+    <string name="vibration">Թրթռում</string>
+    <string name="vibration_subtitle">Հպման հետադարձ կապ տեղադրման ժամանակ</string>
+    <string name="dark_theme">Մուգ թեմա</string>
+    <string name="dark_theme_subtitle">Միշտ մուգ ռեժիմ</string>
+    <string name="privacy_policy">Գաղտնիության քաղաքականություն</string>
+    <string name="privacy_policy_subtitle">Ինչպես ենք մշակում ձեր տվյալները</string>
+
+    <!-- Common -->
+    <string name="exit">Ելք</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Լավ</string>
+    <string name="feedback_great">Հիանալի՛</string>
+    <string name="feedback_excellent">Գերազանց՛</string>
+    <string name="feedback_unbelievable">Անհավանական՛</string>
+    <string name="feedback_combo">Կոմբո</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Ընտրիր պատկերը</string>
+    <string name="tutorial_tray_body">Սեղմիր և պահիր պատկերը այն բարձրացնելու համար:</string>
+    <string name="tutorial_grid_title">Տեղադրիր տախտակին</string>
+    <string name="tutorial_grid_body">Քաշիր պատկերը տախտակին այն տեղադրելու համար: Լրացրու ամբողջական տող կամ սյունակ այն ջնջելու համար:</string>
+    <string name="tutorial_next">Հաջորդը</string>
+    <string name="tutorial_done">Պարզ է</string>
+    <string name="tutorial_skip">Բաց թողնել</string>
+</resources>

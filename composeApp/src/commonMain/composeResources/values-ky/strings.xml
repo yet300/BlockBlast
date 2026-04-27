@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Ойноо</string>
+    <string name="continue_game">Улантуу</string>
+    <string name="new_game">Жаңы оюн</string>
+    <string name="best_score_label">Эң жогорку упай</string>
+    <string name="home_tagline">Тынч чакан табышмак</string>
+
+    <!-- Game Screen -->
+    <string name="score">Упай</string>
+    <string name="best">Рекорд</string>
+    <string name="game_over">Оюн бүттү</string>
+    <string name="game_over_subtitle">Тактада кадамдар калган жок</string>
+    <string name="new_best">Жаңы рекорд</string>
+    <string name="revive">Улантуу</string>
+    <string name="restart">Жаңы оюн</string>
+    <string name="exit_to_home">Чыгуу</string>
+    <string name="cd_settings">Орнотуулар</string>
+    <string name="cd_back">Артка</string>
+    <string name="cd_close">Жабуу</string>
+
+    <!-- Settings -->
+    <string name="settings">Орнотуулар</string>
+    <string name="sound">Үн</string>
+    <string name="sound_subtitle">Оюндун үн эффекттери</string>
+    <string name="vibration">Дирилдөө</string>
+    <string name="vibration_subtitle">Жайгаштырууда тактилдик байланыш</string>
+    <string name="dark_theme">Караңгы тема</string>
+    <string name="dark_theme_subtitle">Ар дайым караңгы режим</string>
+    <string name="privacy_policy">Купуялык саясаты</string>
+    <string name="privacy_policy_subtitle">Дайындарыңызды кантип иштетебиз</string>
+
+    <!-- Common -->
+    <string name="exit">Чыгуу</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Жакшы</string>
+    <string name="feedback_great">Азаматсыз!</string>
+    <string name="feedback_excellent">Эң сонун!</string>
+    <string name="feedback_unbelievable">Ишенгис!</string>
+    <string name="feedback_combo">Комбо</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Фигураны тандаңыз</string>
+    <string name="tutorial_tray_body">Көтөрүү үчүн фигураны басып туруңуз.</string>
+    <string name="tutorial_grid_title">Тактага жайгаштырыңыз</string>
+    <string name="tutorial_grid_body">Жайгаштыруу үчүн фигураны тактага сүйрөңүз. Тазалоо үчүн толук сапты же тилкени толтуруңуз.</string>
+    <string name="tutorial_next">Кийинки</string>
+    <string name="tutorial_done">Түшүнүктүү</string>
+    <string name="tutorial_skip">Өткөрүп жиберүү</string>
+</resources>

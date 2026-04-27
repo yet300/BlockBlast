@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Бозӣ кардан</string>
+    <string name="continue_game">Давом додан</string>
+    <string name="new_game">Бозии нав</string>
+    <string name="best_score_label">Беҳтарин хол</string>
+    <string name="home_tagline">Муаммои ороми хурд</string>
+
+    <!-- Game Screen -->
+    <string name="score">Хол</string>
+    <string name="best">Рекорд</string>
+    <string name="game_over">Бозӣ анҷом ёфт</string>
+    <string name="game_over_subtitle">Дар тахта қадам намондааст</string>
+    <string name="new_best">Рекорди нав</string>
+    <string name="revive">Давом додан</string>
+    <string name="restart">Бозии нав</string>
+    <string name="exit_to_home">Баромад</string>
+    <string name="cd_settings">Танзимот</string>
+    <string name="cd_back">Қафо</string>
+    <string name="cd_close">Пӯшидан</string>
+
+    <!-- Settings -->
+    <string name="settings">Танзимот</string>
+    <string name="sound">Овоз</string>
+    <string name="sound_subtitle">Эффектҳои овозии бозӣ</string>
+    <string name="vibration">Ларзиш</string>
+    <string name="vibration_subtitle">Алоқаи тактилӣ ҳангоми ҷойгиркунӣ</string>
+    <string name="dark_theme">Мавзӯи торик</string>
+    <string name="dark_theme_subtitle">Ҳамеша режими торик</string>
+    <string name="privacy_policy">Сиёсати махфият</string>
+    <string name="privacy_policy_subtitle">Чӣ тавр мо маълумоти шуморо коркард мекунем</string>
+
+    <!-- Common -->
+    <string name="exit">Баромад</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Хуб</string>
+    <string name="feedback_great">Офарин!</string>
+    <string name="feedback_excellent">Беҳтарин!</string>
+    <string name="feedback_unbelievable">Боваринашаванда!</string>
+    <string name="feedback_combo">Комбо</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Фигураро интихоб кунед</string>
+    <string name="tutorial_tray_body">Барои бардоштан фигураро пахш карда нигоҳ доред.</string>
+    <string name="tutorial_grid_title">Дар тахта ҷойгир кунед</string>
+    <string name="tutorial_grid_body">Барои ҷойгир кардан фигураро ба тахта кашед. Барои тоза кардан сатр ё сутуни пурраро пур кунед.</string>
+    <string name="tutorial_next">Оянда</string>
+    <string name="tutorial_done">Фаҳмидам</string>
+    <string name="tutorial_skip">Гузаштан</string>
+</resources>
