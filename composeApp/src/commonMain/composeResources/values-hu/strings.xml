@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Kiváló!</string>
     <string name="feedback_unbelievable">Hihetetlen!</string>
     <string name="feedback_combo">Kombó</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Válassz egy elemet</string>
+    <string name="tutorial_tray_body">Érintsd meg hosszan az elemet a tálcán a felemeléséhez.</string>
+    <string name="tutorial_grid_title">Helyezd a táblára</string>
+    <string name="tutorial_grid_body">Húzd az elemet a táblára az elhelyezéshez. Tölts meg egy teljes sort vagy oszlopot az eltüntetéséhez.</string>
+    <string name="tutorial_next">Tovább</string>
+    <string name="tutorial_done">Értem</string>
+    <string name="tutorial_skip">Kihagyás</string>
 </resources>

@@ -42,4 +42,13 @@
     <string name="feedback_excellent">탁월함!</string>
     <string name="feedback_unbelievable">믿을 수 없음!</string>
     <string name="feedback_combo">콤보</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">조각 선택하기</string>
+    <string name="tutorial_tray_body">트레이에 있는 조각을 길게 눌러 들어 올리세요.</string>
+    <string name="tutorial_grid_title">보드에 배치하기</string>
+    <string name="tutorial_grid_body">조각을 보드로 드래그하여 배치하세요. 가로 또는 세로 줄을 채워 조각을 제거하세요.</string>
+    <string name="tutorial_next">다음</string>
+    <string name="tutorial_done">확인</string>
+    <string name="tutorial_skip">건너뛰기</string>
 </resources>
