@@ -27,6 +27,12 @@ interface RootComponent : BackHandlerOwner {
     /** Whether sound effects are enabled (mirrors Settings toggle). */
     val soundEnabled: StateFlow<Boolean>
 
+    /** Whether the first-launch tutorial has already been seen / dismissed. */
+    val tutorialSeen: StateFlow<Boolean>
+
+    /** Persist that the user has finished the first-launch tutorial. */
+    fun onTutorialSeen()
+
     fun onBackClicked()
 
     sealed interface Child {

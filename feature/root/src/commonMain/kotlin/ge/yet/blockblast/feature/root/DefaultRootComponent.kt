@@ -32,7 +32,7 @@ internal class DefaultRootComponent(
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
     private val audio: AudioRepository,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -41,6 +41,11 @@ internal class DefaultRootComponent(
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
     override val vibrationEnabled: StateFlow<Boolean> = settingsRepository.vibrationEnabled
     override val soundEnabled: StateFlow<Boolean> = settingsRepository.soundEnabled
+    override val tutorialSeen: StateFlow<Boolean> = settingsRepository.tutorialSeen
+
+    override fun onTutorialSeen() {
+        scope.launch { settingsRepository.setTutorialSeen() }
+    }
 
     override val stack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,

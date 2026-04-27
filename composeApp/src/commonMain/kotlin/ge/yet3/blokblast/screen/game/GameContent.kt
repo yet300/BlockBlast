@@ -43,6 +43,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Rect
+import ge.yet3.blokblast.component.overlay.SpotlightTutorial
+import ge.yet3.blokblast.component.overlay.rememberGameTutorialSteps
+import ge.yet3.blokblast.theme.LocalOnTutorialSeen
+import ge.yet3.blokblast.theme.LocalTutorialSeen
 import ge.yet3.blokblast.theme.LocalVibrationEnabled
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -108,6 +115,12 @@ fun GameContent(component: GameComponent) {
     var gridOriginY by remember { mutableFloatStateOf(0f) }
     var cellSizePx by remember { mutableFloatStateOf(0f) }
     var gapPx by remember { mutableFloatStateOf(0f) }
+
+    // Bounds (root-coords) used by the first-launch spotlight tutorial.
+    var gridBounds by remember { mutableStateOf(Rect.Zero) }
+    var trayBounds by remember { mutableStateOf(Rect.Zero) }
+    val tutorialSeen = LocalTutorialSeen.current
+    val onTutorialSeen = LocalOnTutorialSeen.current
 
     var prevComboLevel by remember { mutableStateOf(model.comboLevel) }
     LaunchedEffect(model.comboLevel) {
@@ -241,7 +254,8 @@ fun GameContent(component: GameComponent) {
                             scaleY = entranceAnim.value
                             alpha = entranceAnim.value
                         }
-                        .shake(shakeState),
+                        .shake(shakeState)
+                        .onGloballyPositioned { gridBounds = it.boundsInRoot() },
                     dragDropState = dragDrop,
                     comboStripes = comboStripes,
                     comboLevel = model.comboLevel,
@@ -260,7 +274,10 @@ fun GameContent(component: GameComponent) {
                 PieceTray(
                     pieces = model.currentPieces,
                     selectedPieceId = selectedPieceId,
-                    modifier = Modifier.widthIn(max = 500.dp).padding(bottom = 8.dp),
+                    modifier = Modifier
+                        .widthIn(max = 500.dp)
+                        .padding(bottom = 8.dp)
+                        .onGloballyPositioned { trayBounds = it.boundsInRoot() },
                     onPieceSelected = { id ->
                         if (!dragDrop.isDragging) {
                             selectedPieceId = if (selectedPieceId == id) null else id
@@ -375,6 +392,19 @@ fun GameContent(component: GameComponent) {
                         }
                     }
                 }
+            }
+
+            // ── First-launch spotlight tutorial ─────────────────────────────
+            // Shown until the user finishes/skips it; persisted via Settings so
+            // it never appears again. Only renders once both targets have been
+            // measured so the cutout lands on real geometry.
+            if (!tutorialSeen && trayBounds != Rect.Zero && gridBounds != Rect.Zero && !model.isGameOver) {
+                val steps = rememberGameTutorialSteps(trayBounds = trayBounds, gridBounds = gridBounds)
+                SpotlightTutorial(
+                    steps = steps,
+                    onFinished = onTutorialSeen,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
 
             // ── Floating score & feedback overlays ──────────────────────────
