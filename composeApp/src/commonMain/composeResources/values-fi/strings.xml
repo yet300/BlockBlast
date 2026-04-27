@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Erinomaista!</string>
     <string name="feedback_unbelievable">Uskomatonta!</string>
     <string name="feedback_combo">Kombo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Valitse pala</string>
+    <string name="tutorial_tray_body">Nosta pala tarjottimelta painamalla sitä pitkään.</string>
+    <string name="tutorial_grid_title">Aseta laudalle</string>
+    <string name="tutorial_grid_body">Vedä pala laudalle asettaaksesi sen. Tyhjennä rivi tai sarake täyttämällä se kokonaan.</string>
+    <string name="tutorial_next">Seuraava</string>
+    <string name="tutorial_done">Selvä</string>
+    <string name="tutorial_skip">Ohita</string>
 </resources>

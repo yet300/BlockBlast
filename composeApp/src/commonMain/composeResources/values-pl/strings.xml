@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Doskonale!</string>
     <string name="feedback_unbelievable">Niewiarygodne!</string>
     <string name="feedback_combo">Combo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Wybierz element</string>
+    <string name="tutorial_tray_body">Naciśnij i przytrzymaj element na tacy, aby go podnieść.</string>
+    <string name="tutorial_grid_title">Połóż na planszy</string>
+    <string name="tutorial_grid_body">Przeciągnij element na planszę, aby go umieścić. Wypełnij cały wiersz lub kolumnę, aby je wyczyścić.</string>
+    <string name="tutorial_next">Dalej</string>
+    <string name="tutorial_done">Rozumiem</string>
+    <string name="tutorial_skip">Pomiń</string>
 </resources>

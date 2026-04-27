@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Utmärkt!</string>
     <string name="feedback_unbelievable">Otroligt!</string>
     <string name="feedback_combo">Kombo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Välj en bit</string>
+    <string name="tutorial_tray_body">Tryck och håll på en bit i brickan för att lyfta den.</string>
+    <string name="tutorial_grid_title">Placera på brädet</string>
+    <string name="tutorial_grid_body">Dra biten till brädet för att placera den. Fyll en hel rad eller kolumn för att rensa den.</string>
+    <string name="tutorial_next">Nästa</string>
+    <string name="tutorial_done">Fattar</string>
+    <string name="tutorial_skip">Hoppa över</string>
 </resources>

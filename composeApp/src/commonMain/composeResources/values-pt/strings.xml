@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Excelente!</string>
     <string name="feedback_unbelievable">Inacreditável!</string>
     <string name="feedback_combo">Combo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Escolha uma peça</string>
+    <string name="tutorial_tray_body">Toque e segure uma peça na bandeja para levantá-la.</string>
+    <string name="tutorial_grid_title">Coloque no tabuleiro</string>
+    <string name="tutorial_grid_body">Arraste a peça para o tabuleiro para posicioná-la. Preencha uma linha ou coluna inteira para eliminá-la.</string>
+    <string name="tutorial_next">Próximo</string>
+    <string name="tutorial_done">Entendi</string>
+    <string name="tutorial_skip">Pular</string>
 </resources>

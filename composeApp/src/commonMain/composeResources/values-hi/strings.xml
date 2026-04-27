@@ -42,4 +42,13 @@
     <string name="feedback_excellent">उत्कृष्ट!</string>
     <string name="feedback_unbelievable">अविश्वसनीय!</string>
     <string name="feedback_combo">कॉम्बो</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">एक टुकड़ा चुनें</string>
+    <string name="tutorial_tray_body">उठाने के लिए ट्रे में एक टुकड़े को दबाकर रखें।</string>
+    <string name="tutorial_grid_title">इसे बोर्ड पर रखें</string>
+    <string name="tutorial_grid_body">इसे रखने के लिए टुकड़े को बोर्ड पर खींचें। इसे हटाने के लिए एक पूरी पंक्ति या कॉलम भरें।</string>
+    <string name="tutorial_next">अगला</string>
+    <string name="tutorial_done">समझ गया</string>
+    <string name="tutorial_skip">छोड़ें</string>
 </resources>
