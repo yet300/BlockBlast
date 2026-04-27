@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Oyna</string>
+    <string name="continue_game">Davam et</string>
+    <string name="new_game">Yeni oyun</string>
+    <string name="best_score_label">Ən yüksək xal</string>
+    <string name="home_tagline">Sakit və kiçik bir tapmaca</string>
+
+    <!-- Game Screen -->
+    <string name="score">Xal</string>
+    <string name="best">Rekord</string>
+    <string name="game_over">Oyun bitdi</string>
+    <string name="game_over_subtitle">Lövhədə gediş qalmadı</string>
+    <string name="new_best">Yeni rekord</string>
+    <string name="revive">Davam et</string>
+    <string name="restart">Yeni oyun</string>
+    <string name="exit_to_home">Çıxış</string>
+    <string name="cd_settings">Tənzimləmələr</string>
+    <string name="cd_back">Geri</string>
+    <string name="cd_close">Bağla</string>
+
+    <!-- Settings -->
+    <string name="settings">Tənzimləmələr</string>
+    <string name="sound">Səs</string>
+    <string name="sound_subtitle">Oyunun səs effektləri</string>
+    <string name="vibration">Vibrasiya</string>
+    <string name="vibration_subtitle">Yerləşdirmə zamanı haptik rəy</string>
+    <string name="dark_theme">Tünd mövzu</string>
+    <string name="dark_theme_subtitle">Həmişə aktiv tünd rejim</string>
+    <string name="privacy_policy">Məxfilik siyasəti</string>
+    <string name="privacy_policy_subtitle">Məlumatlarınızı necə idarə edirik</string>
+
+    <!-- Common -->
+    <string name="exit">Çıxış</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Yaxşı</string>
+    <string name="feedback_great">Əla!</string>
+    <string name="feedback_excellent">Mükəmməl!</string>
+    <string name="feedback_unbelievable">İnanılmaz!</string>
+    <string name="feedback_combo">Kombo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Bir fiqur seçin</string>
+    <string name="tutorial_tray_body">Qaldırmaq üçün paneldəki bir fiqura toxunun və saxlayın.</string>
+    <string name="tutorial_grid_title">Lövhəyə yerləşdirin</string>
+    <string name="tutorial_grid_body">Yerləşdirmək üçün fiquru lövhəyə sürün. Təmizləmək üçün tam bir sətir və ya sütunu doldurun.</string>
+    <string name="tutorial_next">Növbəti</string>
+    <string name="tutorial_done">Anladım</string>
+    <string name="tutorial_skip">Ötür</string>
+</resources>

@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Гуляць</string>
+    <string name="continue_game">Працягнуць</string>
+    <string name="new_game">Новая гульня</string>
+    <string name="best_score_label">Лепшы вынік</string>
+    <string name="home_tagline">Спакойная маленькая галаваломка</string>
+
+    <!-- Game Screen -->
+    <string name="score">Лік</string>
+    <string name="best">Рэкорд</string>
+    <string name="game_over">Гульня скончана</string>
+    <string name="game_over_subtitle">На дошцы не засталося хадоў</string>
+    <string name="new_best">Новы рэкорд</string>
+    <string name="revive">Працягнуць</string>
+    <string name="restart">Новая гульня</string>
+    <string name="exit_to_home">Выйсці</string>
+    <string name="cd_settings">Налады</string>
+    <string name="cd_back">Назад</string>
+    <string name="cd_close">Закрыць</string>
+
+    <!-- Settings -->
+    <string name="settings">Налады</string>
+    <string name="sound">Гук</string>
+    <string name="sound_subtitle">Гукавыя эфекты гульні</string>
+    <string name="vibration">Вібрацыя</string>
+    <string name="vibration_subtitle">Тактыльная аддача пры ўсталёўцы</string>
+    <string name="dark_theme">Цёмная тэма</string>
+    <string name="dark_theme_subtitle">Заўсёды цёмны рэжым</string>
+    <string name="privacy_policy">Палітыка канфідэнцыяльнасці</string>
+    <string name="privacy_policy_subtitle">Як мы апрацоўваем вашы даныя</string>
+
+    <!-- Common -->
+    <string name="exit">Выйсці</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Добра</string>
+    <string name="feedback_great">Выдатна!</string>
+    <string name="feedback_excellent">Цудоўна!</string>
+    <string name="feedback_unbelievable">Неверагодна!</string>
+    <string name="feedback_combo">Комба</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Абярыце фігуру</string>
+    <string name="tutorial_tray_body">Націсніце і ўтрымлівайце фігуру на панэлі, каб падняць яе.</string>
+    <string name="tutorial_grid_title">Перацягніце на дошку</string>
+    <string name="tutorial_grid_body">Перацягніце фігуру на дошку, каб размясціць яе. Запоўніце цэлы рад ці слупок, каб ачысціць яго.</string>
+    <string name="tutorial_next">Далей</string>
+    <string name="tutorial_done">Зразумела</string>
+    <string name="tutorial_skip">Прапусціць</string>
+</resources>

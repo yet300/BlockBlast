@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Oýnamak</string>
+    <string name="continue_game">Dowam et</string>
+    <string name="new_game">Täze oýun</string>
+    <string name="best_score_label">Iň ýokary bal</string>
+    <string name="home_tagline">Asuda kiçijik tapmaça</string>
+
+    <!-- Game Screen -->
+    <string name="score">Bal</string>
+    <string name="best">Rekord</string>
+    <string name="game_over">Oýun gutardy</string>
+    <string name="game_over_subtitle">Tagtada göçüm galmady</string>
+    <string name="new_best">Täze rekord</string>
+    <string name="revive">Dowam et</string>
+    <string name="restart">Täze oýun</string>
+    <string name="exit_to_home">Çykyş</string>
+    <string name="cd_settings">Sazlamalar</string>
+    <string name="cd_back">Yza</string>
+    <string name="cd_close">Ýap</string>
+
+    <!-- Settings -->
+    <string name="settings">Sazlamalar</string>
+    <string name="sound">Ses</string>
+    <string name="sound_subtitle">Oýnuň ses effektleri</string>
+    <string name="vibration">Wibrasiýa</string>
+    <string name="vibration_subtitle">Ýerleşdireniňizde taktil seslenmesi</string>
+    <string name="dark_theme">Garaňky tema</string>
+    <string name="dark_theme_subtitle">Elmydama garaňky rejim</string>
+    <string name="privacy_policy">Gizlinlik syýasaty</string>
+    <string name="privacy_policy_subtitle">Maglumatlaryňyzy nähili işleýäris</string>
+
+    <!-- Common -->
+    <string name="exit">Çykyş</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Ýagşy</string>
+    <string name="feedback_great">Berekella!</string>
+    <string name="feedback_excellent">Ajaýyp!</string>
+    <string name="feedback_unbelievable">Ynanawsyz!</string>
+    <string name="feedback_combo">Kombo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Bir şekil saýlaň</string>
+    <string name="tutorial_tray_body">Galdyrmak üçin paneldäki şekili basyp tutuň.</string>
+    <string name="tutorial_grid_title">Tagta ýerleşdiriň</string>
+    <string name="tutorial_grid_body">Ýerleşdirmek için şekili tagta süýräň. Arassalamak üçin doly bir setiri ýa-da sütüni dolduryň.</string>
+    <string name="tutorial_next">Indiki</string>
+    <string name="tutorial_done">Düşündim</string>
+    <string name="tutorial_skip">Geç</string>
+</resources>
