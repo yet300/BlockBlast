@@ -35,7 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import ge.yet3.blokblast.component.modifier.liftedPieceShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -91,7 +91,7 @@ import org.jetbrains.compose.resources.stringResource
 // target always matches where the floating ghost is rendered.
 private val DRAG_GHOST_CELL_SIZE = 36.dp
 private val DRAG_GHOST_GAP = 2.dp
-private const val DRAG_GHOST_VERTICAL_LIFT_PX: Float = 80f
+private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
 fun GameContent(component: GameComponent) {
@@ -299,7 +299,7 @@ fun GameContent(component: GameComponent) {
                             grid = model.grid,
                             ghostCellSizePx = with(density) { DRAG_GHOST_CELL_SIZE.toPx() },
                             ghostGapPx = with(density) { DRAG_GHOST_GAP.toPx() },
-                            verticalLiftPx = DRAG_GHOST_VERTICAL_LIFT_PX,
+                            verticalLiftPx = with(density) { DRAG_GHOST_VERTICAL_LIFT.toPx() },
                         )
                     },
                     onDragEnd = {
@@ -356,7 +356,7 @@ fun GameContent(component: GameComponent) {
                                 dragGap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
                             IntOffset(
                                 x = (pos.x - fingerOff.x - ghostW / 2f).toInt(),
-                                y = (pos.y - fingerOff.y - ghostH - DRAG_GHOST_VERTICAL_LIFT_PX).toInt(),
+                                y = (pos.y - fingerOff.y - ghostH - DRAG_GHOST_VERTICAL_LIFT.toPx()).toInt(),
                             )
                         }
                         .graphicsLayer {
@@ -368,7 +368,6 @@ fun GameContent(component: GameComponent) {
                     val totalW = piece.shape.width * dragCellSize + (piece.shape.width - 1) * dragGap
                     val totalH = piece.shape.height * dragCellSize + (piece.shape.height - 1) * dragGap
                     val cellShape = RoundedCornerShape(4.dp)
-                    val shadowTint = color.copy(alpha = 0.45f)
 
                     Box(modifier = Modifier.size(totalW, totalH)) {
                         piece.shape.cells.forEach { pos ->
@@ -381,12 +380,10 @@ fun GameContent(component: GameComponent) {
                                         x = pos.x * (dragCellSize + dragGap),
                                         y = pos.y * (dragCellSize + dragGap),
                                     )
-                                    .shadow(
-                                        elevation = 16.dp,
+                                    .liftedPieceShadow(
+                                        pieceColor = color,
                                         shape = cellShape,
-                                        clip = false,
-                                        ambientColor = shadowTint,
-                                        spotColor = shadowTint,
+                                        lift = 1f,
                                     ),
                             )
                         }

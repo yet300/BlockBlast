@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import ge.yet.blockblast.feature.root.RootComponent
 import ge.yet3.blokblast.screen.root.RootContent
 import ge.yet3.blokblast.theme.BlockBlastTheme
@@ -19,11 +20,12 @@ fun App(rootComponent: RootComponent) {
         val vibrationEnabled by rootComponent.vibrationEnabled.collectAsState()
         val soundEnabled by rootComponent.soundEnabled.collectAsState()
         val tutorialSeen by rootComponent.tutorialSeen.collectAsState()
+        val onTutorialSeen = remember(rootComponent) { { rootComponent.onTutorialSeen() } }
         CompositionLocalProvider(
             LocalVibrationEnabled provides vibrationEnabled,
             LocalSoundEnabled provides soundEnabled,
             LocalTutorialSeen provides tutorialSeen,
-            LocalOnTutorialSeen provides rootComponent::onTutorialSeen,
+            LocalOnTutorialSeen provides onTutorialSeen,
         ) {
             RootContent(component = rootComponent)
         }
