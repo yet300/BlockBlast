@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -345,11 +346,12 @@ fun GameContent(component: GameComponent) {
                             scaleX = 1.15f
                             scaleY = 1.15f
                             alpha = 0.85f
-                            shadowElevation = 16f
                         },
                 ) {
                     val totalW = piece.shape.width * dragCellSize + (piece.shape.width - 1) * dragGap
                     val totalH = piece.shape.height * dragCellSize + (piece.shape.height - 1) * dragGap
+                    val cellShape = RoundedCornerShape(4.dp)
+                    val shadowTint = color.copy(alpha = 0.45f)
 
                     Box(modifier = Modifier.size(totalW, totalH)) {
                         piece.shape.cells.forEach { pos ->
@@ -357,10 +359,18 @@ fun GameContent(component: GameComponent) {
                                 color = color,
                                 cellSize = dragCellSize,
                                 filled = true,
-                                modifier = Modifier.offset(
-                                    x = pos.x * (dragCellSize + dragGap),
-                                    y = pos.y * (dragCellSize + dragGap),
-                                ),
+                                modifier = Modifier
+                                    .offset(
+                                        x = pos.x * (dragCellSize + dragGap),
+                                        y = pos.y * (dragCellSize + dragGap),
+                                    )
+                                    .shadow(
+                                        elevation = 16.dp,
+                                        shape = cellShape,
+                                        clip = false,
+                                        ambientColor = shadowTint,
+                                        spotColor = shadowTint,
+                                    ),
                             )
                         }
                     }
