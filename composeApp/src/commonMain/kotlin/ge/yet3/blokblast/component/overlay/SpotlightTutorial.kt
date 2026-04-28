@@ -105,25 +105,33 @@ fun SpotlightTutorial(
             // BlendMode.Clear needs an offscreen layer to actually punch a hole.
             .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
             .drawWithCache {
-                val hasTarget = right > left && bottom > top
-                val hole = if (hasTarget) {
-                    Rect(left - padPx, top - padPx, right + padPx, bottom + padPx)
-                } else null
+                // Pass the four floats directly — animateFloatAsState is per-frame
+                // and constructing a Rect/Offset/Size each time would allocate on
+                // every animation tick. drawWithCache only re-runs when the keys
+                // referenced inside change, so we still get caching of the lambda.
                 onDrawWithContent {
                     drawRect(scrimColor)
-                    if (hole != null) {
+                    val hasTarget = right > left && bottom > top
+                    if (hasTarget) {
+                        val holeLeft = left - padPx
+                        val holeTop = top - padPx
+                        val holeWidth = (right - left) + 2f * padPx
+                        val holeHeight = (bottom - top) + 2f * padPx
+                        val topLeft = Offset(holeLeft, holeTop)
+                        val size = Size(holeWidth, holeHeight)
+                        val corner = CornerRadius(cornerPx, cornerPx)
                         drawRoundRect(
                             color = Color.Transparent,
-                            topLeft = Offset(hole.left, hole.top),
-                            size = Size(hole.width, hole.height),
-                            cornerRadius = CornerRadius(cornerPx, cornerPx),
+                            topLeft = topLeft,
+                            size = size,
+                            cornerRadius = corner,
                             blendMode = BlendMode.Clear,
                         )
                         drawRoundRect(
                             color = ringColor,
-                            topLeft = Offset(hole.left, hole.top),
-                            size = Size(hole.width, hole.height),
-                            cornerRadius = CornerRadius(cornerPx, cornerPx),
+                            topLeft = topLeft,
+                            size = size,
+                            cornerRadius = corner,
                             style = Stroke(width = 4f),
                         )
                     }
@@ -132,7 +140,8 @@ fun SpotlightTutorial(
             },
     ) {
         Callout(
-            target = Rect(left, top, right, bottom),
+            targetBottom = bottom,
+            targetVisible = right > left && bottom > top,
             title = step.title,
             body = step.body,
             isLast = isLast,
@@ -144,7 +153,8 @@ fun SpotlightTutorial(
 
 @Composable
 private fun BoxScope.Callout(
-    target: Rect,
+    targetBottom: Float,
+    targetVisible: Boolean,
     title: String,
     body: String,
     isLast: Boolean,
@@ -153,7 +163,7 @@ private fun BoxScope.Callout(
 ) {
     val density = LocalDensity.current
     val gapPx = with(density) { 16.dp.toPx() }
-    val hasTarget = target.height > 0f && target.width > 0f
+    val hasTarget = targetVisible
 
     val cardModifier = Modifier
         .padding(horizontal = 24.dp)
@@ -167,7 +177,7 @@ private fun BoxScope.Callout(
         } else {
             Modifier
                 .align(Alignment.TopCenter)
-                .offset { IntOffset(0, (target.bottom + gapPx).toInt()) }
+                .offset { IntOffset(0, (targetBottom + gapPx).toInt()) }
                 .then(cardModifier)
         },
         verticalArrangement = Arrangement.spacedBy(8.dp),
