@@ -65,9 +65,15 @@ internal class GameStoreFactory(
                         }
 
                         // ── 3. Game-over transitions ──────────────────────────────────────
-                        // distinctUntilChanged on isGameOver gives us one emission per
-                        // edge (false→true and true→false) with no manual wasGameOver var.
-                        // engine.state is a StateFlow so .value is always current.
+                        // We need *real* edges (false→true / true→false), not the
+                        // initial replay value of the StateFlow. If the user
+                        // exits the game while the game-over overlay is up and
+                        // re-enters, a new GameStore subscribes to engine.state
+                        // and the very first emission would be `true` again —
+                        // distinctUntilChanged() would let it through and the
+                        // collector would (incorrectly) start a fresh 5s
+                        // countdown. So we seed `previous` from the current
+                        // engine value and only react when it changes.
                         launch {
                             var countdownJob: Job? = null
                             // Track the best score at the start of each round so we can
@@ -78,11 +84,13 @@ internal class GameStoreFactory(
                                 settings.bestScore.value,
                             )
                             var reviewRequested = false
+                            var previousIsGameOver = engine.state.value.isGameOver
 
                             engine.state
                                 .map { it.isGameOver }
-                                .distinctUntilChanged()
                                 .collect { isGameOver ->
+                                    if (isGameOver == previousIsGameOver) return@collect
+                                    previousIsGameOver = isGameOver
                                     val gameState = engine.state.value
                                     if (isGameOver) {
                                         // false → true: start countdown & maybe trigger review.
@@ -148,7 +156,16 @@ internal class GameStoreFactory(
                     }
 
                     onIntent<GameStore.Intent.Start> {
-                        if (engine.state.value.currentPieces.isEmpty()) engine.startNewGame()
+                        // GameEngine is AppScope-scoped, so it survives the
+                        // Game component being popped & re-pushed (Home → Play).
+                        // Without this, returning to Home after game-over and
+                        // pressing Play would re-show the dead board because
+                        // currentPieces wasn't empty.
+                        val s = engine.state.value
+                        if (s.currentPieces.isEmpty() || s.isGameOver) {
+                            engine.startNewGame(bestScore = s.bestScore)
+                            launch { audio.startMusic() }
+                        }
                     }
                     onIntent<GameStore.Intent.Place> { intent ->
                         engine.placePiece(intent.pieceId, intent.x, intent.y)
