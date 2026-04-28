@@ -1,0 +1,8 @@
+What's new in 1.1.0
+
+• First-launch tutorial: a quick spotlight walks new players through the tray and the board.
+• Polished drag-and-drop: piece shadow now traces the actual shape (no more square shadow on L/T/S pieces).
+• Lift height adapts to your device — feels right on phones and tablets.
+• Score & save fixes: "Best" reflects your real lifetime high score, and the game-over countdown no longer restarts when you come back.
+• "Continue" on the home screen actually continues your saved game across cold starts.
+• Smoother audio handling around app pause/resume and game-over.
