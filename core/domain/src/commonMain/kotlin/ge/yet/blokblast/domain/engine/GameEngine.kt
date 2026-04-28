@@ -74,6 +74,22 @@ class GameEngine(
         _state.value = state
     }
 
+    /**
+     * Lift the engine's known best score to [persistedBest] without disturbing
+     * the rest of the state. Called when a fresh process learns the user's
+     * lifetime best from disk — the engine starts at 0 and otherwise wouldn't
+     * know about it, so subsequent `max(currentBest, score)` updates would
+     * silently shadow the real high score with whatever the player just scored.
+     *
+     * No-op if [persistedBest] isn't actually higher.
+     */
+    fun seedBestScore(persistedBest: Long) {
+        val current = _state.value
+        if (persistedBest > current.bestScore) {
+            _state.value = current.copy(bestScore = persistedBest)
+        }
+    }
+
     // ---------- Public API used by UI ----------
 
     /**

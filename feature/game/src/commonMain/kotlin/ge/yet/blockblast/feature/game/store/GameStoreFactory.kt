@@ -32,14 +32,23 @@ internal class GameStoreFactory(
             Store<GameStore.Intent, GameStoreState, Nothing> by storeFactory.create(
                 name = "GameStore",
                 initialState = GameStoreState(
-                    // Seed in-engine best score from persisted settings so a
-                    // fresh process knows the player's lifetime best before any
-                    // game has finished this session.
-                    game = engine.state.value.copy(bestScore = settings.bestScore.value),
+                    game = engine.state.value,
                     continueCountdown = GameStoreState.COUNTDOWN_INACTIVE,
                 ),
                 executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, Nothing> {
                     onAction<GameStore.Action> {
+                        // ── 0. Seed the engine with the persisted best score ──────────────
+                        // GameEngine starts at bestScore = 0; without seeding it, the
+                        // first `engine.state` emission (section 1) would overwrite our
+                        // initialState with that 0, and `max(currentBest, score)` in
+                        // placePiece would collapse "Best" onto the current round's
+                        // score. seedBestScore is a no-op if the engine already knows a
+                        // higher value (e.g. carried over from an earlier session in
+                        // the same process), so it is safe to run on every bootstrap.
+                        // Synchronous, so it lands in the StateFlow before section 1's
+                        // collect subscribes.
+                        engine.seedBestScore(settings.bestScore.value)
+
                         // ── 1. State snapshots ────────────────────────────────────────────
                         // StateFlow already deduplicates by structural equality, so no
                         // distinctUntilChanged() needed here. Grid now uses IntArray
