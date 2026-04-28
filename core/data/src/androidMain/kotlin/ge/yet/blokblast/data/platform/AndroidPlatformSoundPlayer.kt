@@ -13,13 +13,19 @@ import ge.yet.blokblast.domain.model.FeedbackType
  * Android actual — uses [SoundPool] for low-latency SFX and [MediaPlayer] for
  * looping background music.
  *
- * Audio files live in a single place: `composeApp/src/commonMain/composeResources/files/audio/`.
- * Compose Multiplatform packages those files into `assets/composeResources/
- * blockblast.composeapp.generated.resources/files/audio/` in the APK, so they
- * are accessed via [Context.getAssets] without any duplication across modules.
- *
- * Missing assets are silently ignored — the engine never crashes in dev.
- * `internal` — invisible to composeApp/feature modules.
+ * Two correctness fixes vs. the naive impl:
+ *   1. SoundPool readiness — `pool.load()` is async and `pool.play()` against a
+ *      not-yet-ready sample silently drops with `play soundID N not READY`.
+ *      We register an `OnLoadCompleteListener` and only `pool.play()` IDs we
+ *      have seen complete loading. Plays before-load are dropped silently
+ *      rather than producing a warning.
+ *   2. Music re-entrancy — `MediaPlayer.isPlaying` returns false while the
+ *      player is in PREPARING state. A second `startMusic()` call during
+ *      preparation would `release()` the in-flight player, the old
+ *      `OnPreparedListener` would then fire `start()` on the released player
+ *      and the audio stack would tear the stream down 30–40 ms later. We
+ *      track an explicit `musicState` (IDLE / PREPARING / PLAYING) and only
+ *      build a new player when we are actually idle.
  */
 @SingleIn(AppScope::class)
 @Inject
@@ -39,15 +45,30 @@ internal class AndroidPlatformSoundPlayer(
 
     /** SoundPool IDs keyed by resource name (0 = failed / not found). */
     private val ids: MutableMap<String, Int> = mutableMapOf()
+
+    /** IDs that have completed loading and are safe to play. */
+    private val readyIds: MutableSet<Int> = mutableSetOf()
+
+    private enum class MusicState { IDLE, PREPARING, PLAYING }
+
     private var musicPlayer: MediaPlayer? = null
+    private var musicState: MusicState = MusicState.IDLE
 
     init {
-        // Preload common SFX so the first placement/clear isn't dropped —
-        // SoundPool.load is async and samples can't be played until loaded.
+        pool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0) readyIds += sampleId
+        }
+        // Pre-load common SFX so the first placement/clear isn't dropped.
+        // Voice files are still lazy-loaded the first time they're requested
+        // and will silently drop the very first play (rare and not worth a
+        // queue). Plain SFX are warmed here.
         listOf(
             "block_place",
             "line_clear_1", "line_clear_2", "line_clear_3", "line_clear_4",
-        ).forEach { resolve(it).also { id -> if (id != 0) ids[it] = id } }
+        ).forEach { name ->
+            val id = resolve(name)
+            if (id != 0) ids[name] = id
+        }
     }
 
     override fun playPlacement() = safePlay("block_place")
@@ -58,22 +79,23 @@ internal class AndroidPlatformSoundPlayer(
         safePlay("voice_${type.name.lowercase()}")
 
     override fun playVoiceCombo(combo: Int) {
-        // Try specific combo file first (voice_combo_1…10), fall back to voice_amazing
         val specific = "voice_combo_${combo.coerceAtMost(10)}"
         val id = ids.getOrPut(specific) { resolve(specific) }
-        if (id != 0) {
+        if (id != 0 && id in readyIds) {
             pool.play(id, 1f, 1f, 1, 0, 1f)
-        } else {
+        } else if (id == 0 || id !in readyIds) {
+            // Specific combo file missing or still loading — fall back.
             safePlay("voice_amazing")
         }
     }
 
     override fun startMusic() {
-        if (musicPlayer?.isPlaying == true) return
+        // Re-entrancy guard. PREPARING means a previous startMusic is in flight;
+        // do not release it from under its OnPreparedListener.
+        if (musicState != MusicState.IDLE) return
         runCatching {
             val afd = ctx.assets.openFd("${AUDIO_DIR}music_ambient.mp3")
-            musicPlayer?.release()
-            musicPlayer = MediaPlayer().apply {
+            val player = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -84,21 +106,54 @@ internal class AndroidPlatformSoundPlayer(
                 afd.close()
                 isLooping = true
                 setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
-                // prepareAsync instead of prepare: MP3 decode/setup can block the
-                // caller thread for hundreds of ms. Start playback from the
-                // OnPreparedListener so we never stall the UI.
-                setOnPreparedListener { start() }
-                prepareAsync()
+                setOnPreparedListener {
+                    // The user may have called stopMusic() while we were
+                    // preparing; honor that by tearing down here instead of
+                    // starting a stream that will immediately be stopped.
+                    if (musicState == MusicState.PREPARING) {
+                        musicState = MusicState.PLAYING
+                        it.start()
+                    } else {
+                        runCatching { it.release() }
+                    }
+                }
+                setOnErrorListener { mp, _, _ ->
+                    runCatching { mp.release() }
+                    if (musicPlayer === mp) {
+                        musicPlayer = null
+                        musicState = MusicState.IDLE
+                    }
+                    true
+                }
             }
+            musicPlayer = player
+            musicState = MusicState.PREPARING
+            player.prepareAsync()
+        }.onFailure {
+            // Asset missing or MediaPlayer construction failed — stay idle.
+            musicPlayer = null
+            musicState = MusicState.IDLE
         }
     }
 
     override fun stopMusic() {
-        runCatching {
-            musicPlayer?.stop()
-            musicPlayer?.release()
+        val player = musicPlayer ?: return
+        when (musicState) {
+            MusicState.PLAYING -> runCatching { player.stop() }
+            MusicState.PREPARING -> {
+                // Don't call stop() on a preparing player — that's an
+                // IllegalStateException. The OnPreparedListener will see the
+                // state has flipped and tear down for us. Mark idle now so a
+                // racing startMusic() will create a fresh player after the
+                // old one finishes preparing and disposes itself.
+            }
+            MusicState.IDLE -> Unit
         }
-        musicPlayer = null
+        if (musicState != MusicState.PREPARING) {
+            runCatching { player.release() }
+            musicPlayer = null
+        }
+        musicState = MusicState.IDLE
     }
 
     override fun release() {
@@ -108,12 +163,17 @@ internal class AndroidPlatformSoundPlayer(
 
     private fun safePlay(resName: String) {
         val id = ids.getOrPut(resName) { resolve(resName) }
-        if (id != 0) pool.play(id, 1f, 1f, 1, 0, 1f)
+        if (id != 0 && id in readyIds) {
+            pool.play(id, 1f, 1f, 1, 0, 1f)
+        }
+        // else: still loading — silently drop. The next call will succeed.
     }
 
     /**
-     * Opens the asset as an [AssetFileDescriptor] and loads it into [SoundPool].
-     * Tries `.wav` then `.mp3`; returns 0 if not found.
+     * Opens the asset as an [android.content.res.AssetFileDescriptor] and
+     * registers it with [SoundPool]. Tries `.wav` then `.mp3`; returns 0 if
+     * not found. The returned ID is *not* immediately playable — the
+     * [SoundPool.OnLoadCompleteListener] decides that.
      */
     private fun resolve(resName: String): Int {
         for (ext in AUDIO_EXTENSIONS) {
@@ -131,13 +191,8 @@ internal class AndroidPlatformSoundPlayer(
     private companion object {
         const val MAX_STREAMS = 6
         const val MUSIC_VOLUME = 0.4f
-        // Hoisted to avoid per-call listOf(...) allocation in resolve().
         private val AUDIO_EXTENSIONS = arrayOf("wav", "mp3")
 
-        /**
-         * CMP packages `composeResources/files/` into the APK assets under this prefix.
-         * Derived from the generated [blockblast.composeapp.generated.resources.Res] class.
-         */
         const val AUDIO_DIR =
             "composeResources/blockblast.composeapp.generated.resources/files/audio/"
     }

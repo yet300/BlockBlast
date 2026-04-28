@@ -22,8 +22,6 @@ internal class IosStoreReviewRepository : StoreReviewRepository {
         )
     }
 
-    override fun init() = delegate.init()
-
     override fun requestInAppReview(): Flow<ReviewCode> =
         delegate.requestInAppReview().map { it.toDomain() }
 

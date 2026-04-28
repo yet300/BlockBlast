@@ -19,16 +19,10 @@ internal class AndroidStoreReviewRepository(
     private val activityProvider: ActivityProvider,
 ) : StoreReviewRepository {
 
-    // Cache the delegate keyed by Activity identity so init() and subsequent
-    // request*() calls target the same manager instance. Allocating a fresh
-    // manager per call (the previous behaviour) meant init() seeded a different
-    // instance than the one request*() used, so the review flow could stall.
+    // Cache the delegate keyed by Activity identity so successive request*()
+    // calls reuse the same manager instance bound to the foreground Activity.
     private var cachedDelegate: GooglePlayInAppReviewManager? = null
     private var cachedActivity: Activity? = null
-
-    override fun init() {
-        delegate().init()
-    }
 
     override fun requestInAppReview(): Flow<ReviewCode> =
         delegate().requestInAppReview().map { it.toDomain() }
