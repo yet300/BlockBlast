@@ -1,5 +1,6 @@
-package ge.yet.blokblast.data.internal
+package ge.yet.blokblast.data.platform
 
+import ge.yet.blokblast.data.internal.InAppReviewDelegate
 import ge.yet.blokblast.data.utils.systemVersionMoreOrEqualThan
 import ge.yet.blokblast.domain.repository.ReviewCode
 import kotlinx.coroutines.channels.trySendBlocking
