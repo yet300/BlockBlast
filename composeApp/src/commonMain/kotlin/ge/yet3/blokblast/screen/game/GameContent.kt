@@ -89,6 +89,13 @@ import org.jetbrains.compose.resources.stringResource
 
 // Ghost-piece visual constants. Shared with DragDropState so the snap
 // target always matches where the floating ghost is rendered.
+//
+// All three are Dp — the drag pipeline converts to pixels on demand using
+// LocalDensity, and the cached pixel values in `cellSizePx`/`gapPx` come
+// from GameGrid.onGloballyPositioned, which re-fires on every relayout
+// (rotation, foldable unfold, multi-window split). So density changes are
+// transparent. The only edge case — density flipping *mid-drag* — doesn't
+// happen on real devices and is intentionally not handled.
 private val DRAG_GHOST_CELL_SIZE = 36.dp
 private val DRAG_GHOST_GAP = 2.dp
 private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
@@ -341,54 +348,17 @@ fun GameContent(component: GameComponent) {
             // ── Floating dragged piece overlay ───────────────────────────
             if (dragDrop.isDragging) {
                 val piece = dragDrop.draggedPiece!!
-                val color = pieceColor(piece.colorId)
-                val dragCellSize = DRAG_GHOST_CELL_SIZE
-                val dragGap = DRAG_GHOST_GAP
-
-                Box(
-                    modifier = Modifier
-                        .offset {
-                            val pos = dragDrop.dragPosition
-                            val fingerOff = dragDrop.fingerOffset
-                            val ghostW = dragCellSize.toPx() * piece.shape.width +
-                                dragGap.toPx() * (piece.shape.width - 1).coerceAtLeast(0)
-                            val ghostH = dragCellSize.toPx() * piece.shape.height +
-                                dragGap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
-                            IntOffset(
-                                x = (pos.x - fingerOff.x - ghostW / 2f).toInt(),
-                                y = (pos.y - fingerOff.y - ghostH - DRAG_GHOST_VERTICAL_LIFT.toPx()).toInt(),
-                            )
-                        }
-                        .graphicsLayer {
-                            scaleX = 1.15f
-                            scaleY = 1.15f
-                            alpha = 0.85f
-                        },
-                ) {
-                    val totalW = piece.shape.width * dragCellSize + (piece.shape.width - 1) * dragGap
-                    val totalH = piece.shape.height * dragCellSize + (piece.shape.height - 1) * dragGap
-                    val cellShape = RoundedCornerShape(4.dp)
-
-                    Box(modifier = Modifier.size(totalW, totalH)) {
-                        piece.shape.cells.forEach { pos ->
-                            BlockPiece(
-                                color = color,
-                                cellSize = dragCellSize,
-                                filled = true,
-                                modifier = Modifier
-                                    .offset(
-                                        x = pos.x * (dragCellSize + dragGap),
-                                        y = pos.y * (dragCellSize + dragGap),
-                                    )
-                                    .liftedPieceShadow(
-                                        pieceColor = color,
-                                        shape = cellShape,
-                                        lift = 1f,
-                                    ),
-                            )
-                        }
-                    }
-                }
+                DraggedPieceOverlay(
+                    piece = piece,
+                    color = pieceColor(piece.colorId),
+                    cellSize = DRAG_GHOST_CELL_SIZE,
+                    gap = DRAG_GHOST_GAP,
+                    verticalLift = DRAG_GHOST_VERTICAL_LIFT,
+                    dragPositionX = dragDrop.dragPosition.x,
+                    dragPositionY = dragDrop.dragPosition.y,
+                    fingerOffsetX = dragDrop.fingerOffset.x,
+                    fingerOffsetY = dragDrop.fingerOffset.y,
+                )
             }
 
             // ── First-launch spotlight tutorial ─────────────────────────────
