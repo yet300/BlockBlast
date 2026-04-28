@@ -13,6 +13,9 @@ interface SettingsRepository {
     /** How many times the in-app review prompt has been shown to this user. */
     val reviewPromptCount: StateFlow<Int>
 
+    /** Whether the user has seen (or dismissed) the first-launch tutorial. */
+    val tutorialSeen: StateFlow<Boolean>
+
     suspend fun setSoundEnabled(enabled: Boolean)
     suspend fun setVibrationEnabled(enabled: Boolean)
     suspend fun setDarkTheme(enabled: Boolean)
@@ -22,4 +25,7 @@ interface SettingsRepository {
 
     /** Increment the lifetime review-prompt counter by one. */
     suspend fun incrementReviewPromptCount()
+
+    /** Mark the first-launch tutorial as seen so it does not re-appear. */
+    suspend fun setTutorialSeen()
 }

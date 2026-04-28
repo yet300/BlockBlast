@@ -29,4 +29,12 @@
    <locale android:name="da"/>
    <locale android:name="fi"/>
    <locale android:name="nb"/>
+   <locale android:name="az"/>
+   <locale android:name="kk"/>
+   <locale android:name="hy"/>
+   <locale android:name="be"/>
+   <locale android:name="uz"/>
+   <locale android:name="ky"/>
+   <locale android:name="tg"/>
+   <locale android:name="tk"/>
 </locale-config>

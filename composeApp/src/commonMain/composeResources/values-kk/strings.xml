@@ -1,0 +1,54 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Block Blast</string>
+
+    <!-- Home Screen -->
+    <string name="play">Ойнау</string>
+    <string name="continue_game">Жалғастыру</string>
+    <string name="new_game">Жаңа ойын</string>
+    <string name="best_score_label">Ең жоғары ұпай</string>
+    <string name="home_tagline">Тыныш шағын жұмбақ</string>
+
+    <!-- Game Screen -->
+    <string name="score">Ұпай</string>
+    <string name="best">Рекорд</string>
+    <string name="game_over">Ойын аяқталды</string>
+    <string name="game_over_subtitle">Тақтада қозғалыс қалмады</string>
+    <string name="new_best">Жаңа рекорд</string>
+    <string name="revive">Жалғастыру</string>
+    <string name="restart">Жаңа ойын</string>
+    <string name="exit_to_home">Шығу</string>
+    <string name="cd_settings">Параметрлер</string>
+    <string name="cd_back">Артқа</string>
+    <string name="cd_close">Жабу</string>
+
+    <!-- Settings -->
+    <string name="settings">Параметрлер</string>
+    <string name="sound">Дыбыс</string>
+    <string name="sound_subtitle">Ойынның дыбыстық эффектілері</string>
+    <string name="vibration">Діріл</string>
+    <string name="vibration_subtitle">Орналастыру кезіндегі тактильді кері байланыс</string>
+    <string name="dark_theme">Қараңғы тақырып</string>
+    <string name="dark_theme_subtitle">Әрқашан қараңғы режим</string>
+    <string name="privacy_policy">Құпиялылық саясаты</string>
+    <string name="privacy_policy_subtitle">Деректеріңізді қалай өңдейміз</string>
+
+    <!-- Common -->
+    <string name="exit">Шығу</string>
+
+    <!-- Feedback Popups -->
+    <string name="feedback_good">Жақсы</string>
+    <string name="feedback_great">Тамаша!</string>
+    <string name="feedback_excellent">Керемет!</string>
+    <string name="feedback_unbelievable">Сенгісіз!</string>
+    <string name="feedback_combo">Комбо</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Фигураны таңдаңыз</string>
+    <string name="tutorial_tray_body">Көтеру үшін панельдегі фигураны басып тұрыңыз.</string>
+    <string name="tutorial_grid_title">Тақтаға орналастырыңыз</string>
+    <string name="tutorial_grid_body">Орналастыру үшін фигураны тақтаға сүйреңіз. Тазалау үшін толық жолды немесе бағанды толтырыңыз.</string>
+    <string name="tutorial_next">Келесі</string>
+    <string name="tutorial_done">Түсінікті</string>
+    <string name="tutorial_skip">Өткізіп жіберу</string>
+</resources>

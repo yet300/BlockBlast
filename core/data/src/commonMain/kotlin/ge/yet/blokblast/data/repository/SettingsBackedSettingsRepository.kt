@@ -57,6 +57,9 @@ internal class SettingsBackedSettingsRepository(
     override val reviewPromptCount: StateFlow<Int> =
         settings.getIntStateFlow(scope, KEY_REVIEW_PROMPT_COUNT, defaultValue = 0)
 
+    override val tutorialSeen: StateFlow<Boolean> =
+        settings.getBooleanStateFlow(scope, KEY_TUTORIAL_SEEN, defaultValue = false)
+
     override suspend fun setSoundEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_SOUND, enabled)
     }
@@ -85,11 +88,16 @@ internal class SettingsBackedSettingsRepository(
         }
     }
 
+    override suspend fun setTutorialSeen() = withContext(dispatchers.io) {
+        settings.putBoolean(KEY_TUTORIAL_SEEN, true)
+    }
+
     private companion object {
         const val KEY_SOUND = "blockblast.sound"
         const val KEY_VIBRATION = "blockblast.vibration"
         const val KEY_DARK = "blockblast.dark_theme"
         const val KEY_BEST_SCORE = "blockblast.best_score"
         const val KEY_REVIEW_PROMPT_COUNT = "blockblast.review_prompt_count"
+        const val KEY_TUTORIAL_SEEN = "blockblast.tutorial_seen"
     }
 }

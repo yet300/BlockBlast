@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Mükemmel!</string>
     <string name="feedback_unbelievable">İnanılmaz!</string>
     <string name="feedback_combo">Kombo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Bir parça seç</string>
+    <string name="tutorial_tray_body">Kaldırmak için tepsideki bir parçaya basılı tutun.</string>
+    <string name="tutorial_grid_title">Tahtaya yerleştir</string>
+    <string name="tutorial_grid_body">Yerleştirmek için parçayı tahtaya sürükleyin. Temizlemek için tam bir satır veya sütun doldurun.</string>
+    <string name="tutorial_next">Sonraki</string>
+    <string name="tutorial_done">Anladım</string>
+    <string name="tutorial_skip">Geç</string>
 </resources>

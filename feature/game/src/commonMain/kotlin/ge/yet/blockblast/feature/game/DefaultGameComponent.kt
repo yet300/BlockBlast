@@ -13,12 +13,14 @@ import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
+import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AudioRepository
+import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -27,6 +29,7 @@ internal class DefaultGameComponent(
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
+    private val storeReview: StoreReviewRepository,
     private val onExitClickedCb: () -> Unit,
 ) : ComponentContext by componentContext,
     GameComponent {
@@ -54,6 +57,16 @@ internal class DefaultGameComponent(
         lifecycle.doOnStart { store.accept(GameStore.Intent.Start) }
         // Stop music when the user navigates away (back button or exit)
         lifecycle.doOnDestroy { lifecycleScope.launch { audio.stopMusic() } }
+        // One-shot effects from the store. Per the mvikotlin-code skill,
+        // navigation/SDK calls live in the component, not the executor.
+        lifecycleScope.launch {
+            store.labels.collect { label ->
+                when (label) {
+                    GameStore.Label.RequestReview ->
+                        storeReview.requestInAppReview().collect {}
+                }
+            }
+        }
     }
 
 
@@ -94,6 +107,7 @@ internal class DefaultGameComponentFactory(
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
+    private val storeReview: StoreReviewRepository,
 ) : GameComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
@@ -103,6 +117,7 @@ internal class DefaultGameComponentFactory(
         gameStoreFactory = gameStoreFactory,
         settingsComponent = settingsComponent,
         audio = audio,
+        storeReview = storeReview,
         onExitClickedCb = onExitClicked,
     )
 }

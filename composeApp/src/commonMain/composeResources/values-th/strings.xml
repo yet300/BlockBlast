@@ -42,4 +42,13 @@
     <string name="feedback_excellent">ยอดเยี่ยม!</string>
     <string name="feedback_unbelievable">เหลือเชื่อ!</string>
     <string name="feedback_combo">คอมโบ</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">เลือกชิ้นส่วน</string>
+    <string name="tutorial_tray_body">แตะค้างที่ชิ้นส่วนในถาดเพื่อยกขึ้น</string>
+    <string name="tutorial_grid_title">วางลงบนกระดาน</string>
+    <string name="tutorial_grid_body">ลากชิ้นส่วนลงบนกระดานเพื่อวาง เติมให้เต็มแถวหรือคอลัมน์เพื่อลบออก</string>
+    <string name="tutorial_next">ถัดไป</string>
+    <string name="tutorial_done">ตกลง</string>
+    <string name="tutorial_skip">ข้าม</string>
 </resources>

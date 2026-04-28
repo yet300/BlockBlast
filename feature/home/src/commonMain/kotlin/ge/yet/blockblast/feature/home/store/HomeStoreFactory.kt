@@ -1,6 +1,7 @@
 package ge.yet.blockblast.feature.home.store
 
 import com.arkivanov.mvikotlin.core.store.Reducer
+import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
@@ -21,18 +22,28 @@ internal class HomeStoreFactory(
             Store<HomeStore.Intent, HomeStore.State, Nothing> by storeFactory.create(
                 name = "HomeStore",
                 initialState = HomeStore.State(),
-                executorFactory = coroutineExecutorFactory<HomeStore.Intent, Nothing, HomeStore.State, HomeStore.Msg, Nothing> {
+                bootstrapper = SimpleBootstrapper(HomeStore.Action.LoadStarted),
+                executorFactory = coroutineExecutorFactory<HomeStore.Intent, HomeStore.Action, HomeStore.State, HomeStore.Msg, Nothing> {
+                    // Per the mvikotlin-code skill, the *initial* load is bootstrap
+                    // work and must come from an Action, not an Intent. Intent.Refresh
+                    // re-runs the same load when the screen is brought back to the
+                    // foreground (see DefaultHomeComponent.lifecycle.doOnStart).
+                    onAction<HomeStore.Action.LoadStarted> {
+                        launch {
+                            val saved = saveRepository.load()
+                            val bestScore = maxOf(settings.bestScore.value, saved?.bestScore ?: 0L)
+                            dispatch(
+                                HomeStore.Msg.Loaded(
+                                    bestScore = bestScore,
+                                    hasSavedGame = saved != null && !saved.isGameOver,
+                                )
+                            )
+                        }
+                    }
                     onIntent<HomeStore.Intent.Refresh> {
                         launch {
                             val saved = saveRepository.load()
-                            // Prefer the persisted settings best score — it
-                            // survives clears of the in-memory save and is the
-                            // true lifetime peak.
-                            val persistedBest = settings.bestScore.value
-                            val bestScore = maxOf(
-                                persistedBest,
-                                saved?.bestScore ?: 0L,
-                            )
+                            val bestScore = maxOf(settings.bestScore.value, saved?.bestScore ?: 0L)
                             dispatch(
                                 HomeStore.Msg.Loaded(
                                     bestScore = bestScore,
