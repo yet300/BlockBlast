@@ -14,12 +14,6 @@ interface StoreReviewRepository {
      * Returns a Flow that emits ReviewCode indicating the result.
      */
     fun requestInMarketReview(): Flow<ReviewCode>
-    
-    /**
-     * Initializes the review manager (required for some platforms like App Gallery and Galaxy Store).
-     * Should be called before the fragment or activity is created.
-     */
-    fun init()
 }
 
 /**

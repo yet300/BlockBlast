@@ -4,7 +4,6 @@ import ge.yet.blokblast.domain.repository.ReviewCode
 import kotlinx.coroutines.flow.Flow
 
 internal interface InAppReviewDelegate {
-    fun init() {}
     fun requestInAppReview(): Flow<ReviewCode>
     fun requestInMarketReview(): Flow<ReviewCode>
 }

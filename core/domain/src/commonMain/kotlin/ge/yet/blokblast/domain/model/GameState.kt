@@ -23,6 +23,20 @@ data class GameState(
     val lastClearedCells: ClearEvent = ClearEvent(),
     val lastFeedback: FeedbackEvent = FeedbackEvent(),
     val lastPointsAwarded: PointsEvent = PointsEvent(),
+    /**
+     * Snapshot of [bestScore] at the start of the current round. Used at
+     * game-over to detect a *new* personal best that beat the previous best
+     * by [REVIEW_BEST_SCORE_DELTA] points (review-prompt qualifier). Lives
+     * on [GameState] rather than as a store-executor local so it survives
+     * store recreation when the user navigates Home → Play.
+     */
+    val bestAtRoundStart: Long = 0L,
+    /**
+     * Whether an in-app-review prompt has already fired for the current
+     * game-over event. Prevents the prompt from re-firing if the user exits
+     * the game-over screen, returns, and re-enters the same round.
+     */
+    val reviewPromptFiredThisRound: Boolean = false,
 ) {
     companion object {
         const val MAX_REVIVES = 1

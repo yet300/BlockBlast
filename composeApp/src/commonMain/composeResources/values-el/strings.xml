@@ -42,4 +42,13 @@
     <string name="feedback_excellent">Εξαιρετικά!</string>
     <string name="feedback_unbelievable">Απίστευτο!</string>
     <string name="feedback_combo">Combo</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">Επίλεξε ένα κομμάτι</string>
+    <string name="tutorial_tray_body">Πάτησε παρατεταμένα ένα κομμάτι στον δίσκο για να το σηκώσεις.</string>
+    <string name="tutorial_grid_title">Τοποθέτησέ το στο ταμπλό</string>
+    <string name="tutorial_grid_body">Σύρε το κομμάτι στο ταμπλό για να το τοποθετήσεις. Συμπλήρωσε μια ολόκληρη σειρά ή στήλη για να την εξαφανίσεις.</string>
+    <string name="tutorial_next">Επόμενο</string>
+    <string name="tutorial_done">Έγινε</string>
+    <string name="tutorial_skip">Παράλειψη</string>
 </resources>

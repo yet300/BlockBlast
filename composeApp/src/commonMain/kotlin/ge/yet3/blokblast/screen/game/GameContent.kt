@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import ge.yet3.blokblast.component.modifier.liftedPieceShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,6 +43,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Rect
+import ge.yet3.blokblast.component.overlay.SpotlightTutorial
+import ge.yet3.blokblast.component.overlay.rememberGameTutorialSteps
+import ge.yet3.blokblast.theme.LocalOnTutorialSeen
+import ge.yet3.blokblast.theme.LocalTutorialSeen
 import ge.yet3.blokblast.theme.LocalVibrationEnabled
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -81,9 +89,16 @@ import org.jetbrains.compose.resources.stringResource
 
 // Ghost-piece visual constants. Shared with DragDropState so the snap
 // target always matches where the floating ghost is rendered.
+//
+// All three are Dp — the drag pipeline converts to pixels on demand using
+// LocalDensity, and the cached pixel values in `cellSizePx`/`gapPx` come
+// from GameGrid.onGloballyPositioned, which re-fires on every relayout
+// (rotation, foldable unfold, multi-window split). So density changes are
+// transparent. The only edge case — density flipping *mid-drag* — doesn't
+// happen on real devices and is intentionally not handled.
 private val DRAG_GHOST_CELL_SIZE = 36.dp
 private val DRAG_GHOST_GAP = 2.dp
-private const val DRAG_GHOST_VERTICAL_LIFT_PX: Float = 80f
+private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
 fun GameContent(component: GameComponent) {
@@ -107,6 +122,12 @@ fun GameContent(component: GameComponent) {
     var gridOriginY by remember { mutableFloatStateOf(0f) }
     var cellSizePx by remember { mutableFloatStateOf(0f) }
     var gapPx by remember { mutableFloatStateOf(0f) }
+
+    // Bounds (root-coords) used by the first-launch spotlight tutorial.
+    var gridBounds by remember { mutableStateOf(Rect.Zero) }
+    var trayBounds by remember { mutableStateOf(Rect.Zero) }
+    val tutorialSeen = LocalTutorialSeen.current
+    val onTutorialSeen = LocalOnTutorialSeen.current
 
     var prevComboLevel by remember { mutableStateOf(model.comboLevel) }
     LaunchedEffect(model.comboLevel) {
@@ -240,7 +261,8 @@ fun GameContent(component: GameComponent) {
                             scaleY = entranceAnim.value
                             alpha = entranceAnim.value
                         }
-                        .shake(shakeState),
+                        .shake(shakeState)
+                        .onGloballyPositioned { gridBounds = it.boundsInRoot() },
                     dragDropState = dragDrop,
                     comboStripes = comboStripes,
                     comboLevel = model.comboLevel,
@@ -259,7 +281,10 @@ fun GameContent(component: GameComponent) {
                 PieceTray(
                     pieces = model.currentPieces,
                     selectedPieceId = selectedPieceId,
-                    modifier = Modifier.widthIn(max = 500.dp).padding(bottom = 8.dp),
+                    modifier = Modifier
+                        .widthIn(max = 500.dp)
+                        .padding(bottom = 8.dp)
+                        .onGloballyPositioned { trayBounds = it.boundsInRoot() },
                     onPieceSelected = { id ->
                         if (!dragDrop.isDragging) {
                             selectedPieceId = if (selectedPieceId == id) null else id
@@ -281,7 +306,7 @@ fun GameContent(component: GameComponent) {
                             grid = model.grid,
                             ghostCellSizePx = with(density) { DRAG_GHOST_CELL_SIZE.toPx() },
                             ghostGapPx = with(density) { DRAG_GHOST_GAP.toPx() },
-                            verticalLiftPx = DRAG_GHOST_VERTICAL_LIFT_PX,
+                            verticalLiftPx = with(density) { DRAG_GHOST_VERTICAL_LIFT.toPx() },
                         )
                     },
                     onDragEnd = {
@@ -323,48 +348,30 @@ fun GameContent(component: GameComponent) {
             // ── Floating dragged piece overlay ───────────────────────────
             if (dragDrop.isDragging) {
                 val piece = dragDrop.draggedPiece!!
-                val color = pieceColor(piece.colorId)
-                val dragCellSize = DRAG_GHOST_CELL_SIZE
-                val dragGap = DRAG_GHOST_GAP
+                DraggedPieceOverlay(
+                    piece = piece,
+                    color = pieceColor(piece.colorId),
+                    cellSize = DRAG_GHOST_CELL_SIZE,
+                    gap = DRAG_GHOST_GAP,
+                    verticalLift = DRAG_GHOST_VERTICAL_LIFT,
+                    dragPositionX = dragDrop.dragPosition.x,
+                    dragPositionY = dragDrop.dragPosition.y,
+                    fingerOffsetX = dragDrop.fingerOffset.x,
+                    fingerOffsetY = dragDrop.fingerOffset.y,
+                )
+            }
 
-                Box(
-                    modifier = Modifier
-                        .offset {
-                            val pos = dragDrop.dragPosition
-                            val fingerOff = dragDrop.fingerOffset
-                            val ghostW = dragCellSize.toPx() * piece.shape.width +
-                                dragGap.toPx() * (piece.shape.width - 1).coerceAtLeast(0)
-                            val ghostH = dragCellSize.toPx() * piece.shape.height +
-                                dragGap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
-                            IntOffset(
-                                x = (pos.x - fingerOff.x - ghostW / 2f).toInt(),
-                                y = (pos.y - fingerOff.y - ghostH - DRAG_GHOST_VERTICAL_LIFT_PX).toInt(),
-                            )
-                        }
-                        .graphicsLayer {
-                            scaleX = 1.15f
-                            scaleY = 1.15f
-                            alpha = 0.85f
-                            shadowElevation = 16f
-                        },
-                ) {
-                    val totalW = piece.shape.width * dragCellSize + (piece.shape.width - 1) * dragGap
-                    val totalH = piece.shape.height * dragCellSize + (piece.shape.height - 1) * dragGap
-
-                    Box(modifier = Modifier.size(totalW, totalH)) {
-                        piece.shape.cells.forEach { pos ->
-                            BlockPiece(
-                                color = color,
-                                cellSize = dragCellSize,
-                                filled = true,
-                                modifier = Modifier.offset(
-                                    x = pos.x * (dragCellSize + dragGap),
-                                    y = pos.y * (dragCellSize + dragGap),
-                                ),
-                            )
-                        }
-                    }
-                }
+            // ── First-launch spotlight tutorial ─────────────────────────────
+            // Shown until the user finishes/skips it; persisted via Settings so
+            // it never appears again. Only renders once both targets have been
+            // measured so the cutout lands on real geometry.
+            if (!tutorialSeen && trayBounds != Rect.Zero && gridBounds != Rect.Zero && !model.isGameOver) {
+                val steps = rememberGameTutorialSteps(trayBounds = trayBounds, gridBounds = gridBounds)
+                SpotlightTutorial(
+                    steps = steps,
+                    onFinished = onTutorialSeen,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
 
             // ── Floating score & feedback overlays ──────────────────────────

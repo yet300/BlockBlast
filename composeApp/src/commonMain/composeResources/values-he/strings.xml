@@ -42,4 +42,13 @@
     <string name="feedback_excellent">מצוין!</string>
     <string name="feedback_unbelievable">לא ייאמן!</string>
     <string name="feedback_combo">קומבו</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tray_title">בחר חלק</string>
+    <string name="tutorial_tray_body">לחץ והחזק חלק במגש כדי להרים אותו.</string>
+    <string name="tutorial_grid_title">הנח אותו על הלוח</string>
+    <string name="tutorial_grid_body">גרור את החלק אל הלוח כדי למקם אותו. מלא שורה או עמודה שלמה כדי לנקות אותה.</string>
+    <string name="tutorial_next">הבא</string>
+    <string name="tutorial_done">הבנתי</string>
+    <string name="tutorial_skip">דלג</string>
 </resources>

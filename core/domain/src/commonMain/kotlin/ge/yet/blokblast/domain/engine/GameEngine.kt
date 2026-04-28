@@ -65,13 +65,61 @@ class GameEngine(
             currentPieces = generateTray(),
             isGameOver = false,
             revivesUsed = 0,
+            bestAtRoundStart = bestScore,
+            reviewPromptFiredThisRound = false,
         )
+        _events.tryEmit(GameEvent.GameStarted)
         autoSave()
     }
 
-    /** Restore a previously persisted state. */
+    /**
+     * Mark the in-app review prompt as fired for the current round. Idempotent.
+     * The flag rides on [GameState] so it survives store recreation across
+     * Home → Play navigation and is persisted via [autoSave].
+     */
+    fun markReviewPromptFired() {
+        val current = _state.value
+        if (current.reviewPromptFiredThisRound) return
+        _state.value = current.copy(reviewPromptFiredThisRound = true)
+        autoSave()
+    }
+
+    /**
+     * Restore a previously persisted state. If the restored round is still
+     * playable, emits [GameEvent.GameStarted] so listeners (e.g. audio) can
+     * resume their per-round work.
+     */
     fun restore(state: GameState) {
         _state.value = state
+        if (!state.isGameOver && state.currentPieces.isNotEmpty()) {
+            _events.tryEmit(GameEvent.GameStarted)
+        }
+    }
+
+    /**
+     * Lift the engine's known best score to [persistedBest] without disturbing
+     * the rest of the state. Called when a fresh process learns the user's
+     * lifetime best from disk — the engine starts at 0 and otherwise wouldn't
+     * know about it, so subsequent `max(currentBest, score)` updates would
+     * silently shadow the real high score with whatever the player just scored.
+     *
+     * No-op if [persistedBest] isn't actually higher.
+     *
+     * NOTE: the engine is the single source of truth for game state. Never
+     * mutate `engine.state.value` via `.copy(...)` from outside — only this
+     * class is allowed to drive `_state`. Use this method (or one of the other
+     * public mutators) instead.
+     */
+    fun seedBestScore(persistedBest: Long) {
+        val current = _state.value
+        if (persistedBest > current.bestScore) {
+            _state.value = current.copy(
+                bestScore = persistedBest,
+                // Keep "best at round start" in sync so the review-prompt
+                // delta check uses the real lifetime best, not 0.
+                bestAtRoundStart = maxOf(current.bestAtRoundStart, persistedBest),
+            )
+        }
     }
 
     // ---------- Public API used by UI ----------
@@ -208,6 +256,7 @@ class GameEngine(
             revivesUsed = current.revivesUsed + 1,
             comboLevel = 0,
         )
+        _events.tryEmit(GameEvent.GameStarted)
         autoSave()
         return true
     }

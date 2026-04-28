@@ -22,4 +22,8 @@ sealed interface GameEvent {
 
     @Serializable
     data object GameOver : GameEvent
+
+    /** Round began (fresh game, restored save, or post-revive). Music starts here. */
+    @Serializable
+    data object GameStarted : GameEvent
 }
