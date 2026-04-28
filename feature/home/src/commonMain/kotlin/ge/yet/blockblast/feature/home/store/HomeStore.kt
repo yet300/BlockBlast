@@ -10,7 +10,13 @@ internal interface HomeStore : Store<HomeStore.Intent, HomeStore.State, Nothing>
     )
 
     sealed interface Intent {
+        /** UI re-trigger (e.g. screen returned to foreground). */
         data object Refresh : Intent
+    }
+
+    sealed interface Action {
+        /** First load on store creation, fired by the bootstrapper. */
+        data object LoadStarted : Action
     }
 
     sealed interface Msg {
