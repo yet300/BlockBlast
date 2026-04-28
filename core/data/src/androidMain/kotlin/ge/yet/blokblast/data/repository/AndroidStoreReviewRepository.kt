@@ -4,8 +4,8 @@ import android.app.Activity
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import ge.yet.blokblast.data.internal.GooglePlayInAppReviewInitParams
-import ge.yet.blokblast.data.internal.GooglePlayInAppReviewManager
+import ge.yet.blokblast.data.platform.GooglePlayInAppReviewInitParams
+import ge.yet.blokblast.data.platform.GooglePlayInAppReviewManager
 import ge.yet.blokblast.data.platform.ActivityProvider
 import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.StoreReviewRepository

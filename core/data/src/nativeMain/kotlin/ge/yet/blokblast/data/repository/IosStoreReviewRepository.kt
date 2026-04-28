@@ -4,8 +4,8 @@ import com.app.common.config.AppConfig
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import ge.yet.blokblast.data.internal.AppStoreInAppReviewInitParams
-import ge.yet.blokblast.data.internal.AppStoreInAppReviewManager
+import ge.yet.blokblast.data.platform.AppStoreInAppReviewInitParams
+import ge.yet.blokblast.data.platform.AppStoreInAppReviewManager
 import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.flow.Flow
