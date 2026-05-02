@@ -18,17 +18,17 @@ object AppConfig {
 
     /** Numeric App Store ID (from App Store Connect). */
     // TODO: replace with the real App Store ID once provisioned.
-    const val IOS_APP_STORE_ID: String = "0000000000"
+    const val IOS_APP_STORE_ID: String = "6765924581"
 
     // ── AdMob ──────────────────────────────────────────────────────────────
     const val BANNER_UNIT_ID_ANDROID: String = "ca-app-pub-1829375480261561/8506212995"
-    const val BANNER_UNIT_ID_IOS: String = "ca-app-pub-1829375480261561/7226287891"
+    const val BANNER_UNIT_ID_IOS: String = "ca-app-pub-1829375480261561/9561597181"
 
     /** Interstitial shown after Game Over. TEST unit. */
     const val GAME_OVER_INTERSTITIAL_UNIT_ID_ANDROID: String =
         "ca-app-pub-1829375480261561/8963087579"
     const val GAME_OVER_INTERSTITIAL_UNIT_ID_IOS: String =
-        "ca-app-pub-1829375480261561/1973961215"
+        "ca-app-pub-1829375480261561/5009161004"
 
     // ── In-app review ──────────────────────────────────────────────────────
     /**
