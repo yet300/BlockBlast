@@ -19,6 +19,7 @@ import Foundation
 import UIKit
 import GoogleMobileAds
 import UserMessagingPlatform
+import AppTrackingTransparency
 
 @MainActor
 final class ConsentManager {
@@ -62,13 +63,13 @@ final class ConsentManager {
             if let requestError {
                 print("[ConsentManager] info update failed: \(requestError.localizedDescription)")
                 if self.canRequestAds {
-                    self.fireReady(onReadyToRequestAds)
+                    self.requestATTAndFireReady(onReadyToRequestAds)
                 }
                 return
             }
 
             guard let presenter = rootViewController else {
-                if self.canRequestAds { self.fireReady(onReadyToRequestAds) }
+                if self.canRequestAds { self.requestATTAndFireReady(onReadyToRequestAds) }
                 return
             }
 
@@ -78,14 +79,33 @@ final class ConsentManager {
                     print("[ConsentManager] form error: \(formError.localizedDescription)")
                 }
                 if self.canRequestAds {
-                    self.fireReady(onReadyToRequestAds)
+                    self.requestATTAndFireReady(onReadyToRequestAds)
                 }
             }
         }
 
         // Already-cached consent path: fire immediately so the first
         // interstitial can start loading during the UMP round-trip.
-        if canRequestAds { fireReady(onReadyToRequestAds) }
+        if canRequestAds { 
+            // If already have consent, we might still want to check ATT 
+            // but for immediate start we can fire ready.
+            // Google recommends checking ATT status.
+            requestATTAndFireReady(onReadyToRequestAds)
+        }
+    }
+
+    private func requestATTAndFireReady(_ onReadyToRequestAds: @escaping () -> Void) {
+        // Only request ATT if we are in a state where we can request ads (GDPR cleared)
+        // and if the status is notDetermined.
+        if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+            ATTrackingManager.requestTrackingAuthorization { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.fireReady(onReadyToRequestAds)
+                }
+            }
+        } else {
+            fireReady(onReadyToRequestAds)
+        }
     }
 
     private func fireReady(_ onReadyToRequestAds: () -> Void) {
