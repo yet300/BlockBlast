@@ -15,6 +15,9 @@ import platform.UIKit.UIView
  * sensible no-ops.
  */
 object IosAdBridge {
+    /** Starts the iOS consent / ATT flow after Swift has a visible presenter. */
+    var requestConsentAndAds: (() -> Unit)? = null
+
     /** Preloads an interstitial. Called once on app launch. */
     var loadInterstitial: (() -> Unit)? = null
 

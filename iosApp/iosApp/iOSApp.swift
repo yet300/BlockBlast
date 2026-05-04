@@ -10,7 +10,13 @@ struct iOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ComposeView(root: appDelegate.root, backDispatcher: appDelegate.backDispatcher)
+            ComposeView(
+                root: appDelegate.root,
+                backDispatcher: appDelegate.backDispatcher,
+                onFirstVisible: { presenter in
+                    appDelegate.startConsentFlow(from: presenter)
+                }
+            )
                 .ignoresSafeArea(.all)
         }
     }
@@ -34,21 +40,23 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         FirebaseApp.configure()
         Task { @MainActor in
             AdCoordinator.shared.configureBridge()
-
-            let rootVC = UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .flatMap { $0.windows }
-                .first(where: { $0.isKeyWindow })?
-                .rootViewController
-
-            ConsentManager.shared.gather(from: rootVC) {
-                // Ads may now be requested — preload the game-over interstitial.
-                Task { @MainActor in
-                    await AdCoordinator.shared.loadInterstitial()
-                }
-            }
         }
         return true
+    }
+
+    @MainActor
+    func startConsentFlow(from presenter: UIViewController) {
+        IosAdBridge.shared.requestConsentAndAds = { [weak self, weak presenter] in
+            guard let self, let presenter else { return }
+            self.startConsentFlow(from: presenter)
+        }
+
+        ConsentManager.shared.gather(from: presenter) {
+            // Ads may now be requested — preload the game-over interstitial.
+            Task { @MainActor in
+                await AdCoordinator.shared.loadInterstitial()
+            }
+        }
     }
 
     lazy var root: RootComponent = {
