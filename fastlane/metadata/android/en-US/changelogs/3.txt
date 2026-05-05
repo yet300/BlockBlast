@@ -1,0 +1,1 @@
+Fixed a bug where the tutorial callout could be hidden by system navigation bars on some devices.
