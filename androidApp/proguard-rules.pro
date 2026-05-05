@@ -59,3 +59,6 @@
 -keep @androidx.room.Database class *
 -dontwarn androidx.room.paging.**
 
+-keep class com.mikhailovskii.inappreview.** { *; }
+-dontwarn com.mikhailovskii.inappreview.**
+
