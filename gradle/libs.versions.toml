@@ -12,7 +12,7 @@ gradlePlugins-google-services = "4.4.4"
 #Gitlive
 firebase-gitlive-sdk = "2.4.0"
 
-reviewKtx = "2.0.2"
+inAppReview = "3.5.0"
 
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.10.0"
@@ -108,8 +108,7 @@ firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-cras
 gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
 gitlive-firebase-kotlin-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-gitlive-sdk" }
 
-review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "reviewKtx" }
-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines" }
+inAppReviewKmp = { module = "io.github.sergeimikhailovskii:in-app-review-kmp-google-play", version.ref = "inAppReview" }
 
 #build
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
