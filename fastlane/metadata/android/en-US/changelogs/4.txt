@@ -1,0 +1,3 @@
+• Improved drag sensitivity: pieces now move slightly faster than your finger, making it easier to reach screen corners.
+• Ad banner optimization: the ad slot no longer takes up space when offline or when an ad isn't ready.
+• UI fixes for tutorial placement on different screen sizes.
