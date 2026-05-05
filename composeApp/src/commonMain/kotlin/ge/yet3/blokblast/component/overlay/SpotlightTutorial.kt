@@ -4,8 +4,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -91,7 +91,7 @@ fun SpotlightTutorial(
     val scrimColor = Color.Black.copy(alpha = 0.72f)
     val ringColor = MaterialTheme.colorScheme.primary
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .pointerInput(Unit) {
@@ -139,8 +139,11 @@ fun SpotlightTutorial(
                 }
             },
     ) {
+        val screenHeightPx = with(density) { maxHeight.toPx() }
         Callout(
+            targetTop = top,
             targetBottom = bottom,
+            screenHeightPx = screenHeightPx,
             targetVisible = right > left && bottom > top,
             title = step.title,
             body = step.body,
@@ -153,7 +156,9 @@ fun SpotlightTutorial(
 
 @Composable
 private fun BoxScope.Callout(
+    targetTop: Float,
     targetBottom: Float,
+    screenHeightPx: Float,
     targetVisible: Boolean,
     title: String,
     body: String,
@@ -171,12 +176,27 @@ private fun BoxScope.Callout(
         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
         .padding(20.dp)
 
+    // Heuristic: place the callout where there is more vertical space.
+    // This prevents the card from being pushed off-screen or behind system bars.
+    val spaceAbove = targetTop
+    val spaceBelow = screenHeightPx - targetBottom
+    val preferAbove = hasTarget && spaceBelow < spaceAbove
+
     Column(
         modifier = if (!hasTarget) {
             Modifier.align(Alignment.Center).then(cardModifier)
+        } else if (preferAbove) {
+            Modifier
+                .align(Alignment.BottomCenter)
+                // Alignment.BottomCenter puts the bottom of the card at screenHeightPx.
+                // We offset it up (negative y) so its bottom is at targetTop - gapPx.
+                .offset { IntOffset(0, (-(screenHeightPx - targetTop + gapPx)).toInt()) }
+                .then(cardModifier)
         } else {
             Modifier
                 .align(Alignment.TopCenter)
+                // Alignment.TopCenter puts the top of the card at y=0.
+                // We offset it down so its top is at targetBottom + gapPx.
                 .offset { IntOffset(0, (targetBottom + gapPx).toInt()) }
                 .then(cardModifier)
         },
