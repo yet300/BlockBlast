@@ -57,4 +57,12 @@ object AppConfig {
     /** Public privacy-policy URL linked from the Settings screen. */
     const val PRIVACY_POLICY_URL: String =
         "https://github.com/yet300/block_blast/blob/main/privacy_policy.md"
+
+    // ── Drag & Drop ────────────────────────────────────────────────────────
+    /**
+     * Multiplier for drag speed. Values > 1.0 make the piece move faster than
+     * the finger relative to the pickup point. 1.15 is a good balance for
+     * reaching screen corners on large phones.
+     */
+    const val DRAG_SENSITIVITY: Float = 1.15f
 }
