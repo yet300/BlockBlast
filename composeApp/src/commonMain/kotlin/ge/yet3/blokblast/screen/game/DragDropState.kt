@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import com.app.common.config.AppConfig
 import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
@@ -40,12 +41,16 @@ class DragDropState {
     var fingerOffset by mutableStateOf(Offset.Zero)
         private set
 
+    /** Finger position where the drag started. */
+    private var dragStartFingerPos by mutableStateOf(Offset.Zero)
+
     val isDragging: Boolean get() = draggedPiece != null
 
     fun startDrag(piece: Piece, startPosition: Offset, pieceOriginOffset: Offset) {
         if (isDragging) return          // never hijack an active drag with a second finger
         draggedPiece = piece
         dragPosition = startPosition
+        dragStartFingerPos = startPosition
         fingerOffset = pieceOriginOffset
         hoverAnchor = null
         isValidPlacement = false
@@ -61,11 +66,16 @@ class DragDropState {
         ghostGapPx: Float,
         verticalLiftPx: Float,
     ) {
-        dragPosition = position
+        // Apply sensitivity: the piece moves faster than the finger relative
+        // to the pickup point. This allows reaching screen corners with less
+        // physical thumb movement.
+        val delta = position - dragStartFingerPos
+        dragPosition = dragStartFingerPos + delta * AppConfig.DRAG_SENSITIVITY
+
         val piece = draggedPiece ?: return
 
         // The floating ghost is drawn with its top-left at
-        //   (finger - fingerOffset) - (ghostW/2, ghostH) - (0, verticalLift)
+        //   (dragPosition - fingerOffset) - (ghostW/2, ghostH) - (0, verticalLift)
         // so the snap anchor must be computed from that same top-left,
         // otherwise the piece lands below/beside where the user sees it.
         val ghostW = piece.shape.width * ghostCellSizePx +
@@ -73,8 +83,8 @@ class DragDropState {
         val ghostH = piece.shape.height * ghostCellSizePx +
             (piece.shape.height - 1).coerceAtLeast(0) * ghostGapPx
 
-        val ghostTopLeftX = position.x - fingerOffset.x - ghostW / 2f
-        val ghostTopLeftY = position.y - fingerOffset.y - ghostH - verticalLiftPx
+        val ghostTopLeftX = dragPosition.x - fingerOffset.x - ghostW / 2f
+        val ghostTopLeftY = dragPosition.y - fingerOffset.y - ghostH - verticalLiftPx
 
         // Snap by rounding the ghost's top-left to the nearest grid cell
         // — rounding (not floor) so half-cell overlaps jump to the closer
