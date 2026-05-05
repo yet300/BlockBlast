@@ -46,8 +46,9 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
                 self?.showInterstitial(onDismiss: dismissAsVoid)
             }
         }
-        IosAdBridge.shared.makeBannerView = { [weak self] adUnitId in
-            self?.makeBannerView(adUnitId: adUnitId) ?? UIView()
+        IosAdBridge.shared.makeBannerView = { [weak self] adUnitId, onLoaded in
+            let onLoadedAsVoid: () -> Void = { _ = onLoaded() }
+            return self?.makeBannerView(adUnitId: adUnitId, onLoaded: onLoadedAsVoid) ?? UIView()
         }
     }
 
@@ -83,13 +84,15 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
 
     // MARK: - Banner
 
-    func makeBannerView(adUnitId: String) -> UIView {
+    func makeBannerView(adUnitId: String, onLoaded: @escaping () -> Void) -> UIView {
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitId
         bannerView.rootViewController = Self.rootViewController()
-        // Only fire the request if UMP has cleared us. If consent is still
-        // pending the banner just reserves its layout space silently; the
-        // caller can recreate it once consent arrives.
+
+        let delegate = BannerDelegate(onLoaded: onLoaded)
+        bannerView.delegate = delegate
+        objc_setAssociatedObject(bannerView, &bannerDelegateKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
         if ConsentManager.shared.canRequestAds {
             bannerView.load(Request())
         }
@@ -126,5 +129,23 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
             .flatMap { $0.windows }
             .first(where: { $0.isKeyWindow })?
             .rootViewController
+    }
+}
+
+private var bannerDelegateKey: UInt8 = 0
+
+final class BannerDelegate: NSObject, BannerViewDelegate {
+    private let onLoaded: () -> Void
+
+    init(onLoaded: @escaping () -> Void) {
+        self.onLoaded = onLoaded
+    }
+
+    func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+        onLoaded()
+    }
+
+    func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
+        print("[AdCoordinator] banner failed to load: \(error)")
     }
 }

@@ -31,6 +31,7 @@ object IosAdBridge {
     /**
      * Factory that returns a GADBannerView configured for the given unit ID.
      * Wrapped by Kotlin in a `UIKitView` for placement in Compose layouts.
+     * Invokes [onLoaded] when the first ad is successfully fetched.
      */
-    var makeBannerView: ((adUnitId: String) -> UIView)? = null
+    var makeBannerView: ((adUnitId: String, onLoaded: () -> Unit) -> UIView)? = null
 }
