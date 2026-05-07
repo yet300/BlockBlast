@@ -41,6 +41,8 @@ fun BlockPiece(
     scale: Float = 1f,
     alpha: Float = 1f,
     flashAlpha: Float = 0f,
+    rotationDeg: Float = 0f,
+    translateYPx: Float = 0f,
 ) {
     val shape = RoundedCornerShape(4.dp)
     val bevelWidth = (cellSize.value * 0.12f).coerceIn(1.5f, 4f).dp
@@ -51,6 +53,8 @@ fun BlockPiece(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
+                rotationZ = rotationDeg
+                translationY = translateYPx
                 this.alpha = alpha
             }
             .clip(shape)

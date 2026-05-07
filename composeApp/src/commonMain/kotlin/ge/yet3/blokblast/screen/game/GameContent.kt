@@ -79,7 +79,11 @@ import ge.yet3.blokblast.screen.game.effects.FeedbackPopupState
 import ge.yet3.blokblast.screen.game.effects.FloatingScoreOverlay
 import ge.yet3.blokblast.screen.game.effects.FloatingScoreState
 import ge.yet3.blokblast.screen.game.effects.glitchEffect
+import ge.yet3.blokblast.screen.game.effects.comboFlash
+import ge.yet3.blokblast.screen.game.effects.comboZoom
+import ge.yet3.blokblast.screen.game.effects.rememberComboPunchState
 import ge.yet3.blokblast.screen.game.effects.rememberComboStripesState
+import ge.yet3.blokblast.screen.game.effects.rememberParticleBurstState
 import ge.yet3.blokblast.screen.game.effects.rememberGlitchState
 import ge.yet3.blokblast.screen.game.effects.rememberShakeState
 import ge.yet3.blokblast.screen.game.effects.shake
@@ -110,6 +114,8 @@ fun GameContent(component: GameComponent) {
     val shakeState = rememberShakeState()
     val glitchState = rememberGlitchState()
     val comboStripes = rememberComboStripesState()
+    val particleBurst = rememberParticleBurstState()
+    val comboPunch = rememberComboPunchState()
     val floatingScore = remember { FloatingScoreState() }
     val feedbackPopups = remember { FeedbackPopupState() }
     val haptic = LocalHapticFeedback.current
@@ -146,6 +152,7 @@ fun GameContent(component: GameComponent) {
             }
             if (model.comboLevel >= 2) {
                 feedbackPopups.add(type = null, comboLevel = model.comboLevel)
+                scope.launch { comboPunch.punch(model.comboLevel) }
             }
         }
         prevComboLevel = model.comboLevel
@@ -179,7 +186,21 @@ fun GameContent(component: GameComponent) {
             val rows = cells.groupBy { it.y }.filterValues { it.size == 8 }.keys.toList()
             val cols = cells.groupBy { it.x }.filterValues { it.size == 8 }.keys.toList()
             if (rows.isNotEmpty() || cols.isNotEmpty()) {
-                comboStripes.sweep(rows, cols)
+                scope.launch { comboStripes.sweep(rows, cols) }
+                // Particle burst per cleared cell — colour pulled from the
+                // pre-clear grid snapshot.
+                cells.forEach { pos ->
+                    val c = ge.yet3.blokblast.theme.pieceColor(
+                        ((pos.x * 7 + pos.y * 13) and 0x7FFFFFFF) % 6,
+                    )
+                    scope.launch { particleBurst.burst(pos.x, pos.y, c, count = 5) }
+                }
+                // Shockwave at every row×column intersection.
+                for (r in rows) for (c in cols) {
+                    scope.launch {
+                        particleBurst.shockwave(c, r, Color.White)
+                    }
+                }
             }
         }
     }
@@ -218,7 +239,8 @@ fun GameContent(component: GameComponent) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .glitchEffect(glitchState),
+                .glitchEffect(glitchState)
+                .comboFlash(comboPunch),
         ) {
             AmbientMeshBackground(
                 modifier = Modifier.fillMaxSize(),
@@ -228,6 +250,7 @@ fun GameContent(component: GameComponent) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .comboZoom(comboPunch)
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 58.dp),
@@ -265,6 +288,7 @@ fun GameContent(component: GameComponent) {
                         .onGloballyPositioned { gridBounds = it.boundsInRoot() },
                     dragDropState = dragDrop,
                     comboStripes = comboStripes,
+                    particleBurst = particleBurst,
                     comboLevel = model.comboLevel,
                     clearedEvent = model.lastClearedCells,
                     isGameOver = model.isGameOver,
@@ -281,6 +305,7 @@ fun GameContent(component: GameComponent) {
                 PieceTray(
                     pieces = model.currentPieces,
                     selectedPieceId = selectedPieceId,
+                    grid = model.grid,
                     modifier = Modifier
                         .widthIn(max = 500.dp)
                         .padding(bottom = 8.dp)
