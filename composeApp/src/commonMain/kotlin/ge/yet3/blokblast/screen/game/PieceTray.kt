@@ -2,9 +2,16 @@ package ge.yet3.blokblast.screen.game
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
@@ -29,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -39,6 +48,7 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet3.blokblast.theme.pieceColor
@@ -52,6 +62,7 @@ fun PieceTray(
     selectedPieceId: Long?,
     onPieceSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    grid: Grid? = null,
     onDragStart: ((piece: Piece, startPosition: Offset, pieceOriginOffset: Offset) -> Unit)? = null,
     onDragMove: ((position: Offset) -> Unit)? = null,
     onDragEnd: (() -> Unit)? = null,
@@ -71,32 +82,51 @@ fun PieceTray(
             val piece = pieces.getOrNull(index)
             val isSelected = piece != null && piece.pieceId == selectedPieceId
 
-            var visible by remember(trayKey) { mutableStateOf(false) }
-            androidx.compose.runtime.LaunchedEffect(trayKey) {
-                visible = true
+            // Spring-overshoot entrance, staggered per slot.
+            val entrance = remember(trayKey, index) { Animatable(0f) }
+            val translateY = remember(trayKey, index) { Animatable(40f) }
+            androidx.compose.runtime.LaunchedEffect(trayKey, index) {
+                kotlinx.coroutines.delay(index * 80L)
+                kotlinx.coroutines.coroutineScope {
+                    launch {
+                        entrance.animateTo(
+                            1f,
+                            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = 380f),
+                        )
+                    }
+                    launch {
+                        translateY.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 380f))
+                    }
+                }
             }
 
-            AnimatedVisibility(
-                visible = visible,
-                modifier = Modifier.weight(1f),
-                enter = slideInVertically(
-                    animationSpec = tween(350, delayMillis = index * 80)
-                ) { it / 2 } + fadeIn(tween(350, delayMillis = index * 80)) + scaleIn(
-                    initialScale = 0.7f,
-                    animationSpec = tween(350, delayMillis = index * 80)
-                )
+            // Can this piece fit anywhere on the board? Drives dim-when-no-fit.
+            val canFit = remember(piece, grid) {
+                if (piece == null || grid == null) true
+                else canPlaceAnywhere(piece.shape, grid)
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .graphicsLayer {
+                        scaleX = entrance.value
+                        scaleY = entrance.value
+                        alpha = entrance.value
+                        translationY = translateY.value
+                    },
+                contentAlignment = Alignment.Center,
             ) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    TraySlot(
-                        piece = piece,
-                        isSelected = isSelected,
-                        onTap = { if (piece != null) onPieceSelected(piece.pieceId) },
-                        onDragStart = onDragStart,
-                        onDragMove = onDragMove,
-                        onDragEnd = onDragEnd,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                TraySlot(
+                    piece = piece,
+                    isSelected = isSelected,
+                    canFit = canFit,
+                    onTap = { if (piece != null) onPieceSelected(piece.pieceId) },
+                    onDragStart = onDragStart,
+                    onDragMove = onDragMove,
+                    onDragEnd = onDragEnd,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
@@ -106,6 +136,7 @@ fun PieceTray(
 private fun TraySlot(
     piece: Piece?,
     isSelected: Boolean,
+    canFit: Boolean,
     onTap: () -> Unit,
     onDragStart: ((piece: Piece, startPosition: Offset, pieceOriginOffset: Offset) -> Unit)?,
     onDragMove: ((position: Offset) -> Unit)?,
@@ -115,14 +146,35 @@ private fun TraySlot(
     var isPressed by remember { mutableStateOf(false) }
     val isHighlighted = isSelected || isPressed
 
+    // Idle breathing — subtle pulse on pieces that can still be placed.
+    val breathing = rememberInfiniteTransition(label = "breath")
+    val breathScale by breathing.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "breathScale",
+    )
+
+    val targetScale = when {
+        isPressed -> 1.08f
+        isSelected -> 1.12f
+        canFit -> breathScale
+        else -> 0.92f
+    }
     val scale by animateFloatAsState(
-        targetValue = when {
-            isPressed -> 1.08f
-            isSelected -> 1.12f
-            else -> 1f
-        },
+        targetValue = targetScale,
         animationSpec = spring(),
         label = "pieceScale",
+    )
+
+    // Dim/desaturate when this piece can't be placed anywhere.
+    val pieceAlpha by animateFloatAsState(
+        targetValue = if (canFit) 1f else 0.45f,
+        animationSpec = tween(220),
+        label = "pieceAlpha",
     )
 
     val pColor = piece?.let { pieceColor(it.colorId) }
@@ -223,12 +275,24 @@ private fun TraySlot(
         contentAlignment = Alignment.Center,
     ) {
         if (piece != null) {
+            val baseColor = pieceColor(piece.colorId)
+            val visibleColor = (if (isHighlighted) baseColor else baseColor.copy(alpha = 0.6f))
+                .copy(alpha = baseColor.alpha * pieceAlpha)
             MiniPiece(
                 shape = piece.shape,
-                color = if (isHighlighted) pieceColor(piece.colorId) else pieceColor(piece.colorId).copy(alpha = 0.6f),
+                color = visibleColor,
             )
         }
     }
+}
+
+private fun canPlaceAnywhere(shape: Polyomino, grid: Grid): Boolean {
+    for (y in 0 until Grid.SIZE) {
+        for (x in 0 until Grid.SIZE) {
+            if (canPlacePiece(shape, x, y, grid)) return true
+        }
+    }
+    return false
 }
 
 /**
