@@ -4,9 +4,14 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.coroutineScope
@@ -20,8 +25,19 @@ import kotlinx.coroutines.launch
 class ComboPunchState {
     val flashAlpha = Animatable(0f)
     val zoom = Animatable(1f)
+    /**
+     * Origin of the radial flash in container-local pixels.
+     * Null falls back to a full-bounds white wash (legacy behavior).
+     */
+    var flashOrigin: Offset? by mutableStateOf(null)
+        private set
+    /** Cached level so the modifier can scale flash radius to combo intensity. */
+    var lastLevel: Int by mutableStateOf(0)
+        private set
 
-    suspend fun punch(level: Int) {
+    suspend fun punch(level: Int, origin: Offset? = null) {
+        flashOrigin = origin
+        lastLevel = level
         val flashStrength = (0.10f + 0.06f * level).coerceAtMost(0.32f)
         val zoomTarget = (1f + 0.012f * level).coerceAtMost(1.045f)
         coroutineScope {
@@ -47,11 +63,34 @@ fun Modifier.comboZoom(state: ComboPunchState): Modifier = this.graphicsLayer {
     scaleY = z
 }
 
-/** Renders the combo flash overlay (drawn on top, full bounds). */
+/**
+ * Renders the combo flash overlay. If [ComboPunchState.flashOrigin] is set,
+ * the flash is a radial bloom centered on that point (container-local px),
+ * shrinking to a point with combo level boosting the radius. Otherwise it
+ * falls back to a full-bounds white wash.
+ */
 fun Modifier.comboFlash(state: ComboPunchState): Modifier = this.drawWithContent {
     drawContent()
     val a = state.flashAlpha.value
-    if (a > 0f) {
+    if (a <= 0f) return@drawWithContent
+    val origin = state.flashOrigin
+    if (origin == null) {
         drawRect(color = Color.White.copy(alpha = a))
+    } else {
+        // Radius scales with combo level — a single line is a focused puff,
+        // a 5+ chain washes most of the visible board.
+        val baseR = size.minDimension * 0.18f
+        val radius = baseR * (1f + 0.35f * state.lastLevel).coerceAtMost(2.4f)
+        drawRect(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = a),
+                    Color.White.copy(alpha = a * 0.55f),
+                    Color.Transparent,
+                ),
+                center = origin,
+                radius = radius,
+            ),
+        )
     }
 }

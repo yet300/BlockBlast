@@ -39,10 +39,13 @@ fun BlockPiece(
     modifier: Modifier = Modifier,
     filled: Boolean = true,
     scale: Float = 1f,
+    scaleX: Float = 1f,
+    scaleY: Float = 1f,
     alpha: Float = 1f,
     flashAlpha: Float = 0f,
     rotationDeg: Float = 0f,
     translateYPx: Float = 0f,
+    predictGlowAlpha: Float = 0f,
 ) {
     val shape = RoundedCornerShape(4.dp)
     val bevelWidth = (cellSize.value * 0.12f).coerceIn(1.5f, 4f).dp
@@ -51,8 +54,8 @@ fun BlockPiece(
         modifier = modifier
             .size(cellSize)
             .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
+                this.scaleX = scale * scaleX
+                this.scaleY = scale * scaleY
                 rotationZ = rotationDeg
                 translationY = translateYPx
                 this.alpha = alpha
@@ -93,6 +96,15 @@ fun BlockPiece(
                         .background(Color.White.copy(alpha = flashAlpha))
                 )
             }
+        }
+        // Predictive line glow — pulses across cells that will be cleared
+        // if the currently hovered piece is dropped here.
+        if (predictGlowAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(alpha = predictGlowAlpha))
+            )
         }
     }
 }

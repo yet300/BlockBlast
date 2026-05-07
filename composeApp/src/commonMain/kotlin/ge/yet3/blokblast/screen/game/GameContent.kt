@@ -152,7 +152,20 @@ fun GameContent(component: GameComponent) {
             }
             if (model.comboLevel >= 2) {
                 feedbackPopups.add(type = null, comboLevel = model.comboLevel)
-                scope.launch { comboPunch.punch(model.comboLevel) }
+                // Localize the flash on the centroid of the cells that were
+                // just cleared, so the radial bloom appears to emanate from
+                // the actual point of impact instead of washing the screen.
+                val cleared = model.lastClearedCells.cells
+                val origin = if (cleared.isNotEmpty() && cellSizePx > 0f) {
+                    val avgX = cleared.map { it.x }.average().toFloat()
+                    val avgY = cleared.map { it.y }.average().toFloat()
+                    val step = cellSizePx + gapPx
+                    androidx.compose.ui.geometry.Offset(
+                        x = gridOriginX + avgX * step + cellSizePx / 2f,
+                        y = gridOriginY + avgY * step + cellSizePx / 2f,
+                    )
+                } else null
+                scope.launch { comboPunch.punch(model.comboLevel, origin) }
             }
         }
         prevComboLevel = model.comboLevel
@@ -187,17 +200,44 @@ fun GameContent(component: GameComponent) {
             val cols = cells.groupBy { it.x }.filterValues { it.size == 8 }.keys.toList()
             if (rows.isNotEmpty() || cols.isNotEmpty()) {
                 scope.launch { comboStripes.sweep(rows, cols) }
-                // Particle burst per cleared cell — colour pulled from the
-                // pre-clear grid snapshot.
+
+                // Cascade ordering: each cleared line gets its own slot in a
+                // sequence (rows first, then cols, in their natural order),
+                // and every cell inherits the slot of the *first* line it
+                // belongs to. Multi-line clears now ripple instead of all
+                // popping at the same instant.
+                val lineKeys: List<Pair<Char, Int>> =
+                    rows.map { 'r' to it } + cols.map { 'c' to it }
+                val cellLineSlot = HashMap<Pair<Int, Int>, Int>(cells.size)
+                lineKeys.forEachIndexed { idx, (kind, value) ->
+                    cells.forEach { pos ->
+                        val matches = if (kind == 'r') pos.y == value else pos.x == value
+                        val key = pos.x to pos.y
+                        if (matches && key !in cellLineSlot) cellLineSlot[key] = idx
+                    }
+                }
+                val perLineDelay = 90L
+                // Particle count grows with combo, so chains feel meatier.
+                val particleCount = (5 + model.comboLevel.coerceAtMost(5))
+
                 cells.forEach { pos ->
+                    val slot = cellLineSlot[pos.x to pos.y] ?: 0
                     val c = ge.yet3.blokblast.theme.pieceColor(
                         ((pos.x * 7 + pos.y * 13) and 0x7FFFFFFF) % 6,
                     )
-                    scope.launch { particleBurst.burst(pos.x, pos.y, c, count = 5) }
-                }
-                // Shockwave at every row×column intersection.
-                for (r in rows) for (c in cols) {
                     scope.launch {
+                        kotlinx.coroutines.delay(slot * perLineDelay)
+                        particleBurst.burst(pos.x, pos.y, c, count = particleCount)
+                    }
+                }
+                // Shockwave at every row×column intersection — fire on the
+                // later of the two lines so it caps the cascade.
+                for (r in rows) for (c in cols) {
+                    val rSlot = lineKeys.indexOf('r' to r)
+                    val cSlot = lineKeys.indexOf('c' to c)
+                    val slot = maxOf(rSlot, cSlot).coerceAtLeast(0)
+                    scope.launch {
+                        kotlinx.coroutines.delay(slot * perLineDelay)
                         particleBurst.shockwave(c, r, Color.White)
                     }
                 }
