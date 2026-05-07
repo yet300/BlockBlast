@@ -1,6 +1,11 @@
 package ge.yet3.blokblast.screen.game
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,8 +38,10 @@ import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet3.blokblast.screen.game.effects.CellAnimState
 import ge.yet3.blokblast.screen.game.effects.ComboStripesState
+import ge.yet3.blokblast.screen.game.effects.ParticleBurstState
 import ge.yet3.blokblast.screen.game.effects.comboStripes
 import ge.yet3.blokblast.screen.game.effects.gridBorderGlow
+import ge.yet3.blokblast.screen.game.effects.particleBurst
 import ge.yet3.blokblast.theme.pieceColor
 import ge.yet3.blokblast.theme.pieceColorPreview
 
@@ -50,6 +57,7 @@ fun GameGrid(
     modifier: Modifier = Modifier,
     dragDropState: DragDropState? = null,
     comboStripes: ComboStripesState? = null,
+    particleBurst: ParticleBurstState? = null,
     comboLevel: Int = 0,
     clearedEvent: ClearEvent = ClearEvent(),
     isGameOver: Boolean = false,
@@ -68,6 +76,9 @@ fun GameGrid(
             .padding(GRID_PADDING_DP)
             .then(
                 if (comboStripes != null) Modifier.comboStripes(comboStripes) else Modifier,
+            )
+            .then(
+                if (particleBurst != null) Modifier.particleBurst(particleBurst) else Modifier,
             )
             .gridBorderGlow(comboLevel)
             .onGloballyPositioned { coords ->
@@ -88,6 +99,19 @@ fun GameGrid(
         }
         val hoverColorId = dragDropState?.draggedPiece?.colorId
         val hoverValid = dragDropState?.isValidPlacement == true
+
+        // Pulsing alpha for the hover preview — gentle "breathing" of the
+        // target cells while the user holds the piece overhead.
+        val hoverPulse = rememberInfiniteTransition(label = "hoverPulse")
+        val hoverPulseAlpha by hoverPulse.animateFloat(
+            initialValue = 0.55f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(750, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "hoverPulseAlpha",
+        )
 
         var prevGrid by remember { mutableStateOf(grid) }
         var prevNonce by remember { mutableIntStateOf(clearedEvent.nonce) }
@@ -114,6 +138,18 @@ fun GameGrid(
                 val cellId = grid.colorAt(x, y)
                 var displayColor by remember(cellId) {
                     mutableIntStateOf(cellId)
+                }
+
+                // Game-over board collapse: staggered "fall" of every filled
+                // cell. Stagger from the bottom-up by row, with a small
+                // column-based jitter so it feels physical.
+                LaunchedEffect(isGameOver) {
+                    if (isGameOver && cellId != -1) {
+                        val rowStagger = (COLS - 1 - y) * 35L
+                        val colJitter = x * 12L
+                        val falls = with(density) { 240.dp.toPx() }
+                        cellAnim.fall(delayMs = rowStagger + colJitter, distancePx = falls)
+                    }
                 }
 
                 // Placement animation detection
@@ -147,7 +183,8 @@ fun GameGrid(
                     isFilled -> pieceColor(displayColor)
                     isHoverGhost && hoverColorId != null -> {
                         val base = pieceColorPreview(hoverColorId)
-                        if (hoverValid) base else base.copy(alpha = 0.15f)
+                        if (hoverValid) base.copy(alpha = base.alpha * hoverPulseAlpha)
+                        else base.copy(alpha = 0.15f)
                     }
                     selectedPiece != null && previewHit(selectedPiece, x, y, grid) ->
                         pieceColorPreview(selectedPiece.colorId)
@@ -161,6 +198,8 @@ fun GameGrid(
                     scale = cellAnim.scale.value,
                     alpha = cellAnim.alpha.value,
                     flashAlpha = cellAnim.flashAlpha.value,
+                    rotationDeg = cellAnim.rotation.value,
+                    translateYPx = cellAnim.translateY.value,
                     modifier = Modifier
                         .offset(
                             x = col * (cellSize + GAP_DP),
