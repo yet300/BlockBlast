@@ -16,20 +16,38 @@ import kotlinx.coroutines.launch
  */
 class CellAnimState {
     val scale = Animatable(1f)
+    // Independent X/Y multipliers used to "squash" the cell on snap-in: a wide-flat
+    // anticipation pose collapses into a tall-narrow recoil before settling at 1×1.
+    // Final composed scale at render time is (scale * scaleX, scale * scaleY).
+    val scaleX = Animatable(1f)
+    val scaleY = Animatable(1f)
     val alpha = Animatable(1f)
     val flashAlpha = Animatable(0f)
     val rotation = Animatable(0f)
     val translateY = Animatable(0f)
 
-    /** Drop/snap bounce — scale 0.6 → 1.15 → 1.0 with overshoot spring. */
+    /** Drop/snap bounce with squash — pancake-flat → tall recoil → settle. */
     suspend fun popIn(delayMs: Long) {
-        scale.snapTo(0.6f)
+        scale.snapTo(0.85f)
+        scaleX.snapTo(1.25f)
+        scaleY.snapTo(0.65f)
         alpha.snapTo(1f)
         rotation.snapTo(0f)
         delay(delayMs)
-        // Overshoot, then settle.
-        scale.animateTo(1.12f, tween(140, easing = LinearOutSlowInEasing))
-        scale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+        coroutineScope {
+            launch {
+                scale.animateTo(1f, tween(140, easing = LinearOutSlowInEasing))
+            }
+            launch {
+                // Squash → recoil → settle (parallel, slightly offset on rebound).
+                scaleX.animateTo(0.92f, tween(110, easing = LinearOutSlowInEasing))
+                scaleX.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+            }
+            launch {
+                scaleY.animateTo(1.18f, tween(110, easing = LinearOutSlowInEasing))
+                scaleY.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+            }
+        }
     }
 
     /**
@@ -63,6 +81,8 @@ class CellAnimState {
 
     suspend fun reset() {
         scale.snapTo(1f)
+        scaleX.snapTo(1f)
+        scaleY.snapTo(1f)
         alpha.snapTo(1f)
         flashAlpha.snapTo(0f)
         rotation.snapTo(0f)

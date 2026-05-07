@@ -40,6 +40,7 @@ import ge.yet3.blokblast.screen.game.effects.CellAnimState
 import ge.yet3.blokblast.screen.game.effects.ComboStripesState
 import ge.yet3.blokblast.screen.game.effects.ParticleBurstState
 import ge.yet3.blokblast.screen.game.effects.comboStripes
+import ge.yet3.blokblast.screen.game.effects.dangerVignette
 import ge.yet3.blokblast.screen.game.effects.gridBorderGlow
 import ge.yet3.blokblast.screen.game.effects.particleBurst
 import ge.yet3.blokblast.theme.pieceColor
@@ -68,6 +69,17 @@ fun GameGrid(
     val density = LocalDensity.current
     val gapPx = with(density) { GAP_DP.toPx() }
 
+    // Danger ramp — fraction of the board filled. Drives the inner red
+    // vignette starting at 70% so the player feels the squeeze before
+    // game-over actually triggers.
+    val totalCells = COLS * COLS
+    val filledCells = remember(grid) {
+        var n = 0
+        for (v in grid.cells) if (v != ge.yet.blokblast.domain.model.Grid.EMPTY) n++
+        n
+    }
+    val dangerLevel = filledCells.toFloat() / totalCells.toFloat()
+
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(1f)
@@ -81,6 +93,7 @@ fun GameGrid(
                 if (particleBurst != null) Modifier.particleBurst(particleBurst) else Modifier,
             )
             .gridBorderGlow(comboLevel)
+            .dangerVignette(dangerLevel)
             .onGloballyPositioned { coords ->
                 val pos = coords.positionInWindow()
                 val widthPx = coords.size.width.toFloat()
@@ -99,6 +112,45 @@ fun GameGrid(
         }
         val hoverColorId = dragDropState?.draggedPiece?.colorId
         val hoverValid = dragDropState?.isValidPlacement == true
+
+        // Predictive clear: if the current hover represents a valid placement,
+        // figure out which rows / cols would be fully filled after the drop,
+        // so the grid can preview the clear.
+        val (predictedRows, predictedCols) = remember(grid, hoverCells, hoverValid) {
+            if (!hoverValid || hoverCells.isEmpty()) {
+                emptySet<Int>() to emptySet<Int>()
+            } else {
+                val rows = mutableSetOf<Int>()
+                val cols = mutableSetOf<Int>()
+                for (i in 0 until COLS) {
+                    var rowFull = true
+                    for (j in 0 until COLS) {
+                        val occupied = !grid.isEmpty(j, i) || (j to i) in hoverCells
+                        if (!occupied) { rowFull = false; break }
+                    }
+                    if (rowFull) rows.add(i)
+
+                    var colFull = true
+                    for (j in 0 until COLS) {
+                        val occupied = !grid.isEmpty(i, j) || (i to j) in hoverCells
+                        if (!occupied) { colFull = false; break }
+                    }
+                    if (colFull) cols.add(i)
+                }
+                rows to cols
+            }
+        }
+        val hasPrediction = predictedRows.isNotEmpty() || predictedCols.isNotEmpty()
+        val predictPulse = rememberInfiniteTransition(label = "predictPulse")
+        val predictAlpha by predictPulse.animateFloat(
+            initialValue = 0.35f,
+            targetValue = 0.75f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(450, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "predictAlpha",
+        )
 
         // Pulsing alpha for the hover preview — gentle "breathing" of the
         // target cells while the user holds the piece overhead.
@@ -191,15 +243,21 @@ fun GameGrid(
                     else -> emptyColor
                 }
 
+                val inPredictedLine = hasPrediction && (y in predictedRows || x in predictedCols)
+                val predictGlow = if (inPredictedLine) predictAlpha else 0f
+
                 BlockPiece(
                     color = cellColor,
                     cellSize = cellSize,
                     filled = isFilled || (isHoverGhost && hoverValid),
                     scale = cellAnim.scale.value,
+                    scaleX = cellAnim.scaleX.value,
+                    scaleY = cellAnim.scaleY.value,
                     alpha = cellAnim.alpha.value,
                     flashAlpha = cellAnim.flashAlpha.value,
                     rotationDeg = cellAnim.rotation.value,
                     translateYPx = cellAnim.translateY.value,
+                    predictGlowAlpha = predictGlow,
                     modifier = Modifier
                         .offset(
                             x = col * (cellSize + GAP_DP),
