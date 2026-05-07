@@ -1,0 +1,9 @@
+• Predictive line glow: rows and columns about to clear pulse white while you hover a piece over them.
+• Snappier placement: blocks land with a squash-and-stretch bounce that ripples across the piece.
+• Punchier combos: the screen flash now blooms from the actual point of impact and grows with combo level.
+• Cascade clears: chained line clears now ripple outward in sequence with extra particles per combo step.
+• Score tally rollup: the score counter rolls smoothly through intermediate values instead of jumping.
+• Danger vignette: a red pulse closes in around the board once it's more than 70% full and ramps up as the squeeze gets tighter.
+• No-fit nudge: pieces that no longer fit anywhere periodically wobble to flag they're stuck.
+• Tray polish: the three new pieces fly in from different directions, with a one-shot shimmer on each fresh piece.
+• Performance: tray slots no longer recompose every animation frame.
