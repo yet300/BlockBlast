@@ -6,7 +6,6 @@ import ge.yet.blokblast.domain.model.GameState
 internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore.Label> {
 
     sealed interface Intent {
-        data object Start : Intent
         data class Place(val pieceId: Long, val x: Int, val y: Int) : Intent
         data object Revive : Intent
         data object Restart : Intent

@@ -55,7 +55,6 @@ internal class DefaultGameComponent(
         )
 
     init {
-        lifecycle.doOnStart { store.accept(GameStore.Intent.Start) }
         // Stop music when the user navigates away (back button or exit)
         lifecycle.doOnDestroy { lifecycleScope.launch { audio.stopMusic() } }
         // One-shot effects from the store. Per the mvikotlin-code skill,
