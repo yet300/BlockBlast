@@ -201,6 +201,8 @@ fun GameGrid(
                         val colJitter = x * 12L
                         val falls = with(density) { 240.dp.toPx() }
                         cellAnim.fall(delayMs = rowStagger + colJitter, distancePx = falls)
+                    } else if (!isGameOver) {
+                        cellAnim.reset()
                     }
                 }
 
