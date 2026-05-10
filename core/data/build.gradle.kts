@@ -18,6 +18,7 @@ kotlin {
             implementation(libs.bundles.multiplatform.settings)
 
             implementation(libs.gitlive.firebase.kotlin.crashlytics)
+            implementation(libs.gitlive.firebase.kotlin.analytics)
             implementation(libs.inAppReviewKmp)
         }
         commonTest.dependencies {
