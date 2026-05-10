@@ -35,7 +35,7 @@ internal class HomeStoreFactory(
                             dispatch(
                                 HomeStore.Msg.Loaded(
                                     bestScore = bestScore,
-                                    hasSavedGame = saved != null && !saved.isGameOver,
+                                    hasSavedGame = saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty(),
                                 )
                             )
                         }
@@ -47,7 +47,7 @@ internal class HomeStoreFactory(
                             dispatch(
                                 HomeStore.Msg.Loaded(
                                     bestScore = bestScore,
-                                    hasSavedGame = saved != null && !saved.isGameOver,
+                                    hasSavedGame = saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty(),
                                 )
                             )
                         }
