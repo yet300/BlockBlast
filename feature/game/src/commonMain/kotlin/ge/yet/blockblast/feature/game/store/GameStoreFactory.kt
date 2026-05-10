@@ -49,19 +49,27 @@ internal class GameStoreFactory(
                         // the same process), so it is safe to run on every bootstrap.
                         engine.seedBestScore(settings.bestScore.value)
 
-                        // Save-restore: on a cold launch the engine is empty, but a
-                        // previous session may have left a playable round on disk.
-                        // Pull it back in so "Continue" on Home actually continues.
-                        // Skipped if the engine already has a live game (mid-process
-                        // navigation) or the saved game was already over.
+                        // Save-restore / Initialization:
+                        // We consolidate this here to avoid race conditions between
+                        // cold-start restoration and the Decompose-triggered Intent.Start.
                         launch {
-                            val engineEmpty = engine.state.value.currentPieces.isEmpty()
-                            if (engineEmpty && !isNewGame) {
+                            val current = engine.state.value
+                            // 1. New game requested OR existing game in memory is already over
+                            if (isNewGame || current.isGameOver) {
+                                engine.startNewGame(bestScore = current.bestScore)
+                            }
+                            // 2. "Continue" requested AND engine is empty (Cold Start)
+                            else if (current.currentPieces.isEmpty()) {
                                 val saved = saveRepository.load()
                                 if (saved != null && !saved.isGameOver && saved.currentPieces.isNotEmpty()) {
                                     engine.restore(saved)
+                                } else {
+                                    // Nothing to continue, start fresh
+                                    engine.startNewGame(bestScore = current.bestScore)
                                 }
                             }
+                            // 3. "Continue" requested AND engine already has state (Warm Start)
+                            // -> Do nothing, the state-snapshot collector will pick up current state.
                         }
 
                         // ── 1. State snapshots ────────────────────────────────────────────
@@ -179,17 +187,6 @@ internal class GameStoreFactory(
                                 .collect { shouldPlay ->
                                     if (shouldPlay) audio.startMusic() else audio.stopMusic()
                                 }
-                        }
-                    }
-
-                    onIntent<GameStore.Intent.Start> {
-                        // GameEngine is AppScope-scoped, so it survives the Game component
-                        // being popped & re-pushed (Home → Play). Without this, returning
-                        // to Home after game-over and pressing Play would re-show the
-                        // dead board because currentPieces wasn't empty.
-                        val s = engine.state.value
-                        if (isNewGame || s.currentPieces.isEmpty() || s.isGameOver) {
-                            engine.startNewGame(bestScore = s.bestScore)
                         }
                     }
                     onIntent<GameStore.Intent.Place> { intent ->
