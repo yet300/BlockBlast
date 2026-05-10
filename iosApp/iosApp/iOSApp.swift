@@ -70,6 +70,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return appGraph.rootFactory.create(componentContext: context)
     }()
 
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        return .portrait
+    }
+
     func application(_ application: UIApplication, shouldSaveSecureApplicationState coder: NSCoder) -> Bool {
         StateKeeperUtilsKt.save(coder: coder, state: stateKeeper.save())
         return true
