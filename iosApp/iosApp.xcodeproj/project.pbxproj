@@ -15,7 +15,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlockBlast.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		71346B7DB7AC52CDD05A2BA1 /* Logica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Logica.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -63,7 +63,7 @@
 		870219FDE2381E1046B97948 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */,
+				71346B7DB7AC52CDD05A2BA1 /* Logica.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -96,6 +96,7 @@
 				22F8B9F3A3BCFBA87F753189 /* Sources */,
 				7728B4269205277A049714FE /* Frameworks */,
 				D42046E77B185842D86D12EE /* Resources */,
+				D45DE91A2FB0BEE400488CBD /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -113,7 +114,7 @@
 				D4858AF22F97B41F00DE4B41 /* GoogleUserMessagingPlatform */,
 			);
 			productName = iosApp;
-			productReference = 71346B7DB7AC52CDD05A2BA1 /* BlockBlast.app */;
+			productReference = 71346B7DB7AC52CDD05A2BA1 /* Logica.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -166,6 +167,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		D45DE91A2FB0BEE400488CBD /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n# Скрипт для SPM (Swift Package Manager)\n\"${BUILD_DIR%Build/*}SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
 		F5F68245A5C3E648FDD0B3EE /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -329,6 +352,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = 3KKQ642Q9H;
 				ENABLE_PREVIEWS = YES;
