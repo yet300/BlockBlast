@@ -30,10 +30,11 @@ internal class DefaultGameComponent(
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val storeReview: StoreReviewRepository,
+    private val isNewGame: Boolean,
     private val onExitClickedCb: () -> Unit,
 ) : ComponentContext by componentContext,
     GameComponent {
-    private val store = instanceKeeper.getStore { gameStoreFactory.create() }
+    private val store = instanceKeeper.getStore { gameStoreFactory.create(isNewGame = isNewGame) }
     private val sheetNavigation = SlotNavigation<SheetConfig>()
     private val lifecycleScope = coroutineScope()
 
@@ -111,6 +112,7 @@ internal class DefaultGameComponentFactory(
 ) : GameComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
+        isNewGame: Boolean,
         onExitClicked: () -> Unit,
     ): GameComponent = DefaultGameComponent(
         componentContext = componentContext,
@@ -118,6 +120,7 @@ internal class DefaultGameComponentFactory(
         settingsComponent = settingsComponent,
         audio = audio,
         storeReview = storeReview,
+        isNewGame = isNewGame,
         onExitClickedCb = onExitClicked,
     )
 }

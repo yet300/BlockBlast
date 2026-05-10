@@ -28,7 +28,7 @@ internal class GameStoreFactory(
     private val saveRepository: GameSaveRepository,
     private val settings: SettingsRepository,
 ) {
-    fun create(): GameStore =
+    fun create(isNewGame: Boolean): GameStore =
         object :
             GameStore,
             Store<GameStore.Intent, GameStoreState, GameStore.Label> by storeFactory.create(
@@ -56,7 +56,7 @@ internal class GameStoreFactory(
                         // navigation) or the saved game was already over.
                         launch {
                             val engineEmpty = engine.state.value.currentPieces.isEmpty()
-                            if (engineEmpty) {
+                            if (engineEmpty && !isNewGame) {
                                 val saved = saveRepository.load()
                                 if (saved != null && !saved.isGameOver && saved.currentPieces.isNotEmpty()) {
                                     engine.restore(saved)
@@ -188,7 +188,7 @@ internal class GameStoreFactory(
                         // to Home after game-over and pressing Play would re-show the
                         // dead board because currentPieces wasn't empty.
                         val s = engine.state.value
-                        if (s.currentPieces.isEmpty() || s.isGameOver) {
+                        if (isNewGame || s.currentPieces.isEmpty() || s.isGameOver) {
                             engine.startNewGame(bestScore = s.bestScore)
                         }
                     }

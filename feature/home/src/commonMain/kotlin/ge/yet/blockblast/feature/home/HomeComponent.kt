@@ -10,7 +10,8 @@ interface HomeComponent {
 
     val model: Value<Model>
 
-    fun onPlayClicked()
+    fun onContinueClicked()
+    fun onNewGameClicked()
 
     data class Model(
         val bestScore: Long,
@@ -20,7 +21,8 @@ interface HomeComponent {
     fun interface Factory {
         fun create(
             componentContext: ComponentContext,
-            onPlayClicked: () -> Unit,
+            onContinueClicked: (Boolean) -> Unit,
+            onNewGameClicked: (Boolean) -> Unit,
         ): HomeComponent
     }
 }

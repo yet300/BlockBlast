@@ -5,8 +5,8 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
-import com.arkivanov.decompose.router.stack.push
 import com.app.common.decompose.coroutineScope
+import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.essenty.lifecycle.doOnStop
@@ -74,16 +74,18 @@ internal class DefaultRootComponent(
         config: Config,
         componentContext: ComponentContext,
     ): RootComponent.Child = when (config) {
-        Config.Home -> RootComponent.Child.Home(
+        is Config.Home -> RootComponent.Child.Home(
             homeFactory.create(
                 componentContext = componentContext,
-                onPlayClicked = { navigation.push(Config.Game) },
+                onContinueClicked = { navigation.bringToFront(Config.Game(isNewGame = false)) },
+                onNewGameClicked = { navigation.bringToFront(Config.Game(isNewGame = true)) },
             )
         )
 
-        Config.Game -> RootComponent.Child.Game(
+        is Config.Game -> RootComponent.Child.Game(
             gameFactory.create(
                 componentContext = componentContext,
+                isNewGame = config.isNewGame,
                 onExitClicked = { navigation.pop() },
             )
         )
@@ -95,7 +97,7 @@ internal class DefaultRootComponent(
         data object Home : Config
 
         @Serializable
-        data object Game : Config
+        data class Game(val isNewGame: Boolean) : Config
     }
 }
 
