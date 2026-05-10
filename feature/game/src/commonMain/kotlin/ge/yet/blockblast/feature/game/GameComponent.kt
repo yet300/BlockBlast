@@ -48,6 +48,7 @@ interface GameComponent {
     fun interface Factory {
         fun create(
             componentContext: ComponentContext,
+            isNewGame: Boolean,
             onExitClicked: () -> Unit,
         ): GameComponent
     }

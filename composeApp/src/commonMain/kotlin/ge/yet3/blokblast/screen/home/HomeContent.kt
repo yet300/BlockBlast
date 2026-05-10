@@ -101,7 +101,7 @@ fun HomeContent(component: HomeComponent) {
                     } else {
                         stringResource(Res.string.play)
                     },
-                    onClick = component::onPlayClicked,
+                    onClick = component::onContinueClicked,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -109,7 +109,7 @@ fun HomeContent(component: HomeComponent) {
                     Spacer(Modifier.height(12.dp))
                     SecondaryWarmSandButton(
                         text = stringResource(Res.string.new_game),
-                        onClick = component::onPlayClicked,
+                        onClick = component::onNewGameClicked,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

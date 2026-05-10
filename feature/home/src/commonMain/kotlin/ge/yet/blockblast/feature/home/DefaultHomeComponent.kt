@@ -14,7 +14,9 @@ import ge.yet.blockblast.feature.home.store.HomeStoreFactory
 internal class DefaultHomeComponent(
     componentContext: ComponentContext,
     private val homeStoreFactory: HomeStoreFactory,
-    private val onPlayClickedCb: () -> Unit,
+
+    private val onContinueClickedCb: (Boolean) -> Unit,
+    private val onNewGameClickedCb: (Boolean) -> Unit,
 ) : ComponentContext by componentContext,
     HomeComponent {
     private val store = instanceKeeper.getStore { homeStoreFactory.create() }
@@ -27,7 +29,8 @@ internal class DefaultHomeComponent(
         lifecycle.doOnStart { store.accept(HomeStore.Intent.Refresh) }
     }
 
-    override fun onPlayClicked() = onPlayClickedCb()
+    override fun onContinueClicked() = onContinueClickedCb(false)
+    override fun onNewGameClicked() = onNewGameClickedCb(true)
 }
 
 @Inject
@@ -36,10 +39,12 @@ internal class DefaultHomeComponentFactory(
 ) : HomeComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
-        onPlayClicked: () -> Unit,
+        onContinueClicked: (Boolean) -> Unit,
+        onNewGameClicked: (Boolean) -> Unit,
     ): HomeComponent = DefaultHomeComponent(
         componentContext = componentContext,
         homeStoreFactory = homeStoreFactory,
-        onPlayClickedCb = onPlayClicked,
+        onContinueClickedCb = onContinueClicked,
+        onNewGameClickedCb = onNewGameClicked,
     )
 }
