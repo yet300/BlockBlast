@@ -1,6 +1,8 @@
 package ge.yet.blokblast.domain.engine
 
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.Polyomino
 import kotlin.random.Random
 
@@ -14,6 +16,7 @@ interface ShapeGenerator {
  * Weighted generator — guarantees a fair mix of small/medium/large shapes
  * so the player never gets three 3x3 blocks in a row.
  */
+@SingleIn(AppScope::class)
 @Inject
 internal class WeightedShapeGenerator : ShapeGenerator {
 
