@@ -10,6 +10,7 @@ import ge.yet.blokblast.data.platform.ActivityProvider
 import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import com.mikhailovskii.inappreview.ReviewCode as LibraryReviewCode
 
@@ -24,14 +25,18 @@ internal class AndroidStoreReviewRepository(
     private var cachedDelegate: GooglePlayInAppReviewManager? = null
     private var cachedActivity: Activity? = null
 
-    override fun requestInAppReview(): Flow<ReviewCode> =
-        delegate().requestInAppReview().map { it.toDomain() }
+    override fun requestInAppReview(): Flow<ReviewCode> {
+        val manager = delegate() ?: return flowOf(ReviewCode.INTERNAL_ERROR)
+        return manager.requestInAppReview().map { it.toDomain() }
+    }
 
-    override fun requestInMarketReview(): Flow<ReviewCode> =
-        delegate().requestInMarketReview().map { it.toDomain() }
+    override fun requestInMarketReview(): Flow<ReviewCode> {
+        val manager = delegate() ?: return flowOf(ReviewCode.INTERNAL_ERROR)
+        return manager.requestInMarketReview().map { it.toDomain() }
+    }
 
-    private fun delegate(): GooglePlayInAppReviewManager {
-        val act = activityProvider.current()
+    private fun delegate(): GooglePlayInAppReviewManager? {
+        val act = activityProvider.current() ?: return null // Возвращаем null если нет Activity
         val cached = cachedDelegate
         if (cached != null && cachedActivity === act) return cached
         return GooglePlayInAppReviewManager(GooglePlayInAppReviewInitParams(act))

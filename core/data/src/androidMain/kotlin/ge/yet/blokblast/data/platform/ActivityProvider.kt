@@ -39,6 +39,5 @@ internal class ActivityProvider(context: android.content.Context) {
             })
     }
 
-    fun current(): Activity =
-        currentRef.get() ?: error("No resumed Activity available for StoreReview")
+    fun current(): android.app.Activity? = currentRef.get()
 }
