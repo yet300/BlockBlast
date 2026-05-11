@@ -10,10 +10,12 @@ import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.home.integration.stateToModel
 import ge.yet.blockblast.feature.home.store.HomeStore
 import ge.yet.blockblast.feature.home.store.HomeStoreFactory
+import ge.yet.blokblast.domain.repository.AnalyticRepository
 
 internal class DefaultHomeComponent(
     componentContext: ComponentContext,
     private val homeStoreFactory: HomeStoreFactory,
+    private val analytics: AnalyticRepository,
 
     private val onContinueClickedCb: (Boolean) -> Unit,
     private val onNewGameClickedCb: (Boolean) -> Unit,
@@ -29,13 +31,32 @@ internal class DefaultHomeComponent(
         lifecycle.doOnStart { store.accept(HomeStore.Intent.Refresh) }
     }
 
-    override fun onContinueClicked() = onContinueClickedCb(false)
-    override fun onNewGameClicked() = onNewGameClickedCb(true)
+    override fun onContinueClicked() {
+        logHomeClick("continue_clicked")
+        onContinueClickedCb(false)
+    }
+
+    override fun onNewGameClicked() {
+        logHomeClick("new_game_clicked")
+        onNewGameClickedCb(true)
+    }
+
+    private fun logHomeClick(eventName: String) {
+        val state = store.state
+        analytics.logEvent(
+            eventName = eventName,
+            params = mapOf(
+                "best_score" to state.bestScore,
+                "has_saved_game" to state.hasSavedGame,
+            ),
+        )
+    }
 }
 
 @Inject
 internal class DefaultHomeComponentFactory(
     private val homeStoreFactory: HomeStoreFactory,
+    private val analytics: AnalyticRepository,
 ) : HomeComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
@@ -44,6 +65,7 @@ internal class DefaultHomeComponentFactory(
     ): HomeComponent = DefaultHomeComponent(
         componentContext = componentContext,
         homeStoreFactory = homeStoreFactory,
+        analytics = analytics,
         onContinueClickedCb = onContinueClicked,
         onNewGameClickedCb = onNewGameClicked,
     )

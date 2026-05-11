@@ -9,10 +9,12 @@ import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.settings.integration.stateToModel
 import ge.yet.blockblast.feature.settings.store.SettingsStore
 import ge.yet.blockblast.feature.settings.store.SettingsStoreFactory
+import ge.yet.blokblast.domain.repository.AnalyticRepository
 
 internal class DefaultSettingsComponent(
     componentContext: ComponentContext,
     private val storeFactory: SettingsStoreFactory,
+    private val analytics: AnalyticRepository,
     private val onBackClickedCb: () -> Unit,
 ) : SettingsComponent, ComponentContext by componentContext {
 
@@ -33,12 +35,19 @@ internal class DefaultSettingsComponent(
         store.accept(SettingsStore.Intent.SetDark(enabled))
     }
 
-    override fun onBackClicked() = onBackClickedCb()
+    override fun onBackClicked() {
+        analytics.logEvent(
+            eventName = "settings_back_clicked",
+            params = null,
+        )
+        onBackClickedCb()
+    }
 }
 
 @Inject
 internal class DefaultSettingsComponentFactory(
     private val storeFactory: SettingsStoreFactory,
+    private val analytics: AnalyticRepository,
 ) : SettingsComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
@@ -46,6 +55,7 @@ internal class DefaultSettingsComponentFactory(
     ): SettingsComponent = DefaultSettingsComponent(
         componentContext = componentContext,
         storeFactory = storeFactory,
+        analytics = analytics,
         onBackClickedCb = onBackClicked,
     )
 }
