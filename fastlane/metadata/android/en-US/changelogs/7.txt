@@ -1,0 +1,1 @@
+We’ve spruced up the game: we’ve added 8 new languages (so you can now play with an accent), a “Continue” button for when your phone suddenly rings, and made the in-game feedback more user-friendly. We’ve also added analytics—now we know exactly when you start to lose focus. Let’s keep playing! 🧩✨
