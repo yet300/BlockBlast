@@ -43,6 +43,10 @@ interface GameComponent {
         class Settings(
             val component: SettingsComponent,
         ) : SheetChild
+
+        class ReviewPrompt(
+            val component: ReviewPromptComponent,
+        ) : SheetChild
     }
 
     fun interface Factory {
