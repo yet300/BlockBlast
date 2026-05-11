@@ -1,10 +1,9 @@
 package ge.yet.blokblast.domain.di
 
 import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.engine.ShapeGenerator
 import ge.yet.blokblast.domain.engine.WeightedShapeGenerator
 
@@ -16,9 +15,8 @@ import ge.yet.blokblast.domain.engine.WeightedShapeGenerator
  */
 @ContributesTo(AppScope::class)
 @BindingContainer
-object DomainBindings {
+abstract class DomainBindings {
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideShapeGenerator(impl: WeightedShapeGenerator): ShapeGenerator = impl
+    @Binds
+    internal abstract val WeightedShapeGenerator.bindShapeGenerator: ShapeGenerator
 }

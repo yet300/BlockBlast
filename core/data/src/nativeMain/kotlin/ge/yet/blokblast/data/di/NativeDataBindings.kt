@@ -1,11 +1,9 @@
 package ge.yet.blokblast.data.di
 
-import com.russhwolf.settings.ExperimentalSettingsApi
 import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.data.platform.NativePlatformSoundPlayer
 import ge.yet.blokblast.data.platform.NativePlatformVibrator
 import ge.yet.blokblast.data.platform.PlatformSoundPlayer
@@ -19,26 +17,16 @@ import platform.Foundation.NSUserDefaults
  * for user preferences — matches the native feel on iOS and is immediately
  * observable through multiplatform-settings.
  */
-@OptIn(ExperimentalSettingsApi::class)
 @ContributesTo(AppScope::class)
 @BindingContainer
-object NativeDataBindings {
+abstract class NativeDataBindings {
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun providePlatformSoundPlayer(
-        impl: NativePlatformSoundPlayer,
-    ): PlatformSoundPlayer = impl
+    @Binds
+    internal abstract val NativePlatformSoundPlayer.bindPlatformSoundPlayer: PlatformSoundPlayer
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun providePlatformVibrator(
-        impl: NativePlatformVibrator,
-    ): PlatformVibrator = impl
+    @Binds
+    internal abstract val NativePlatformVibrator.bindPlatformVibrator: PlatformVibrator
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideStoreReviewRepository(
-        impl: IosStoreReviewRepository,
-    ): StoreReviewRepository = impl
+    @Binds
+    internal abstract val IosStoreReviewRepository.bindStoreReviewRepository: StoreReviewRepository
 }

@@ -5,6 +5,7 @@ import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.observable.makeObservable
 import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
@@ -35,48 +36,38 @@ import ge.yet.blokblast.domain.repository.VibrationRepository
 @OptIn(ExperimentalSettingsApi::class)
 @ContributesTo(AppScope::class)
 @BindingContainer
-object DataBindings {
+abstract class DataBindings {
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideGameSaveRepository(
-        impl: SettingsBackedGameSaveRepository,
-    ): GameSaveRepository = impl
+    @Binds
+    internal abstract val SettingsBackedGameSaveRepository.bindGameSaveRepository: GameSaveRepository
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideSettingsRepository(
-        impl: SettingsBackedSettingsRepository,
-    ): SettingsRepository = impl
+    @Binds
+    internal abstract val SettingsBackedSettingsRepository.bindSettingsRepository: SettingsRepository
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideAudioRepository(
-        impl: DefaultAudioRepository,
-    ): AudioRepository = impl
+    @Binds
+    internal abstract val DefaultAudioRepository.bindAudioRepository: AudioRepository
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideVibrationRepository(
-        impl: DefaultVibrationRepository,
-    ): VibrationRepository = impl
+    @Binds
+    internal abstract val DefaultVibrationRepository.bindVibrationRepository: VibrationRepository
 
-    @Provides @SingleIn(AppScope::class)
-    internal fun provideCrashlyticsRepository(impl: CrashlyticsRepositoryImpl): CrashlyticsRepository = impl
+    @Binds
+    internal abstract val CrashlyticsRepositoryImpl.bindCrashlyticsRepository: CrashlyticsRepository
 
-    @Provides @SingleIn(AppScope::class)
-    internal fun provideAnalyticRepository(impl: AnalyticRepositoryImpl): AnalyticRepository = impl
+    @Binds
+    internal abstract val AnalyticRepositoryImpl.bindAnalyticRepository: AnalyticRepository
 
     /**
      * Widening binding so consumers that only need the base [Settings] API share
      * the same singleton instance as [SettingsBackedSettingsRepository] — no
      * duplicate stores, no lost writes.
      */
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideSettings(): Settings = Settings()
+    companion object {
+        @Provides
+        @SingleIn(AppScope::class)
+        internal fun provideSettings(): Settings = Settings()
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideObservableSettings(impl: Settings): ObservableSettings = impl.makeObservable()
+        @Provides
+        @SingleIn(AppScope::class)
+        internal fun provideObservableSettings(impl: Settings): ObservableSettings = impl.makeObservable()
+    }
 }

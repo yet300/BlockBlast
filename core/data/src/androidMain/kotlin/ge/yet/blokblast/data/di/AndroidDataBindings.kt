@@ -1,12 +1,10 @@
 package ge.yet.blokblast.data.di
 
 import android.content.Context
-import com.russhwolf.settings.ExperimentalSettingsApi
 import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.data.platform.AndroidPlatformSoundPlayer
 import ge.yet.blokblast.data.platform.AndroidPlatformVibrator
 import ge.yet.blokblast.data.platform.PlatformSoundPlayer
@@ -19,26 +17,16 @@ import ge.yet.blokblast.domain.repository.StoreReviewRepository
  * by the host via `@BindsInstance` on the top-level graph factory — that's the
  * only place Android needs to reach through the DI boundary.
  */
-@OptIn(ExperimentalSettingsApi::class)
 @ContributesTo(AppScope::class)
 @BindingContainer
-object AndroidDataBindings {
+abstract class AndroidDataBindings {
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun providePlatformSoundPlayer(
-        impl: AndroidPlatformSoundPlayer,
-    ): PlatformSoundPlayer = impl
+    @Binds
+    internal abstract val AndroidPlatformSoundPlayer.bindPlatformSoundPlayer: PlatformSoundPlayer
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun providePlatformVibrator(
-        impl: AndroidPlatformVibrator,
-    ): PlatformVibrator = impl
+    @Binds
+    internal abstract val AndroidPlatformVibrator.bindPlatformVibrator: PlatformVibrator
 
-    @Provides
-    @SingleIn(AppScope::class)
-    internal fun provideStoreReviewRepository(
-        impl: AndroidStoreReviewRepository,
-    ): StoreReviewRepository = impl
+    @Binds
+    internal abstract val AndroidStoreReviewRepository.bindStoreReviewRepository: StoreReviewRepository
 }
