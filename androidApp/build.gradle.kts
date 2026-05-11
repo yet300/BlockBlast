@@ -58,7 +58,3 @@ dependencies {
     implementation(libs.firebase.android.crashlytics.ktx)
 
 }
-
-configurations.all {
-    exclude(group = "io.github.sergeimikhailovskii", module = "in-app-review-kmp-android")
-}
