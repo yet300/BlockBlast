@@ -1,5 +1,6 @@
 package ge.yet.blockblast.feature.game
 
+import com.app.common.config.AppConfig
 import com.app.common.decompose.asValue
 import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.ComponentContext
@@ -11,7 +12,6 @@ import com.arkivanov.decompose.router.slot.dismiss
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.essenty.lifecycle.doOnDestroy
-import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
@@ -21,6 +21,7 @@ import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
+import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -30,6 +31,7 @@ internal class DefaultGameComponent(
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
+    private val settings: SettingsRepository,
     private val storeReview: StoreReviewRepository,
     private val analytics: AnalyticRepository,
     private val isNewGame: Boolean,
@@ -66,10 +68,10 @@ internal class DefaultGameComponent(
                 when (label) {
                     GameStore.Label.RequestReview -> {
                         analytics.logEvent(
-                            eventName = "review_requested",
+                            eventName = "review_prompt_shown",
                             params = gameParams(),
                         )
-                        storeReview.requestInAppReview().collect {}
+                        sheetNavigation.activate(SheetConfig.ReviewPrompt)
                     }
                 }
             }
@@ -100,11 +102,42 @@ internal class DefaultGameComponent(
     }
 
     override fun onDismissSheet() {
+        when (sheetSlot.value.child?.instance) {
+            is GameComponent.SheetChild.Settings ->
+                analytics.logEvent(
+                    eventName = "settings_closed",
+                    params = gameParams(),
+                )
+            is GameComponent.SheetChild.ReviewPrompt ->
+                analytics.logEvent(
+                    eventName = "review_prompt_closed",
+                    params = gameParams(),
+                )
+            null -> Unit
+        }
+        sheetNavigation.dismiss()
+    }
+
+    private fun onReviewPromptDontShowAgainClicked() {
         analytics.logEvent(
-            eventName = "settings_closed",
+            eventName = "review_prompt_suppressed",
             params = gameParams(),
         )
-        sheetNavigation.dismiss()
+        lifecycleScope.launch {
+            while (settings.reviewPromptCount.value < AppConfig.REVIEW_MAX_PROMPTS) {
+                settings.incrementReviewPromptCount()
+            }
+        }
+    }
+
+    private fun onReviewPromptLeaveFeedbackClicked() {
+        analytics.logEvent(
+            eventName = "review_requested",
+            params = gameParams(),
+        )
+        lifecycleScope.launch {
+            storeReview.requestInAppReview().collect {}
+        }
     }
 
     private fun gameParams(): Map<String, Any> {
@@ -129,12 +162,24 @@ internal class DefaultGameComponent(
                         onBackClicked = ::onDismissSheet
                     ),
                 )
+            is SheetConfig.ReviewPrompt ->
+                GameComponent.SheetChild.ReviewPrompt(
+                    DefaultReviewPromptComponent(
+                        componentContext = componentContext,
+                        onDontShowAgainRequested = ::onReviewPromptDontShowAgainClicked,
+                        onDismissed = { sheetNavigation.dismiss() },
+                        onReviewRequested = ::onReviewPromptLeaveFeedbackClicked,
+                    ),
+                )
         }
 
     @Serializable
     sealed interface SheetConfig {
         @Serializable
         data object Settings : SheetConfig
+
+        @Serializable
+        data object ReviewPrompt : SheetConfig
     }
 }
 
@@ -144,6 +189,7 @@ internal class DefaultGameComponentFactory(
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
+    private val settings: SettingsRepository,
     private val storeReview: StoreReviewRepository,
     private val analytics: AnalyticRepository,
 ) : GameComponent.Factory {
@@ -156,6 +202,7 @@ internal class DefaultGameComponentFactory(
         gameStoreFactory = gameStoreFactory,
         settingsComponent = settingsComponent,
         audio = audio,
+        settings = settings,
         storeReview = storeReview,
         analytics = analytics,
         isNewGame = isNewGame,
