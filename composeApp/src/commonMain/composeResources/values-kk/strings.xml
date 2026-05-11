@@ -51,4 +51,10 @@
     <string name="tutorial_next">Келесі</string>
     <string name="tutorial_done">Түсінікті</string>
     <string name="tutorial_skip">Өткізіп жіберу</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica ұнады ма?</string>
+    <string name="review_prompt_body">Сіздің пікіріңіз көбірек жұмбақ ойыншыларына ойынды табуға көмектеседі.</string>
+    <string name="review_prompt_leave_feedback">Пікір қалдыру</string>
+    <string name="review_prompt_dont_show">Қайта көрсетпеу</string>
 </resources>

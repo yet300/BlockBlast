@@ -51,4 +51,10 @@
     <string name="tutorial_next">Հաջորդը</string>
     <string name="tutorial_done">Պարզ է</string>
     <string name="tutorial_skip">Բաց թողնել</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Հավանու՞մ եք Logica-ն</string>
+    <string name="review_prompt_body">Ձեր գնահատականը կօգնի ավելի շատ գլուխկոտրուկների սիրահարների գտնել խաղը:</string>
+    <string name="review_prompt_leave_feedback">Թողնել կարծիք</string>
+    <string name="review_prompt_dont_show">Այլևս չցուցադրել</string>
 </resources>

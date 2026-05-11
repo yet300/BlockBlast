@@ -51,4 +51,10 @@
     <string name="tutorial_next">הבא</string>
     <string name="tutorial_done">הבנתי</string>
     <string name="tutorial_skip">דלג</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">נהנה מ-Logica?</string>
+    <string name="review_prompt_body">הביקורת שלך עוזרת לשחקני פאזלים נוספים למצוא את המשחק.</string>
+    <string name="review_prompt_leave_feedback">השאר משוב</string>
+    <string name="review_prompt_dont_show">אל תציג שוב</string>
 </resources>

@@ -51,4 +51,10 @@
     <string name="tutorial_next">Siguiente</string>
     <string name="tutorial_done">Entendido</string>
     <string name="tutorial_skip">Omitir</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">¿Disfrutando Logica?</string>
+    <string name="review_prompt_body">Tu reseña ayuda a más jugadores de puzzles a encontrar el juego.</string>
+    <string name="review_prompt_leave_feedback">Dejar comentario</string>
+    <string name="review_prompt_dont_show">No mostrar de nuevo</string>
 </resources>

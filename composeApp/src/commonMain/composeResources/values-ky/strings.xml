@@ -51,4 +51,10 @@
     <string name="tutorial_next">Кийинки</string>
     <string name="tutorial_done">Түшүнүктүү</string>
     <string name="tutorial_skip">Өткөрүп жиберүү</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica жакты беби?</string>
+    <string name="review_prompt_body">Сиздин баа берүүңүз башка табышмак ойноочуларга оюнду табууга жардам берет.</string>
+    <string name="review_prompt_leave_feedback">Пикир калтыруу</string>
+    <string name="review_prompt_dont_show">Кайра көрсөтпөө</string>
 </resources>

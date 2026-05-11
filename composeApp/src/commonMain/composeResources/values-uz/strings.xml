@@ -3,20 +3,20 @@
     <string name="app_name">Logica</string>
 
     <!-- Home Screen -->
-    <string name="play">O‘ynash</string>
+    <string name="play">O'ynash</string>
     <string name="continue_game">Davom etish</string>
-    <string name="new_game">Yangi o‘yin</string>
+    <string name="new_game">Yangi o'yin</string>
     <string name="best_score_label">Eng yuqori ball</string>
     <string name="home_tagline">Sokin kichik jumboq</string>
 
     <!-- Game Screen -->
     <string name="score">Ball</string>
     <string name="best">Rekord</string>
-    <string name="game_over">O‘yin tugadi</string>
+    <string name="game_over">O'yin tugadi</string>
     <string name="game_over_subtitle">Doskada harakatlar qolmadi</string>
     <string name="new_best">Yangi rekord</string>
     <string name="revive">Davom etish</string>
-    <string name="restart">Yangi o‘yin</string>
+    <string name="restart">Yangi o'yin</string>
     <string name="exit_to_home">Chiqish</string>
     <string name="cd_settings">Sozlamalar</string>
     <string name="cd_back">Orqaga</string>
@@ -25,13 +25,13 @@
     <!-- Settings -->
     <string name="settings">Sozlamalar</string>
     <string name="sound">Ovoz</string>
-    <string name="sound_subtitle">O‘yinning ovoz effektlari</string>
+    <string name="sound_subtitle">O'yinning ovoz effektlari</string>
     <string name="vibration">Vibratsiya</string>
     <string name="vibration_subtitle">Joylashtirishda tebranishli aloqa</string>
     <string name="dark_theme">Tungi mavzu</string>
     <string name="dark_theme_subtitle">Har doim tungi rejim</string>
     <string name="privacy_policy">Maxfiylik siyosati</string>
-    <string name="privacy_policy_subtitle">Ma’lumotlaringizni qanday qayta ishlaymiz</string>
+    <string name="privacy_policy_subtitle">Ma'lumotlaringizni qanday qayta ishlaymiz</string>
 
     <!-- Common -->
     <string name="exit">Chiqish</string>
@@ -40,15 +40,21 @@
     <string name="feedback_good">Yaxshi</string>
     <string name="feedback_great">Ajoyib!</string>
     <string name="feedback_excellent">Mukkammal!</string>
-    <string name="feedback_unbelievable">Inonib bo‘lmas!</string>
+    <string name="feedback_unbelievable">Inonib bo'lmas!</string>
     <string name="feedback_combo">Kombo</string>
 
     <!-- Tutorial -->
     <string name="tutorial_tray_title">Shaklni tanlang</string>
-    <string name="tutorial_tray_body">Ko‘tarish uchun shaklni bosib turing.</string>
+    <string name="tutorial_tray_body">Ko'tarish uchun shaklni bosib turing.</string>
     <string name="tutorial_grid_title">Doskaga joylashtiring</string>
-    <string name="tutorial_grid_body">Joylashtirish uchun shaklni doskaga suring. Tozalash uchun qator yoki ustunni to‘ldiring.</string>
+    <string name="tutorial_grid_body">Joylashtirish uchun shaklni doskaga suring. Tozalash uchun qator yoki ustunni to'ldiring.</string>
     <string name="tutorial_next">Keyingi</string>
     <string name="tutorial_done">Tushunarli</string>
-    <string name="tutorial_skip">O‘tkazib yuborish</string>
+    <string name="tutorial_skip">O'tkazib yuborish</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica yoqdimi?</string>
+    <string name="review_prompt_body">Sizning sharhingiz ko'proq jumboq o'yinchilariga o'yinni topishga yordam beradi.</string>
+    <string name="review_prompt_leave_feedback">Fikr qoldirish</string>
+    <string name="review_prompt_dont_show">Yana ko'rsatmaslik</string>
 </resources>

@@ -51,4 +51,10 @@
     <string name="tutorial_next">Indiki</string>
     <string name="tutorial_done">Düşündim</string>
     <string name="tutorial_skip">Geç</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica halaýarmy?</string>
+    <string name="review_prompt_body">Siziň synlaryňyz has köp tapmaça oýunçylaryna oýny tapmaga kömek eder.</string>
+    <string name="review_prompt_leave_feedback">Pikir galdyrmak</string>
+    <string name="review_prompt_dont_show">Ýene görkezme</string>
 </resources>

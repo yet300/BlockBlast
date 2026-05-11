@@ -51,4 +51,10 @@
     <string name="tutorial_next">Tovább</string>
     <string name="tutorial_done">Értem</string>
     <string name="tutorial_skip">Kihagyás</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Tetszik a Logica?</string>
+    <string name="review_prompt_body">Az értékelésed segít több kirakós játékosnak megtalálni a játékot.</string>
+    <string name="review_prompt_leave_feedback">Visszajelzés küldése</string>
+    <string name="review_prompt_dont_show">Ne jelenjen meg újra</string>
 </resources>

@@ -51,4 +51,10 @@
     <string name="tutorial_next">შემდეგი</string>
     <string name="tutorial_done">გასაგებია</string>
     <string name="tutorial_skip">გამოტოვება</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">მოგწონთ Logica?</string>
+    <string name="review_prompt_body">თქვენი შეფასება დაეხმარება მეტ თავსატეხის მოთამაშეს თამაშის პოვნაში.</string>
+    <string name="review_prompt_leave_feedback">გამოხმაურების დატოვება</string>
+    <string name="review_prompt_dont_show">აღარ აჩვენო</string>
 </resources>

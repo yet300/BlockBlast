@@ -4,7 +4,7 @@
 
     <!-- Home Screen -->
     <string name="play">খেলুন</string>
-    <string name="continue_game">চালিয়ে যান</string>
+    <string name="continue_game">চালিয়ে যান</string>
     <string name="new_game">নতুন খেলা</string>
     <string name="best_score_label">সেরা স্কোর</string>
     <string name="home_tagline">একটি শান্ত ছোট ধাঁধা</string>
@@ -15,9 +15,9 @@
     <string name="game_over">খেলা শেষ</string>
     <string name="game_over_subtitle">বোর্ডে আর কোনো চাল বাকি নেই</string>
     <string name="new_best">নতুন রেকর্ড</string>
-    <string name="revive">চালিয়ে যান</string>
+    <string name="revive">চালিয়ে যান</string>
     <string name="restart">নতুন খেলা</string>
-    <string name="exit_to_home">বেরিয়ে যান</string>
+    <string name="exit_to_home">বেরিয়ে যান</string>
     <string name="cd_settings">সেটিংস</string>
     <string name="cd_back">পিছনে</string>
     <string name="cd_close">বন্ধ করুন</string>
@@ -27,14 +27,14 @@
     <string name="sound">শব্দ</string>
     <string name="sound_subtitle">খেলার শব্দ প্রভাব</string>
     <string name="vibration">কম্পন</string>
-    <string name="vibration_subtitle">রাখার সময় হ্যাপটিক ফিডব্যাক</string>
+    <string name="vibration_subtitle">রাখার সময় হ্যাপটিক ফিডব্যাক</string>
     <string name="dark_theme">ডার্ক থিম</string>
     <string name="dark_theme_subtitle">সর্বদা ডার্ক মোড চালু</string>
     <string name="privacy_policy">গোপনীয়তা নীতি</string>
     <string name="privacy_policy_subtitle">আমরা আপনার ডেটা কীভাবে ব্যবহার করি</string>
 
     <!-- Common -->
-    <string name="exit">বেরিয়ে যান</string>
+    <string name="exit">বেরিয়ে যান</string>
 
     <!-- Feedback Popups -->
     <string name="feedback_good">ভালো</string>
@@ -50,5 +50,11 @@
     <string name="tutorial_grid_body">এটি রাখার জন্য টুকরাটিকে বোর্ডে টেনে আনুন। এটি সরানোর জন্য একটি সম্পূর্ণ সারি বা কলাম পূরণ করুন।</string>
     <string name="tutorial_next">পরবর্তী</string>
     <string name="tutorial_done">বুঝেছি</string>
-    <string name="tutorial_skip">এড়িয়ে যান</string>
+    <string name="tutorial_skip">এড়িয়ে যান</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica উপভোগ করছেন?</string>
+    <string name="review_prompt_body">আপনার রিভিউ আরও ধাঁধা খেলোয়াড়দের খেলাটি খুঁজে পেতে সাহায্য করে।</string>
+    <string name="review_prompt_leave_feedback">মতামত দিন</string>
+    <string name="review_prompt_dont_show">আর দেখাবেন না</string>
 </resources>

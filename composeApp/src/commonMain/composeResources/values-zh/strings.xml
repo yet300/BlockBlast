@@ -51,4 +51,10 @@
     <string name="tutorial_next">下一步</string>
     <string name="tutorial_done">知道了</string>
     <string name="tutorial_skip">跳过</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">喜欢Logica吗？</string>
+    <string name="review_prompt_body">您的评价可以帮助更多拼图玩家找到这款游戏。</string>
+    <string name="review_prompt_leave_feedback">留下反馈</string>
+    <string name="review_prompt_dont_show">不再显示</string>
 </resources>

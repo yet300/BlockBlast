@@ -51,4 +51,10 @@
     <string name="tutorial_next">Далі</string>
     <string name="tutorial_done">Зрозуміло</string>
     <string name="tutorial_skip">Пропустити</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Подобається Logica?</string>
+    <string name="review_prompt_body">Ваш відгук допоможе іншим любителям головоломок знайти гру.</string>
+    <string name="review_prompt_leave_feedback">Залишити відгук</string>
+    <string name="review_prompt_dont_show">Більше не показувати</string>
 </resources>

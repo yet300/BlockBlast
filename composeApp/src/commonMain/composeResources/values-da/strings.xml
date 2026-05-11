@@ -51,4 +51,10 @@
     <string name="tutorial_next">Næste</string>
     <string name="tutorial_done">Forstået</string>
     <string name="tutorial_skip">Spring over</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Nyder du Logica?</string>
+    <string name="review_prompt_body">Din anmeldelse hjælper flere puslespilsspillere med at finde spillet.</string>
+    <string name="review_prompt_leave_feedback">Giv feedback</string>
+    <string name="review_prompt_dont_show">Vis ikke igen</string>
 </resources>

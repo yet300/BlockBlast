@@ -51,4 +51,10 @@
     <string name="tutorial_next">Berikutnya</string>
     <string name="tutorial_done">Mengerti</string>
     <string name="tutorial_skip">Lewati</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Menikmati Logica?</string>
+    <string name="review_prompt_body">Ulasan Anda membantu lebih banyak pemain teka-teki menemukan permainan ini.</string>
+    <string name="review_prompt_leave_feedback">Berikan masukan</string>
+    <string name="review_prompt_dont_show">Jangan tampilkan lagi</string>
 </resources>

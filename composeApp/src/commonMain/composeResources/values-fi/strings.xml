@@ -51,4 +51,10 @@
     <string name="tutorial_next">Seuraava</string>
     <string name="tutorial_done">Selvä</string>
     <string name="tutorial_skip">Ohita</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Pidätkö Logicasta?</string>
+    <string name="review_prompt_body">Arviosi auttaa muita palapelipelaajia löytämään pelin.</string>
+    <string name="review_prompt_leave_feedback">Jätä palaute</string>
+    <string name="review_prompt_dont_show">Älä näytä uudelleen</string>
 </resources>

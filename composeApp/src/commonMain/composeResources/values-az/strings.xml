@@ -51,4 +51,10 @@
     <string name="tutorial_next">Növbəti</string>
     <string name="tutorial_done">Anladım</string>
     <string name="tutorial_skip">Ötür</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica xoşunuza gəlir?</string>
+    <string name="review_prompt_body">Rəyiniz daha çox tapmaca oyunçusunun oyunu tapmasına kömək edir.</string>
+    <string name="review_prompt_leave_feedback">Rəy yazın</string>
+    <string name="review_prompt_dont_show">Bir daha göstərmə</string>
 </resources>

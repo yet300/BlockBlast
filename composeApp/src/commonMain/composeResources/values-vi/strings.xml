@@ -51,4 +51,10 @@
     <string name="tutorial_next">Tiếp theo</string>
     <string name="tutorial_done">Đã hiểu</string>
     <string name="tutorial_skip">Bỏ qua</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Bạn thích Logica?</string>
+    <string name="review_prompt_body">Đánh giá của bạn giúp nhiều người chơi giải đố tìm thấy trò chơi này.</string>
+    <string name="review_prompt_leave_feedback">Để lại phản hồi</string>
+    <string name="review_prompt_dont_show">Không hiển thị lại</string>
 </resources>

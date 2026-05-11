@@ -51,4 +51,10 @@
     <string name="tutorial_next">Următorul</string>
     <string name="tutorial_done">Am înțeles</string>
     <string name="tutorial_skip">Omite</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Îți place Logica?</string>
+    <string name="review_prompt_body">Recenzia ta îi ajută pe mai mulți jucători de puzzle să găsească jocul.</string>
+    <string name="review_prompt_leave_feedback">Lasă un feedback</string>
+    <string name="review_prompt_dont_show">Nu mai afișa</string>
 </resources>
