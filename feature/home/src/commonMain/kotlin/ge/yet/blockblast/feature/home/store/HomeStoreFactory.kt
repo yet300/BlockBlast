@@ -6,6 +6,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
+import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.launch
@@ -15,6 +16,7 @@ internal class HomeStoreFactory(
     private val storeFactory: StoreFactory,
     private val saveRepository: GameSaveRepository,
     private val settings: SettingsRepository,
+    private val analytics: AnalyticRepository,
 ) {
     fun create(): HomeStore =
         object :
@@ -44,10 +46,19 @@ internal class HomeStoreFactory(
                         launch {
                             val saved = saveRepository.load()
                             val bestScore = maxOf(settings.bestScore.value, saved?.bestScore ?: 0L)
+                            val hasSavedGame =
+                                saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty()
+                            analytics.logEvent(
+                                eventName = "home_shown",
+                                params = mapOf(
+                                    "best_score" to bestScore,
+                                    "has_saved_game" to hasSavedGame,
+                                ),
+                            )
                             dispatch(
                                 HomeStore.Msg.Loaded(
                                     bestScore = bestScore,
-                                    hasSavedGame = saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty(),
+                                    hasSavedGame = hasSavedGame,
                                 )
                             )
                         }

@@ -6,6 +6,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
+import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 internal class SettingsStoreFactory(
     private val storeFactory: StoreFactory,
     private val settingsRepository: SettingsRepository,
+    private val analytics: AnalyticRepository,
 ) {
     fun create(): SettingsStore =
         object :
@@ -38,18 +40,30 @@ internal class SettingsStoreFactory(
                         }
                     }
                     onIntent<SettingsStore.Intent.SetSound> { intent ->
+                        logSettingChanged(setting = "sound", enabled = intent.enabled)
                         launch { settingsRepository.setSoundEnabled(intent.enabled) }
                     }
                     onIntent<SettingsStore.Intent.SetVibration> { intent ->
+                        logSettingChanged(setting = "vibration", enabled = intent.enabled)
                         launch { settingsRepository.setVibrationEnabled(intent.enabled) }
                     }
                     onIntent<SettingsStore.Intent.SetDark> { intent ->
+                        logSettingChanged(setting = "dark_theme", enabled = intent.enabled)
                         launch { settingsRepository.setDarkTheme(intent.enabled) }
                     }
                 },
                 reducer = SettingsReducer,
             ) {}
 
+    private fun logSettingChanged(setting: String, enabled: Boolean) {
+        analytics.logEvent(
+            eventName = "setting_changed",
+            params = mapOf(
+                "setting" to setting,
+                "enabled" to enabled,
+            ),
+        )
+    }
 
     internal object SettingsReducer : Reducer<SettingsStore.State, SettingsStore.Msg> {
         override fun SettingsStore.State.reduce(msg: SettingsStore.Msg): SettingsStore.State =

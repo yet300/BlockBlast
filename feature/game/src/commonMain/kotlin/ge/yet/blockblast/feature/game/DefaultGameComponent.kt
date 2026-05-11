@@ -19,6 +19,7 @@ import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
+import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.launch
@@ -30,6 +31,7 @@ internal class DefaultGameComponent(
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val storeReview: StoreReviewRepository,
+    private val analytics: AnalyticRepository,
     private val isNewGame: Boolean,
     private val onExitClickedCb: () -> Unit,
 ) : ComponentContext by componentContext,
@@ -62,8 +64,13 @@ internal class DefaultGameComponent(
         lifecycleScope.launch {
             store.labels.collect { label ->
                 when (label) {
-                    GameStore.Label.RequestReview ->
+                    GameStore.Label.RequestReview -> {
+                        analytics.logEvent(
+                            eventName = "review_requested",
+                            params = gameParams(),
+                        )
                         storeReview.requestInAppReview().collect {}
+                    }
                 }
             }
         }
@@ -76,9 +83,39 @@ internal class DefaultGameComponent(
 
     override fun onReviveClicked() = store.accept(GameStore.Intent.Revive)
     override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
-    override fun onSettingsClicked() = sheetNavigation.activate(SheetConfig.Settings)
-    override fun onExitClicked() = onExitClickedCb()
-    override fun onDismissSheet() = sheetNavigation.dismiss()
+    override fun onSettingsClicked() {
+        analytics.logEvent(
+            eventName = "settings_opened",
+            params = gameParams(),
+        )
+        sheetNavigation.activate(SheetConfig.Settings)
+    }
+
+    override fun onExitClicked() {
+        analytics.logEvent(
+            eventName = "exit_clicked",
+            params = gameParams(),
+        )
+        onExitClickedCb()
+    }
+
+    override fun onDismissSheet() {
+        analytics.logEvent(
+            eventName = "settings_closed",
+            params = gameParams(),
+        )
+        sheetNavigation.dismiss()
+    }
+
+    private fun gameParams(): Map<String, Any> {
+        val game = store.state.game
+        return mapOf(
+            "score" to game.score,
+            "best_score" to game.bestScore,
+            "revives_used" to game.revivesUsed,
+            "remaining_pieces" to game.currentPieces.size,
+        )
+    }
 
     private fun createSheetChild(
         config: SheetConfig,
@@ -108,6 +145,7 @@ internal class DefaultGameComponentFactory(
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val storeReview: StoreReviewRepository,
+    private val analytics: AnalyticRepository,
 ) : GameComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
@@ -119,6 +157,7 @@ internal class DefaultGameComponentFactory(
         settingsComponent = settingsComponent,
         audio = audio,
         storeReview = storeReview,
+        analytics = analytics,
         isNewGame = isNewGame,
         onExitClickedCb = onExitClicked,
     )
