@@ -51,4 +51,10 @@
     <string name="tutorial_next">Оянда</string>
     <string name="tutorial_done">Фаҳмидам</string>
     <string name="tutorial_skip">Гузаштан</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica-ро дӯст медоред?</string>
+    <string name="review_prompt_body">Баҳои шумо ба бозигарони дигари муаммо кӯмак мекунад, ки бозиро пайдо кунанд.</string>
+    <string name="review_prompt_leave_feedback">Фикр гузоштан</string>
+    <string name="review_prompt_dont_show">Дигар нишон надиҳед</string>
 </resources>

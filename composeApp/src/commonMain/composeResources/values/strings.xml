@@ -51,4 +51,10 @@
     <string name="tutorial_next">Next</string>
     <string name="tutorial_done">Got it</string>
     <string name="tutorial_skip">Skip</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Enjoying Logica?</string>
+    <string name="review_prompt_body">Your review helps more puzzle players find the game.</string>
+    <string name="review_prompt_leave_feedback">Leave feedback</string>
+    <string name="review_prompt_dont_show">Don't show again</string>
 </resources>

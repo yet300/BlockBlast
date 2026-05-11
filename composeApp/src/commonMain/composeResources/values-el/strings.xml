@@ -51,4 +51,10 @@
     <string name="tutorial_next">Επόμενο</string>
     <string name="tutorial_done">Έγινε</string>
     <string name="tutorial_skip">Παράλειψη</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Σου αρέσει το Logica;</string>
+    <string name="review_prompt_body">Η κριτική σου βοηθά περισσότερους παίκτες παζλ να βρουν το παιχνίδι.</string>
+    <string name="review_prompt_leave_feedback">Αφήστε σχόλια</string>
+    <string name="review_prompt_dont_show">Να μην εμφανιστεί ξανά</string>
 </resources>

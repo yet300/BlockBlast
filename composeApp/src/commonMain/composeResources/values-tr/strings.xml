@@ -51,4 +51,10 @@
     <string name="tutorial_next">Sonraki</string>
     <string name="tutorial_done">Anladım</string>
     <string name="tutorial_skip">Geç</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Logica'yı beğeniyor musunuz?</string>
+    <string name="review_prompt_body">Yorumunuz daha fazla bulmaca oyuncusunun oyunu bulmasına yardımcı olur.</string>
+    <string name="review_prompt_leave_feedback">Geri bildirim bırak</string>
+    <string name="review_prompt_dont_show">Tekrar gösterme</string>
 </resources>

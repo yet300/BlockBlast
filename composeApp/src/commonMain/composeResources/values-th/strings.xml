@@ -51,4 +51,10 @@
     <string name="tutorial_next">ถัดไป</string>
     <string name="tutorial_done">ตกลง</string>
     <string name="tutorial_skip">ข้าม</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">ชอบ Logica ไหม?</string>
+    <string name="review_prompt_body">รีวิวของคุณช่วยให้ผู้เล่นปริศนาคนอื่นๆ ค้นหาเกมนี้ได้</string>
+    <string name="review_prompt_leave_feedback">ให้ความคิดเห็น</string>
+    <string name="review_prompt_dont_show">ไม่ต้องแสดงอีก</string>
 </resources>

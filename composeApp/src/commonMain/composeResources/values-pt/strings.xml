@@ -51,4 +51,10 @@
     <string name="tutorial_next">Próximo</string>
     <string name="tutorial_done">Entendi</string>
     <string name="tutorial_skip">Pular</string>
+
+    <!-- Review Prompt -->
+    <string name="review_prompt_title">Gostando de Logica?</string>
+    <string name="review_prompt_body">Sua avaliação ajuda mais jogadores de quebra-cabeças a encontrar o jogo.</string>
+    <string name="review_prompt_leave_feedback">Deixar feedback</string>
+    <string name="review_prompt_dont_show">Não mostrar novamente</string>
 </resources>
