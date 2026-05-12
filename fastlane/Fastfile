@@ -68,7 +68,9 @@ platform :ios do
     # SPM packages keep their default (no signing) so they don't fail.
     require "xcodeproj"
     project_path = "iosApp/iosApp.xcodeproj"
-    project = Xcodeproj::Project.open(project_path)
+    # Fastlane runs from ./fastlane, so raw Ruby paths need ../ prefix.
+    # Fastlane actions (like build_app) handle this automatically.
+    project = Xcodeproj::Project.open("../#{project_path}")
     target = project.targets.find { |t| t.name == "iosApp" } \
       or UI.user_error!("Target 'iosApp' not found in project")
     target.build_configurations.each do |config|
