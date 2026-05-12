@@ -111,6 +111,16 @@ jobs:
         run: |
           sed -i '' "s/^TEAM_ID=.*/TEAM_ID=${{ secrets.APPLE_TEAM_ID }}/" iosApp/Configuration/Config.xcconfig
 
+      - name: Create temporary keychain
+        run: |
+          bundle exec fastlane run create_keychain \
+            name:fastlane_tmp_keychain \
+            password:fastlane \
+            default_keychain:true \
+            unlock:true \
+            timeout:3600 \
+            lock_when_sleeps:false
+
       - name: Import signing certificate
         env:
           IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
