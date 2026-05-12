@@ -107,10 +107,6 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 -d > iosApp/iosApp/GoogleService-Info.plist
 
-      - name: Set TEAM_ID in xcconfig
-        run: |
-          sed -i '' "s/^TEAM_ID=.*/TEAM_ID=${{ secrets.APPLE_TEAM_ID }}/" iosApp/Configuration/Config.xcconfig
-
       - name: Create temporary keychain
         run: |
           bundle exec fastlane run create_keychain \

@@ -70,7 +70,9 @@ platform :ios do
       xcargs: [
         "MARKETING_VERSION=#{version_name}",
         "CURRENT_PROJECT_VERSION=#{version_code}",
+        "PRODUCT_BUNDLE_IDENTIFIER=ge.yet3.blokblast.BlockBlast",
         "CODE_SIGN_STYLE=Manual",
+        "CODE_SIGN_IDENTITY=\"Apple Distribution\"",
         "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\"",
         "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}",
       ].join(" "),
