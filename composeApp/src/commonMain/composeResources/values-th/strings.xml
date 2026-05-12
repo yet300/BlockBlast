@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">เปิดโหมดมืดตลอดเวลา</string>
     <string name="privacy_policy">นโยบายความเป็นส่วนตัว</string>
     <string name="privacy_policy_subtitle">วิธีที่เราจัดการข้อมูลของคุณ</string>
+    <string name="more">เพิ่มเติม</string>
+    <string name="more_subtitle">ความเป็นส่วนตัว ซอร์สโค้ด ไลบรารี</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">ดูซอร์สโค้ด</string>
+    <string name="open_source_libraries">ไลบรารีโอเพนซอร์ส</string>
+    <string name="open_source_libraries_subtitle">เครดิตและคำขอบคุณ</string>
 
     <!-- Common -->
     <string name="exit">ออก</string>

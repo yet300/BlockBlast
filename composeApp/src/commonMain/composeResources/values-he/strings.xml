@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">מצב כהה תמידי</string>
     <string name="privacy_policy">מדיניות פרטיות</string>
     <string name="privacy_policy_subtitle">כיצד אנו מטפלים בנתונים שלך</string>
+    <string name="more">עוד</string>
+    <string name="more_subtitle">פרטיות, קוד מקור, ספריות</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">הצג את קוד המקור</string>
+    <string name="open_source_libraries">ספריות קוד פתוח</string>
+    <string name="open_source_libraries_subtitle">קרדיטים והכרת תודה</string>
 
     <!-- Common -->
     <string name="exit">יציאה</string>

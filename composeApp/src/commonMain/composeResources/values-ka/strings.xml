@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">მუდმივი მუქი რეჟიმი</string>
     <string name="privacy_policy">კონფიდენციალურობის პოლიტიკა</string>
     <string name="privacy_policy_subtitle">როგორ ვიყენებთ თქვენს მონაცემებს</string>
+    <string name="more">მეტი</string>
+    <string name="more_subtitle">კონფიდენციალურობა, წყაროს კოდი, ბიბლიოთეკები</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">ნახეთ წყაროს კოდი</string>
+    <string name="open_source_libraries">ღია წყაროს ბიბლიოთეკები</string>
+    <string name="open_source_libraries_subtitle">კრედიტები და მადლობები</string>
 
     <!-- Common -->
     <string name="exit">გასვლა</string>

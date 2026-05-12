@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Her zaman koyu mod</string>
     <string name="privacy_policy">Gizlilik Politikası</string>
     <string name="privacy_policy_subtitle">Verilerinizi nasıl işliyoruz</string>
+    <string name="more">Daha fazla</string>
+    <string name="more_subtitle">Gizlilik, kaynak kodu, kütüphaneler</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Kaynak kodunu görüntüle</string>
+    <string name="open_source_libraries">Açık kaynak kütüphaneler</string>
+    <string name="open_source_libraries_subtitle">Krediler ve teşekkürler</string>
 
     <!-- Common -->
     <string name="exit">Çıkış</string>

@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">常時ダークモード</string>
     <string name="privacy_policy">プライバシーポリシー</string>
     <string name="privacy_policy_subtitle">データの取り扱いについて</string>
+    <string name="more">その他</string>
+    <string name="more_subtitle">プライバシー、ソースコード、ライブラリ</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">ソースコードを表示</string>
+    <string name="open_source_libraries">オープンソース ライブラリ</string>
+    <string name="open_source_libraries_subtitle">クレジットと謝辞</string>
 
     <!-- Common -->
     <string name="exit">終了</string>

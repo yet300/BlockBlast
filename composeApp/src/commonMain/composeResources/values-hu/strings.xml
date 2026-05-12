@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Mindig bekapcsolt sötét mód</string>
     <string name="privacy_policy">Adatvédelmi irányelvek</string>
     <string name="privacy_policy_subtitle">Hogyan kezeljük az adatait</string>
+    <string name="more">Tovább</string>
+    <string name="more_subtitle">Adatvédelem, forráskód, könyvtárak</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">A forráskód megtekintése</string>
+    <string name="open_source_libraries">Nyílt forráskódú könyvtárak</string>
+    <string name="open_source_libraries_subtitle">Köszönetnyilvánítások</string>
 
     <!-- Common -->
     <string name="exit">Kilépés</string>

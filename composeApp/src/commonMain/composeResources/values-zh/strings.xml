@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">始终开启深色模式</string>
     <string name="privacy_policy">隐私政策</string>
     <string name="privacy_policy_subtitle">我们如何处理您的数据</string>
+    <string name="more">更多</string>
+    <string name="more_subtitle">隐私、源代码、库</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">查看源代码</string>
+    <string name="open_source_libraries">开源库</string>
+    <string name="open_source_libraries_subtitle">致谢</string>
 
     <!-- Common -->
     <string name="exit">退出</string>

@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Altijd donkere modus</string>
     <string name="privacy_policy">Privacybeleid</string>
     <string name="privacy_policy_subtitle">Hoe we met uw gegevens omgaan</string>
+    <string name="more">Meer</string>
+    <string name="more_subtitle">Privacy, broncode, bibliotheken</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Bekijk de broncode</string>
+    <string name="open_source_libraries">Open-source-bibliotheken</string>
+    <string name="open_source_libraries_subtitle">Dankbetuigingen</string>
 
     <!-- Common -->
     <string name="exit">Afsluiten</string>

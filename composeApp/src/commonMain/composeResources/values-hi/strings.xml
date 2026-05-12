@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">हमेशा डार्क मोड चालू</string>
     <string name="privacy_policy">गोपनीयता नीति</string>
     <string name="privacy_policy_subtitle">हम आपके डेटा को कैसे संभालते हैं</string>
+    <string name="more">अधिक</string>
+    <string name="more_subtitle">गोपनीयता, स्रोत कोड, पुस्तकालय</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">स्रोत कोड देखें</string>
+    <string name="open_source_libraries">ओपन-सोर्स लाइब्रेरीज़</string>
+    <string name="open_source_libraries_subtitle">श्रेय और आभार</string>
 
     <!-- Common -->
     <string name="exit">बाहर निकलें</string>
