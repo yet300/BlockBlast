@@ -82,7 +82,6 @@ platform :ios do
       xcargs: "MARKETING_VERSION=#{version_name} " \
               "CURRENT_PROJECT_VERSION=#{version_code} " \
               "#{auth_args}",
-      api_key: api_key,
       export_options: {
         method: "app-store",
         signingStyle: "automatic",
