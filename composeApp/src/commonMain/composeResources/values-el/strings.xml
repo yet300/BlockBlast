@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Πάντα ενεργή σκούρα λειτουργία</string>
     <string name="privacy_policy">Πολιτική απορρήτου</string>
     <string name="privacy_policy_subtitle">Πώς διαχειριζόμαστε τα δεδομένα σας</string>
+    <string name="more">Περισσότερα</string>
+    <string name="more_subtitle">Απόρρητο, πηγαίος κώδικας, βιβλιοθήκες</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Δείτε τον πηγαίο κώδικα</string>
+    <string name="open_source_libraries">Βιβλιοθήκες ανοιχτού κώδικα</string>
+    <string name="open_source_libraries_subtitle">Εύσημα και αναγνωρίσεις</string>
 
     <!-- Common -->
     <string name="exit">Έξοδος</string>

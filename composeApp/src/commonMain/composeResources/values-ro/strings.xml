@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Mod întunecat mereu activ</string>
     <string name="privacy_policy">Politica de confidențialitate</string>
     <string name="privacy_policy_subtitle">Cum gestionăm datele tale</string>
+    <string name="more">Mai mult</string>
+    <string name="more_subtitle">Confidențialitate, cod sursă, biblioteci</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Vezi codul sursă</string>
+    <string name="open_source_libraries">Biblioteci open-source</string>
+    <string name="open_source_libraries_subtitle">Recunoștințe și mulțumiri</string>
 
     <!-- Common -->
     <string name="exit">Ieșire</string>

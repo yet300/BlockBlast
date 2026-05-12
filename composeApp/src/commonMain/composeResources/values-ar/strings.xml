@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">وضع داكن دائم</string>
     <string name="privacy_policy">سياسة الخصوصية</string>
     <string name="privacy_policy_subtitle">كيف نتعامل مع بياناتك</string>
+    <string name="more">المزيد</string>
+    <string name="more_subtitle">الخصوصية، الكود المصدري، المكتبات</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">عرض الكود المصدري</string>
+    <string name="open_source_libraries">مكتبات مفتوحة المصدر</string>
+    <string name="open_source_libraries_subtitle">الاعتمادات والشكر</string>
 
     <!-- Common -->
     <string name="exit">خروج</string>

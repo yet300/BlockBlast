@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Altid mørkt tilstand</string>
     <string name="privacy_policy">Privatlivspolitik</string>
     <string name="privacy_policy_subtitle">Hvordan vi håndterer dine data</string>
+    <string name="more">Mere</string>
+    <string name="more_subtitle">Privatliv, kildekode, biblioteker</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Vis kildekoden</string>
+    <string name="open_source_libraries">Open source-biblioteker</string>
+    <string name="open_source_libraries_subtitle">Anerkendelser</string>
 
     <!-- Common -->
     <string name="exit">Afslut</string>
