@@ -1,25 +1,26 @@
 package ge.yet.blockblast.feature.settings
 
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.backhandler.BackHandlerOwner
 
 /**
  * Settings screen. Reachable from BOTH Home and Game via Root navigation.
+ * Hosts a ChildStack of [Child.Main] (toggles) and [Child.More] (links and
+ * open-source libraries).
  */
-interface SettingsComponent {
+interface SettingsComponent : BackHandlerOwner {
 
-    val model: Value<Model>
+    val stack: Value<ChildStack<*, Child>>
 
-    fun onSoundToggled(enabled: Boolean)
-    fun onVibrationToggled(enabled: Boolean)
-    fun onDarkThemeToggled(enabled: Boolean)
     fun onBackClicked()
 
-    data class Model(
-        val soundEnabled: Boolean,
-        val vibrationEnabled: Boolean,
-        val darkTheme: Boolean,
-    )
+    sealed interface Child {
+        class Main(val component: MainSettingsComponent) : Child
+        class More(val component: MoreSettingsComponent) : Child
+        class Libraries(val component: LibrariesSettingsComponent) : Child
+    }
 
     fun interface Factory {
         fun create(
