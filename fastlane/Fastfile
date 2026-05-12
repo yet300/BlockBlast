@@ -62,6 +62,20 @@ platform :ios do
     profile_name = ENV["IOS_PROVISIONING_PROFILE_NAME"] \
       or UI.user_error!("IOS_PROVISIONING_PROFILE_NAME env is not set")
 
+    bundle_id = "ge.yet3.blokblast.BlockBlast"
+
+    # Apply manual signing only to the iosApp target (not SPM packages).
+    update_code_signing_settings(
+      path: "iosApp/iosApp.xcodeproj",
+      use_automatic_signing: false,
+      team_id: ENV["APPLE_TEAM_ID"],
+      bundle_identifier: bundle_id,
+      profile_name: profile_name,
+      code_sign_identity: "Apple Distribution",
+      targets: ["iosApp"],
+      build_configurations: ["Release"],
+    )
+
     build_app(
       project: "iosApp/iosApp.xcodeproj",
       scheme: "iosApp",
@@ -70,12 +84,13 @@ platform :ios do
       xcargs: [
         "MARKETING_VERSION=#{version_name}",
         "CURRENT_PROJECT_VERSION=#{version_code}",
-        "PRODUCT_BUNDLE_IDENTIFIER=ge.yet3.blokblast.BlockBlast",
-        "CODE_SIGN_STYLE=Manual",
-        "CODE_SIGN_IDENTITY=\"Apple Distribution\"",
-        "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\"",
-        "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}",
       ].join(" "),
+      export_options: {
+        method: "app-store",
+        signingStyle: "manual",
+        teamID: ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: { bundle_id => profile_name },
+      },
       output_directory: "build/ios",
       output_name: "Logica.ipa",
       clean: true,
