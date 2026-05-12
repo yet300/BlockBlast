@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Միշտ մուգ ռեժիմ</string>
     <string name="privacy_policy">Գաղտնիության քաղաքականություն</string>
     <string name="privacy_policy_subtitle">Ինչպես ենք մշակում ձեր տվյալները</string>
-    <string name="more">Ավելին</string>
-    <string name="more_subtitle">Գաղտնիություն, սկզբնական կոդ, գրադարաններ</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Դիտել սկզբնական կոդը</string>
-    <string name="open_source_libraries">Բաց կոդով գրադարաններ</string>
-    <string name="open_source_libraries_subtitle">Շնորհակալություններ</string>
 
     <!-- Common -->
     <string name="exit">Ելք</string>

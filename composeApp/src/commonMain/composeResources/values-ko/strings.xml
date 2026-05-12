@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">항상 다크 모드</string>
     <string name="privacy_policy">개인정보 처리방침</string>
     <string name="privacy_policy_subtitle">데이터 처리 방법</string>
-    <string name="more">더 보기</string>
-    <string name="more_subtitle">개인정보, 소스 코드, 라이브러리</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">소스 코드 보기</string>
-    <string name="open_source_libraries">오픈 소스 라이브러리</string>
-    <string name="open_source_libraries_subtitle">크레딧 및 감사의 말</string>
 
     <!-- Common -->
     <string name="exit">나가기</string>

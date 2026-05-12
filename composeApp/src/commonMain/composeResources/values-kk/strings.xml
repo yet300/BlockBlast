@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Әрқашан қараңғы режим</string>
     <string name="privacy_policy">Құпиялылық саясаты</string>
     <string name="privacy_policy_subtitle">Деректеріңізді қалай өңдейміз</string>
-    <string name="more">Қосымша</string>
-    <string name="more_subtitle">Құпиялылық, бастапқы код, кітапханалар</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Бастапқы кодты қарау</string>
-    <string name="open_source_libraries">Ашық бастапқы кітапханалар</string>
-    <string name="open_source_libraries_subtitle">Алғыс пен мойындау</string>
 
     <!-- Common -->
     <string name="exit">Шығу</string>

@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Aina käytössä oleva tumma tila</string>
     <string name="privacy_policy">Tietosuojakäytäntö</string>
     <string name="privacy_policy_subtitle">Kuinka käsittelemme tietojasi</string>
-    <string name="more">Lisää</string>
-    <string name="more_subtitle">Tietosuoja, lähdekoodi, kirjastot</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Näytä lähdekoodi</string>
-    <string name="open_source_libraries">Avoimen lähdekoodin kirjastot</string>
-    <string name="open_source_libraries_subtitle">Kiitokset</string>
 
     <!-- Common -->
     <string name="exit">Poistu</string>

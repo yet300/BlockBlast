@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Elmydama garaňky rejim</string>
     <string name="privacy_policy">Gizlinlik syýasaty</string>
     <string name="privacy_policy_subtitle">Maglumatlaryňyzy nähili işleýäris</string>
-    <string name="more">Has köp</string>
-    <string name="more_subtitle">Gizlinlik, çeşme kody, kitaphanalar</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Çeşme kody görkez</string>
-    <string name="open_source_libraries">Açyk çeşme kitaphanalary</string>
-    <string name="open_source_libraries_subtitle">Minnetdarlyklar</string>
 
     <!-- Common -->
     <string name="exit">Çykyş</string>

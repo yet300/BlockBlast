@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Har doim tungi rejim</string>
     <string name="privacy_policy">Maxfiylik siyosati</string>
     <string name="privacy_policy_subtitle">Ma'lumotlaringizni qanday qayta ishlaymiz</string>
-    <string name="more">Yana</string>
-    <string name="more_subtitle">Maxfiylik, manba kodi, kutubxonalar</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Manba kodini ko'rish</string>
-    <string name="open_source_libraries">Ochiq manba kutubxonalar</string>
-    <string name="open_source_libraries_subtitle">Minnatdorchiliklar</string>
 
     <!-- Common -->
     <string name="exit">Chiqish</string>

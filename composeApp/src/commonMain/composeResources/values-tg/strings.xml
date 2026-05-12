@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Ҳамеша режими торик</string>
     <string name="privacy_policy">Сиёсати махфият</string>
     <string name="privacy_policy_subtitle">Чӣ тавр мо маълумоти шуморо коркард мекунем</string>
-    <string name="more">Бештар</string>
-    <string name="more_subtitle">Махфият, коди манбаъ, китобхонаҳо</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Дидани коди манбаъ</string>
-    <string name="open_source_libraries">Китобхонаҳои кушодаасос</string>
-    <string name="open_source_libraries_subtitle">Эътирофҳо ва ташаккур</string>
 
     <!-- Common -->
     <string name="exit">Баромад</string>

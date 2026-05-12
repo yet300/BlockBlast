@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Заўсёды цёмны рэжым</string>
     <string name="privacy_policy">Палітыка канфідэнцыяльнасці</string>
     <string name="privacy_policy_subtitle">Як мы апрацоўваем вашы даныя</string>
-    <string name="more">Яшчэ</string>
-    <string name="more_subtitle">Прыватнасць, зыходны код, бібліятэкі</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Прагледзець зыходны код</string>
-    <string name="open_source_libraries">Бібліятэкі з адкрытым кодам</string>
-    <string name="open_source_libraries_subtitle">Падзякі і прызнанне</string>
 
     <!-- Common -->
     <string name="exit">Выйсці</string>

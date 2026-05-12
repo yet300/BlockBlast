@@ -58,10 +58,6 @@ object AppConfig {
     const val PRIVACY_POLICY_URL: String =
         "https://github.com/yet300/block_blast/blob/main/privacy_policy.md"
 
-    /** Public source-code repository linked from the Settings screen. */
-    const val GITHUB_URL: String =
-        "https://github.com/yet300/BlockBlast"
-
     // ── Drag & Drop ────────────────────────────────────────────────────────
     /**
      * Multiplier for drag speed. Values > 1.0 make the piece move faster than

@@ -32,12 +32,6 @@
     <string name="dark_theme_subtitle">Luôn bật chế độ tối</string>
     <string name="privacy_policy">Chính sách bảo mật</string>
     <string name="privacy_policy_subtitle">Cách chúng tôi xử lý dữ liệu của bạn</string>
-    <string name="more">Thêm</string>
-    <string name="more_subtitle">Quyền riêng tư, mã nguồn, thư viện</string>
-    <string name="github">GitHub</string>
-    <string name="github_subtitle">Xem mã nguồn</string>
-    <string name="open_source_libraries">Thư viện mã nguồn mở</string>
-    <string name="open_source_libraries_subtitle">Lời cảm ơn</string>
 
     <!-- Common -->
     <string name="exit">Thoát</string>
