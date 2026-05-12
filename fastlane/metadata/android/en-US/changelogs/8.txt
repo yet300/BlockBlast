@@ -1,0 +1,1 @@
+Settings got a makeover! There's now a tidy "More" section where you can check the Privacy Policy, peek at our GitHub source, and browse all the open-source libraries that power the game. New translations were added for these screens too. Smoother sailing, less clutter — back to the puzzles! 🧩✨
