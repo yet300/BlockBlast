@@ -1,0 +1,88 @@
+default_platform(:android)
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def version_name
+  ENV["APP_VERSION_NAME"] or UI.user_error!("APP_VERSION_NAME env is not set")
+end
+
+def version_code
+  ENV["APP_VERSION_CODE"] or UI.user_error!("APP_VERSION_CODE env is not set")
+end
+
+# ---------------------------------------------------------------------------
+# Android — Google Play internal track
+# ---------------------------------------------------------------------------
+platform :android do
+  desc "Build signed AAB and upload to Google Play (internal track)"
+  lane :release do
+    gradle(
+      task: "androidApp:bundleRelease",
+      properties: {
+        "appVersionName" => version_name,
+        "appVersionCode" => version_code,
+      },
+    )
+
+    upload_to_play_store(
+      package_name: "ge.yet.blokblast",
+      track: "internal",
+      aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH],
+      json_key_data: ENV["PLAY_STORE_JSON_KEY"],
+      release_status: "draft",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+  end
+end
+
+# ---------------------------------------------------------------------------
+# iOS — TestFlight
+# ---------------------------------------------------------------------------
+platform :ios do
+  desc "Build signed IPA and upload to TestFlight"
+  lane :release do
+    setup_ci if ENV["CI"]
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_KEY_CONTENT"],
+      is_key_content_base64: true,
+      in_house: false,
+    )
+
+    # Cert + provisioning profile imported in the workflow before this lane runs.
+    # We use manual signing with the imported profile.
+    profile_name = ENV["IOS_PROVISIONING_PROFILE_NAME"] \
+      or UI.user_error!("IOS_PROVISIONING_PROFILE_NAME env is not set")
+
+    build_app(
+      project: "iosApp/iosApp.xcodeproj",
+      scheme: "iosApp",
+      configuration: "Release",
+      export_method: "app-store",
+      xcargs: [
+        "MARKETING_VERSION=#{version_name}",
+        "CURRENT_PROJECT_VERSION=#{version_code}",
+        "CODE_SIGN_STYLE=Manual",
+        "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\"",
+        "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}",
+      ].join(" "),
+      output_directory: "build/ios",
+      output_name: "Logica.ipa",
+      clean: true,
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: "build/ios/Logica.ipa",
+      skip_waiting_for_build_processing: true,
+    )
+  end
+end
