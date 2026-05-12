@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Modalità scura sempre attiva</string>
     <string name="privacy_policy">Privacy policy</string>
     <string name="privacy_policy_subtitle">Come gestiamo i tuoi dati</string>
+    <string name="more">Altro</string>
+    <string name="more_subtitle">Privacy, codice sorgente, librerie</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Visualizza il codice sorgente</string>
+    <string name="open_source_libraries">Librerie open-source</string>
+    <string name="open_source_libraries_subtitle">Crediti e ringraziamenti</string>
 
     <!-- Common -->
     <string name="exit">Esci</string>

@@ -18,9 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import ge.yet3.blokblast.component.modifier.liftedPieceShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
@@ -51,9 +47,7 @@ import ge.yet3.blokblast.component.overlay.rememberGameTutorialSteps
 import ge.yet3.blokblast.theme.LocalOnTutorialSeen
 import ge.yet3.blokblast.theme.LocalTutorialSeen
 import ge.yet3.blokblast.theme.LocalVibrationEnabled
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best
 import blockblast.composeapp.generated.resources.cd_back
@@ -70,6 +64,7 @@ import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet3.blokblast.ads.AdBanner
 import ge.yet3.blokblast.ads.rememberGameOverInterstitial
 import ge.yet3.blokblast.component.background.AmbientMeshBackground
+import ge.yet3.blokblast.component.button.IconCircleButton
 import ge.yet3.blokblast.component.icon.ArrowBack
 import ge.yet3.blokblast.component.icon.Settings
 import ge.yet3.blokblast.component.overlay.GameOverOverlay
@@ -555,24 +550,4 @@ private fun GameTopBar(
 /** Fires haptic feedback only when [enabled] is true. */
 private fun HapticFeedback.vibrateIf(enabled: Boolean, type: HapticFeedbackType) {
     if (enabled) performHapticFeedback(type)
-}
-
-@Composable
-private fun IconCircleButton(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-) {
-    IconButton(
-        onClick = onClick,
-        colors = IconButtonDefaults.iconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-        )
-    }
 }

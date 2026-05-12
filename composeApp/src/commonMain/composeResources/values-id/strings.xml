@@ -32,6 +32,12 @@
     <string name="dark_theme_subtitle">Mode gelap selalu aktif</string>
     <string name="privacy_policy">Kebijakan Privasi</string>
     <string name="privacy_policy_subtitle">Cara kami mengelola data Anda</string>
+    <string name="more">Lainnya</string>
+    <string name="more_subtitle">Privasi, kode sumber, pustaka</string>
+    <string name="github">GitHub</string>
+    <string name="github_subtitle">Lihat kode sumber</string>
+    <string name="open_source_libraries">Pustaka open-source</string>
+    <string name="open_source_libraries_subtitle">Kredit dan pengakuan</string>
 
     <!-- Common -->
     <string name="exit">Keluar</string>

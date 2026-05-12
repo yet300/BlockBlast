@@ -1,247 +1,34 @@
 package ge.yet3.blokblast.screen.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.app.common.config.AppConfig
+import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.arkivanov.decompose.extensions.compose.stack.Children
+import com.arkivanov.decompose.extensions.compose.stack.animation.slide
+import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.settings.SettingsComponent
-import ge.yet3.blokblast.component.icon.DarkMode
-import ge.yet3.blokblast.component.icon.NotificationsActive
-import ge.yet3.blokblast.component.icon.Vibration
-import ge.yet3.blokblast.component.modifier.ringShadow
-import org.jetbrains.compose.resources.stringResource
-import blockblast.composeapp.generated.resources.Res
-import blockblast.composeapp.generated.resources.dark_theme
-import blockblast.composeapp.generated.resources.dark_theme_subtitle
-import blockblast.composeapp.generated.resources.privacy_policy
-import blockblast.composeapp.generated.resources.privacy_policy_subtitle
-import blockblast.composeapp.generated.resources.settings
-import blockblast.composeapp.generated.resources.sound
-import blockblast.composeapp.generated.resources.sound_subtitle
-import blockblast.composeapp.generated.resources.vibration
-import blockblast.composeapp.generated.resources.vibration_subtitle
-import ge.yet3.blokblast.component.icon.OpenInNew
-import ge.yet3.blokblast.component.icon.PrivacyTip
+import ge.yet3.blokblast.screen.settings.content.LibrariesSettingsContent
+import ge.yet3.blokblast.screen.settings.content.MainSettingsContent
+import ge.yet3.blokblast.screen.settings.content.MoreSettingsContent
 
+@OptIn(ExperimentalDecomposeApi::class)
 @Composable
-fun SettingsContent(component: SettingsComponent) {
-    val model by component.model.subscribeAsState()
-    val uriHandler = LocalUriHandler.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 28.dp, vertical = 4.dp),
-    ) {
-        Text(
-            text = stringResource(Res.string.settings),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        SettingsToggleRow(
-            icon = NotificationsActive,
-            title = stringResource(Res.string.sound),
-            subtitle = stringResource(Res.string.sound_subtitle),
-            checked = model.soundEnabled,
-            onCheckedChange = component::onSoundToggled,
-        )
-
-        SettingsDivider()
-
-        SettingsToggleRow(
-            icon = Vibration,
-            title = stringResource(Res.string.vibration),
-            subtitle = stringResource(Res.string.vibration_subtitle),
-            checked = model.vibrationEnabled,
-            onCheckedChange = component::onVibrationToggled,
-        )
-
-        SettingsDivider()
-
-        SettingsToggleRow(
-            icon = DarkMode,
-            title = stringResource(Res.string.dark_theme),
-            subtitle = stringResource(Res.string.dark_theme_subtitle),
-            checked = model.darkTheme,
-            onCheckedChange = component::onDarkThemeToggled,
-        )
-
-        SettingsDivider()
-
-        SettingsLinkRow(
-            icon = PrivacyTip,
-            title = stringResource(Res.string.privacy_policy),
-            subtitle = stringResource(Res.string.privacy_policy_subtitle),
-            onClick = { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) },
-        )
-
-        Spacer(Modifier.height(28.dp))
-    }
-}
-
-@Composable
-private fun SettingsToggleRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+fun SettingsContent(
+    component: SettingsComponent,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f),
-        ) {
-            // Custom-vector icon in a small warm-sand pill
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .ringShadow(
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = RoundedCornerShape(12.dp),
-                    )
-                    .background(
-                        MaterialTheme.colorScheme.secondary,
-                        RoundedCornerShape(12.dp),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+    val childStack by component.stack.subscribeAsState()
+    Children(
+        modifier = Modifier.animateContentSize(),
+        stack = childStack,
+        animation = stackAnimation(slide()),
+    ) { child ->
+        when (val instance = child.instance) {
+            is SettingsComponent.Child.Main -> MainSettingsContent(component = instance.component)
+            is SettingsComponent.Child.More -> MoreSettingsContent(component = instance.component)
+            is SettingsComponent.Child.Libraries -> LibrariesSettingsContent(component = instance.component)
         }
-
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
     }
-}
-
-@Composable
-private fun SettingsLinkRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .ringShadow(
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = RoundedCornerShape(12.dp),
-                    )
-                    .background(
-                        MaterialTheme.colorScheme.secondary,
-                        RoundedCornerShape(12.dp),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        Icon(
-            imageVector = OpenInNew,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
-    }
-}
-
-@Composable
-private fun SettingsDivider() {
-    HorizontalDivider(
-        thickness = 1.dp,
-        color = MaterialTheme.colorScheme.outline,
-    )
 }
