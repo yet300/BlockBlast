@@ -84,6 +84,8 @@ platform :ios do
       xcargs: [
         "MARKETING_VERSION=#{version_name}",
         "CURRENT_PROJECT_VERSION=#{version_code}",
+        "CODE_SIGN_IDENTITY=\"Apple Distribution\"",
+        "\"CODE_SIGN_IDENTITY[sdk=iphoneos*]=Apple Distribution\"",
       ].join(" "),
       export_options: {
         method: "app-store",
