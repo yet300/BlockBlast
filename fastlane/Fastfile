@@ -12,10 +12,20 @@ end
 # Android — Google Play internal track
 # ---------------------------------------------------------------------------
 platform :android do
-  desc "Build signed AAB and upload to Google Play (internal track)"
+  desc "Build signed AAB+APK and upload AAB to Google Play (internal track)"
   lane :release do
+    # AAB for Play (Play only accepts bundles for new uploads).
     gradle(
       task: "androidApp:bundleRelease",
+      properties: {
+        "appVersionName" => version_name,
+        "appVersionCode" => version_code,
+      },
+    )
+
+    # APK for the GitHub Release attachment (sideload/internal testing).
+    gradle(
+      task: "androidApp:assembleRelease",
       properties: {
         "appVersionName" => version_name,
         "appVersionCode" => version_code,

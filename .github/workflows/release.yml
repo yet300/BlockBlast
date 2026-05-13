@@ -68,8 +68,8 @@ jobs:
           PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
         run: bundle exec fastlane android release
 
-      - name: Upload AAB to GitHub Release
+      - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: androidApp/build/outputs/bundle/release/*.aab
+          files: androidApp/build/outputs/apk/release/*.apk
           generate_release_notes: true
