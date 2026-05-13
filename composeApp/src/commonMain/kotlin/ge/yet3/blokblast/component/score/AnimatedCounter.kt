@@ -17,7 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import ge.yet3.blokblast.utils.formatScore
+import com.app.common.utils.formatScore
 
 /**
  * Animated number readout — each digit slides vertically when it changes,
