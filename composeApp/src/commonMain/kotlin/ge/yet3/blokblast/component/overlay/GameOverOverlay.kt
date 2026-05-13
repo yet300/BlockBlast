@@ -45,7 +45,7 @@ import ge.yet3.blokblast.component.button.PrimaryTerracottaButton
 import ge.yet3.blokblast.component.modifier.ringShadow
 import ge.yet3.blokblast.component.modifier.whisperShadow
 import ge.yet3.blokblast.component.score.AnimatedCounter
-import ge.yet3.blokblast.utils.formatScore
+import com.app.common.utils.formatScore
 
 /**
  * The end-of-round overlay.  Animates in with a custom dialog motion (spring

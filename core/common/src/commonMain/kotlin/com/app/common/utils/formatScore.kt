@@ -1,4 +1,4 @@
-package ge.yet3.blokblast.utils
+package com.app.common.utils
 
 import kotlin.math.abs
 

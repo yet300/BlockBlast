@@ -37,6 +37,7 @@ include(":core")
 include(":core:common")
 include(":core:domain")
 include(":core:data")
+include(":core:telemetry")
 
 include(":feature")
 include(":feature:root")

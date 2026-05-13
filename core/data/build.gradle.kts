@@ -7,9 +7,6 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
-            // Pins the unversioned Firebase Android artifacts pulled in
-            // transitively by dev.gitlive:firebase-crashlytics.
-            implementation(project.dependencies.platform(libs.firebase.android.bom))
             implementation(libs.android.play.review)
             implementation(libs.android.play.review.ktx)
         }
@@ -19,8 +16,6 @@ kotlin {
 
             implementation(libs.bundles.multiplatform.settings)
 
-            implementation(libs.gitlive.firebase.kotlin.crashlytics)
-            implementation(libs.gitlive.firebase.kotlin.analytics)
         }
         commonTest.dependencies {
             implementation(libs.bundles.testing)

@@ -13,6 +13,7 @@ import ge.yet.blockblast.feature.settings.di.SettingsBindings
 import ge.yet.blokblast.data.di.AndroidDataBindings
 import ge.yet.blokblast.data.di.DataBindings
 import ge.yet.blokblast.domain.di.DomainBindings
+import ge.yet.blokblast.telemetry.di.TelemetryBindings
 
 @DependencyGraph(
     scope = AppScope::class,
@@ -21,6 +22,7 @@ import ge.yet.blokblast.domain.di.DomainBindings
         DomainBindings::class,
         DataBindings::class,
         AndroidDataBindings::class,
+        TelemetryBindings::class,
         ComposeAppBindings::class,
         RootBindings::class,
         HomeBindings::class,
