@@ -129,6 +129,15 @@ jobs:
             keychain_name:fastlane_tmp_keychain \
             keychain_password:fastlane
 
+      - name: Configure keychain search list
+        run: |
+          security list-keychains -d user -s fastlane_tmp_keychain $(security list-keychains -d user | xargs)
+          security default-keychain -s fastlane_tmp_keychain
+          security unlock-keychain -p fastlane fastlane_tmp_keychain
+          security set-keychain-settings -lut 7200 fastlane_tmp_keychain
+          echo "--- Certificates in keychain ---"
+          security find-identity -v -p codesigning fastlane_tmp_keychain
+
       - name: Install provisioning profile
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
