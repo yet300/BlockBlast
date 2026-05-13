@@ -12,6 +12,7 @@ import ge.yet.blockblast.feature.settings.di.SettingsBindings
 import ge.yet.blokblast.data.di.DataBindings
 import ge.yet.blokblast.data.di.NativeDataBindings
 import ge.yet.blokblast.domain.di.DomainBindings
+import ge.yet.blokblast.telemetry.di.TelemetryBindings
 
 
 @DependencyGraph(
@@ -21,6 +22,7 @@ import ge.yet.blokblast.domain.di.DomainBindings
         DomainBindings::class,
         DataBindings::class,
         NativeDataBindings::class,
+        TelemetryBindings::class,
         ComposeAppBindings::class,
         RootBindings::class,
         HomeBindings::class,

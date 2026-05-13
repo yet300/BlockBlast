@@ -1,4 +1,4 @@
-package ge.yet.blokblast.data.repository
+package ge.yet.blokblast.telemetry.repository
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject

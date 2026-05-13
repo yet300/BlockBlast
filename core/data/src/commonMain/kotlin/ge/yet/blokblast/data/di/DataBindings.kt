@@ -10,15 +10,11 @@ import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
-import ge.yet.blokblast.data.repository.AnalyticRepositoryImpl
-import ge.yet.blokblast.data.repository.CrashlyticsRepositoryImpl
 import ge.yet.blokblast.data.repository.DefaultAudioRepository
 import ge.yet.blokblast.data.repository.DefaultVibrationRepository
 import ge.yet.blokblast.data.repository.SettingsBackedGameSaveRepository
 import ge.yet.blokblast.data.repository.SettingsBackedSettingsRepository
-import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
-import ge.yet.blokblast.domain.repository.CrashlyticsRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.VibrationRepository
@@ -49,12 +45,6 @@ abstract class DataBindings {
 
     @Binds
     internal abstract val DefaultVibrationRepository.bindVibrationRepository: VibrationRepository
-
-    @Binds
-    internal abstract val CrashlyticsRepositoryImpl.bindCrashlyticsRepository: CrashlyticsRepository
-
-    @Binds
-    internal abstract val AnalyticRepositoryImpl.bindAnalyticRepository: AnalyticRepository
 
     /**
      * Widening binding so consumers that only need the base [Settings] API share
