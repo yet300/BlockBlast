@@ -1,7 +1,1 @@
-app_identifier("ge.yet3.blokblast.BlockBlast")
 package_name("ge.yet.blokblast")
-
-# apple_id and team_id are read from env in CI:
-#   APPLE_ID, APPLE_TEAM_ID
-apple_id(ENV["APPLE_ID"]) if ENV["APPLE_ID"]
-team_id(ENV["APPLE_TEAM_ID"]) if ENV["APPLE_TEAM_ID"]

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------
-  # Compute version from tag once, share with both jobs
+  # Compute version from tag
   # ---------------------------------------------------------------------
   version:
     runs-on: ubuntu-latest
@@ -73,68 +73,3 @@ jobs:
         with:
           files: androidApp/build/outputs/bundle/release/*.aab
           generate_release_notes: true
-
-  # ---------------------------------------------------------------------
-  # iOS: build signed IPA → upload to TestFlight
-  # ---------------------------------------------------------------------
-  ios:
-    needs: version
-    runs-on: macos-15
-    env:
-      APP_VERSION_NAME: ${{ needs.version.outputs.version_name }}
-      APP_VERSION_CODE: ${{ needs.version.outputs.version_code }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
-      IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3'
-          bundler-cache: true
-
-      - name: Restore GoogleService-Info.plist
-        env:
-          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
-        run: echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 -d > iosApp/iosApp/GoogleService-Info.plist
-
-      - name: Create temporary keychain
-        run: |
-          bundle exec fastlane run create_keychain \
-            name:fastlane_tmp_keychain \
-            password:fastlane \
-            default_keychain:true \
-            unlock:true \
-            timeout:3600 \
-            lock_when_sleeps:false
-
-      - name: Import signing certificate
-        env:
-          IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
-          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-        run: |
-          echo "$IOS_DIST_CERT_P12" | base64 -d > "$RUNNER_TEMP/dist.p12"
-          bundle exec fastlane run import_certificate \
-            certificate_path:"$RUNNER_TEMP/dist.p12" \
-            certificate_password:"$IOS_DIST_CERT_PASSWORD" \
-            keychain_name:fastlane_tmp_keychain \
-            keychain_password:fastlane
-
-      - name: Install provisioning profile
-        env:
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-        run: |
-          echo "$IOS_PROVISIONING_PROFILE" | base64 -d > "$RUNNER_TEMP/profile.mobileprovision"
-          bundle exec fastlane run install_provisioning_profile path:"$RUNNER_TEMP/profile.mobileprovision"
-
-      - name: Fastlane ios release
-        run: bundle exec fastlane ios release
