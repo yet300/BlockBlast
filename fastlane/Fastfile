@@ -45,20 +45,19 @@ end
 # iOS — TestFlight
 # ---------------------------------------------------------------------------
 platform :ios do
-  desc "Build signed IPA and upload to TestFlight"
-  lane :release do
+  desc "Push a new beta build to TestFlight using Manual Signing"
+  lane :release do |options|
     setup_ci if ENV["CI"]
+
+    # 1. Setup API Key
+    key_id = options[:appstore_key_id] || ENV["APP_STORE_CONNECT_KEY_ID"]
+    issuer_id = options[:appstore_issuer_id] || ENV["APP_STORE_CONNECT_ISSUER_ID"]
+    key_content = ENV["APP_STORE_CONNECT_KEY_CONTENT"]
+    app_identifier = "ge.yet3.blokblast.BlockBlast"
 
     require "base64"
     require "tmpdir"
-    key_id = ENV["APP_STORE_CONNECT_KEY_ID"] \
-      or UI.user_error!("APP_STORE_CONNECT_KEY_ID env is not set")
-    issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"] \
-      or UI.user_error!("APP_STORE_CONNECT_ISSUER_ID env is not set")
-    key_content = ENV["APP_STORE_CONNECT_KEY_CONTENT"] \
-      or UI.user_error!("APP_STORE_CONNECT_KEY_CONTENT env is not set")
 
-    # Write API key to disk so xcodebuild can authenticate to ASC.
     key_path = File.expand_path("AuthKey_#{key_id}.p8", Dir.tmpdir)
     File.write(key_path, Base64.decode64(key_content))
 
@@ -66,36 +65,73 @@ platform :ios do
       key_id: key_id,
       issuer_id: issuer_id,
       key_filepath: key_path,
-      in_house: false,
+      in_house: false
     )
 
-    auth_args = "-authenticationKeyPath #{key_path} " \
-                "-authenticationKeyID #{key_id} " \
-                "-authenticationKeyIssuerID #{issuer_id} " \
-                "-allowProvisioningUpdates"
+    # 2. Install Certificates and Profiles (Manual Signing)
+    if ENV["CI"]
+      # setup_ci creates a temporary keychain
+      keychain_name = lane_context[SharedValues::KEYCHAIN_PATH]
 
+      # Decode and import the P12 certificate
+      p12_path = File.expand_path("dist.p12", Dir.tmpdir)
+      File.write(p12_path, Base64.decode64(ENV["IOS_DIST_CERT_P12"]))
+
+      import_certificate(
+        certificate_path: p12_path,
+        certificate_password: ENV["IOS_DIST_CERT_PASSWORD"],
+        keychain_name: keychain_name
+      )
+
+      # Decode and install the Provisioning Profile
+      profile_path = File.expand_path("app.mobileprovision", Dir.tmpdir)
+      File.write(profile_path, Base64.decode64(ENV["IOS_PROVISIONING_PROFILE"]))
+      install_provisioning_profile(path: profile_path)
+    end
+
+    # 3. Handle Build Number (Increment based on TestFlight)
+    begin
+      latest_build = latest_testflight_build_number(
+        app_identifier: app_identifier,
+        api_key: api_key
+      )
+      new_build_number = latest_build + 1
+    rescue
+      UI.important("Could not fetch latest build number from TestFlight, using version_code from ENV")
+      new_build_number = version_code
+    end
+
+    increment_build_number(
+      build_number: new_build_number,
+      xcodeproj: "iosApp/iosApp.xcodeproj"
+    )
+
+    # 4. Build App
     build_app(
       project: "iosApp/iosApp.xcodeproj",
       scheme: "iosApp",
       configuration: "Release",
+      api_key: api_key,
       export_method: "app-store",
-      xcargs: "MARKETING_VERSION=#{version_name} " \
-              "CURRENT_PROJECT_VERSION=#{version_code} " \
-              "#{auth_args}",
+      xcargs: "MARKETING_VERSION=#{version_name} ",
       export_options: {
-        method: "app-store",
-        signingStyle: "automatic",
+        method: "app-store-connect",
+        signingStyle: "manual",
         teamID: ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: {
+          app_identifier => ENV["IOS_PROVISIONING_PROFILE_NAME"]
+        }
       },
       output_directory: "build/ios",
       output_name: "Logica.ipa",
-      clean: true,
+      clean: true
     )
 
+    # 5. Upload to TestFlight
     upload_to_testflight(
       api_key: api_key,
       ipa: "build/ios/Logica.ipa",
-      skip_waiting_for_build_processing: true,
+      skip_waiting_for_build_processing: true
     )
   end
 end
