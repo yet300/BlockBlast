@@ -84,12 +84,8 @@ platform :ios do
               "#{auth_args}",
       export_options: {
         method: "app-store",
-        signingStyle: "manual",
+        signingStyle: "automatic",
         teamID: ENV["APPLE_TEAM_ID"],
-        signingCertificate: "Apple Distribution",
-        provisioningProfiles: {
-          "ge.yet3.blokblast.BlockBlast" => ENV["IOS_PROVISIONING_PROFILE_NAME"],
-        },
       },
       output_directory: "build/ios",
       output_name: "Logica.ipa",
