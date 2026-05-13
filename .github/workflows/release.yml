@@ -88,6 +88,9 @@ jobs:
       APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
       APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
+      IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
+      IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+      IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
       IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
     steps:
       - uses: actions/checkout@v4
@@ -106,44 +109,6 @@ jobs:
         env:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 -d > iosApp/iosApp/GoogleService-Info.plist
-
-      - name: Create temporary keychain
-        run: |
-          bundle exec fastlane run create_keychain \
-            name:fastlane_tmp_keychain \
-            password:fastlane \
-            default_keychain:true \
-            unlock:true \
-            timeout:3600 \
-            lock_when_sleeps:false
-
-      - name: Import signing certificate
-        env:
-          IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
-          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-        run: |
-          echo "$IOS_DIST_CERT_P12" | base64 -d > "$RUNNER_TEMP/dist.p12"
-          bundle exec fastlane run import_certificate \
-            certificate_path:"$RUNNER_TEMP/dist.p12" \
-            certificate_password:"$IOS_DIST_CERT_PASSWORD" \
-            keychain_name:fastlane_tmp_keychain \
-            keychain_password:fastlane
-
-      - name: Configure keychain search list
-        run: |
-          security list-keychains -d user -s fastlane_tmp_keychain $(security list-keychains -d user | xargs)
-          security default-keychain -s fastlane_tmp_keychain
-          security unlock-keychain -p fastlane fastlane_tmp_keychain
-          security set-keychain-settings -lut 7200 fastlane_tmp_keychain
-          echo "--- Certificates in keychain ---"
-          security find-identity -v -p codesigning fastlane_tmp_keychain
-
-      - name: Install provisioning profile
-        env:
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-        run: |
-          echo "$IOS_PROVISIONING_PROFILE" | base64 -d > "$RUNNER_TEMP/profile.mobileprovision"
-          bundle exec fastlane run install_provisioning_profile path:"$RUNNER_TEMP/profile.mobileprovision"
 
       - name: Fastlane ios release
         run: bundle exec fastlane ios release

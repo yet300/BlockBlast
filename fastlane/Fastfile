@@ -70,8 +70,8 @@ platform :ios do
 
     # 2. Install Certificates and Profiles (Manual Signing)
     if ENV["CI"]
-      # setup_ci creates a temporary keychain
-      keychain_name = lane_context[SharedValues::KEYCHAIN_PATH]
+      # setup_ci creates a temporary keychain and returns its path
+      keychain_path = lane_context[SharedValues::KEYCHAIN_PATH]
 
       # Decode and import the P12 certificate
       p12_path = File.expand_path("dist.p12", Dir.tmpdir)
@@ -80,7 +80,7 @@ platform :ios do
       import_certificate(
         certificate_path: p12_path,
         certificate_password: ENV["IOS_DIST_CERT_PASSWORD"],
-        keychain_name: keychain_name
+        keychain_name: File.basename(keychain_path)
       )
 
       # Decode and install the Provisioning Profile
