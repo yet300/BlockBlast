@@ -15,11 +15,11 @@ import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
+import ge.yet.blockblast.feature.game.integration.stateToModel
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
-import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
@@ -29,12 +29,12 @@ import kotlinx.serialization.Serializable
 
 internal class DefaultGameComponent(
     componentContext: ComponentContext,
+    analytics: AnalyticRepository,
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val settings: SettingsRepository,
     private val storeReview: StoreReviewRepository,
-    private val analytics: AnalyticRepository,
     private val isNewGame: Boolean,
     private val onExitClickedCb: () -> Unit,
 ) : ComponentContext by componentContext,
@@ -44,12 +44,7 @@ internal class DefaultGameComponent(
     private val lifecycleScope = coroutineScope()
     private val logger = GameAnalyticsLogger(analytics)
 
-    // Single source of truth = the store's combined state. The two public
-    // Values are plain projections so consumers recompose only on the slice
-    // they care about.
-    private val storeState = store.asValue()
-    override val model: Value<GameState> = storeState.map { it.game }
-    override val continueCountdown: Value<Int> = storeState.map { it.continueCountdown }
+    override val model: Value<GameComponent.Model> = store.asValue().map(stateToModel)
 
     override val sheetSlot: Value<ChildSlot<*, GameComponent.SheetChild>> =
         childSlot(
