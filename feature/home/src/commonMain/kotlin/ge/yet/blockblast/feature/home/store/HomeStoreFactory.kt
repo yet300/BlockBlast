@@ -18,8 +18,9 @@ internal class HomeStoreFactory(
     private val settings: SettingsRepository,
     private val analytics: AnalyticRepository,
 ) {
-    fun create(): HomeStore =
-        object :
+    fun create(): HomeStore {
+        val logger = HomeAnalyticsLogger(analytics)
+        return object :
             HomeStore,
             Store<HomeStore.Intent, HomeStore.State, Nothing> by storeFactory.create(
                 name = "HomeStore",
@@ -48,13 +49,7 @@ internal class HomeStoreFactory(
                             val bestScore = maxOf(settings.bestScore.value, saved?.bestScore ?: 0L)
                             val hasSavedGame =
                                 saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty()
-                            analytics.logEvent(
-                                eventName = "home_shown",
-                                params = mapOf(
-                                    "best_score" to bestScore,
-                                    "has_saved_game" to hasSavedGame,
-                                ),
-                            )
+                            logger.log("home_shown", bestScore, hasSavedGame)
                             dispatch(
                                 HomeStore.Msg.Loaded(
                                     bestScore = bestScore,
@@ -66,6 +61,7 @@ internal class HomeStoreFactory(
                 },
                 reducer = HomeReducer,
             ) {}
+    }
 
 
     internal object HomeReducer : Reducer<HomeStore.State, HomeStore.Msg> {

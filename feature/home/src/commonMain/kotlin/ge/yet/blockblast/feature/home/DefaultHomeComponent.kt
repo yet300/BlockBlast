@@ -8,6 +8,7 @@ import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.home.integration.stateToModel
+import ge.yet.blockblast.feature.home.store.HomeAnalyticsLogger
 import ge.yet.blockblast.feature.home.store.HomeStore
 import ge.yet.blockblast.feature.home.store.HomeStoreFactory
 import ge.yet.blokblast.domain.repository.AnalyticRepository
@@ -22,6 +23,7 @@ internal class DefaultHomeComponent(
 ) : ComponentContext by componentContext,
     HomeComponent {
     private val store = instanceKeeper.getStore { homeStoreFactory.create() }
+    private val logger = HomeAnalyticsLogger(analytics)
 
     override val model: Value<HomeComponent.Model> =
         store.asValue().map(stateToModel)
@@ -43,13 +45,7 @@ internal class DefaultHomeComponent(
 
     private fun logHomeClick(eventName: String) {
         val state = store.state
-        analytics.logEvent(
-            eventName = eventName,
-            params = mapOf(
-                "best_score" to state.bestScore,
-                "has_saved_game" to state.hasSavedGame,
-            ),
-        )
+        logger.log(eventName, state.bestScore, state.hasSavedGame)
     }
 }
 
