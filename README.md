@@ -38,6 +38,7 @@ A modern, cross-platform block puzzle game built with **Kotlin Multiplatform** a
 - 📱 Single codebase for Android & iOS via Compose Multiplatform
 - 💾 Persistent settings and best-score tracking
 - 🎉 Confetti effects on big clears
+- 🎵 Rotating background music across multiple tracks
 - 📴 Fully offline — no account required
 - ⭐ In-app review prompts on Android
 - 📊 Firebase Analytics & Crashlytics
