@@ -20,11 +20,17 @@ interface SettingsRepository {
     suspend fun setVibrationEnabled(enabled: Boolean)
     suspend fun setDarkTheme(enabled: Boolean)
 
-    /** Write a new best score (caller is responsible for the `>` check). */
+    /** Monotonic write: implementations must ignore scores ≤ current best. */
     suspend fun setBestScore(score: Long)
 
     /** Increment the lifetime review-prompt counter by one. */
     suspend fun incrementReviewPromptCount()
+
+    /**
+     * Cap the review-prompt counter at [max] so no further prompts ever fire.
+     * Idempotent: no-op when the counter is already at or above [max].
+     */
+    suspend fun suppressReviewPrompts(max: Int)
 
     /** Mark the first-launch tutorial as seen so it does not re-appear. */
     suspend fun setTutorialSeen()

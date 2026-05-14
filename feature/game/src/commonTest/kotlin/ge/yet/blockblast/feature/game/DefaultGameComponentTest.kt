@@ -239,6 +239,7 @@ class DefaultGameComponentTest {
             if (score > bestScoreFlow.value) bestScoreFlow.value = score
         }
         override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
+        override suspend fun suppressReviewPrompts(max: Int) {}
         override suspend fun setTutorialSeen() {}
     }
 

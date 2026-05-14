@@ -111,6 +111,7 @@ class SettingsStoreFactoryTest {
         override suspend fun setDarkTheme(enabled: Boolean) { darkFlow.value = enabled }
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
+        override suspend fun suppressReviewPrompts(max: Int) {}
         override suspend fun setTutorialSeen() {}
     }
 

@@ -124,9 +124,7 @@ internal class DefaultGameComponent(
             params = gameParams(),
         )
         lifecycleScope.launch {
-            while (settings.reviewPromptCount.value < AppConfig.REVIEW_MAX_PROMPTS) {
-                settings.incrementReviewPromptCount()
-            }
+            settings.suppressReviewPrompts(AppConfig.REVIEW_MAX_PROMPTS)
         }
     }
 

@@ -467,6 +467,7 @@ private class FakeSettings(
     override suspend fun setDarkTheme(enabled: Boolean) {}
     override suspend fun setBestScore(score: Long) { if (score > bestScoreFlow.value) bestScoreFlow.value = score }
     override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
+    override suspend fun suppressReviewPrompts(max: Int) { if (reviewFlow.value < max) reviewFlow.value = max }
     override suspend fun setTutorialSeen() {}
 }
 

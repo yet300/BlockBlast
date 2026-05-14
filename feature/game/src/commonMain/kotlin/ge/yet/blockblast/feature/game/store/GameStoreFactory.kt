@@ -60,13 +60,12 @@ internal class GameStoreFactory(
                         }
 
                         // ── 2. Best-score persistence ─────────────────────────────────────
+                        // setBestScore is monotonic at the repo level — no caller-side guard.
                         launch {
                             engine.state
                                 .map { it.bestScore }
                                 .distinctUntilChanged()
-                                .collect { best ->
-                                    if (best > settings.bestScore.value) settings.setBestScore(best)
-                                }
+                                .collect { best -> settings.setBestScore(best) }
                         }
 
                         // ── 3. Game-over edge → countdown + (one-shot) review ─────────────
