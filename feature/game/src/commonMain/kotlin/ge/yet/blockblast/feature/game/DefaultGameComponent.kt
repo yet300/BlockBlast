@@ -15,10 +15,12 @@ import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
+import ge.yet.blockblast.feature.game.integration.stateToModel
+import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
+import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
-import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
@@ -28,12 +30,12 @@ import kotlinx.serialization.Serializable
 
 internal class DefaultGameComponent(
     componentContext: ComponentContext,
+    analytics: AnalyticRepository,
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val settings: SettingsRepository,
     private val storeReview: StoreReviewRepository,
-    private val analytics: AnalyticRepository,
     private val isNewGame: Boolean,
     private val onExitClickedCb: () -> Unit,
 ) : ComponentContext by componentContext,
@@ -41,13 +43,9 @@ internal class DefaultGameComponent(
     private val store = instanceKeeper.getStore { gameStoreFactory.create(isNewGame = isNewGame) }
     private val sheetNavigation = SlotNavigation<SheetConfig>()
     private val lifecycleScope = coroutineScope()
+    private val logger = GameAnalyticsLogger(analytics)
 
-    // Single source of truth = the store's combined state. The two public
-    // Values are plain projections so consumers recompose only on the slice
-    // they care about.
-    private val storeState = store.asValue()
-    override val model: Value<GameState> = storeState.map { it.game }
-    override val continueCountdown: Value<Int> = storeState.map { it.continueCountdown }
+    override val model: Value<GameComponent.Model> = store.asValue().map(stateToModel)
 
     override val sheetSlot: Value<ChildSlot<*, GameComponent.SheetChild>> =
         childSlot(
@@ -67,10 +65,7 @@ internal class DefaultGameComponent(
             store.labels.collect { label ->
                 when (label) {
                     GameStore.Label.RequestReview -> {
-                        analytics.logEvent(
-                            eventName = "review_prompt_shown",
-                            params = gameParams(),
-                        )
+                        log("review_prompt_shown")
                         sheetNavigation.activate(SheetConfig.ReviewPrompt)
                     }
                 }
@@ -86,69 +81,39 @@ internal class DefaultGameComponent(
     override fun onReviveClicked() = store.accept(GameStore.Intent.Revive)
     override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
     override fun onSettingsClicked() {
-        analytics.logEvent(
-            eventName = "settings_opened",
-            params = gameParams(),
-        )
+        log("settings_opened")
         sheetNavigation.activate(SheetConfig.Settings)
     }
 
     override fun onExitClicked() {
-        analytics.logEvent(
-            eventName = "exit_clicked",
-            params = gameParams(),
-        )
+        log("exit_clicked")
         onExitClickedCb()
     }
 
     override fun onDismissSheet() {
         when (sheetSlot.value.child?.instance) {
-            is GameComponent.SheetChild.Settings ->
-                analytics.logEvent(
-                    eventName = "settings_closed",
-                    params = gameParams(),
-                )
-            is GameComponent.SheetChild.ReviewPrompt ->
-                analytics.logEvent(
-                    eventName = "review_prompt_closed",
-                    params = gameParams(),
-                )
+            is GameComponent.SheetChild.Settings -> log("settings_closed")
+            is GameComponent.SheetChild.ReviewPrompt -> log("review_prompt_closed")
             null -> Unit
         }
         sheetNavigation.dismiss()
     }
 
     private fun onReviewPromptDontShowAgainClicked() {
-        analytics.logEvent(
-            eventName = "review_prompt_suppressed",
-            params = gameParams(),
-        )
+        log("review_prompt_suppressed")
         lifecycleScope.launch {
-            while (settings.reviewPromptCount.value < AppConfig.REVIEW_MAX_PROMPTS) {
-                settings.incrementReviewPromptCount()
-            }
+            settings.suppressReviewPrompts(AppConfig.REVIEW_MAX_PROMPTS)
         }
     }
 
     private fun onReviewPromptLeaveFeedbackClicked() {
-        analytics.logEvent(
-            eventName = "review_requested",
-            params = gameParams(),
-        )
+        log("review_requested")
         lifecycleScope.launch {
             storeReview.requestInAppReview().collect {}
         }
     }
 
-    private fun gameParams(): Map<String, Any> {
-        val game = store.state.game
-        return mapOf(
-            "score" to game.score,
-            "best_score" to game.bestScore,
-            "revives_used" to game.revivesUsed,
-            "remaining_pieces" to game.currentPieces.size,
-        )
-    }
+    private fun log(eventName: String) = logger.log(eventName, store.state.game)
 
     private fun createSheetChild(
         config: SheetConfig,

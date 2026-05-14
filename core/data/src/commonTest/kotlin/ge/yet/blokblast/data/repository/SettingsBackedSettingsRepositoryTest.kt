@@ -94,4 +94,66 @@ class SettingsBackedSettingsRepositoryTest {
         repo.setTutorialSeen()
         assertTrue(repo.tutorialSeen.value)
     }
+
+    // ── Race-condition / mutex coverage ──────────────────────────────────
+    //
+    // These tests run many writers concurrently against the same key. Without
+    // writeMutex, the read-modify-write pairs in setBestScore /
+    // incrementReviewPromptCount / suppressReviewPrompts would interleave and
+    // produce lost updates or non-monotonic state.
+
+    @Test
+    fun setBestScore_concurrent_writers_keep_max() = runTest {
+        // 100 writers shuffle values 1..100. The monotonic guard inside
+        // setBestScore must survive all interleavings — final value must be
+        // exactly the highest candidate, never anything lower.
+        val candidates = (1L..100L).shuffled()
+        candidates
+            .map { async(Dispatchers.Unconfined) { repo.setBestScore(it) } }
+            .awaitAll()
+        assertEquals(100L, repo.bestScore.value)
+    }
+
+    @Test
+    fun setBestScore_concurrent_lower_values_never_overwrite_higher() = runTest {
+        repo.setBestScore(500)
+        // Hammer with values below the current best. None must take effect.
+        (1L..200L)
+            .map { async(Dispatchers.Unconfined) { repo.setBestScore(it) } }
+            .awaitAll()
+        assertEquals(500L, repo.bestScore.value)
+    }
+
+    @Test
+    fun suppressReviewPrompts_concurrent_callers_settle_at_max() = runTest {
+        // Multiple parallel suppress calls — idempotent, must end exactly at max.
+        List(25) { async(Dispatchers.Unconfined) { repo.suppressReviewPrompts(max = 3) } }
+            .awaitAll()
+        assertEquals(3, repo.reviewPromptCount.value)
+    }
+
+    @Test
+    fun suppressReviewPrompts_no_op_when_already_at_or_above_max() = runTest {
+        repeat(5) { repo.incrementReviewPromptCount() } // count = 5
+        repo.suppressReviewPrompts(max = 3) // already above
+        assertEquals(5, repo.reviewPromptCount.value)
+        repo.suppressReviewPrompts(max = 5) // equal to max
+        assertEquals(5, repo.reviewPromptCount.value)
+    }
+
+    @Test
+    fun increment_and_suppress_concurrent_never_drops_below_max() = runTest {
+        // Mix N increments with one suppress(max=10). After everything settles,
+        // count must be at least max — the suppress floor must hold even when
+        // increments race against it.
+        val increments = List(20) {
+            async(Dispatchers.Unconfined) { repo.incrementReviewPromptCount() }
+        }
+        val suppress = async(Dispatchers.Unconfined) { repo.suppressReviewPrompts(max = 10) }
+        (increments + suppress).awaitAll()
+        assertTrue(
+            repo.reviewPromptCount.value >= 10,
+            "expected count ≥ 10 after concurrent suppress+increment, got ${repo.reviewPromptCount.value}",
+        )
+    }
 }

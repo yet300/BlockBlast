@@ -1,0 +1,1 @@
+Fresh tunes incoming! 🎶 The background music now rotates across multiple tracks, so your puzzle sessions stay lively. Android also gets a slicker startup with the modern SplashScreen API. Under the hood: lots of polish — cleaner components, tighter analytics, and safer settings storage. 🧩✨

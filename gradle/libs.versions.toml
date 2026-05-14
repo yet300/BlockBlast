@@ -15,6 +15,7 @@ firebase-gitlive-sdk = "2.4.0"
 android-review = "2.0.2"
 
 androidx-activity = "1.13.0"
+androidx-core-splashscreen = "1.2.0"
 androidx-lifecycle = "2.10.0"
 composeMultiplatform = "1.10.3"
 confettikit = "0.8.0"
@@ -45,6 +46,7 @@ coreKtx = "1.7.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }
 compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }

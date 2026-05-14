@@ -88,6 +88,14 @@ internal class SettingsBackedSettingsRepository(
         }
     }
 
+    override suspend fun suppressReviewPrompts(max: Int) = withContext(dispatchers.io) {
+        writeMutex.withLock {
+            if (settings.getInt(KEY_REVIEW_PROMPT_COUNT, 0) < max) {
+                settings.putInt(KEY_REVIEW_PROMPT_COUNT, max)
+            }
+        }
+    }
+
     override suspend fun setTutorialSeen() = withContext(dispatchers.io) {
         settings.putBoolean(KEY_TUTORIAL_SEEN, true)
     }

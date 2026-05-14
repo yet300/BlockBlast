@@ -2,7 +2,6 @@ package ge.yet.blockblast.feature.game.store
 
 import com.app.common.config.AppConfig
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
-import com.arkivanov.mvikotlin.extensions.coroutines.states
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.engine.ScoreCalculator
@@ -24,26 +23,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -432,7 +428,6 @@ class GameStoreFactoryTest {
             storeFactory = DefaultStoreFactory(),
             engine = engine,
             audio = audio,
-            storeReview = storeReview,
             saveRepository = saveRepo,
             settings = settings,
             analytics = analytics,
@@ -472,6 +467,7 @@ private class FakeSettings(
     override suspend fun setDarkTheme(enabled: Boolean) {}
     override suspend fun setBestScore(score: Long) { if (score > bestScoreFlow.value) bestScoreFlow.value = score }
     override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
+    override suspend fun suppressReviewPrompts(max: Int) { if (reviewFlow.value < max) reviewFlow.value = max }
     override suspend fun setTutorialSeen() {}
 }
 

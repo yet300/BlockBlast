@@ -9,7 +9,10 @@ import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import dev.zacsweers.metro.Inject
-import ge.yet.blockblast.feature.settings.store.SettingsStoreFactory
+import ge.yet.blockblast.feature.settings.libraries.DefaultLibrariesSettingsComponent
+import ge.yet.blockblast.feature.settings.main.DefaultMainSettingsComponent
+import ge.yet.blockblast.feature.settings.main.store.SettingsStoreFactory
+import ge.yet.blockblast.feature.settings.more.DefaultMoreSettingsComponent
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import kotlinx.serialization.Serializable
 

@@ -4,6 +4,9 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
+import ge.yet.blockblast.feature.settings.libraries.LibrariesSettingsComponent
+import ge.yet.blockblast.feature.settings.main.MainSettingsComponent
+import ge.yet.blockblast.feature.settings.more.MoreSettingsComponent
 
 /**
  * Settings screen. Reachable from BOTH Home and Game via Root navigation.

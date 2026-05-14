@@ -153,9 +153,11 @@ class DefaultRootComponentTest {
 
     private class FakeGame : GameComponent {
         override val model = com.arkivanov.decompose.value.MutableValue(
-            ge.yet.blokblast.domain.model.GameState(),
+            GameComponent.Model(
+                game = ge.yet.blokblast.domain.model.GameState(),
+                continueCountdown = -1,
+            ),
         )
-        override val continueCountdown = com.arkivanov.decompose.value.MutableValue(-1)
         override val sheetSlot = com.arkivanov.decompose.value.MutableValue(
             com.arkivanov.decompose.router.slot.ChildSlot<Any, GameComponent.SheetChild>(child = null),
         )
@@ -196,6 +198,7 @@ class DefaultRootComponentTest {
         override suspend fun setDarkTheme(enabled: Boolean) { darkFlow.value = enabled }
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
+        override suspend fun suppressReviewPrompts(max: Int) {}
         override suspend fun setTutorialSeen() { tutorialFlow.value = true }
     }
 }

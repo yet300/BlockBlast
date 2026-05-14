@@ -101,7 +101,8 @@ private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
 fun GameContent(component: GameComponent) {
-    val model by component.model.subscribeAsState()
+    val uiModel by component.model.subscribeAsState()
+    val model = uiModel.game
     var selectedPieceId by remember { mutableStateOf<Long?>(null) }
 
     // ── Effect states ────────────────────────────────────────────────────
@@ -252,10 +253,9 @@ fun GameContent(component: GameComponent) {
     // owned by the GameStore (see GameStoreFactory) and projected onto a
     // Value<Int> via DefaultGameComponent. ──
     val interstitial = rememberGameOverInterstitial()
-    val continueCountdownRaw by component.continueCountdown.subscribeAsState()
     // Store emits -1 (COUNTDOWN_INACTIVE) when no game-over countdown is
     // active; the overlay API uses a nullable Int for the same concept.
-    val continueCountdown: Int? = continueCountdownRaw.takeIf { it >= 0 }
+    val continueCountdown: Int? = uiModel.continueCountdown.takeIf { it >= 0 }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

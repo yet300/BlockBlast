@@ -18,7 +18,7 @@ import blockblast.composeapp.generated.resources.open_source_libraries_subtitle
 import blockblast.composeapp.generated.resources.privacy_policy
 import blockblast.composeapp.generated.resources.privacy_policy_subtitle
 import com.app.common.config.AppConfig
-import ge.yet.blockblast.feature.settings.MoreSettingsComponent
+import ge.yet.blockblast.feature.settings.more.MoreSettingsComponent
 import ge.yet3.blokblast.component.icon.Github
 import ge.yet3.blokblast.component.icon.OpenInNew
 import ge.yet3.blokblast.component.icon.PrivacyTip

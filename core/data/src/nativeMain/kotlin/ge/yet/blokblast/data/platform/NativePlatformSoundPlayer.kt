@@ -10,6 +10,8 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import platform.AVFAudio.AVAudioPlayer
@@ -42,15 +44,14 @@ internal class NativePlatformSoundPlayer(
 
     private val sfxCache: MutableMap<String, AVAudioPlayer> = mutableMapOf()
     private var musicPlayer: AVAudioPlayer? = null
+    private var musicJob: Job? = null
+    private var lastTrackIndex: Int = -1
 
     /** Known SFX filenames to preload eagerly at startup. */
     private val knownSfx = listOf(
-        "block_place.wav",
-        "line_clear_1.wav", "line_clear_2.wav",
-        "line_clear_3.wav", "line_clear_4.wav",
-        "voice_good.wav", "voice_great.wav",
-        "voice_excellent.wav", "voice_unbelievable.wav",
-        "voice_amazing.wav", "voice_combo.wav",
+        "voice_good.mp3", "voice_great.mp3",
+        "voice_excellent.mp3", "voice_unbelievable.mp3",
+        "voice_amazing.mp3",
     )
 
     init {
@@ -78,17 +79,28 @@ internal class NativePlatformSoundPlayer(
     }
 
     override fun startMusic() {
-        if (musicPlayer?.playing == true) return
-        scope.launch(Dispatchers.Main) {
-            val player = loadPlayer("music_ambient.mp3") ?: return@launch
-            player.numberOfLoops = -1
-            player.volume = MUSIC_VOLUME
-            musicPlayer = player
-            player.play()
+        if (musicJob?.isActive == true || musicPlayer?.playing == true) return
+        musicJob = scope.launch(Dispatchers.Main) {
+            while (true) {
+                val index = MusicPlaylist.nextIndex(lastTrackIndex)
+                lastTrackIndex = index
+                val filename = MusicPlaylist.TRACKS[index]
+                val player = loadPlayer(filename) ?: return@launch
+                player.numberOfLoops = 0
+                player.volume = MUSIC_VOLUME
+                musicPlayer = player
+                player.play()
+                // Sleep until the track is done, then loop to the next one.
+                // Add a small tail buffer to avoid an audible end-of-buffer cut.
+                val durationMs = (player.duration * 1000.0).toLong().coerceAtLeast(0L)
+                delay(durationMs + 50L)
+            }
         }
     }
 
     override fun stopMusic() {
+        musicJob?.cancel()
+        musicJob = null
         musicPlayer?.stop()
         musicPlayer = null
     }

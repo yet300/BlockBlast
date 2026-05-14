@@ -3,7 +3,6 @@ package ge.yet.blockblast.feature.game
 import com.app.common.config.AppConfig
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
-import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
@@ -80,7 +79,6 @@ class DefaultGameComponentTest {
             storeFactory = DefaultStoreFactory(),
             engine = engine,
             audio = audio,
-            storeReview = storeReview,
             saveRepository = save,
             settings = settings,
             analytics = analytics,
@@ -241,6 +239,7 @@ class DefaultGameComponentTest {
             if (score > bestScoreFlow.value) bestScoreFlow.value = score
         }
         override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
+        override suspend fun suppressReviewPrompts(max: Int) {}
         override suspend fun setTutorialSeen() {}
     }
 
