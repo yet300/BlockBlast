@@ -53,21 +53,11 @@ internal class AndroidPlatformSoundPlayer(
 
     private var musicPlayer: MediaPlayer? = null
     private var musicState: MusicState = MusicState.IDLE
+    private var lastTrackIndex: Int = -1
 
     init {
         pool.setOnLoadCompleteListener { _, sampleId, status ->
             if (status == 0) readyIds += sampleId
-        }
-        // Pre-load common SFX so the first placement/clear isn't dropped.
-        // Voice files are still lazy-loaded the first time they're requested
-        // and will silently drop the very first play (rare and not worth a
-        // queue). Plain SFX are warmed here.
-        listOf(
-            "block_place",
-            "line_clear_1", "line_clear_2", "line_clear_3", "line_clear_4",
-        ).forEach { name ->
-            val id = resolve(name)
-            if (id != 0) ids[name] = id
         }
     }
 
@@ -93,8 +83,14 @@ internal class AndroidPlatformSoundPlayer(
         // Re-entrancy guard. PREPARING means a previous startMusic is in flight;
         // do not release it from under its OnPreparedListener.
         if (musicState != MusicState.IDLE) return
+        playTrack(MusicPlaylist.nextIndex(lastTrackIndex))
+    }
+
+    private fun playTrack(index: Int) {
+        lastTrackIndex = index
+        val filename = MusicPlaylist.TRACKS[index]
         runCatching {
-            val afd = ctx.assets.openFd("${AUDIO_DIR}music_ambient.mp3")
+            val afd = ctx.assets.openFd("${AUDIO_DIR}$filename")
             val player = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
@@ -104,17 +100,21 @@ internal class AndroidPlatformSoundPlayer(
                 )
                 setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
                 afd.close()
-                isLooping = true
                 setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
                 setOnPreparedListener {
-                    // The user may have called stopMusic() while we were
-                    // preparing; honor that by tearing down here instead of
-                    // starting a stream that will immediately be stopped.
                     if (musicState == MusicState.PREPARING) {
                         musicState = MusicState.PLAYING
                         it.start()
                     } else {
                         runCatching { it.release() }
+                    }
+                }
+                setOnCompletionListener { mp ->
+                    runCatching { mp.release() }
+                    if (musicPlayer === mp && musicState == MusicState.PLAYING) {
+                        musicPlayer = null
+                        musicState = MusicState.IDLE
+                        playTrack(MusicPlaylist.nextIndex(lastTrackIndex))
                     }
                 }
                 setOnErrorListener { mp, _, _ ->
@@ -130,7 +130,6 @@ internal class AndroidPlatformSoundPlayer(
             musicState = MusicState.PREPARING
             player.prepareAsync()
         }.onFailure {
-            // Asset missing or MediaPlayer construction failed — stay idle.
             musicPlayer = null
             musicState = MusicState.IDLE
         }
