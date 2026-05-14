@@ -3,6 +3,7 @@ package ge.yet.blockblast.feature.game
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
+import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 

@@ -1,4 +1,4 @@
-package ge.yet.blockblast.feature.settings.store
+package ge.yet.blockblast.feature.settings.main.store
 
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper

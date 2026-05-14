@@ -22,7 +22,7 @@ import blockblast.composeapp.generated.resources.sound_subtitle
 import blockblast.composeapp.generated.resources.vibration
 import blockblast.composeapp.generated.resources.vibration_subtitle
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import ge.yet.blockblast.feature.settings.MainSettingsComponent
+import ge.yet.blockblast.feature.settings.main.MainSettingsComponent
 import ge.yet3.blokblast.component.icon.DarkMode
 import ge.yet3.blokblast.component.icon.NotificationsActive
 import ge.yet3.blokblast.component.icon.Settings

@@ -1,6 +1,6 @@
-package ge.yet.blockblast.feature.settings.integration
+package ge.yet.blockblast.feature.settings.main.integration
 
-import ge.yet.blockblast.feature.settings.store.SettingsStore
+import ge.yet.blockblast.feature.settings.main.store.SettingsStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

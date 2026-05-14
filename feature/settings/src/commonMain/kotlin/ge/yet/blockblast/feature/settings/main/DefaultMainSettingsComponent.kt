@@ -1,11 +1,11 @@
-package ge.yet.blockblast.feature.settings
+package ge.yet.blockblast.feature.settings.main
 
 import com.app.common.decompose.asValue
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.operator.map
-import ge.yet.blockblast.feature.settings.integration.stateToModel
-import ge.yet.blockblast.feature.settings.store.SettingsStore
+import ge.yet.blockblast.feature.settings.main.integration.stateToModel
+import ge.yet.blockblast.feature.settings.main.store.SettingsStore
 
 internal class DefaultMainSettingsComponent(
     componentContext: ComponentContext,

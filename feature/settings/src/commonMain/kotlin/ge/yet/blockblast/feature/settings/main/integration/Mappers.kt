@@ -1,7 +1,7 @@
-package ge.yet.blockblast.feature.settings.integration
+package ge.yet.blockblast.feature.settings.main.integration
 
-import ge.yet.blockblast.feature.settings.MainSettingsComponent
-import ge.yet.blockblast.feature.settings.store.SettingsStore
+import ge.yet.blockblast.feature.settings.main.MainSettingsComponent
+import ge.yet.blockblast.feature.settings.main.store.SettingsStore
 
 internal val stateToModel: (SettingsStore.State) -> MainSettingsComponent.Model =
     { state ->

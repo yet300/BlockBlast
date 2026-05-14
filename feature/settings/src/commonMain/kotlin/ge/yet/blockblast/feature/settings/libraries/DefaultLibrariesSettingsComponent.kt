@@ -1,4 +1,4 @@
-package ge.yet.blockblast.feature.settings
+package ge.yet.blockblast.feature.settings.libraries
 
 import com.arkivanov.decompose.ComponentContext
 

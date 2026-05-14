@@ -1,4 +1,4 @@
-package ge.yet.blockblast.feature.settings
+package ge.yet.blockblast.feature.settings.main
 
 import com.arkivanov.decompose.value.Value
 

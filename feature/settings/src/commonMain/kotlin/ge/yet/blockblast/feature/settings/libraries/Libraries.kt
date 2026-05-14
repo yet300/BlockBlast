@@ -1,4 +1,4 @@
-package ge.yet.blockblast.feature.settings
+package ge.yet.blockblast.feature.settings.libraries
 
 internal val DEFAULT_LIBRARIES: List<LibrariesSettingsComponent.Library> = listOf(
     LibrariesSettingsComponent.Library(

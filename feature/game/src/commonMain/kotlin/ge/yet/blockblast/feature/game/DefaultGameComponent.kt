@@ -16,6 +16,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.integration.stateToModel
+import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory

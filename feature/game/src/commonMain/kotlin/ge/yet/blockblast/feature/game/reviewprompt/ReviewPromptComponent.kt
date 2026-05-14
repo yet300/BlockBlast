@@ -1,4 +1,4 @@
-package ge.yet.blockblast.feature.game
+package ge.yet.blockblast.feature.game.reviewprompt
 
 import com.arkivanov.decompose.ComponentContext
 

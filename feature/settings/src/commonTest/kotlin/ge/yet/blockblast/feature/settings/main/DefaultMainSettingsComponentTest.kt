@@ -1,10 +1,10 @@
-package ge.yet.blockblast.feature.settings
+package ge.yet.blockblast.feature.settings.main
 
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import ge.yet.blockblast.feature.settings.store.SettingsStore
-import ge.yet.blockblast.feature.settings.store.SettingsStoreFactory
+import ge.yet.blockblast.feature.settings.main.store.SettingsStore
+import ge.yet.blockblast.feature.settings.main.store.SettingsStoreFactory
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.Dispatchers

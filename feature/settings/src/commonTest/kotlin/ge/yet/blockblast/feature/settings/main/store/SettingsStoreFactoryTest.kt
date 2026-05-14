@@ -1,4 +1,4 @@
-package ge.yet.blockblast.feature.settings.store
+package ge.yet.blockblast.feature.settings.main.store
 
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blokblast.domain.repository.AnalyticRepository
