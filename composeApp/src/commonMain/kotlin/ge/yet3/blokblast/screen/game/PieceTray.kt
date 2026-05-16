@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -227,6 +228,11 @@ private fun TraySlot(
     var slotOriginInWindow by remember { mutableStateOf(Offset.Zero) }
     val touchSlop = LocalViewConfiguration.current.touchSlop
 
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDragMove by rememberUpdatedState(onDragMove)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
+    val currentOnTap by rememberUpdatedState(onTap)
+
     Box(
         modifier = modifier
             .padding(6.dp)
@@ -286,23 +292,23 @@ private fun TraySlot(
                                         if (!dragging && delta.getDistance() > touchSlop) {
                                             dragging = true
                                             val startInWindow = slotOriginInWindow + downPos
-                                            onDragStart?.invoke(piece, startInWindow, downPos)
+                                            currentOnDragStart?.invoke(piece, startInWindow, downPos)
                                         }
 
                                         if (dragging) {
                                             change.consume()
                                             val posInWindow = slotOriginInWindow + change.position
-                                            onDragMove?.invoke(posInWindow)
+                                            currentOnDragMove?.invoke(posInWindow)
                                         }
                                     }
 
                                     if (event.type == PointerEventType.Release) {
                                         isPressed = false
                                         if (dragging) {
-                                            onDragEnd?.invoke()
+                                            currentOnDragEnd?.invoke()
                                         } else {
                                             // It was a tap — toggle selection
-                                            onTap()
+                                            currentOnTap()
                                         }
                                         break
                                     }
@@ -311,7 +317,7 @@ private fun TraySlot(
                                 // If the pointer was cancelled
                                 if (isPressed) {
                                     isPressed = false
-                                    if (dragging) onDragEnd?.invoke()
+                                    if (dragging) currentOnDragEnd?.invoke()
                                 }
                             }
                         }

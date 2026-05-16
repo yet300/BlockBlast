@@ -91,6 +91,9 @@ class GameEngine(
      */
     fun restore(state: GameState) {
         _state.value = state
+        // Restore counter so new pieces don't collide with existing IDs.
+        pieceIdCounter = state.currentPieces.maxOfOrNull { it.pieceId } ?: 0
+
         if (!state.isGameOver && state.currentPieces.isNotEmpty()) {
             _events.tryEmit(GameEvent.GameStarted)
         }

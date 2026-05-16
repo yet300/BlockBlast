@@ -83,8 +83,12 @@ class DragDropState {
         val ghostH = piece.shape.height * ghostCellSizePx +
             (piece.shape.height - 1).coerceAtLeast(0) * ghostGapPx
 
-        val ghostTopLeftX = dragPosition.x - fingerOffset.x - ghostW / 2f
-        val ghostTopLeftY = dragPosition.y - fingerOffset.y - ghostH - verticalLiftPx
+        // The floating ghost is drawn with its center at [dragPosition] (virtual
+        // finger) horizontally, and entirely above the finger vertically.
+        // This is a "lifted" drag style that ensures the piece is never
+        // obscured by the user's thumb.
+        val ghostTopLeftX = dragPosition.x - ghostW / 2f
+        val ghostTopLeftY = dragPosition.y - ghostH - verticalLiftPx
 
         // Snap by rounding the ghost's top-left to the nearest grid cell
         // — rounding (not floor) so half-cell overlaps jump to the closer

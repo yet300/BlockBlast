@@ -416,8 +416,6 @@ fun GameContent(component: GameComponent) {
                     verticalLift = DRAG_GHOST_VERTICAL_LIFT,
                     dragPositionX = dragDrop.dragPosition.x,
                     dragPositionY = dragDrop.dragPosition.y,
-                    fingerOffsetX = dragDrop.fingerOffset.x,
-                    fingerOffsetY = dragDrop.fingerOffset.y,
                 )
             }
 

@@ -166,11 +166,9 @@ fun GameGrid(
         )
 
         var prevGrid by remember { mutableStateOf(grid) }
-        var prevNonce by remember { mutableIntStateOf(clearedEvent.nonce) }
         
         LaunchedEffect(grid, clearedEvent) {
             prevGrid = grid
-            prevNonce = clearedEvent.nonce
         }
 
         val saturation = animateFloatAsState(
@@ -191,6 +189,11 @@ fun GameGrid(
                 var displayColor by remember(cellId) {
                     mutableIntStateOf(cellId)
                 }
+
+                // Internal nonce tracker per cell to ensure clear animations
+                // never skip due to the parent GameGrid updating prevNonce
+                // before the cell's LaunchedEffect fires.
+                var cellPrevNonce by remember { mutableIntStateOf(clearedEvent.nonce) }
 
                 // Game-over board collapse: staggered "fall" of every filled
                 // cell. Stagger from the bottom-up by row, with a small
@@ -217,12 +220,15 @@ fun GameGrid(
 
                 // Clear animation detection
                 LaunchedEffect(clearedEvent) {
-                    if (clearedEvent.nonce != prevNonce && clearedEvent.cells.any { it.x == x && it.y == y }) {
+                    if (clearedEvent.nonce != cellPrevNonce && clearedEvent.cells.any { it.x == x && it.y == y }) {
+                        cellPrevNonce = clearedEvent.nonce
                         isClearing = true
                         cellAnim.clear(delayMs = (x + y) * 30L)
                         isClearing = false
                         displayColor = -1
                         cellAnim.reset()
+                    } else {
+                        cellPrevNonce = clearedEvent.nonce
                     }
                 }
 
