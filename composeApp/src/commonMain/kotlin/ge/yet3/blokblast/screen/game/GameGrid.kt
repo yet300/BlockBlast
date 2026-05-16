@@ -134,8 +134,13 @@ fun GameGrid(
         }
         val hasPrediction = predictedRows.isNotEmpty() || predictedCols.isNotEmpty()
         
+        // Pulses are exposed as State<Float> and passed downward as () -> Float
+        // lambdas so the read happens inside each cell's body — and only inside
+        // the branches that actually use it. Cells that are neither hovered nor
+        // in a predicted line never read the State, so they stay skippable and
+        // don't recompose at the animation frame rate.
         val predictPulse = rememberInfiniteTransition(label = "predictPulse")
-        val predictAlpha by predictPulse.animateFloat(
+        val predictAlphaState = predictPulse.animateFloat(
             initialValue = 0.35f,
             targetValue = 0.75f,
             animationSpec = infiniteRepeatable(
@@ -144,9 +149,10 @@ fun GameGrid(
             ),
             label = "predictAlpha",
         )
+        val predictAlpha: () -> Float = remember(predictAlphaState) { { predictAlphaState.value } }
 
         val hoverPulse = rememberInfiniteTransition(label = "hoverPulse")
-        val hoverPulseAlpha by hoverPulse.animateFloat(
+        val hoverPulseAlphaState = hoverPulse.animateFloat(
             initialValue = 0.55f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
@@ -155,6 +161,7 @@ fun GameGrid(
             ),
             label = "hoverPulseAlpha",
         )
+        val hoverPulseAlpha: () -> Float = remember(hoverPulseAlphaState) { { hoverPulseAlphaState.value } }
 
         val saturation by animateFloatAsState(
             targetValue = if (isGameOver) 0.2f else 1f,
@@ -211,9 +218,9 @@ private fun GridCell(
     isHoverGhost: Boolean,
     hoverColorId: Int?,
     hoverValid: Boolean,
-    hoverPulseAlpha: Float,
+    hoverPulseAlpha: () -> Float,
     inPredictedLine: Boolean,
-    predictAlpha: Float,
+    predictAlpha: () -> Float,
     tapEnabled: Boolean,
     onCellTapped: (x: Int, y: Int) -> Unit,
 ) {
@@ -269,13 +276,13 @@ private fun GridCell(
         isFilled -> pieceColor(displayColor)
         isHoverGhost && hoverColorId != null -> {
             val base = pieceColorPreview(hoverColorId)
-            if (hoverValid) base.copy(alpha = base.alpha * hoverPulseAlpha)
+            if (hoverValid) base.copy(alpha = base.alpha * hoverPulseAlpha())
             else base.copy(alpha = 0.15f)
         }
         else -> emptyColor
     }
 
-    val predictGlow = if (inPredictedLine) predictAlpha else 0f
+    val predictGlow = if (inPredictedLine) predictAlpha() else 0f
 
     BlockPiece(
         color = cellColor,

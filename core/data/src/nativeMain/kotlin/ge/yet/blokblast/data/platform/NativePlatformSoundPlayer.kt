@@ -44,6 +44,9 @@ internal class NativePlatformSoundPlayer(
 ) : PlatformSoundPlayer {
 
     private val sfxCache: MutableMap<String, AVAudioPlayer> = mutableMapOf()
+    // Tracks keys we've already tried and failed to load, so missing assets
+    // don't keep paying the I/O + decode cost on every play call.
+    private val sfxMisses: MutableSet<String> = mutableSetOf()
     private var musicPlayer: AVAudioPlayer? = null
     private var musicJob: Job? = null
     private var lastTrackIndex: Int = -1
@@ -129,9 +132,21 @@ internal class NativePlatformSoundPlayer(
     private fun safePlay(key: String) { safePlayReturning(key) }
 
     private fun safePlayReturning(key: String): Boolean {
-        val player = sfxCache[key] ?: return false
-        player.currentTime = 0.0
-        return player.play()
+        val player = sfxCache[key]
+        if (player != null) {
+            player.currentTime = 0.0
+            return player.play()
+        }
+        // Lazy-load on miss: matches Android behaviour and avoids the
+        // requirement to enumerate every SFX in [knownSfx]. The current call
+        // can't play (load is async), but subsequent calls will hit the cache.
+        if (key !in sfxMisses) {
+            scope.launch(Dispatchers.Main) {
+                val loaded = loadPlayer("$key.mp3")
+                if (loaded != null) sfxCache[key] = loaded else sfxMisses += key
+            }
+        }
+        return false
     }
 
     /**
