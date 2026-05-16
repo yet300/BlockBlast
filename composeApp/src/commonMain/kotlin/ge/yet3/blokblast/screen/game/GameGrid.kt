@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -179,8 +180,12 @@ fun GameGrid(
         }
         val tapEnabled = selectedPiece != null
 
-        // Wrap cells in a layer to apply saturation effect once to the whole grid
-        Box(modifier = Modifier.graphicsLayer { this.colorFilter = colorFilter }) {
+        // Wrap cells in a layer to apply saturation effect once to the whole
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { this.colorFilter = colorFilter },
+        ) {
             for (row in 0 until COLS) {
                 for (col in 0 until COLS) {
                     GridCell(
