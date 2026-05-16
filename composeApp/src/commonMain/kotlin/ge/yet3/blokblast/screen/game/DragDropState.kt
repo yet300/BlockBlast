@@ -100,6 +100,10 @@ class DragDropState {
         val anchorX = kotlin.math.round(relX / step).toInt()
         val anchorY = kotlin.math.round(relY / step).toInt()
 
+        // Always recompute validity — the grid can change under a stationary
+        // finger (line-clear animation finishes mid-drag and frees cells).
+        // mutableStateOf's structural equality elides redundant emits, so
+        // there's no need to gate the writes manually.
         hoverAnchor = anchorX to anchorY
         isValidPlacement = canPlacePiece(piece.shape, anchorX, anchorY, grid)
     }

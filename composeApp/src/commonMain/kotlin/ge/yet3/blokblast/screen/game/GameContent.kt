@@ -414,8 +414,7 @@ fun GameContent(component: GameComponent) {
                     cellSize = DRAG_GHOST_CELL_SIZE,
                     gap = DRAG_GHOST_GAP,
                     verticalLift = DRAG_GHOST_VERTICAL_LIFT,
-                    dragPositionX = dragDrop.dragPosition.x,
-                    dragPositionY = dragDrop.dragPosition.y,
+                    dragDropState = dragDrop,
                 )
             }
 
