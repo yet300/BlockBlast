@@ -33,10 +33,7 @@ fun DraggedPieceOverlay(
     cellSize: Dp,
     gap: Dp,
     verticalLift: Dp,
-    dragPositionX: Float,
-    dragPositionY: Float,
-    fingerOffsetX: Float,
-    fingerOffsetY: Float,
+    dragDropState: DragDropState,
     modifier: Modifier = Modifier,
 ) {
     val shadowCells = remember(piece) {
@@ -46,13 +43,14 @@ fun DraggedPieceOverlay(
     Box(
         modifier = modifier
             .offset {
+                val dragPosition = dragDropState.dragPosition
                 val ghostW = cellSize.toPx() * piece.shape.width +
                     gap.toPx() * (piece.shape.width - 1).coerceAtLeast(0)
                 val ghostH = cellSize.toPx() * piece.shape.height +
                     gap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
                 IntOffset(
-                    x = (dragPositionX - fingerOffsetX - ghostW / 2f).toInt(),
-                    y = (dragPositionY - fingerOffsetY - ghostH - verticalLift.toPx()).toInt(),
+                    x = (dragPosition.x - ghostW / 2f).toInt(),
+                    y = (dragPosition.y - ghostH - verticalLift.toPx()).toInt(),
                 )
             }
             .graphicsLayer {

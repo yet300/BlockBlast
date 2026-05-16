@@ -6,13 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
-import com.arkivanov.decompose.extensions.compose.stack.animation.fade
-import com.arkivanov.decompose.extensions.compose.stack.animation.plus
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimation
-import com.arkivanov.decompose.extensions.compose.stack.animation.scale
-import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.root.RootComponent
+import ge.yet3.blokblast.component.utils.cupertinoPredictiveBackAnimation
 import ge.yet3.blokblast.screen.game.GameContent
 import ge.yet3.blokblast.screen.home.HomeContent
 
@@ -27,9 +23,8 @@ fun RootContent(
     Children(
         modifier = modifier,
         stack = childStack,
-        animation = predictiveBackAnimation(
+        animation = cupertinoPredictiveBackAnimation(
             backHandler = component.backHandler,
-            fallbackAnimation = stackAnimation(fade() + scale(frontFactor = 0.75f, backFactor = 0.95f)),
             onBack = component::onBackClicked,
         ),
     ) { child ->

@@ -90,7 +90,18 @@ class GameEngine(
      * resume their per-round work.
      */
     fun restore(state: GameState) {
-        _state.value = state
+        // Merge best score: a freshly-seeded lifetime best from settings can be
+        // higher than the value persisted in the save blob if autosave hadn't
+        // flushed before the previous process death. Wholesale replacement
+        // would visibly downgrade the HUD this round.
+        val mergedBest = maxOf(_state.value.bestScore, state.bestScore)
+        _state.value = state.copy(
+            bestScore = mergedBest,
+            bestAtRoundStart = maxOf(state.bestAtRoundStart, mergedBest),
+        )
+        // Restore counter so new pieces don't collide with existing IDs.
+        pieceIdCounter = state.currentPieces.maxOfOrNull { it.pieceId } ?: 0
+
         if (!state.isGameOver && state.currentPieces.isNotEmpty()) {
             _events.tryEmit(GameEvent.GameStarted)
         }

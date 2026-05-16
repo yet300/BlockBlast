@@ -1,0 +1,1 @@
+Stability sprint! 🩹 Fixed a sneaky bug where pieces refused to drop on valid cells right after a line clear, squashed a crash on the iOS back-swipe gesture, and stopped the high-score from sliding back when continuing a saved game. Smoother drags, fewer dropped frames, and tighter iOS sound. Back to the puzzles! 🧩✨

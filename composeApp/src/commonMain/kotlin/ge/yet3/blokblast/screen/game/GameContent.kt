@@ -47,6 +47,7 @@ import ge.yet3.blokblast.component.overlay.rememberGameTutorialSteps
 import ge.yet3.blokblast.theme.LocalOnTutorialSeen
 import ge.yet3.blokblast.theme.LocalTutorialSeen
 import ge.yet3.blokblast.theme.LocalVibrationEnabled
+import ge.yet.blokblast.domain.model.Grid
 import androidx.compose.ui.unit.dp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best
@@ -183,8 +184,8 @@ fun GameContent(component: GameComponent) {
     LaunchedEffect(model.lastPointsAwarded) {
         val points = model.lastPointsAwarded.points
         if (points > 0) {
-            val cx = gridOriginX + (8 * cellSizePx + 7 * gapPx) / 2f
-            val cy = gridOriginY + (8 * cellSizePx + 7 * gapPx) / 2f
+            val cx = gridOriginX + (Grid.SIZE * cellSizePx + (Grid.SIZE - 1) * gapPx) / 2f
+            val cy = gridOriginY + (Grid.SIZE * cellSizePx + (Grid.SIZE - 1) * gapPx) / 2f
             floatingScore.add(points, androidx.compose.ui.geometry.Offset(cx, cy))
         }
     }
@@ -414,10 +415,7 @@ fun GameContent(component: GameComponent) {
                     cellSize = DRAG_GHOST_CELL_SIZE,
                     gap = DRAG_GHOST_GAP,
                     verticalLift = DRAG_GHOST_VERTICAL_LIFT,
-                    dragPositionX = dragDrop.dragPosition.x,
-                    dragPositionY = dragDrop.dragPosition.y,
-                    fingerOffsetX = dragDrop.fingerOffset.x,
-                    fingerOffsetY = dragDrop.fingerOffset.y,
+                    dragDropState = dragDrop,
                 )
             }
 

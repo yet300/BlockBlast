@@ -117,6 +117,27 @@ class GameEngineTest {
     }
 
     @Test
+    fun restore_preserves_seeded_best_when_save_has_lower_best() {
+        // Lifetime best from settings is seeded before a save is restored.
+        // If autosave hadn't flushed before the previous process died, the
+        // persisted save can carry a lower bestScore — restore must not
+        // visibly downgrade the HUD.
+        engine.seedBestScore(5000)
+        val stale = GameState(score = 42L, bestScore = 1000L, currentPieces = emptyList())
+        engine.restore(stale)
+        assertEquals(5000L, engine.state.value.bestScore)
+        assertEquals(5000L, engine.state.value.bestAtRoundStart)
+    }
+
+    @Test
+    fun restore_uses_save_best_when_higher_than_seeded() {
+        engine.seedBestScore(100)
+        val winning = GameState(score = 42L, bestScore = 9000L, currentPieces = emptyList())
+        engine.restore(winning)
+        assertEquals(9000L, engine.state.value.bestScore)
+    }
+
+    @Test
     fun restore_emits_GameStarted_for_playable_state() = runTest {
         val playable = GameState(
             grid = Grid().withCell(0, 0, 1),

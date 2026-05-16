@@ -83,8 +83,12 @@ class DragDropState {
         val ghostH = piece.shape.height * ghostCellSizePx +
             (piece.shape.height - 1).coerceAtLeast(0) * ghostGapPx
 
-        val ghostTopLeftX = dragPosition.x - fingerOffset.x - ghostW / 2f
-        val ghostTopLeftY = dragPosition.y - fingerOffset.y - ghostH - verticalLiftPx
+        // The floating ghost is drawn with its center at [dragPosition] (virtual
+        // finger) horizontally, and entirely above the finger vertically.
+        // This is a "lifted" drag style that ensures the piece is never
+        // obscured by the user's thumb.
+        val ghostTopLeftX = dragPosition.x - ghostW / 2f
+        val ghostTopLeftY = dragPosition.y - ghostH - verticalLiftPx
 
         // Snap by rounding the ghost's top-left to the nearest grid cell
         // — rounding (not floor) so half-cell overlaps jump to the closer
@@ -96,6 +100,10 @@ class DragDropState {
         val anchorX = kotlin.math.round(relX / step).toInt()
         val anchorY = kotlin.math.round(relY / step).toInt()
 
+        // Always recompute validity — the grid can change under a stationary
+        // finger (line-clear animation finishes mid-drag and frees cells).
+        // mutableStateOf's structural equality elides redundant emits, so
+        // there's no need to gate the writes manually.
         hoverAnchor = anchorX to anchorY
         isValidPlacement = canPlacePiece(piece.shape, anchorX, anchorY, grid)
     }

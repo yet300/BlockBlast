@@ -10,7 +10,18 @@ import ge.yet.blokblast.domain.repository.GameSaveRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+
+/**
+ * Versioned save envelope. Bump [CURRENT_SAVE_VERSION] on any incompatible
+ * change to [GameState] (or its transitively serialized types). On load we
+ * drop saves whose version doesn't match — no migration framework yet.
+ */
+@Serializable
+private data class SavedGame(val version: Int, val state: GameState)
+
+private const val CURRENT_SAVE_VERSION = 1
 
 /**
  * Disk-backed save store: serializes [GameState] as JSON into the shared
@@ -34,8 +45,9 @@ internal class SettingsBackedGameSaveRepository(
     override suspend fun save(state: GameState) {
         mutex.withLock {
             cached = state
+            val envelope = SavedGame(version = CURRENT_SAVE_VERSION, state = state)
             withContext(dispatchers.io) {
-                settings.putString(KEY_SAVE, json.encodeToString(GameState.serializer(), state))
+                settings.putString(KEY_SAVE, json.encodeToString(SavedGame.serializer(), envelope))
             }
         }
     }
@@ -43,8 +55,14 @@ internal class SettingsBackedGameSaveRepository(
     override suspend fun load(): GameState? = mutex.withLock {
         if (loaded) return@withLock cached
         val raw = withContext(dispatchers.io) { settings.getStringOrNull(KEY_SAVE) }
-        cached = raw?.let {
-            runCatching { json.decodeFromString(GameState.serializer(), it) }.getOrNull()
+        val parsed = raw?.let {
+            runCatching { json.decodeFromString(SavedGame.serializer(), it) }.getOrNull()
+        }
+        cached = parsed?.takeIf { it.version == CURRENT_SAVE_VERSION }?.state
+        // Drop unreadable / wrong-version blobs so we don't pay the parse cost
+        // every cold start and don't keep a one-way trap for users.
+        if (raw != null && cached == null) {
+            withContext(dispatchers.io) { settings.remove(KEY_SAVE) }
         }
         loaded = true
         cached
