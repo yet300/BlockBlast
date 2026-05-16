@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import platform.AVFAudio.AVAudioPlayer
@@ -46,6 +47,10 @@ internal class NativePlatformSoundPlayer(
     private var musicPlayer: AVAudioPlayer? = null
     private var musicJob: Job? = null
     private var lastTrackIndex: Int = -1
+    // Monotonically incremented each startMusic(); the loop captures its own
+    // generation and refuses to publish/play a track if it has been superseded
+    // (e.g., stopMusic ran while loadPlayer was on a background dispatcher).
+    private var musicGeneration: Long = 0L
 
     /** Known SFX filenames to preload eagerly at startup. */
     private val knownSfx = listOf(
@@ -80,12 +85,19 @@ internal class NativePlatformSoundPlayer(
 
     override fun startMusic() {
         if (musicJob?.isActive == true || musicPlayer?.playing == true) return
+        val generation = ++musicGeneration
         musicJob = scope.launch(Dispatchers.Main) {
             while (true) {
                 val index = MusicPlaylist.nextIndex(lastTrackIndex)
                 lastTrackIndex = index
                 val filename = MusicPlaylist.TRACKS[index]
                 val player = loadPlayer(filename) ?: return@launch
+                // After loadPlayer (which hops dispatchers), the loop may have
+                // been cancelled and/or superseded by another startMusic. In
+                // either case, drop this player on the floor — assigning it to
+                // musicPlayer or calling play() would leak audio past stopMusic.
+                coroutineContext.ensureActive()
+                if (generation != musicGeneration) return@launch
                 player.numberOfLoops = 0
                 player.volume = MUSIC_VOLUME
                 musicPlayer = player
@@ -99,6 +111,7 @@ internal class NativePlatformSoundPlayer(
     }
 
     override fun stopMusic() {
+        musicGeneration++
         musicJob?.cancel()
         musicJob = null
         musicPlayer?.stop()

@@ -14,7 +14,6 @@ private fun String.versionToNumber() = split(".")
     .run {
         val appendedList = toMutableList()
         repeat(3 - size) { appendedList.add(0) }
-        println(appendedList)
         appendedList.foldIndexed(0) { index, acc, current ->
             acc + current * 1000.0.pow(2 - index).toInt()
         }
