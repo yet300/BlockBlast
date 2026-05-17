@@ -13,6 +13,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,43 +38,49 @@ fun AnimatedCounter(
     color: Color = LocalContentColor.current,
     durationMillis: Int = 350,
 ) {
-    val formatted = value.formatScore()
+    val formatted = remember(value) { value.formatScore() }
 
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.Bottom,
     ) {
         formatted.forEachIndexed { index, char ->
-            // Key by *position from the right*, so left-side new digits don't
-            // re-key the whole row when the number gains a digit.
+            // Key by *position from the right* so AnimatedContent slots stay
+            // aligned to digit places when the number gains or loses a digit
+            // (e.g. 999 → 1,000). Without this key, positional matching makes
+            // a ones-place '9' animate into a thousands-place '1' and a tens
+            // '9' into a separator ',' — visually jarring and it resets every
+            // AnimatedContent's internal Transition.
             val positionFromRight = formatted.length - index
-            AnimatedContent(
-                targetState = char,
-                transitionSpec = {
-                    val rollingUp = targetState.digitOrNull() != null &&
-                        initialState.digitOrNull() != null &&
-                        (targetState.digitOrNull()!! > initialState.digitOrNull()!!)
-                    val direction = if (rollingUp) 1 else -1
-                    val enter = slideInVertically(
-                        animationSpec = tween(durationMillis),
-                    ) { fullHeight -> direction * fullHeight } + fadeIn(tween(durationMillis))
-                    val exit = slideOutVertically(
-                        animationSpec = tween(durationMillis),
-                    ) { fullHeight -> -direction * fullHeight } + fadeOut(tween(durationMillis))
-                    ContentTransform(
-                        targetContentEnter = enter,
-                        initialContentExit = exit,
-                        sizeTransform = SizeTransform(clip = false),
+            key(positionFromRight) {
+                AnimatedContent(
+                    targetState = char,
+                    transitionSpec = {
+                        val rollingUp = targetState.digitOrNull() != null &&
+                            initialState.digitOrNull() != null &&
+                            (targetState.digitOrNull()!! > initialState.digitOrNull()!!)
+                        val direction = if (rollingUp) 1 else -1
+                        val enter = slideInVertically(
+                            animationSpec = tween(durationMillis),
+                        ) { fullHeight -> direction * fullHeight } + fadeIn(tween(durationMillis))
+                        val exit = slideOutVertically(
+                            animationSpec = tween(durationMillis),
+                        ) { fullHeight -> -direction * fullHeight } + fadeOut(tween(durationMillis))
+                        ContentTransform(
+                            targetContentEnter = enter,
+                            initialContentExit = exit,
+                            sizeTransform = SizeTransform(clip = false),
+                        )
+                    },
+                    label = "digit-$positionFromRight",
+                ) { displayedChar ->
+                    Text(
+                        text = displayedChar.toString(),
+                        style = style,
+                        color = color,
+                        maxLines = 1,
                     )
-                },
-                label = "digit-$positionFromRight",
-            ) { displayedChar ->
-                Text(
-                    text = displayedChar.toString(),
-                    style = style,
-                    color = color,
-                    maxLines = 1,
-                )
+                }
             }
         }
     }

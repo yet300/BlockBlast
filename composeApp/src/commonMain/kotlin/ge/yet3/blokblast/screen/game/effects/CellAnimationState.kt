@@ -26,26 +26,41 @@ class CellAnimState {
     val rotation = Animatable(0f)
     val translateY = Animatable(0f)
 
-    /** Drop/snap bounce with squash — pancake-flat → tall recoil → settle. */
+    /**
+     * Drop/snap with a soft squash — barely-flat → very mild recoil → settle.
+     *
+     * Tuned for visual smoothness rather than punch: amplitudes are kept
+     * small enough that the cell never visibly leaves its grid slot, easing
+     * is FastOutSlowInEasing throughout (no linear "snap" feel), durations
+     * are stretched to ~250ms total, and the recoil springs use a high
+     * damping ratio so they settle without ringing.
+     *
+     * Previous more aggressive version (scaleX 1.25 / scaleY 0.65, recoil
+     * 1.18) made adjacent cells of multi-cell pieces overlap each other
+     * mid-animation — looked like ghost cells appearing.
+     *
+     * The per-cell (x+y) * 25L wave delay used at the call site was also
+     * dropped: staggering the squash across cells of a single piece made
+     * the visual collision much worse.
+     */
     suspend fun popIn(delayMs: Long) {
-        scale.snapTo(0.85f)
-        scaleX.snapTo(1.25f)
-        scaleY.snapTo(0.65f)
+        scale.snapTo(0.92f)
+        scaleX.snapTo(1.05f)
+        scaleY.snapTo(0.95f)
         alpha.snapTo(1f)
         rotation.snapTo(0f)
         delay(delayMs)
         coroutineScope {
             launch {
-                scale.animateTo(1f, tween(140, easing = LinearOutSlowInEasing))
+                scale.animateTo(1f, tween(220, easing = FastOutSlowInEasing))
             }
             launch {
-                // Squash → recoil → settle (parallel, slightly offset on rebound).
-                scaleX.animateTo(0.92f, tween(110, easing = LinearOutSlowInEasing))
-                scaleX.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+                scaleX.animateTo(0.98f, tween(140, easing = FastOutSlowInEasing))
+                scaleX.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 450f))
             }
             launch {
-                scaleY.animateTo(1.18f, tween(110, easing = LinearOutSlowInEasing))
-                scaleY.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+                scaleY.animateTo(1.02f, tween(140, easing = FastOutSlowInEasing))
+                scaleY.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 450f))
             }
         }
     }

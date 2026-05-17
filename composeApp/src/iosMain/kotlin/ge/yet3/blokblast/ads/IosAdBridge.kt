@@ -31,7 +31,12 @@ object IosAdBridge {
     /**
      * Factory that returns a GADBannerView configured for the given unit ID.
      * Wrapped by Kotlin in a `UIKitView` for placement in Compose layouts.
-     * Invokes [onLoaded] when the first ad is successfully fetched.
+     * - [onLoaded] fires every time an ad is successfully fetched (initial
+     *   load and any later refresh-retry that succeeds after a failure).
+     * - [onFailed] fires every time a load attempt fails, so Compose can
+     *   collapse the slot instead of leaving a blank 50dp hole.
      */
-    var makeBannerView: ((adUnitId: String, onLoaded: () -> Unit) -> UIView)? = null
+    var makeBannerView: (
+        (adUnitId: String, onLoaded: () -> Unit, onFailed: () -> Unit) -> UIView
+    )? = null
 }
