@@ -253,7 +253,7 @@ private fun GridCell(
     var lastSeenCellId by remember { mutableIntStateOf(cellId) }
     LaunchedEffect(cellId) {
         if (cellId != -1 && lastSeenCellId == -1) {
-            cellAnim.popIn(delayMs = (x + y) * 25L)
+            cellAnim.popIn(delayMs = 0L)
         }
         lastSeenCellId = cellId
     }
