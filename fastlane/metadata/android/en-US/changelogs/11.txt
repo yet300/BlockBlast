@@ -1,0 +1,1 @@
+Polish pass! ✨ Piece-placement animation is smoother and no longer shows "ghost" cells on multi-block pieces. Big internal speed-up: score chip, tray slots, and the board recompose far less often, so drags and combos feel snappier on older devices. iOS sound + banner ads got their own round of fixes too. 🧩✨
