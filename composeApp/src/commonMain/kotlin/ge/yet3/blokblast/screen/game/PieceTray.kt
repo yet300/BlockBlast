@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -202,8 +203,11 @@ private fun TraySlot(
     val applyBreath = canFit && !isPressed && !isSelected
     val applyWiggle = !canFit && piece != null
 
-    // Dim/desaturate when this piece can't be placed anywhere.
-    val pieceAlpha by animateFloatAsState(
+    // Dim/desaturate when this piece can't be placed anywhere. NOTE: keep this
+    // as State<Float> (no `by` delegate) so reads happen in the draw phase
+    // inside graphicsLayer — otherwise every animation tick recomposes the
+    // whole TraySlot (~290 recomp/session, observed in Layout Inspector).
+    val pieceAlphaState = animateFloatAsState(
         targetValue = if (canFit) 1f else 0.45f,
         animationSpec = tween(220),
         label = "pieceAlpha",
@@ -211,7 +215,8 @@ private fun TraySlot(
 
     val pColor = piece?.let { pieceColor(it.colorId) }
 
-    val slotBg by animateColorAsState(
+    // Same rule: State<Color> read inside drawBehind (draw phase), not here.
+    val slotBgState = animateColorAsState(
         targetValue = when {
             isHighlighted && pColor != null -> pColor.copy(alpha = 0.18f)
             else -> MaterialTheme.colorScheme.surfaceVariant
@@ -254,7 +259,7 @@ private fun TraySlot(
                 } else 0f
             }
             .clip(RoundedCornerShape(14.dp))
-            .background(slotBg)
+            .drawBehind { drawRect(slotBgState.value) }
             .then(
                 if (isHighlighted) Modifier.border(
                     width = 2.dp,
@@ -328,13 +333,16 @@ private fun TraySlot(
     ) {
         if (piece != null) {
             val baseColor = pieceColor(piece.colorId)
-            val visibleColor = (if (isHighlighted) baseColor else baseColor.copy(alpha = 0.6f))
-                .copy(alpha = baseColor.alpha * pieceAlpha)
-            MiniPiece(
-                shape = piece.shape,
-                color = visibleColor,
-                shimmerKey = piece.pieceId,
-            )
+            val visibleColor = if (isHighlighted) baseColor else baseColor.copy(alpha = 0.6f)
+            // Apply the animated dim via graphicsLayer so its per-frame ticks
+            // invalidate only this MiniPiece's draw, not TraySlot composition.
+            Box(modifier = Modifier.graphicsLayer { alpha = pieceAlphaState.value }) {
+                MiniPiece(
+                    shape = piece.shape,
+                    color = visibleColor,
+                    shimmerKey = piece.pieceId,
+                )
+            }
         }
     }
 }
