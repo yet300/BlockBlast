@@ -46,9 +46,14 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
                 self?.showInterstitial(onDismiss: dismissAsVoid)
             }
         }
-        IosAdBridge.shared.makeBannerView = { [weak self] adUnitId, onLoaded in
+        IosAdBridge.shared.makeBannerView = { [weak self] adUnitId, onLoaded, onFailed in
             let onLoadedAsVoid: () -> Void = { _ = onLoaded() }
-            return self?.makeBannerView(adUnitId: adUnitId, onLoaded: onLoadedAsVoid) ?? UIView()
+            let onFailedAsVoid: () -> Void = { _ = onFailed() }
+            return self?.makeBannerView(
+                adUnitId: adUnitId,
+                onLoaded: onLoadedAsVoid,
+                onFailed: onFailedAsVoid,
+            ) ?? UIView()
         }
     }
 
@@ -84,12 +89,16 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
 
     // MARK: - Banner
 
-    func makeBannerView(adUnitId: String, onLoaded: @escaping () -> Void) -> UIView {
+    func makeBannerView(
+        adUnitId: String,
+        onLoaded: @escaping () -> Void,
+        onFailed: @escaping () -> Void,
+    ) -> UIView {
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitId
         bannerView.rootViewController = Self.rootViewController()
 
-        let delegate = BannerDelegate(onLoaded: onLoaded)
+        let delegate = BannerDelegate(onLoaded: onLoaded, onFailed: onFailed)
         bannerView.delegate = delegate
         objc_setAssociatedObject(bannerView, &bannerDelegateKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
@@ -136,9 +145,11 @@ private var bannerDelegateKey: UInt8 = 0
 
 final class BannerDelegate: NSObject, BannerViewDelegate {
     private let onLoaded: () -> Void
+    private let onFailed: () -> Void
 
-    init(onLoaded: @escaping () -> Void) {
+    init(onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) {
         self.onLoaded = onLoaded
+        self.onFailed = onFailed
     }
 
     func bannerViewDidReceiveAd(_ bannerView: BannerView) {
@@ -147,5 +158,6 @@ final class BannerDelegate: NSObject, BannerViewDelegate {
 
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
         print("[AdCoordinator] banner failed to load: \(error)")
+        onFailed()
     }
 }
