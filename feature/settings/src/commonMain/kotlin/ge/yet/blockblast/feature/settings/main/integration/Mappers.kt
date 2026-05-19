@@ -6,7 +6,8 @@ import ge.yet.blockblast.feature.settings.main.store.SettingsStore
 internal val stateToModel: (SettingsStore.State) -> MainSettingsComponent.Model =
     { state ->
         MainSettingsComponent.Model(
-            soundEnabled = state.sound,
+            musicEnabled = state.music,
+            sfxEnabled = state.sfx,
             vibrationEnabled = state.vibration,
             darkTheme = state.dark,
         )

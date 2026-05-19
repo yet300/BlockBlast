@@ -17,8 +17,12 @@ internal class DefaultMainSettingsComponent(
     override val model: Value<MainSettingsComponent.Model> =
         store.asValue().map(stateToModel)
 
-    override fun onSoundToggled(enabled: Boolean) {
-        store.accept(SettingsStore.Intent.SetSound(enabled))
+    override fun onMusicToggled(enabled: Boolean) {
+        store.accept(SettingsStore.Intent.SetMusic(enabled))
+    }
+
+    override fun onSfxToggled(enabled: Boolean) {
+        store.accept(SettingsStore.Intent.SetSfx(enabled))
     }
 
     override fun onVibrationToggled(enabled: Boolean) {

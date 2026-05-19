@@ -63,13 +63,15 @@ class DefaultVibrationRepositoryTest {
 
     private class FakeSettings(vibration: Boolean) : SettingsRepository {
         val vibrationFlow = MutableStateFlow(vibration)
-        override val soundEnabled = MutableStateFlow(true).asStateFlow()
+        override val musicEnabled = MutableStateFlow(true).asStateFlow()
+        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled: StateFlow<Boolean> = vibrationFlow.asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
-        override suspend fun setSoundEnabled(enabled: Boolean) {}
+        override suspend fun setMusicEnabled(enabled: Boolean) {}
+        override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
         override suspend fun setDarkTheme(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {}

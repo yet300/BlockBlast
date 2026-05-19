@@ -24,8 +24,8 @@ interface RootComponent : BackHandlerOwner {
     /** Whether haptic feedback is enabled (mirrors Settings toggle). */
     val vibrationEnabled: StateFlow<Boolean>
 
-    /** Whether sound effects are enabled (mirrors Settings toggle). */
-    val soundEnabled: StateFlow<Boolean>
+    /** Whether SFX / voice feedback are enabled (mirrors Settings toggle). */
+    val sfxEnabled: StateFlow<Boolean>
 
     /** Whether the first-launch tutorial has already been seen / dismissed. */
     val tutorialSeen: StateFlow<Boolean>

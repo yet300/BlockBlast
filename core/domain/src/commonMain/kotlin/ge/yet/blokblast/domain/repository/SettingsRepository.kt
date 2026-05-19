@@ -3,7 +3,12 @@ package ge.yet.blokblast.domain.repository
 import kotlinx.coroutines.flow.StateFlow
 
 interface SettingsRepository {
-    val soundEnabled: StateFlow<Boolean>
+    /** Background music gate. Independent of [sfxEnabled] since v1.5.0. */
+    val musicEnabled: StateFlow<Boolean>
+
+    /** SFX + voice-line gate (piece placement, line clear, combo voice). */
+    val sfxEnabled: StateFlow<Boolean>
+
     val vibrationEnabled: StateFlow<Boolean>
     val darkTheme: StateFlow<Boolean>
 
@@ -16,7 +21,8 @@ interface SettingsRepository {
     /** Whether the user has seen (or dismissed) the first-launch tutorial. */
     val tutorialSeen: StateFlow<Boolean>
 
-    suspend fun setSoundEnabled(enabled: Boolean)
+    suspend fun setMusicEnabled(enabled: Boolean)
+    suspend fun setSfxEnabled(enabled: Boolean)
     suspend fun setVibrationEnabled(enabled: Boolean)
     suspend fun setDarkTheme(enabled: Boolean)
 
