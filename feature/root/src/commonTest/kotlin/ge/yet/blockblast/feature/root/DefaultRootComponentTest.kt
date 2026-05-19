@@ -161,6 +161,15 @@ class DefaultRootComponentTest {
         override val sheetSlot = com.arkivanov.decompose.value.MutableValue(
             com.arkivanov.decompose.router.slot.ChildSlot<Any, GameComponent.SheetChild>(child = null),
         )
+        override val pieceTray: ge.yet.blockblast.feature.game.tray.PieceTrayComponent =
+            object : ge.yet.blockblast.feature.game.tray.PieceTrayComponent {
+                override val slots = com.arkivanov.decompose.value.MutableValue(
+                    emptyList<ge.yet.blockblast.feature.game.tray.TraySlotComponent>(),
+                )
+                override val selection =
+                    com.arkivanov.decompose.value.MutableValue(ge.yet.blockblast.feature.game.tray.TraySelection.NONE)
+                override fun clearSelection() {}
+            }
         override fun onCellClicked(pieceId: Long, x: Int, y: Int) {}
         override fun onReviveClicked() {}
         override fun onRestartClicked() {}

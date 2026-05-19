@@ -104,7 +104,8 @@ private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 fun GameContent(component: GameComponent) {
     val uiModel by component.model.subscribeAsState()
     val model = uiModel.game
-    var selectedPieceId by remember { mutableStateOf<Long?>(null) }
+    val traySelection by component.pieceTray.selection.subscribeAsState()
+    val selectedPiece = traySelection.piece
 
     // ── Effect states ────────────────────────────────────────────────────
     val dragDrop = rememberDragDropState()
@@ -304,12 +305,12 @@ fun GameContent(component: GameComponent) {
 
                 GameGrid(
                     grid = model.grid,
-                    selectedPiece = model.currentPieces.firstOrNull { it.pieceId == selectedPieceId },
+                    selectedPiece = selectedPiece,
                     onCellTapped = { x, y ->
-                        val id = selectedPieceId
-                        if (id != null) {
-                            component.onCellClicked(id, x, y)
-                            selectedPieceId = null
+                        val piece = selectedPiece
+                        if (piece != null) {
+                            component.onCellClicked(piece.pieceId, x, y)
+                            component.pieceTray.clearSelection()
                         }
                     },
                     modifier = Modifier
@@ -339,21 +340,13 @@ fun GameContent(component: GameComponent) {
                 Spacer(Modifier.height(24.dp))
 
                 PieceTray(
-                    pieces = model.currentPieces,
-                    selectedPieceId = selectedPieceId,
-                    grid = model.grid,
+                    tray = component.pieceTray,
                     modifier = Modifier
                         .widthIn(max = 500.dp)
                         .padding(bottom = 8.dp)
                         .onGloballyPositioned { trayBounds = it.boundsInRoot() },
-                    onPieceSelected = { id ->
-                        if (!dragDrop.isDragging) {
-                            selectedPieceId = if (selectedPieceId == id) null else id
-                        }
-                    },
                     onDragStart = { piece, startPos, offset ->
                         if (!dragDrop.isDragging) {
-                            selectedPieceId = null
                             dragDrop.startDrag(piece, startPos, offset)
                             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
                         }
@@ -456,14 +449,14 @@ fun GameContent(component: GameComponent) {
                 canRevive = model.revivesUsed < 1,
                 continueCountdownSeconds = continueCountdown,
                 onReviveClicked = {
-                    selectedPieceId = null
+                    component.pieceTray.clearSelection()
                     // Show interstitial; revive fires only after it's dismissed.
                     interstitial.show {
                         component.onReviveClicked()
                     }
                 },
                 onRestartClicked = {
-                    selectedPieceId = null
+                    component.pieceTray.clearSelection()
                     component.onRestartClicked()
                 },
                 onExitClicked = component::onExitClicked,
