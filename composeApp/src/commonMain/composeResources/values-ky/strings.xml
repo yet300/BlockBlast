@@ -26,6 +26,10 @@
     <string name="settings">Орнотуулар</string>
     <string name="sound">Үн</string>
     <string name="sound_subtitle">Оюндун үн эффекттери</string>
+    <string name="music">Музыка</string>
+    <string name="music_subtitle">Фондук музыка</string>
+    <string name="sfx">Үн эффекттери</string>
+    <string name="sfx_subtitle">Жайгаштыруу, тазалоо жана үн линиялары</string>
     <string name="vibration">Дирилдөө</string>
     <string name="vibration_subtitle">Жайгаштырууда тактилдик байланыш</string>
     <string name="dark_theme">Караңгы тема</string>

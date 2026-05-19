@@ -26,6 +26,10 @@
     <string name="settings">Beállítások</string>
     <string name="sound">Hang</string>
     <string name="sound_subtitle">Játék hanghatások</string>
+    <string name="music">Zene</string>
+    <string name="music_subtitle">Háttérzene</string>
+    <string name="sfx">Hanghatások</string>
+    <string name="sfx_subtitle">Elhelyezés, törlés és hangsorok</string>
     <string name="vibration">Rezgés</string>
     <string name="vibration_subtitle">Haptikus visszajelzés elhelyezéskor</string>
     <string name="dark_theme">Sötét téma</string>

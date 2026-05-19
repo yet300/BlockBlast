@@ -26,6 +26,10 @@
     <string name="settings">პარამეტრები</string>
     <string name="sound">ხმა</string>
     <string name="sound_subtitle">თამაშის ხმოვანი ეფექტები</string>
+    <string name="music">მუსიკა</string>
+    <string name="music_subtitle">ფონური მუსიკა</string>
+    <string name="sfx">ხმის ეფექტები</string>
+    <string name="sfx_subtitle">განთავსება, გასუფთავება და ხმოვანი ხაზები</string>
     <string name="vibration">ვიბრაცია</string>
     <string name="vibration_subtitle">ვიბრაცია ბლოკის დასმისას</string>
     <string name="dark_theme">მუქი თემა</string>

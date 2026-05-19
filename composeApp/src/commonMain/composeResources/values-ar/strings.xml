@@ -26,6 +26,10 @@
     <string name="settings">الإعدادات</string>
     <string name="sound">الصوت</string>
     <string name="sound_subtitle">المؤثرات الصوتية للعبة</string>
+    <string name="music">موسيقى</string>
+    <string name="music_subtitle">موسيقى خلفية</string>
+    <string name="sfx">مؤثرات صوتية</string>
+    <string name="sfx_subtitle">الوضع، المسح، والتعليقات الصوتية</string>
     <string name="vibration">الاهتزاز</string>
     <string name="vibration_subtitle">ردود فعل لمسية عند الوضع</string>
     <string name="dark_theme">المظهر الداكن</string>

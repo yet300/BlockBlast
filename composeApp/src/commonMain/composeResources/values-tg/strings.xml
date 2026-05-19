@@ -26,6 +26,10 @@
     <string name="settings">Танзимот</string>
     <string name="sound">Овоз</string>
     <string name="sound_subtitle">Эффектҳои овозии бозӣ</string>
+    <string name="music">Мусиқӣ</string>
+    <string name="music_subtitle">Мусиқии заминавӣ</string>
+    <string name="sfx">Эффектҳои савтӣ</string>
+    <string name="sfx_subtitle">Ҷойгиркунӣ, тозакунӣ ва хатҳои овозӣ</string>
     <string name="vibration">Ларзиш</string>
     <string name="vibration_subtitle">Алоқаи тактилӣ ҳангоми ҷойгиркунӣ</string>
     <string name="dark_theme">Мавзӯи торик</string>

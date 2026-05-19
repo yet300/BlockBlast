@@ -26,6 +26,10 @@
     <string name="settings">Setări</string>
     <string name="sound">Sunet</string>
     <string name="sound_subtitle">Efecte sonore ale jocului</string>
+    <string name="music">Muzică</string>
+    <string name="music_subtitle">Muzică de fundal</string>
+    <string name="sfx">Efecte sonore</string>
+    <string name="sfx_subtitle">Plasare, ștergere și replici vocale</string>
     <string name="vibration">Vibrație</string>
     <string name="vibration_subtitle">Feedback haptic la plasare</string>
     <string name="dark_theme">Temă întunecată</string>

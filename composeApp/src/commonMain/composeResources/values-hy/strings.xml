@@ -26,6 +26,10 @@
     <string name="settings">Կարգավորումներ</string>
     <string name="sound">Ձայն</string>
     <string name="sound_subtitle">Խաղի ձայնային էֆեկտներ</string>
+    <string name="music">Երաժշտություն</string>
+    <string name="music_subtitle">Ֆոնային երաժշտություն</string>
+    <string name="sfx">Ձայնային էֆեկտներ</string>
+    <string name="sfx_subtitle">Տեղադրում, մաքրում և ձայնային տողեր</string>
     <string name="vibration">Թրթռում</string>
     <string name="vibration_subtitle">Հպման հետադարձ կապ տեղադրման ժամանակ</string>
     <string name="dark_theme">Մուգ թեմա</string>

@@ -26,6 +26,10 @@
     <string name="settings">Ρυθμίσεις</string>
     <string name="sound">Ήχος</string>
     <string name="sound_subtitle">Ηχητικά εφέ παιχνιδιού</string>
+    <string name="music">Μουσική</string>
+    <string name="music_subtitle">Μουσική υποβάθρου</string>
+    <string name="sfx">Ηχητικά εφέ</string>
+    <string name="sfx_subtitle">Τοποθέτηση, καθαρισμός και φωνητικές γραμμές</string>
     <string name="vibration">Δόνηση</string>
     <string name="vibration_subtitle">Απτική ανάδραση κατά την τοποθέτηση</string>
     <string name="dark_theme">Σκούρο θέμα</string>

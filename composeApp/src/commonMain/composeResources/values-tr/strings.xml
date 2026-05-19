@@ -26,6 +26,10 @@
     <string name="settings">Ayarlar</string>
     <string name="sound">Ses</string>
     <string name="sound_subtitle">Oyun ses efektleri</string>
+    <string name="music">Müzik</string>
+    <string name="music_subtitle">Arka plan müziği</string>
+    <string name="sfx">Ses efektleri</string>
+    <string name="sfx_subtitle">Yerleştirme, temizleme ve ses hatları</string>
     <string name="vibration">Titreşim</string>
     <string name="vibration_subtitle">Yerleştirme sırasında dokunsal geri bildirim</string>
     <string name="dark_theme">Koyu Tema</string>

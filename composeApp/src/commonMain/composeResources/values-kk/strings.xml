@@ -26,6 +26,10 @@
     <string name="settings">Параметрлер</string>
     <string name="sound">Дыбыс</string>
     <string name="sound_subtitle">Ойынның дыбыстық эффектілері</string>
+    <string name="music">Музыка</string>
+    <string name="music_subtitle">Фондық музыка</string>
+    <string name="sfx">Дыбыс әсерлері</string>
+    <string name="sfx_subtitle">Орналастыру, тазалау және дыбыстық жолдар</string>
     <string name="vibration">Діріл</string>
     <string name="vibration_subtitle">Орналастыру кезіндегі тактильді кері байланыс</string>
     <string name="dark_theme">Қараңғы тақырып</string>

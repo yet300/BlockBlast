@@ -26,6 +26,10 @@
     <string name="settings">設定</string>
     <string name="sound">サウンド</string>
     <string name="sound_subtitle">ゲームの音響効果</string>
+    <string name="music">音楽</string>
+    <string name="music_subtitle">BGM</string>
+    <string name="sfx">効果音</string>
+    <string name="sfx_subtitle">配置、消去、およびボイスライン</string>
     <string name="vibration">バイブレーション</string>
     <string name="vibration_subtitle">ブロック配置時の振動</string>
     <string name="dark_theme">ダークテーマ</string>

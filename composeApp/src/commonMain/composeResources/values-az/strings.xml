@@ -26,6 +26,10 @@
     <string name="settings">Tənzimləmələr</string>
     <string name="sound">Səs</string>
     <string name="sound_subtitle">Oyunun səs effektləri</string>
+    <string name="music">Musiqi</string>
+    <string name="music_subtitle">Fon musiqisi</string>
+    <string name="sfx">Səs effektləri</string>
+    <string name="sfx_subtitle">Yerləşdirmə, təmizləmə və səs xətləri</string>
     <string name="vibration">Vibrasiya</string>
     <string name="vibration_subtitle">Yerləşdirmə zamanı haptik rəy</string>
     <string name="dark_theme">Tünd mövzu</string>

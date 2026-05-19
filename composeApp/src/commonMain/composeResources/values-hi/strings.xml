@@ -26,6 +26,10 @@
     <string name="settings">सेटिंग</string>
     <string name="sound">ध्वनि</string>
     <string name="sound_subtitle">खेल ध्वनि प्रभाव</string>
+    <string name="music">संगीत</string>
+    <string name="music_subtitle">पृष्ठभूमि संगीत</string>
+    <string name="sfx">ध्वनि प्रभाव</string>
+    <string name="sfx_subtitle">प्लेसमेंट, क्लियर और वॉयस लाइन्स</string>
     <string name="vibration">कंपन</string>
     <string name="vibration_subtitle">रखने पर हैप्टिक फीडबैक</string>
     <string name="dark_theme">डार्क थीम</string>

@@ -26,6 +26,10 @@
     <string name="settings">Impostazioni</string>
     <string name="sound">Suono</string>
     <string name="sound_subtitle">Effetti sonori del gioco</string>
+    <string name="music">Musica</string>
+    <string name="music_subtitle">Musica di sottofondo</string>
+    <string name="sfx">Effetti sonori</string>
+    <string name="sfx_subtitle">Posizionamento, cancellazione e linee vocali</string>
     <string name="vibration">Vibrazione</string>
     <string name="vibration_subtitle">Feedback aptico al posizionamento</string>
     <string name="dark_theme">Tema scuro</string>

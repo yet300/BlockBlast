@@ -26,6 +26,10 @@
     <string name="settings">Pengaturan</string>
     <string name="sound">Suara</string>
     <string name="sound_subtitle">Efek suara permainan</string>
+    <string name="music">Musik</string>
+    <string name="music_subtitle">Musik latar</string>
+    <string name="sfx">Efek suara</string>
+    <string name="sfx_subtitle">Penempatan, pembersihan, dan garis suara</string>
     <string name="vibration">Getaran</string>
     <string name="vibration_subtitle">Umpan balik haptik saat menaruh</string>
     <string name="dark_theme">Tema Gelap</string>

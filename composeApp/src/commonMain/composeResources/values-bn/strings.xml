@@ -26,6 +26,10 @@
     <string name="settings">সেটিংস</string>
     <string name="sound">শব্দ</string>
     <string name="sound_subtitle">খেলার শব্দ প্রভাব</string>
+    <string name="music">সঙ্গীত</string>
+    <string name="music_subtitle">আবহ সঙ্গীত</string>
+    <string name="sfx">শব্দ প্রভাব</string>
+    <string name="sfx_subtitle">প্লেসমেন্ট, ক্লিয়ার এবং ভয়েস লাইন</string>
     <string name="vibration">কম্পন</string>
     <string name="vibration_subtitle">রাখার সময় হ্যাপটিক ফিডব্যাক</string>
     <string name="dark_theme">ডার্ক থিম</string>

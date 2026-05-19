@@ -26,6 +26,10 @@
     <string name="settings">Налаштування</string>
     <string name="sound">Звук</string>
     <string name="sound_subtitle">Звукові ефекти гри</string>
+    <string name="music">Музика</string>
+    <string name="music_subtitle">Фонова музика</string>
+    <string name="sfx">Звукові ефекти</string>
+    <string name="sfx_subtitle">Розміщення, очищення та озвучення</string>
     <string name="vibration">Вібрація</string>
     <string name="vibration_subtitle">Тактильний відгук при встановленні</string>
     <string name="dark_theme">Темная тема</string>

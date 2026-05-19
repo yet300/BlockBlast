@@ -26,6 +26,10 @@
     <string name="settings">Instellingen</string>
     <string name="sound">Geluid</string>
     <string name="sound_subtitle">Geluidseffecten van het spel</string>
+    <string name="music">Muziek</string>
+    <string name="music_subtitle">Achtergrondmuziek</string>
+    <string name="sfx">Geluidseffecten</string>
+    <string name="sfx_subtitle">Plaatsen, wissen en stemlijnen</string>
     <string name="vibration">Trillen</string>
     <string name="vibration_subtitle">Haptische feedback bij plaatsen</string>
     <string name="dark_theme">Donker thema</string>

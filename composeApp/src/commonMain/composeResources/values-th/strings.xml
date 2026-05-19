@@ -26,6 +26,10 @@
     <string name="settings">ตั้งค่า</string>
     <string name="sound">เสียง</string>
     <string name="sound_subtitle">เอฟเฟกต์เสียงในเกม</string>
+    <string name="music">ดนตรี</string>
+    <string name="music_subtitle">เพลงประกอบ</string>
+    <string name="sfx">เอฟเฟกต์เสียง</string>
+    <string name="sfx_subtitle">การวาง การล้าง และเสียงบรรยาย</string>
     <string name="vibration">การสั่น</string>
     <string name="vibration_subtitle">การสั่นตอบสนองเมื่อวางบล็อก</string>
     <string name="dark_theme">ธีมมืด</string>

@@ -26,6 +26,10 @@
     <string name="settings">Sazlamalar</string>
     <string name="sound">Ses</string>
     <string name="sound_subtitle">Oýnuň ses effektleri</string>
+    <string name="music">Saz</string>
+    <string name="music_subtitle">Fon sazy</string>
+    <string name="sfx">Ses effektleri</string>
+    <string name="sfx_subtitle">Ýerleşdirme, arassalama we ses setirleri</string>
     <string name="vibration">Wibrasiýa</string>
     <string name="vibration_subtitle">Ýerleşdireniňizde taktil seslenmesi</string>
     <string name="dark_theme">Garaňky tema</string>

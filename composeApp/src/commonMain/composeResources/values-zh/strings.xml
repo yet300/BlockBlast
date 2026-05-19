@@ -26,6 +26,10 @@
     <string name="settings">设置</string>
     <string name="sound">声音</string>
     <string name="sound_subtitle">游戏音效</string>
+    <string name="music">音乐</string>
+    <string name="music_subtitle">背景音乐</string>
+    <string name="sfx">音效</string>
+    <string name="sfx_subtitle">放置、消除和语音旁白</string>
     <string name="vibration">振动</string>
     <string name="vibration_subtitle">放置方块时的触感反馈</string>
     <string name="dark_theme">深色主题</string>

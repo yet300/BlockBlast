@@ -26,6 +26,10 @@
     <string name="settings">Налады</string>
     <string name="sound">Гук</string>
     <string name="sound_subtitle">Гукавыя эфекты гульні</string>
+    <string name="music">Музыка</string>
+    <string name="music_subtitle">Фонавая музыка</string>
+    <string name="sfx">Гукавыя эфекты</string>
+    <string name="sfx_subtitle">Размяшчэнне, ачыстка і агучка</string>
     <string name="vibration">Вібрацыя</string>
     <string name="vibration_subtitle">Тактыльная аддача пры ўсталёўцы</string>
     <string name="dark_theme">Цёмная тэма</string>

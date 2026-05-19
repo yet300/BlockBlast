@@ -26,6 +26,10 @@
     <string name="settings">Innstillinger</string>
     <string name="sound">Lyd</string>
     <string name="sound_subtitle">Lydeffekter i spillet</string>
+    <string name="music">Musikk</string>
+    <string name="music_subtitle">Bakgrunnsmusikk</string>
+    <string name="sfx">Lydeffekter</string>
+    <string name="sfx_subtitle">Plassering, tømming og stemmelinjer</string>
     <string name="vibration">Vibrasjon</string>
     <string name="vibration_subtitle">Haptisk tilbakemelding ved plassering</string>
     <string name="dark_theme">Mørkt tema</string>

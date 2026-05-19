@@ -26,6 +26,10 @@
     <string name="settings">Einstellungen</string>
     <string name="sound">Ton</string>
     <string name="sound_subtitle">Soundeffekte des Spiels</string>
+    <string name="music">Musik</string>
+    <string name="music_subtitle">Hintergrundmusik</string>
+    <string name="sfx">Soundeffekte</string>
+    <string name="sfx_subtitle">Platzieren, Löschen und Stimmen</string>
     <string name="vibration">Vibration</string>
     <string name="vibration_subtitle">Haptisches Feedback beim Platzieren</string>
     <string name="dark_theme">Dunkles Design</string>

@@ -26,6 +26,10 @@
     <string name="settings">Cài đặt</string>
     <string name="sound">Âm thanh</string>
     <string name="sound_subtitle">Hiệu ứng âm thanh trò chơi</string>
+    <string name="music">Nhạc</string>
+    <string name="music_subtitle">Nhạc nền</string>
+    <string name="sfx">Hiệu ứng âm thanh</string>
+    <string name="sfx_subtitle">Đặt, xóa và lời thoại</string>
     <string name="vibration">Rung</string>
     <string name="vibration_subtitle">Phản hồi rung khi đặt khối</string>
     <string name="dark_theme">Giao diện tối</string>

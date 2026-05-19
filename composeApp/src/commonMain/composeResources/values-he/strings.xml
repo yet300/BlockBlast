@@ -26,6 +26,10 @@
     <string name="settings">הגדרות</string>
     <string name="sound">צליל</string>
     <string name="sound_subtitle">אפקטים קוליים של המשחק</string>
+    <string name="music">מוזיקה</string>
+    <string name="music_subtitle">מוזיקת רקע</string>
+    <string name="sfx">אפקטים קוליים</string>
+    <string name="sfx_subtitle">הנחה, ניקוי ודיבור</string>
     <string name="vibration">רטט</string>
     <string name="vibration_subtitle">משוב רטט בעת הנחה</string>
     <string name="dark_theme">ערכת נושא כהה</string>

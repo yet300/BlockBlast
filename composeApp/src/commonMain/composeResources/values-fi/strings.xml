@@ -26,6 +26,10 @@
     <string name="settings">Asetukset</string>
     <string name="sound">Ääni</string>
     <string name="sound_subtitle">Pelin äänitehosteet</string>
+    <string name="music">Musiikki</string>
+    <string name="music_subtitle">Taustamusiikki</string>
+    <string name="sfx">Äänitehosteet</string>
+    <string name="sfx_subtitle">Sijoittelu, tyhjennys ja puherivit</string>
     <string name="vibration">Värinä</string>
     <string name="vibration_subtitle">Haptinen palaute asetettaessa</string>
     <string name="dark_theme">Tumma teema</string>

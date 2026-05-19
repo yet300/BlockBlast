@@ -26,6 +26,10 @@
     <string name="settings">Sozlamalar</string>
     <string name="sound">Ovoz</string>
     <string name="sound_subtitle">O'yinning ovoz effektlari</string>
+    <string name="music">Musiqa</string>
+    <string name="music_subtitle">Fon musiqisi</string>
+    <string name="sfx">Ovoz effektlari</string>
+    <string name="sfx_subtitle">Joylashtirish, tozalash va ovozli liniyalar</string>
     <string name="vibration">Vibratsiya</string>
     <string name="vibration_subtitle">Joylashtirishda tebranishli aloqa</string>
     <string name="dark_theme">Tungi mavzu</string>
