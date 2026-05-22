@@ -11,7 +11,7 @@ A modern, cross-platform block puzzle game built with **Kotlin Multiplatform** a
 ## Download
 
 <a href="https://apps.apple.com/us/app/logica-block-puzzle-2027/id6765924581">
-  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="56"/>
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="80"/>
 </a>
 
 <a href="https://play.google.com/store/apps/details?id=ge.yet.blokblast">
