@@ -14,10 +14,6 @@ A modern, cross-platform block puzzle game built with **Kotlin Multiplatform** a
   <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="56"/>
 </a>
 
-> **Android — closed testing.**
-> 1. Join the testers group: <https://groups.google.com/g/block-blast-2027>
-> 2. Then open the Play Store listing: <https://play.google.com/store/apps/details?id=ge.yet.blokblast>
-
 <a href="https://play.google.com/store/apps/details?id=ge.yet.blokblast">
   <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play (closed testing)" height="80"/>
 </a>
