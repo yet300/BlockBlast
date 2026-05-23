@@ -54,13 +54,7 @@
     <string name="feedback_combo">Комбо</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Оберіть фігуру</string>
-    <string name="tutorial_tray_body">Натисніть і утримуйте фігуру на панелі, щоб підняти її.</string>
     <string name="tutorial_grid_title">Перетягніть на дошку</string>
-    <string name="tutorial_grid_body">Перетягніть фігуру на дошку, щоб розмістити її. Заповніть цілий ряд або стовпець, щоб очистити його.</string>
-    <string name="tutorial_next">Далі</string>
-    <string name="tutorial_done">Зрозуміло</string>
-    <string name="tutorial_skip">Пропустити</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Подобається Logica?</string>

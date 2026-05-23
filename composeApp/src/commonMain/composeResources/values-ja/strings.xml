@@ -54,13 +54,7 @@
     <string name="feedback_combo">コンボ</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">ピースを選ぼう</string>
-    <string name="tutorial_tray_body">トレイにあるピースを長押しして持ち上げます。</string>
     <string name="tutorial_grid_title">ボードに置こう</string>
-    <string name="tutorial_grid_body">ピースをボードにドラッグして配置します。行または列を揃えて消去しましょう。</string>
-    <string name="tutorial_next">次へ</string>
-    <string name="tutorial_done">わかった</string>
-    <string name="tutorial_skip">スキップ</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logicaを楽しんでいますか？</string>

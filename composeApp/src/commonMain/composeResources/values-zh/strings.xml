@@ -54,13 +54,7 @@
     <string name="feedback_combo">连击</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">选择方块</string>
-    <string name="tutorial_tray_body">长按托盘中的方块将其拿起。</string>
     <string name="tutorial_grid_title">放置在棋盘上</string>
-    <string name="tutorial_grid_body">将方块拖到棋盘上进行放置。填满整行或整列即可消除。</string>
-    <string name="tutorial_next">下一步</string>
-    <string name="tutorial_done">知道了</string>
-    <string name="tutorial_skip">跳过</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">喜欢Logica吗？</string>

@@ -54,13 +54,7 @@
     <string name="feedback_combo">Комбо</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Фигураны таңдаңыз</string>
-    <string name="tutorial_tray_body">Көтеру үшін панельдегі фигураны басып тұрыңыз.</string>
     <string name="tutorial_grid_title">Тақтаға орналастырыңыз</string>
-    <string name="tutorial_grid_body">Орналастыру үшін фигураны тақтаға сүйреңіз. Тазалау үшін толық жолды немесе бағанды толтырыңыз.</string>
-    <string name="tutorial_next">Келесі</string>
-    <string name="tutorial_done">Түсінікті</string>
-    <string name="tutorial_skip">Өткізіп жіберу</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica ұнады ма?</string>

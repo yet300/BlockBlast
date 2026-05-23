@@ -54,13 +54,7 @@
     <string name="feedback_combo">কম্বো</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">একটি টুকরা চয়ন করুন</string>
-    <string name="tutorial_tray_body">একটি টুকরা তোলার জন্য ট্রেতে থাকা টুকরাটিকে চেপে ধরে রাখুন।</string>
     <string name="tutorial_grid_title">এটি বোর্ডে রাখুন</string>
-    <string name="tutorial_grid_body">এটি রাখার জন্য টুকরাটিকে বোর্ডে টেনে আনুন। এটি সরানোর জন্য একটি সম্পূর্ণ সারি বা কলাম পূরণ করুন।</string>
-    <string name="tutorial_next">পরবর্তী</string>
-    <string name="tutorial_done">বুঝেছি</string>
-    <string name="tutorial_skip">এড়িয়ে যান</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica উপভোগ করছেন?</string>

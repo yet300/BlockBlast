@@ -54,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Wähle ein Teil</string>
-    <string name="tutorial_tray_body">Tippe und halte ein Teil im Fach, um es anzuheben.</string>
     <string name="tutorial_grid_title">Auf das Spielfeld legen</string>
-    <string name="tutorial_grid_body">Ziehe das Teil auf das Spielfeld, um es zu platzieren. Fülle eine komplette Reihe oder Spalte, um sie zu leeren.</string>
-    <string name="tutorial_next">Weiter</string>
-    <string name="tutorial_done">Verstanden</string>
-    <string name="tutorial_skip">Überspringen</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Gefällt dir Logica?</string>

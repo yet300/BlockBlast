@@ -54,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Alege o piesă</string>
-    <string name="tutorial_tray_body">Apasă lung pe o piesă din tavă pentru a o ridica.</string>
     <string name="tutorial_grid_title">Pune-o pe tablă</string>
-    <string name="tutorial_grid_body">Trage piesa pe tablă pentru a o plasa. Completează un rând sau o coloană întreagă pentru a o elimina.</string>
-    <string name="tutorial_next">Următorul</string>
-    <string name="tutorial_done">Am înțeles</string>
-    <string name="tutorial_skip">Omite</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Îți place Logica?</string>

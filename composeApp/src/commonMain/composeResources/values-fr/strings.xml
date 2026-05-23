@@ -54,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Choisis une pièce</string>
-    <string name="tutorial_tray_body">Appuie longuement sur une pièce pour la soulever.</string>
     <string name="tutorial_grid_title">Dépose-la sur la grille</string>
-    <string name="tutorial_grid_body">Fais glisser la pièce sur la grille pour la placer. Remplis une ligne ou une colonne entière pour l'effacer.</string>
-    <string name="tutorial_next">Suivant</string>
-    <string name="tutorial_done">Compris</string>
-    <string name="tutorial_skip">Passer</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Vous aimez Logica ?</string>
