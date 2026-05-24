@@ -26,6 +26,10 @@
     <string name="settings">Ustawienia</string>
     <string name="sound">Dźwięk</string>
     <string name="sound_subtitle">Efekty dźwiękowe gry</string>
+    <string name="music">Muzyka</string>
+    <string name="music_subtitle">Muzyka w tle</string>
+    <string name="sfx">Efekty dźwiękowe</string>
+    <string name="sfx_subtitle">Umieszczanie, czyszczenie i linie głosowe</string>
     <string name="vibration">Wibracje</string>
     <string name="vibration_subtitle">Haptyczne sprzężenie zwrotne</string>
     <string name="dark_theme">Ciemny motyw</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Wybierz element</string>
-    <string name="tutorial_tray_body">Naciśnij i przytrzymaj element na tacy, aby go podnieść.</string>
     <string name="tutorial_grid_title">Połóż na planszy</string>
-    <string name="tutorial_grid_body">Przeciągnij element na planszę, aby go umieścić. Wypełnij cały wiersz lub kolumnę, aby je wyczyścić.</string>
-    <string name="tutorial_next">Dalej</string>
-    <string name="tutorial_done">Rozumiem</string>
-    <string name="tutorial_skip">Pomiń</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Podoba Ci się Logica?</string>

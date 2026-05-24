@@ -44,13 +44,13 @@ class DefaultRootComponentTest {
     }
 
     @Test
-    fun darkTheme_vibration_sound_tutorial_flows_mirror_settings() {
+    fun darkTheme_vibration_sfx_tutorial_flows_mirror_settings() {
         val (component, _, _, settings, _, _) = build()
         assertFalse(component.darkTheme.value)
         settings.darkFlow.value = true
         assertTrue(component.darkTheme.value)
-        settings.soundFlow.value = false
-        assertFalse(component.soundEnabled.value)
+        settings.sfxFlow.value = false
+        assertFalse(component.sfxEnabled.value)
         settings.vibrationFlow.value = false
         assertFalse(component.vibrationEnabled.value)
         settings.tutorialFlow.value = true
@@ -161,6 +161,15 @@ class DefaultRootComponentTest {
         override val sheetSlot = com.arkivanov.decompose.value.MutableValue(
             com.arkivanov.decompose.router.slot.ChildSlot<Any, GameComponent.SheetChild>(child = null),
         )
+        override val pieceTray: ge.yet.blockblast.feature.game.tray.PieceTrayComponent =
+            object : ge.yet.blockblast.feature.game.tray.PieceTrayComponent {
+                override val slots = com.arkivanov.decompose.value.MutableValue(
+                    emptyList<ge.yet.blockblast.feature.game.tray.TraySlotComponent>(),
+                )
+                override val selection =
+                    com.arkivanov.decompose.value.MutableValue(ge.yet.blockblast.feature.game.tray.TraySelection.NONE)
+                override fun clearSelection() {}
+            }
         override fun onCellClicked(pieceId: Long, x: Int, y: Int) {}
         override fun onReviveClicked() {}
         override fun onRestartClicked() {}
@@ -183,17 +192,20 @@ class DefaultRootComponentTest {
     }
 
     private class FakeSettings : SettingsRepository {
-        val soundFlow = MutableStateFlow(true)
+        val musicFlow = MutableStateFlow(true)
+        val sfxFlow = MutableStateFlow(true)
         val vibrationFlow = MutableStateFlow(true)
         val darkFlow = MutableStateFlow(false)
         val tutorialFlow = MutableStateFlow(false)
-        override val soundEnabled = soundFlow.asStateFlow()
+        override val musicEnabled = musicFlow.asStateFlow()
+        override val sfxEnabled = sfxFlow.asStateFlow()
         override val vibrationEnabled = vibrationFlow.asStateFlow()
         override val darkTheme = darkFlow.asStateFlow()
         override val tutorialSeen = tutorialFlow.asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override suspend fun setSoundEnabled(enabled: Boolean) { soundFlow.value = enabled }
+        override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
+        override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
         override suspend fun setDarkTheme(enabled: Boolean) { darkFlow.value = enabled }
         override suspend fun setBestScore(score: Long) {}

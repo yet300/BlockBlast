@@ -26,6 +26,10 @@
     <string name="settings">Indstillinger</string>
     <string name="sound">Lyd</string>
     <string name="sound_subtitle">Lydeffekter i spillet</string>
+    <string name="music">Musik</string>
+    <string name="music_subtitle">Baggrundsmusik</string>
+    <string name="sfx">Lydeffekter</string>
+    <string name="sfx_subtitle">Placering, rydning og stemmelinjer</string>
     <string name="vibration">Vibration</string>
     <string name="vibration_subtitle">Haptisk feedback ved placering</string>
     <string name="dark_theme">Mørkt tema</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Vælg en brik</string>
-    <string name="tutorial_tray_body">Tryk og hold på en brik i bakken for at løfte den.</string>
     <string name="tutorial_grid_title">Placer på brættet</string>
-    <string name="tutorial_grid_body">Træk brikken over på brættet for at placere den. Fyld en hel række eller kolonne for at fjerne den.</string>
-    <string name="tutorial_next">Næste</string>
-    <string name="tutorial_done">Forstået</string>
-    <string name="tutorial_skip">Spring over</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Nyder du Logica?</string>

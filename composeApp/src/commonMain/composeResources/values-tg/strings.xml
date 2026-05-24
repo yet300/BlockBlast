@@ -26,6 +26,10 @@
     <string name="settings">Танзимот</string>
     <string name="sound">Овоз</string>
     <string name="sound_subtitle">Эффектҳои овозии бозӣ</string>
+    <string name="music">Мусиқӣ</string>
+    <string name="music_subtitle">Мусиқии заминавӣ</string>
+    <string name="sfx">Эффектҳои савтӣ</string>
+    <string name="sfx_subtitle">Ҷойгиркунӣ, тозакунӣ ва хатҳои овозӣ</string>
     <string name="vibration">Ларзиш</string>
     <string name="vibration_subtitle">Алоқаи тактилӣ ҳангоми ҷойгиркунӣ</string>
     <string name="dark_theme">Мавзӯи торик</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Комбо</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Фигураро интихоб кунед</string>
-    <string name="tutorial_tray_body">Барои бардоштан фигураро пахш карда нигоҳ доред.</string>
     <string name="tutorial_grid_title">Дар тахта ҷойгир кунед</string>
-    <string name="tutorial_grid_body">Барои ҷойгир кардан фигураро ба тахта кашед. Барои тоза кардан сатр ё сутуни пурраро пур кунед.</string>
-    <string name="tutorial_next">Оянда</string>
-    <string name="tutorial_done">Фаҳмидам</string>
-    <string name="tutorial_skip">Гузаштан</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica-ро дӯст медоред?</string>

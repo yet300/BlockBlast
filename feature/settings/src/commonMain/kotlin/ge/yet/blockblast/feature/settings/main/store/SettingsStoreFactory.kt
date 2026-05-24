@@ -23,7 +23,8 @@ internal class SettingsStoreFactory(
             Store<SettingsStore.Intent, SettingsStore.State, Nothing> by storeFactory.create(
                 name = "SettingsStore",
                 initialState = SettingsStore.State(
-                    sound = settingsRepository.soundEnabled.value,
+                    music = settingsRepository.musicEnabled.value,
+                    sfx = settingsRepository.sfxEnabled.value,
                     vibration = settingsRepository.vibrationEnabled.value,
                     dark = settingsRepository.darkTheme.value,
                 ),
@@ -32,16 +33,21 @@ internal class SettingsStoreFactory(
                     onAction<SettingsStore.Action.Init> {
                         launch {
                             combine(
-                                settingsRepository.soundEnabled,
+                                settingsRepository.musicEnabled,
+                                settingsRepository.sfxEnabled,
                                 settingsRepository.vibrationEnabled,
                                 settingsRepository.darkTheme,
-                            ) { s, v, d -> SettingsStore.Msg.Snapshot(s, v, d) }
+                            ) { m, s, v, d -> SettingsStore.Msg.Snapshot(m, s, v, d) }
                                 .collect { dispatch(it) }
                         }
                     }
-                    onIntent<SettingsStore.Intent.SetSound> { intent ->
-                        logSettingChanged(setting = "sound", enabled = intent.enabled)
-                        launch { settingsRepository.setSoundEnabled(intent.enabled) }
+                    onIntent<SettingsStore.Intent.SetMusic> { intent ->
+                        logSettingChanged(setting = "music", enabled = intent.enabled)
+                        launch { settingsRepository.setMusicEnabled(intent.enabled) }
+                    }
+                    onIntent<SettingsStore.Intent.SetSfx> { intent ->
+                        logSettingChanged(setting = "sfx", enabled = intent.enabled)
+                        launch { settingsRepository.setSfxEnabled(intent.enabled) }
                     }
                     onIntent<SettingsStore.Intent.SetVibration> { intent ->
                         logSettingChanged(setting = "vibration", enabled = intent.enabled)
@@ -69,9 +75,10 @@ internal class SettingsStoreFactory(
         override fun SettingsStore.State.reduce(msg: SettingsStore.Msg): SettingsStore.State =
             when (msg) {
                 is SettingsStore.Msg.Snapshot -> copy(
-                    sound = msg.sound,
+                    music = msg.music,
+                    sfx = msg.sfx,
                     vibration = msg.vibration,
-                    dark = msg.dark
+                    dark = msg.dark,
                 )
             }
     }

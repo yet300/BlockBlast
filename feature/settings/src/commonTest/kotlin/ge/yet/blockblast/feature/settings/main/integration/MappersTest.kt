@@ -7,11 +7,12 @@ import kotlin.test.assertEquals
 class MappersTest {
 
     @Test
-    fun maps_three_flags_through() {
+    fun maps_all_flags_through() {
         val model = stateToModel(
-            SettingsStore.State(sound = false, vibration = true, dark = true),
+            SettingsStore.State(music = false, sfx = true, vibration = true, dark = true),
         )
-        assertEquals(false, model.soundEnabled)
+        assertEquals(false, model.musicEnabled)
+        assertEquals(true, model.sfxEnabled)
         assertEquals(true, model.vibrationEnabled)
         assertEquals(true, model.darkTheme)
     }
@@ -19,7 +20,8 @@ class MappersTest {
     @Test
     fun maps_default_state() {
         val model = stateToModel(SettingsStore.State())
-        assertEquals(true, model.soundEnabled)
+        assertEquals(true, model.musicEnabled)
+        assertEquals(true, model.sfxEnabled)
         assertEquals(true, model.vibrationEnabled)
         assertEquals(false, model.darkTheme)
     }

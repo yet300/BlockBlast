@@ -52,17 +52,28 @@ class DefaultMainSettingsComponentTest {
     @Test
     fun model_reflects_initial_state() = runTest {
         val (component, _, _) = build()
-        assertTrue(component.model.value.soundEnabled)
+        assertTrue(component.model.value.musicEnabled)
+        assertTrue(component.model.value.sfxEnabled)
         assertTrue(component.model.value.vibrationEnabled)
         assertFalse(component.model.value.darkTheme)
     }
 
     @Test
-    fun onSoundToggled_propagates_to_repository_and_model() = runTest {
+    fun onMusicToggled_propagates_to_repository_and_model() = runTest {
         val (component, settings, _) = build()
-        component.onSoundToggled(false)
-        assertFalse(settings.soundFlow.value)
-        assertFalse(component.model.value.soundEnabled)
+        component.onMusicToggled(false)
+        assertFalse(settings.musicFlow.value)
+        assertFalse(component.model.value.musicEnabled)
+        assertTrue(component.model.value.sfxEnabled)
+    }
+
+    @Test
+    fun onSfxToggled_propagates_to_repository_and_model() = runTest {
+        val (component, settings, _) = build()
+        component.onSfxToggled(false)
+        assertFalse(settings.sfxFlow.value)
+        assertFalse(component.model.value.sfxEnabled)
+        assertTrue(component.model.value.musicEnabled)
     }
 
     @Test
@@ -94,16 +105,19 @@ class DefaultMainSettingsComponentTest {
     }
 
     private class FakeSettings : SettingsRepository {
-        val soundFlow = MutableStateFlow(true)
+        val musicFlow = MutableStateFlow(true)
+        val sfxFlow = MutableStateFlow(true)
         val vibrationFlow = MutableStateFlow(true)
         val darkFlow = MutableStateFlow(false)
-        override val soundEnabled: StateFlow<Boolean> = soundFlow.asStateFlow()
+        override val musicEnabled: StateFlow<Boolean> = musicFlow.asStateFlow()
+        override val sfxEnabled: StateFlow<Boolean> = sfxFlow.asStateFlow()
         override val vibrationEnabled: StateFlow<Boolean> = vibrationFlow.asStateFlow()
         override val darkTheme: StateFlow<Boolean> = darkFlow.asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
-        override suspend fun setSoundEnabled(enabled: Boolean) { soundFlow.value = enabled }
+        override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
+        override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
         override suspend fun setDarkTheme(enabled: Boolean) { darkFlow.value = enabled }
         override suspend fun setBestScore(score: Long) {}

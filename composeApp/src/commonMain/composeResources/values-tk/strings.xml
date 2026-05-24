@@ -26,6 +26,10 @@
     <string name="settings">Sazlamalar</string>
     <string name="sound">Ses</string>
     <string name="sound_subtitle">Oýnuň ses effektleri</string>
+    <string name="music">Saz</string>
+    <string name="music_subtitle">Fon sazy</string>
+    <string name="sfx">Ses effektleri</string>
+    <string name="sfx_subtitle">Ýerleşdirme, arassalama we ses setirleri</string>
     <string name="vibration">Wibrasiýa</string>
     <string name="vibration_subtitle">Ýerleşdireniňizde taktil seslenmesi</string>
     <string name="dark_theme">Garaňky tema</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Kombo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Bir şekil saýlaň</string>
-    <string name="tutorial_tray_body">Galdyrmak üçin paneldäki şekili basyp tutuň.</string>
     <string name="tutorial_grid_title">Tagta ýerleşdiriň</string>
-    <string name="tutorial_grid_body">Ýerleşdirmek için şekili tagta süýräň. Arassalamak üçin doly bir setiri ýa-da sütüni dolduryň.</string>
-    <string name="tutorial_next">Indiki</string>
-    <string name="tutorial_done">Düşündim</string>
-    <string name="tutorial_skip">Geç</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica halaýarmy?</string>

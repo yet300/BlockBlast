@@ -26,6 +26,10 @@
     <string name="settings">Pengaturan</string>
     <string name="sound">Suara</string>
     <string name="sound_subtitle">Efek suara permainan</string>
+    <string name="music">Musik</string>
+    <string name="music_subtitle">Musik latar</string>
+    <string name="sfx">Efek suara</string>
+    <string name="sfx_subtitle">Penempatan, pembersihan, dan garis suara</string>
     <string name="vibration">Getaran</string>
     <string name="vibration_subtitle">Umpan balik haptik saat menaruh</string>
     <string name="dark_theme">Tema Gelap</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Kombo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Pilih balok</string>
-    <string name="tutorial_tray_body">Ketuk dan tahan balok di baki untuk mengangkatnya.</string>
     <string name="tutorial_grid_title">Letakkan di papan</string>
-    <string name="tutorial_grid_body">Seret balok ke papan untuk menempatkannya. Isi seluruh baris atau kolom untuk menghapusnya.</string>
-    <string name="tutorial_next">Berikutnya</string>
-    <string name="tutorial_done">Mengerti</string>
-    <string name="tutorial_skip">Lewati</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Menikmati Logica?</string>

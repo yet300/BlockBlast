@@ -4,6 +4,7 @@ import com.app.common.config.AppConfig
 import com.app.common.decompose.asValue
 import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.childContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.router.slot.SlotNavigation
 import com.arkivanov.decompose.router.slot.activate
@@ -18,6 +19,8 @@ import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.integration.stateToModel
 import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
+import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
+import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
@@ -46,6 +49,11 @@ internal class DefaultGameComponent(
     private val logger = GameAnalyticsLogger(analytics)
 
     override val model: Value<GameComponent.Model> = store.asValue().map(stateToModel)
+
+    override val pieceTray: PieceTrayComponent = DefaultPieceTrayComponent(
+        componentContext = childContext(key = "PieceTray"),
+        state = store.asValue().map { it.game },
+    )
 
     override val sheetSlot: Value<ChildSlot<*, GameComponent.SheetChild>> =
         childSlot(

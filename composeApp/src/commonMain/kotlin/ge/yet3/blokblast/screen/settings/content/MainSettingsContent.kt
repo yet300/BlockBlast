@@ -16,9 +16,11 @@ import blockblast.composeapp.generated.resources.dark_theme
 import blockblast.composeapp.generated.resources.dark_theme_subtitle
 import blockblast.composeapp.generated.resources.more
 import blockblast.composeapp.generated.resources.more_subtitle
+import blockblast.composeapp.generated.resources.music
+import blockblast.composeapp.generated.resources.music_subtitle
 import blockblast.composeapp.generated.resources.settings
-import blockblast.composeapp.generated.resources.sound
-import blockblast.composeapp.generated.resources.sound_subtitle
+import blockblast.composeapp.generated.resources.sfx
+import blockblast.composeapp.generated.resources.sfx_subtitle
 import blockblast.composeapp.generated.resources.vibration
 import blockblast.composeapp.generated.resources.vibration_subtitle
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -51,10 +53,20 @@ fun MainSettingsContent(component: MainSettingsComponent) {
 
         SettingsToggleRow(
             icon = NotificationsActive,
-            title = stringResource(Res.string.sound),
-            subtitle = stringResource(Res.string.sound_subtitle),
-            checked = model.soundEnabled,
-            onCheckedChange = component::onSoundToggled,
+            title = stringResource(Res.string.music),
+            subtitle = stringResource(Res.string.music_subtitle),
+            checked = model.musicEnabled,
+            onCheckedChange = component::onMusicToggled,
+        )
+
+        SettingsDivider()
+
+        SettingsToggleRow(
+            icon = NotificationsActive,
+            title = stringResource(Res.string.sfx),
+            subtitle = stringResource(Res.string.sfx_subtitle),
+            checked = model.sfxEnabled,
+            onCheckedChange = component::onSfxToggled,
         )
 
         SettingsDivider()

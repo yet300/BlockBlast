@@ -4,6 +4,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
 import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
+import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 
@@ -19,6 +20,8 @@ interface GameComponent {
     val model: Value<Model>
 
     val sheetSlot: Value<ChildSlot<*, SheetChild>>
+
+    val pieceTray: PieceTrayComponent
 
     data class Model(
         val game: GameState,

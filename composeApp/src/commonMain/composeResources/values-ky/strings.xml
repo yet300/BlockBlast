@@ -26,6 +26,10 @@
     <string name="settings">Орнотуулар</string>
     <string name="sound">Үн</string>
     <string name="sound_subtitle">Оюндун үн эффекттери</string>
+    <string name="music">Музыка</string>
+    <string name="music_subtitle">Фондук музыка</string>
+    <string name="sfx">Үн эффекттери</string>
+    <string name="sfx_subtitle">Жайгаштыруу, тазалоо жана үн линиялары</string>
     <string name="vibration">Дирилдөө</string>
     <string name="vibration_subtitle">Жайгаштырууда тактилдик байланыш</string>
     <string name="dark_theme">Караңгы тема</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Комбо</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Фигураны тандаңыз</string>
-    <string name="tutorial_tray_body">Көтөрүү үчүн фигураны басып туруңуз.</string>
     <string name="tutorial_grid_title">Тактага жайгаштырыңыз</string>
-    <string name="tutorial_grid_body">Жайгаштыруу үчүн фигураны тактага сүйрөңүз. Тазалоо үчүн толук сапты же тилкени толтуруңуз.</string>
-    <string name="tutorial_next">Кийинки</string>
-    <string name="tutorial_done">Түшүнүктүү</string>
-    <string name="tutorial_skip">Өткөрүп жиберүү</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica жакты беби?</string>

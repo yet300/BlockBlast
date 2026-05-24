@@ -6,13 +6,16 @@ internal interface SettingsStore : Store<SettingsStore.Intent, SettingsStore.Sta
 
 
     data class State(
-        val sound: Boolean = true,
+        val music: Boolean = true,
+        val sfx: Boolean = true,
         val vibration: Boolean = true,
         val dark: Boolean = false,
     )
 
     sealed interface Intent {
-        data class SetSound(val enabled: Boolean) : Intent
+        data class SetMusic(val enabled: Boolean) : Intent
+
+        data class SetSfx(val enabled: Boolean) : Intent
 
         data class SetVibration(val enabled: Boolean) : Intent
 
@@ -25,7 +28,8 @@ internal interface SettingsStore : Store<SettingsStore.Intent, SettingsStore.Sta
 
     sealed interface Msg {
         data class Snapshot(
-            val sound: Boolean,
+            val music: Boolean,
+            val sfx: Boolean,
             val vibration: Boolean,
             val dark: Boolean,
         ) : Msg

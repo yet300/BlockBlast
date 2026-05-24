@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import ge.yet3.blokblast.component.modifier.liftedPieceShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
@@ -42,8 +41,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Rect
-import ge.yet3.blokblast.component.overlay.SpotlightTutorial
-import ge.yet3.blokblast.component.overlay.rememberGameTutorialSteps
+import ge.yet3.blokblast.component.overlay.GestureTutorial
 import ge.yet3.blokblast.theme.LocalOnTutorialSeen
 import ge.yet3.blokblast.theme.LocalTutorialSeen
 import ge.yet3.blokblast.theme.LocalVibrationEnabled
@@ -104,7 +102,9 @@ private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 fun GameContent(component: GameComponent) {
     val uiModel by component.model.subscribeAsState()
     val model = uiModel.game
-    var selectedPieceId by remember { mutableStateOf<Long?>(null) }
+    val traySelection by component.pieceTray.selection.subscribeAsState()
+    val selectedPiece = traySelection.piece
+    val traySlots by component.pieceTray.slots.subscribeAsState()
 
     // ── Effect states ────────────────────────────────────────────────────
     val dragDrop = rememberDragDropState()
@@ -126,11 +126,22 @@ fun GameContent(component: GameComponent) {
     var cellSizePx by remember { mutableFloatStateOf(0f) }
     var gapPx by remember { mutableFloatStateOf(0f) }
 
-    // Bounds (root-coords) used by the first-launch spotlight tutorial.
+    // Bounds (root-coords) used by the first-launch gesture tutorial.
     var gridBounds by remember { mutableStateOf(Rect.Zero) }
     var trayBounds by remember { mutableStateOf(Rect.Zero) }
     val tutorialSeen = LocalTutorialSeen.current
     val onTutorialSeen = LocalOnTutorialSeen.current
+
+    // The wordless tutorial dismisses itself the moment the player engages —
+    // either by dragging a piece or tapping one to select it. Dismissal is
+    // local + immediate (a fade-out + confetti) so it never lags behind the
+    // async "seen" persistence; the flag is persisted once the exit finishes.
+    var tutorialDismissing by remember { mutableStateOf(false) }
+    var tutorialDismissed by remember { mutableStateOf(false) }
+    val userEngaged = dragDrop.isDragging || selectedPiece != null
+    LaunchedEffect(userEngaged) {
+        if (userEngaged && !tutorialSeen) tutorialDismissing = true
+    }
 
     var prevComboLevel by remember { mutableStateOf(model.comboLevel) }
     LaunchedEffect(model.comboLevel) {
@@ -304,12 +315,12 @@ fun GameContent(component: GameComponent) {
 
                 GameGrid(
                     grid = model.grid,
-                    selectedPiece = model.currentPieces.firstOrNull { it.pieceId == selectedPieceId },
+                    selectedPiece = selectedPiece,
                     onCellTapped = { x, y ->
-                        val id = selectedPieceId
-                        if (id != null) {
-                            component.onCellClicked(id, x, y)
-                            selectedPieceId = null
+                        val piece = selectedPiece
+                        if (piece != null) {
+                            component.onCellClicked(piece.pieceId, x, y)
+                            component.pieceTray.clearSelection()
                         }
                     },
                     modifier = Modifier
@@ -339,21 +350,13 @@ fun GameContent(component: GameComponent) {
                 Spacer(Modifier.height(24.dp))
 
                 PieceTray(
-                    pieces = model.currentPieces,
-                    selectedPieceId = selectedPieceId,
-                    grid = model.grid,
+                    tray = component.pieceTray,
                     modifier = Modifier
                         .widthIn(max = 500.dp)
                         .padding(bottom = 8.dp)
                         .onGloballyPositioned { trayBounds = it.boundsInRoot() },
-                    onPieceSelected = { id ->
-                        if (!dragDrop.isDragging) {
-                            selectedPieceId = if (selectedPieceId == id) null else id
-                        }
-                    },
                     onDragStart = { piece, startPos, offset ->
                         if (!dragDrop.isDragging) {
-                            selectedPieceId = null
                             dragDrop.startDrag(piece, startPos, offset)
                             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
                         }
@@ -419,15 +422,23 @@ fun GameContent(component: GameComponent) {
                 )
             }
 
-            // ── First-launch spotlight tutorial ─────────────────────────────
-            // Shown until the user finishes/skips it; persisted via Settings so
-            // it never appears again. Only renders once both targets have been
-            // measured so the cutout lands on real geometry.
-            if (!tutorialSeen && trayBounds != Rect.Zero && gridBounds != Rect.Zero && !model.isGameOver) {
-                val steps = rememberGameTutorialSteps(trayBounds = trayBounds, gridBounds = gridBounds)
-                SpotlightTutorial(
-                    steps = steps,
-                    onFinished = onTutorialSeen,
+            // ── First-launch gesture tutorial ───────────────────────────────
+            // A wordless looping hand demonstrates the drag gesture. Persisted
+            // via Settings so it never appears again, and only renders once both
+            // targets have been measured so the spotlight lands on real geometry.
+            if (!tutorialSeen && !tutorialDismissed &&
+                trayBounds != Rect.Zero && gridBounds != Rect.Zero && !model.isGameOver
+            ) {
+                GestureTutorial(
+                    trayBounds = trayBounds,
+                    gridBounds = gridBounds,
+                    piece = traySlots.firstOrNull()?.piece,
+                    captionTopPadding = innerPadding.calculateTopPadding() + 8.dp,
+                    dismissing = tutorialDismissing,
+                    onExitComplete = {
+                        tutorialDismissed = true
+                        onTutorialSeen()
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -456,14 +467,14 @@ fun GameContent(component: GameComponent) {
                 canRevive = model.revivesUsed < 1,
                 continueCountdownSeconds = continueCountdown,
                 onReviveClicked = {
-                    selectedPieceId = null
+                    component.pieceTray.clearSelection()
                     // Show interstitial; revive fires only after it's dismissed.
                     interstitial.show {
                         component.onReviveClicked()
                     }
                 },
                 onRestartClicked = {
-                    selectedPieceId = null
+                    component.pieceTray.clearSelection()
                     component.onRestartClicked()
                 },
                 onExitClicked = component::onExitClicked,

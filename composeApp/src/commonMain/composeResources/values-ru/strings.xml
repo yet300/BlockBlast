@@ -26,6 +26,10 @@
     <string name="settings">Настройки</string>
     <string name="sound">Звук</string>
     <string name="sound_subtitle">Звуковые эффекты игры</string>
+    <string name="music">Музыка</string>
+    <string name="music_subtitle">Фоновая музыка</string>
+    <string name="sfx">Звуковые эффекты</string>
+    <string name="sfx_subtitle">Размещение, очистка и озвучка</string>
     <string name="vibration">Вибрация</string>
     <string name="vibration_subtitle">Тактильный отклик при установке</string>
     <string name="dark_theme">Темная тема</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Комбо</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Выберите фигуру</string>
-    <string name="tutorial_tray_body">Нажмите и удерживайте фигуру на панели, чтобы поднять ее.</string>
     <string name="tutorial_grid_title">Перетащите на доску</string>
-    <string name="tutorial_grid_body">Перетащите фигуру на доску, чтобы разместить ее. Заполните целый ряд или столбец, чтобы очистить его.</string>
-    <string name="tutorial_next">Далее</string>
-    <string name="tutorial_done">Понятно</string>
-    <string name="tutorial_skip">Пропустить</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Нравится Logica?</string>

@@ -226,13 +226,15 @@ class DefaultGameComponentTest {
     private class FakeSettings(bestScore: Long = 0L, reviewPromptCount: Int = 0) : SettingsRepository {
         private val bestScoreFlow = MutableStateFlow(bestScore)
         private val reviewFlow = MutableStateFlow(reviewPromptCount)
-        override val soundEnabled = MutableStateFlow(true).asStateFlow()
+        override val musicEnabled = MutableStateFlow(true).asStateFlow()
+        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
         override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
-        override suspend fun setSoundEnabled(enabled: Boolean) {}
+        override suspend fun setMusicEnabled(enabled: Boolean) {}
+        override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
         override suspend fun setDarkTheme(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {

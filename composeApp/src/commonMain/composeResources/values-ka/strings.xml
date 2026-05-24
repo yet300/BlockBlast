@@ -26,6 +26,10 @@
     <string name="settings">პარამეტრები</string>
     <string name="sound">ხმა</string>
     <string name="sound_subtitle">თამაშის ხმოვანი ეფექტები</string>
+    <string name="music">მუსიკა</string>
+    <string name="music_subtitle">ფონური მუსიკა</string>
+    <string name="sfx">ხმის ეფექტები</string>
+    <string name="sfx_subtitle">განთავსება, გასუფთავება და ხმოვანი ხაზები</string>
     <string name="vibration">ვიბრაცია</string>
     <string name="vibration_subtitle">ვიბრაცია ბლოკის დასმისას</string>
     <string name="dark_theme">მუქი თემა</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">კომბო</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">აირჩიე ფიგურა</string>
-    <string name="tutorial_tray_body">დააჭირე და გეჭიროს ფიგურა მის ასაღებად.</string>
     <string name="tutorial_grid_title">განათავსე დაფაზე</string>
-    <string name="tutorial_grid_body">გადაიტანე ფიგურა დაფაზე მის განსათავსებლად. შეავსე მთლიანი რიგი ან სვეტი მის გასაქრობად.</string>
-    <string name="tutorial_next">შემდეგი</string>
-    <string name="tutorial_done">გასაგებია</string>
-    <string name="tutorial_skip">გამოტოვება</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">მოგწონთ Logica?</string>

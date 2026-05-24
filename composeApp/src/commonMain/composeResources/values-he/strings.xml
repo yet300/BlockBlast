@@ -26,6 +26,10 @@
     <string name="settings">הגדרות</string>
     <string name="sound">צליל</string>
     <string name="sound_subtitle">אפקטים קוליים של המשחק</string>
+    <string name="music">מוזיקה</string>
+    <string name="music_subtitle">מוזיקת רקע</string>
+    <string name="sfx">אפקטים קוליים</string>
+    <string name="sfx_subtitle">הנחה, ניקוי ודיבור</string>
     <string name="vibration">רטט</string>
     <string name="vibration_subtitle">משוב רטט בעת הנחה</string>
     <string name="dark_theme">ערכת נושא כהה</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">קומבו</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">בחר חלק</string>
-    <string name="tutorial_tray_body">לחץ והחזק חלק במגש כדי להרים אותו.</string>
     <string name="tutorial_grid_title">הנח אותו על הלוח</string>
-    <string name="tutorial_grid_body">גרור את החלק אל הלוח כדי למקם אותו. מלא שורה או עמודה שלמה כדי לנקות אותה.</string>
-    <string name="tutorial_next">הבא</string>
-    <string name="tutorial_done">הבנתי</string>
-    <string name="tutorial_skip">דלג</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">נהנה מ-Logica?</string>

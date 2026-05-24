@@ -15,8 +15,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /**
- * Guards every SFX call with the live `soundEnabled` flag, then delegates to the
- * platform bridge.
+ * Guards every SFX/voice call with [SettingsRepository.sfxEnabled] and gates
+ * music separately on [SettingsRepository.musicEnabled].
  *
  * Music lifecycle is driven by:
  *   - [musicRequested]: a flow set true by [startMusic] (game session active)
@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
  *   - [appForeground]: a flow set false on [onAppBackground] and true on
  *     [onAppForeground]. Backgrounding the app silences music without
  *     forgetting that a session is active.
- *   - [SettingsRepository.soundEnabled]: user preference.
+ *   - [SettingsRepository.musicEnabled]: user preference (music-only).
  *
  * Music plays iff *all three* are true. A single coroutine collects the
  * combine of those flows and serializes start/stop calls to the platform
@@ -70,7 +70,7 @@ internal class DefaultAudioRepository(
             combine(
                 musicRequested,
                 appForeground,
-                settings.soundEnabled,
+                settings.musicEnabled,
             ) { requested, foreground, enabled -> requested && foreground && enabled }
                 // distinctUntilChanged is critical: combine() re-emits whenever
                 // any upstream emits, even if the boolean output didn't change.
@@ -90,19 +90,19 @@ internal class DefaultAudioRepository(
         }
     }
 
-    private inline fun ifEnabled(block: () -> Unit) {
-        if (settings.soundEnabled.value) block()
+    private inline fun ifSfxEnabled(block: () -> Unit) {
+        if (settings.sfxEnabled.value) block()
     }
 
-    override suspend fun playPlacementSound() = ifEnabled { player.playPlacement() }
+    override suspend fun playPlacementSound() = ifSfxEnabled { player.playPlacement() }
 
-    override suspend fun playClearSound(lines: Int) = ifEnabled { player.playClear(lines) }
+    override suspend fun playClearSound(lines: Int) = ifSfxEnabled { player.playClear(lines) }
 
     override suspend fun playVoiceFeedback(type: FeedbackType) =
-        ifEnabled { player.playVoiceFeedback(type) }
+        ifSfxEnabled { player.playVoiceFeedback(type) }
 
     override suspend fun playVoiceCombo(combo: Int) =
-        ifEnabled { player.playVoiceCombo(combo) }
+        ifSfxEnabled { player.playVoiceCombo(combo) }
 
     override suspend fun startMusic() {
         musicRequested.value = true

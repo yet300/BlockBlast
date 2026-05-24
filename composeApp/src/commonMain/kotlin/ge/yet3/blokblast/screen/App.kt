@@ -18,7 +18,7 @@ fun App(rootComponent: RootComponent) {
     val darkTheme by rootComponent.darkTheme.collectAsState()
     BlockBlastTheme(darkTheme = darkTheme) {
         val vibrationEnabled by rootComponent.vibrationEnabled.collectAsState()
-        val soundEnabled by rootComponent.soundEnabled.collectAsState()
+        val soundEnabled by rootComponent.sfxEnabled.collectAsState()
         val tutorialSeen by rootComponent.tutorialSeen.collectAsState()
         val onTutorialSeen = remember(rootComponent) { { rootComponent.onTutorialSeen() } }
         CompositionLocalProvider(

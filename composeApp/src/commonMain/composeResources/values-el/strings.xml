@@ -26,6 +26,10 @@
     <string name="settings">Ρυθμίσεις</string>
     <string name="sound">Ήχος</string>
     <string name="sound_subtitle">Ηχητικά εφέ παιχνιδιού</string>
+    <string name="music">Μουσική</string>
+    <string name="music_subtitle">Μουσική υποβάθρου</string>
+    <string name="sfx">Ηχητικά εφέ</string>
+    <string name="sfx_subtitle">Τοποθέτηση, καθαρισμός και φωνητικές γραμμές</string>
     <string name="vibration">Δόνηση</string>
     <string name="vibration_subtitle">Απτική ανάδραση κατά την τοποθέτηση</string>
     <string name="dark_theme">Σκούρο θέμα</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Επίλεξε ένα κομμάτι</string>
-    <string name="tutorial_tray_body">Πάτησε παρατεταμένα ένα κομμάτι στον δίσκο για να το σηκώσεις.</string>
     <string name="tutorial_grid_title">Τοποθέτησέ το στο ταμπλό</string>
-    <string name="tutorial_grid_body">Σύρε το κομμάτι στο ταμπλό για να το τοποθετήσεις. Συμπλήρωσε μια ολόκληρη σειρά ή στήλη για να την εξαφανίσεις.</string>
-    <string name="tutorial_next">Επόμενο</string>
-    <string name="tutorial_done">Έγινε</string>
-    <string name="tutorial_skip">Παράλειψη</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Σου αρέσει το Logica;</string>

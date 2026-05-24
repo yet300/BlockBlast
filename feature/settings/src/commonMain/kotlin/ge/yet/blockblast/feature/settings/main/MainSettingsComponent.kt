@@ -6,14 +6,16 @@ interface MainSettingsComponent {
 
     val model: Value<Model>
 
-    fun onSoundToggled(enabled: Boolean)
+    fun onMusicToggled(enabled: Boolean)
+    fun onSfxToggled(enabled: Boolean)
     fun onVibrationToggled(enabled: Boolean)
     fun onDarkThemeToggled(enabled: Boolean)
     fun onMoreClicked()
     fun onBackClicked()
 
     data class Model(
-        val soundEnabled: Boolean,
+        val musicEnabled: Boolean,
+        val sfxEnabled: Boolean,
         val vibrationEnabled: Boolean,
         val darkTheme: Boolean,
     )

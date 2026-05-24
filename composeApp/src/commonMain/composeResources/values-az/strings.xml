@@ -26,6 +26,10 @@
     <string name="settings">Tənzimləmələr</string>
     <string name="sound">Səs</string>
     <string name="sound_subtitle">Oyunun səs effektləri</string>
+    <string name="music">Musiqi</string>
+    <string name="music_subtitle">Fon musiqisi</string>
+    <string name="sfx">Səs effektləri</string>
+    <string name="sfx_subtitle">Yerləşdirmə, təmizləmə və səs xətləri</string>
     <string name="vibration">Vibrasiya</string>
     <string name="vibration_subtitle">Yerləşdirmə zamanı haptik rəy</string>
     <string name="dark_theme">Tünd mövzu</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Kombo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Bir fiqur seçin</string>
-    <string name="tutorial_tray_body">Qaldırmaq üçün paneldəki bir fiqura toxunun və saxlayın.</string>
     <string name="tutorial_grid_title">Lövhəyə yerləşdirin</string>
-    <string name="tutorial_grid_body">Yerləşdirmək üçün fiquru lövhəyə sürün. Təmizləmək üçün tam bir sətir və ya sütunu doldurun.</string>
-    <string name="tutorial_next">Növbəti</string>
-    <string name="tutorial_done">Anladım</string>
-    <string name="tutorial_skip">Ötür</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica xoşunuza gəlir?</string>

@@ -26,6 +26,10 @@
     <string name="settings">设置</string>
     <string name="sound">声音</string>
     <string name="sound_subtitle">游戏音效</string>
+    <string name="music">音乐</string>
+    <string name="music_subtitle">背景音乐</string>
+    <string name="sfx">音效</string>
+    <string name="sfx_subtitle">放置、消除和语音旁白</string>
     <string name="vibration">振动</string>
     <string name="vibration_subtitle">放置方块时的触感反馈</string>
     <string name="dark_theme">深色主题</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">连击</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">选择方块</string>
-    <string name="tutorial_tray_body">长按托盘中的方块将其拿起。</string>
     <string name="tutorial_grid_title">放置在棋盘上</string>
-    <string name="tutorial_grid_body">将方块拖到棋盘上进行放置。填满整行或整列即可消除。</string>
-    <string name="tutorial_next">下一步</string>
-    <string name="tutorial_done">知道了</string>
-    <string name="tutorial_skip">跳过</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">喜欢Logica吗？</string>

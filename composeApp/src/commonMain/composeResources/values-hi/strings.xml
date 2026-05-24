@@ -26,6 +26,10 @@
     <string name="settings">सेटिंग</string>
     <string name="sound">ध्वनि</string>
     <string name="sound_subtitle">खेल ध्वनि प्रभाव</string>
+    <string name="music">संगीत</string>
+    <string name="music_subtitle">पृष्ठभूमि संगीत</string>
+    <string name="sfx">ध्वनि प्रभाव</string>
+    <string name="sfx_subtitle">प्लेसमेंट, क्लियर और वॉयस लाइन्स</string>
     <string name="vibration">कंपन</string>
     <string name="vibration_subtitle">रखने पर हैप्टिक फीडबैक</string>
     <string name="dark_theme">डार्क थीम</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">कॉम्बो</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">एक टुकड़ा चुनें</string>
-    <string name="tutorial_tray_body">उठाने के लिए ट्रे में एक टुकड़े को दबाकर रखें।</string>
     <string name="tutorial_grid_title">इसे बोर्ड पर रखें</string>
-    <string name="tutorial_grid_body">इसे रखने के लिए टुकड़े को बोर्ड पर खींचें। इसे हटाने के लिए एक पूरी पंक्ति या कॉलम भरें।</string>
-    <string name="tutorial_next">अगला</string>
-    <string name="tutorial_done">समझ गया</string>
-    <string name="tutorial_skip">छोड़ें</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica का आनंद ले रहे हैं?</string>

@@ -26,6 +26,10 @@
     <string name="settings">Impostazioni</string>
     <string name="sound">Suono</string>
     <string name="sound_subtitle">Effetti sonori del gioco</string>
+    <string name="music">Musica</string>
+    <string name="music_subtitle">Musica di sottofondo</string>
+    <string name="sfx">Effetti sonori</string>
+    <string name="sfx_subtitle">Posizionamento, cancellazione e linee vocali</string>
     <string name="vibration">Vibrazione</string>
     <string name="vibration_subtitle">Feedback aptico al posizionamento</string>
     <string name="dark_theme">Tema scuro</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Combo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Scegli un pezzo</string>
-    <string name="tutorial_tray_body">Tocca e tieni premuto un pezzo nel vassoio per sollevarlo.</string>
     <string name="tutorial_grid_title">Trascinalo sulla griglia</string>
-    <string name="tutorial_grid_body">Trascina il pezzo sulla griglia per posizionarlo. Riempi una riga o una colonna intera per eliminarla.</string>
-    <string name="tutorial_next">Avanti</string>
-    <string name="tutorial_done">Ho capito</string>
-    <string name="tutorial_skip">Salta</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Ti piace Logica?</string>

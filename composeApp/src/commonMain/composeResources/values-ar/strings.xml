@@ -26,6 +26,10 @@
     <string name="settings">الإعدادات</string>
     <string name="sound">الصوت</string>
     <string name="sound_subtitle">المؤثرات الصوتية للعبة</string>
+    <string name="music">موسيقى</string>
+    <string name="music_subtitle">موسيقى خلفية</string>
+    <string name="sfx">مؤثرات صوتية</string>
+    <string name="sfx_subtitle">الوضع، المسح، والتعليقات الصوتية</string>
     <string name="vibration">الاهتزاز</string>
     <string name="vibration_subtitle">ردود فعل لمسية عند الوضع</string>
     <string name="dark_theme">المظهر الداكن</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">كومبو</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">اختر قطعة</string>
-    <string name="tutorial_tray_body">اضغط مع الاستمرار على قطعة في الدرج لرفعها.</string>
     <string name="tutorial_grid_title">ضعها على اللوحة</string>
-    <string name="tutorial_grid_body">اسحب القطعة إلى اللوحة لوضعها. املأ صفاً أو عموداً بالكامل لمسحه.</string>
-    <string name="tutorial_next">التالي</string>
-    <string name="tutorial_done">حسناً</string>
-    <string name="tutorial_skip">تخطي</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">هل تستمتع بـ Logica؟</string>

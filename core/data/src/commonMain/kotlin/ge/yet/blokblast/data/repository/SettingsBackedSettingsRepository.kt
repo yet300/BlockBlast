@@ -42,8 +42,18 @@ internal class SettingsBackedSettingsRepository(
 
     private val writeMutex = Mutex()
 
-    override val soundEnabled: StateFlow<Boolean> =
-        settings.getBooleanStateFlow(scope, KEY_SOUND, defaultValue = true)
+    init {
+        // 1.5.0 migration: prior versions had a single KEY_SOUND_LEGACY flag
+        // that gated both music and SFX. Seed each new key from it once so an
+        // existing "muted" user stays muted on the first launch after upgrade.
+        migrateLegacySoundFlag()
+    }
+
+    override val musicEnabled: StateFlow<Boolean> =
+        settings.getBooleanStateFlow(scope, KEY_MUSIC, defaultValue = true)
+
+    override val sfxEnabled: StateFlow<Boolean> =
+        settings.getBooleanStateFlow(scope, KEY_SFX, defaultValue = true)
 
     override val vibrationEnabled: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_VIBRATION, defaultValue = true)
@@ -60,8 +70,12 @@ internal class SettingsBackedSettingsRepository(
     override val tutorialSeen: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_TUTORIAL_SEEN, defaultValue = false)
 
-    override suspend fun setSoundEnabled(enabled: Boolean) = withContext(dispatchers.io) {
-        settings.putBoolean(KEY_SOUND, enabled)
+    override suspend fun setMusicEnabled(enabled: Boolean) = withContext(dispatchers.io) {
+        settings.putBoolean(KEY_MUSIC, enabled)
+    }
+
+    override suspend fun setSfxEnabled(enabled: Boolean) = withContext(dispatchers.io) {
+        settings.putBoolean(KEY_SFX, enabled)
     }
 
     override suspend fun setVibrationEnabled(enabled: Boolean) = withContext(dispatchers.io) {
@@ -100,8 +114,23 @@ internal class SettingsBackedSettingsRepository(
         settings.putBoolean(KEY_TUTORIAL_SEEN, true)
     }
 
+    /**
+     * If a legacy single-flag value is present and neither new key has been
+     * written, copy the legacy value into both. Idempotent: the legacy key is
+     * removed afterwards so this runs at most once per device.
+     */
+    private fun migrateLegacySoundFlag() {
+        if (!settings.hasKey(KEY_SOUND_LEGACY)) return
+        val legacy = settings.getBoolean(KEY_SOUND_LEGACY, true)
+        if (!settings.hasKey(KEY_MUSIC)) settings.putBoolean(KEY_MUSIC, legacy)
+        if (!settings.hasKey(KEY_SFX)) settings.putBoolean(KEY_SFX, legacy)
+        settings.remove(KEY_SOUND_LEGACY)
+    }
+
     private companion object {
-        const val KEY_SOUND = "blockblast.sound"
+        const val KEY_MUSIC = "blockblast.music"
+        const val KEY_SFX = "blockblast.sfx"
+        const val KEY_SOUND_LEGACY = "blockblast.sound"
         const val KEY_VIBRATION = "blockblast.vibration"
         const val KEY_DARK = "blockblast.dark_theme"
         const val KEY_BEST_SCORE = "blockblast.best_score"

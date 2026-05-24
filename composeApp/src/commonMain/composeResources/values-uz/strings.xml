@@ -26,6 +26,10 @@
     <string name="settings">Sozlamalar</string>
     <string name="sound">Ovoz</string>
     <string name="sound_subtitle">O'yinning ovoz effektlari</string>
+    <string name="music">Musiqa</string>
+    <string name="music_subtitle">Fon musiqisi</string>
+    <string name="sfx">Ovoz effektlari</string>
+    <string name="sfx_subtitle">Joylashtirish, tozalash va ovozli liniyalar</string>
     <string name="vibration">Vibratsiya</string>
     <string name="vibration_subtitle">Joylashtirishda tebranishli aloqa</string>
     <string name="dark_theme">Tungi mavzu</string>
@@ -50,13 +54,7 @@
     <string name="feedback_combo">Kombo</string>
 
     <!-- Tutorial -->
-    <string name="tutorial_tray_title">Shaklni tanlang</string>
-    <string name="tutorial_tray_body">Ko'tarish uchun shaklni bosib turing.</string>
     <string name="tutorial_grid_title">Doskaga joylashtiring</string>
-    <string name="tutorial_grid_body">Joylashtirish uchun shaklni doskaga suring. Tozalash uchun qator yoki ustunni to'ldiring.</string>
-    <string name="tutorial_next">Keyingi</string>
-    <string name="tutorial_done">Tushunarli</string>
-    <string name="tutorial_skip">O'tkazib yuborish</string>
 
     <!-- Review Prompt -->
     <string name="review_prompt_title">Logica yoqdimi?</string>

@@ -23,10 +23,11 @@ class DefaultAudioRepositoryTest {
      * transitions, so we snapshot and discard that initial emission.
      */
     private fun setup(
-        sound: Boolean = true,
+        music: Boolean = true,
+        sfx: Boolean = true,
     ): Triple<DefaultAudioRepository, RecordingPlayer, FakeSettings> {
         val player = RecordingPlayer()
-        val settings = FakeSettings(soundEnabled = sound)
+        val settings = FakeSettings(musicEnabled = music, sfxEnabled = sfx)
         val scope = CoroutineScope(UnconfinedTestDispatcher())
         val repo = DefaultAudioRepository(player, settings, scope)
         player.calls.clear()
@@ -43,10 +44,17 @@ class DefaultAudioRepositoryTest {
     }
 
     @Test
-    fun startMusic_does_not_start_when_sound_off() = runTest {
-        val (repo, player) = setup(sound = false)
+    fun startMusic_does_not_start_when_music_off() = runTest {
+        val (repo, player) = setup(music = false)
         repo.startMusic()
         assertTrue(player.calls.isEmpty())
+    }
+
+    @Test
+    fun startMusic_starts_when_music_on_even_if_sfx_off() = runTest {
+        val (repo, player) = setup(music = true, sfx = false)
+        repo.startMusic()
+        assertEquals(listOf(PlayerCall.Start), player.calls)
     }
 
     @Test
@@ -79,15 +87,25 @@ class DefaultAudioRepositoryTest {
     }
 
     @Test
-    fun toggling_sound_off_then_on_during_music_stops_then_starts() = runTest {
+    fun toggling_music_off_then_on_during_music_stops_then_starts() = runTest {
         val (repo, player, settings) = setup()
         repo.startMusic()
-        settings.soundFlow.value = false
-        settings.soundFlow.value = true
+        settings.musicFlow.value = false
+        settings.musicFlow.value = true
         assertEquals(
             listOf(PlayerCall.Start, PlayerCall.Stop, PlayerCall.Start),
             player.calls,
         )
+    }
+
+    @Test
+    fun toggling_sfx_does_not_affect_music_playback() = runTest {
+        val (repo, player, settings) = setup()
+        repo.startMusic()
+        val baseline = player.calls.toList()
+        settings.sfxFlow.value = false
+        settings.sfxFlow.value = true
+        assertEquals(baseline, player.calls)
     }
 
     @Test
@@ -118,7 +136,7 @@ class DefaultAudioRepositoryTest {
 
     @Test
     fun sfx_silent_when_disabled() = runTest {
-        val (repo, player) = setup(sound = false)
+        val (repo, player) = setup(sfx = false)
         repo.playPlacementSound()
         repo.playClearSound(2)
         repo.playVoiceFeedback(FeedbackType.GOOD)
@@ -148,15 +166,21 @@ class DefaultAudioRepositoryTest {
         override fun release() {}
     }
 
-    private class FakeSettings(soundEnabled: Boolean = true) : SettingsRepository {
-        val soundFlow = MutableStateFlow(soundEnabled)
-        override val soundEnabled: StateFlow<Boolean> = soundFlow.asStateFlow()
+    private class FakeSettings(
+        musicEnabled: Boolean = true,
+        sfxEnabled: Boolean = true,
+    ) : SettingsRepository {
+        val musicFlow = MutableStateFlow(musicEnabled)
+        val sfxFlow = MutableStateFlow(sfxEnabled)
+        override val musicEnabled: StateFlow<Boolean> = musicFlow.asStateFlow()
+        override val sfxEnabled: StateFlow<Boolean> = sfxFlow.asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
-        override suspend fun setSoundEnabled(enabled: Boolean) { soundFlow.value = enabled }
+        override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
+        override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
         override suspend fun setDarkTheme(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {}
