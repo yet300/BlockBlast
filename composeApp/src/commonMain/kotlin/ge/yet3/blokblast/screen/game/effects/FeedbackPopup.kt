@@ -40,15 +40,15 @@ import kotlin.time.Clock
 import org.jetbrains.compose.resources.stringResource
 
 class FeedbackPopupState {
-    private val _popups = mutableStateListOf<FeedbackItem>()
-    val popups: List<FeedbackItem> get() = _popups
+    val popups: List<FeedbackItem>
+        field = mutableStateListOf<FeedbackItem>()
 
     fun add(type: FeedbackType?, comboLevel: Int?) {
-        _popups.add(FeedbackItem(type, comboLevel, Clock.System.now().toEpochMilliseconds()))
+        popups.add(FeedbackItem(type, comboLevel, Clock.System.now().toEpochMilliseconds()))
     }
 
     fun remove(item: FeedbackItem) {
-        _popups.remove(item)
+        popups.remove(item)
     }
 }
 

@@ -21,15 +21,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
  * The single source of truth for game state. Singleton-scoped via Metro.
  *
  * Pure state machine — no UI, no platform code. Communicates outwards through:
- *   - [state] : MutableStateFlow snapshots of the current [GameState]
+ *   - [state] : StateFlow snapshots of the current [GameState]
  *   - [events]: SharedFlow of one-shot effects (animations, sounds)
  */
 @SingleIn(AppScope::class)
@@ -41,11 +39,11 @@ class GameEngine(
     private val externalScope: CoroutineScope,
 ) {
 
-    private val _state = MutableStateFlow(GameState())
-    val state: StateFlow<GameState> = _state.asStateFlow()
+    val state: StateFlow<GameState>
+        field = MutableStateFlow(GameState())
 
-    private val _events = MutableSharedFlow<GameEvent>(extraBufferCapacity = 16)
-    val events: SharedFlow<GameEvent> = _events.asSharedFlow()
+    val events: SharedFlow<GameEvent>
+        field = MutableSharedFlow<GameEvent>(extraBufferCapacity = 16)
 
     private var pieceIdCounter: Long = 0
     private var deterministicSeed: Long? = null
@@ -54,10 +52,10 @@ class GameEngine(
     // ---------- Lifecycle ----------
 
     /** Start a fresh game. Pass [seed] for deterministic tests. */
-    fun startNewGame(seed: Long? = null, bestScore: Long = _state.value.bestScore) {
+    fun startNewGame(seed: Long? = null, bestScore: Long = state.value.bestScore) {
         deterministicSeed = seed
         pieceIdCounter = 0
-        _state.value = GameState(
+        state.value = GameState(
             grid = Grid(),
             score = 0,
             bestScore = bestScore,
@@ -68,7 +66,7 @@ class GameEngine(
             bestAtRoundStart = bestScore,
             reviewPromptFiredThisRound = false,
         )
-        _events.tryEmit(GameEvent.GameStarted)
+        events.tryEmit(GameEvent.GameStarted)
         autoSave()
     }
 
@@ -78,9 +76,9 @@ class GameEngine(
      * Home → Play navigation and is persisted via [autoSave].
      */
     fun markReviewPromptFired() {
-        val current = _state.value
+        val current = state.value
         if (current.reviewPromptFiredThisRound) return
-        _state.value = current.copy(reviewPromptFiredThisRound = true)
+        state.value = current.copy(reviewPromptFiredThisRound = true)
         autoSave()
     }
 
@@ -94,8 +92,8 @@ class GameEngine(
         // higher than the value persisted in the save blob if autosave hadn't
         // flushed before the previous process death. Wholesale replacement
         // would visibly downgrade the HUD this round.
-        val mergedBest = maxOf(_state.value.bestScore, state.bestScore)
-        _state.value = state.copy(
+        val mergedBest = maxOf(this.state.value.bestScore, state.bestScore)
+        this.state.value = state.copy(
             bestScore = mergedBest,
             bestAtRoundStart = maxOf(state.bestAtRoundStart, mergedBest),
         )
@@ -103,7 +101,7 @@ class GameEngine(
         pieceIdCounter = state.currentPieces.maxOfOrNull { it.pieceId } ?: 0
 
         if (!state.isGameOver && state.currentPieces.isNotEmpty()) {
-            _events.tryEmit(GameEvent.GameStarted)
+            events.tryEmit(GameEvent.GameStarted)
         }
     }
 
@@ -118,13 +116,13 @@ class GameEngine(
      *
      * NOTE: the engine is the single source of truth for game state. Never
      * mutate `engine.state.value` via `.copy(...)` from outside — only this
-     * class is allowed to drive `_state`. Use this method (or one of the other
-     * public mutators) instead.
+     * class is allowed to drive the explicit backing field. Use this method
+     * (or one of the other public mutators) instead.
      */
     fun seedBestScore(persistedBest: Long) {
-        val current = _state.value
+        val current = state.value
         if (persistedBest > current.bestScore) {
-            _state.value = current.copy(
+            state.value = current.copy(
                 bestScore = persistedBest,
                 // Keep "best at round start" in sync so the review-prompt
                 // delta check uses the real lifetime best, not 0.
@@ -140,9 +138,9 @@ class GameEngine(
      * Used during drag-and-drop hover.
      */
     fun canPlace(piece: Piece, x: Int, y: Int): Boolean =
-        canPlace(piece.shape, x, y, _state.value.grid)
+        canPlace(piece.shape, x, y, state.value.grid)
 
-    fun canPlace(shape: Polyomino, x: Int, y: Int, grid: Grid = _state.value.grid): Boolean {
+    fun canPlace(shape: Polyomino, x: Int, y: Int, grid: Grid = state.value.grid): Boolean {
         for (cell in shape.cells) {
             val gx = x + cell.x
             val gy = y + cell.y
@@ -157,7 +155,7 @@ class GameEngine(
      * Returns true on success. Emits all relevant events and updates [state].
      */
     fun placePiece(pieceId: Long, x: Int, y: Int): Boolean {
-        val current = _state.value
+        val current = state.value
         if (current.isGameOver) return false
         val piece = current.currentPieces.firstOrNull { it.pieceId == pieceId } ?: return false
         if (!canPlace(piece, x, y)) return false
@@ -227,24 +225,24 @@ class GameEngine(
                 PointsEvent(totalPoints, current.lastPointsAwarded.nonce + 1)
             } else current.lastPointsAwarded,
         )
-        _state.value = newState
+        state.value = newState
 
         // 8. Emit events in narrative order via tryEmit (buffer = 16, always room).
         // tryEmit is synchronous and preserves FIFO; launch{emit} could re-order
         // events if the coroutine scheduler interleaves two placePiece calls.
-        _events.tryEmit(GameEvent.PiecePlaced(totalPoints))
+        events.tryEmit(GameEvent.PiecePlaced(totalPoints))
         if (clearedList != null) {
-            _events.tryEmit(
+            events.tryEmit(
                 GameEvent.LinesCleared(
                     clearedCells = clearedList,
                     linesCount = totalLines,
                     isCrossClear = isCrossClear,
                 )
             )
-            feedback?.let { _events.tryEmit(GameEvent.Feedback(it)) }
-            if (newCombo >= 2) _events.tryEmit(GameEvent.ComboActive(newCombo))
+            feedback?.let { events.tryEmit(GameEvent.Feedback(it)) }
+            if (newCombo >= 2) events.tryEmit(GameEvent.ComboActive(newCombo))
         }
-        if (gameOver) _events.tryEmit(GameEvent.GameOver)
+        if (gameOver) events.tryEmit(GameEvent.GameOver)
 
         autoSave()
         return true
@@ -256,18 +254,18 @@ class GameEngine(
      * No-op if the player has already used all revives.
      */
     fun continueWithSmallBlocks(): Boolean {
-        val current = _state.value
+        val current = state.value
         if (!current.isGameOver) return false
         if (current.revivesUsed >= GameState.MAX_REVIVES) return false
 
         val smallPieces = shapeGenerator.smallReviveTray().map { wrapInPiece(it) }
-        _state.value = current.copy(
+        state.value = current.copy(
             currentPieces = smallPieces,
             isGameOver = false,
             revivesUsed = current.revivesUsed + 1,
             comboLevel = 0,
         )
-        _events.tryEmit(GameEvent.GameStarted)
+        events.tryEmit(GameEvent.GameStarted)
         autoSave()
         return true
     }
@@ -327,7 +325,7 @@ class GameEngine(
         saveJob?.cancel()
         saveJob = externalScope.launch {
             delay(300)
-            saveRepository.save(_state.value)
+            saveRepository.save(state.value)
         }
     }
 }

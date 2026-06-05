@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -10,6 +11,10 @@ plugins {
 }
 
 kotlin {
+    compilerOptions {
+        languageVersion.set(KotlinVersion.KOTLIN_2_4)
+        apiVersion.set(KotlinVersion.KOTLIN_2_4)
+    }
 
     androidLibrary {
         namespace = "ge.yet.blokblast.composeApp"

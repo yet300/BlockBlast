@@ -22,15 +22,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class FloatingScoreState {
-    private val _popups = mutableStateListOf<ScorePopup>()
-    val popups: List<ScorePopup> get() = _popups
+    val popups: List<ScorePopup>
+        field = mutableStateListOf<ScorePopup>()
 
     fun add(points: Long, origin: Offset) {
-        _popups.add(ScorePopup(points, origin))
+        popups.add(ScorePopup(points, origin))
     }
 
     fun remove(popup: ScorePopup) {
-        _popups.remove(popup)
+        popups.remove(popup)
     }
 }
 

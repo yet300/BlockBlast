@@ -2,6 +2,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 private const val JDK_VERSION = 17
@@ -12,6 +13,11 @@ internal fun Project.configureKotlinMultiplatform(
     extension: KotlinMultiplatformExtension,
 ) = extension.apply {
     jvmToolchain(JDK_VERSION)
+
+    compilerOptions {
+        languageVersion.set(KotlinVersion.KOTLIN_2_4)
+        apiVersion.set(KotlinVersion.KOTLIN_2_4)
+    }
 
     extensions.configure<KotlinMultiplatformAndroidLibraryExtension>("android") {
         val moduleName = path.split(":").drop(2).joinToString(".")
