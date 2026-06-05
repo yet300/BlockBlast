@@ -4,9 +4,9 @@ android-compileSdk = "37"
 android-minSdk = "24"
 android-targetSdk = "37"
 
-playServicesAds = "25.2.0"
+playServicesAds = "25.3.0"
 userMessagingPlatform = "4.0.0"
-firebase-android-bom = "34.13.0"
+firebase-android-bom = "34.14.0"
 gradlePlugins-crashlytics = "3.0.7"
 gradlePlugins-google-services = "4.4.4"
 #Gitlive
@@ -17,11 +17,11 @@ android-review = "2.0.2"
 androidx-activity = "1.13.0"
 androidx-core-splashscreen = "1.2.0"
 androidx-lifecycle = "2.10.0"
-composeMultiplatform = "1.11.0"
+composeMultiplatform = "1.11.1"
 confettikit = "0.8.0"
 material3 = "1.10.0-alpha05"
 
-kotlin = "2.3.21"
+kotlin = "2.4.0"
 metro = "1.1.1"
 
 
