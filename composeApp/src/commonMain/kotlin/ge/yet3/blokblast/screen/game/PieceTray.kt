@@ -5,12 +5,8 @@ import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -52,6 +48,7 @@ import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
@@ -64,7 +61,12 @@ import ge.yet3.blokblast.theme.pieceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private typealias DragStart = (piece: Piece, startPosition: Offset, pieceOriginOffset: Offset) -> Unit
+private typealias DragStart = (
+    piece: Piece,
+    startPosition: Offset,
+    pieceOriginOffset: Offset,
+    sourcePosition: Offset,
+) -> Unit
 private typealias DragMove = (position: Offset) -> Unit
 private typealias DragEnd = () -> Unit
 
@@ -84,6 +86,8 @@ private const val SLOT_COUNT = 3
 fun PieceTray(
     tray: PieceTrayComponent,
     modifier: Modifier = Modifier,
+    dragEnabled: Boolean = true,
+    spatialMotionEnabled: Boolean = true,
     onDragStart: DragStart? = null,
     onDragMove: DragMove? = null,
     onDragEnd: DragEnd? = null,
@@ -112,15 +116,23 @@ fun PieceTray(
                     key(slot.piece.pieceId) {
                         TraySlot(
                             slot = slot,
-                            onDragStart = { piece, startPos, originOffset ->
+                            onDragStart = { piece, startPos, originOffset, sourcePosition ->
                                 tray.clearSelection()
-                                onDragStart?.invoke(piece, startPos, originOffset)
+                                onDragStart?.invoke(piece, startPos, originOffset, sourcePosition)
                             },
                             onDragMove = onDragMove,
                             onDragEnd = onDragEnd,
+                            dragEnabled = dragEnabled,
+                            spatialMotionEnabled = spatialMotionEnabled,
                             modifier = Modifier
                                 .width(slotWidth)
-                                .animateBounds(this@LookaheadScope),
+                                .then(
+                                    if (spatialMotionEnabled) {
+                                        Modifier.animateBounds(this@LookaheadScope)
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
                         )
                     }
                 }
@@ -135,15 +147,19 @@ private fun TraySlot(
     onDragStart: DragStart?,
     onDragMove: DragMove?,
     onDragEnd: DragEnd?,
+    dragEnabled: Boolean,
+    spatialMotionEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val piece = slot.piece
     val isSelected by slot.isSelected.subscribeAsState()
     val canFit by slot.canFit.subscribeAsState()
 
-    val entrance = rememberSlotEntrance(piece.pieceId, slot.spawnIndex)
-    val ambient = rememberAmbientLoops()
-
+    val entrance = rememberSlotEntrance(
+        pieceId = piece.pieceId,
+        spawnIndex = slot.spawnIndex,
+        spatialMotionEnabled = spatialMotionEnabled,
+    )
     var isPressed by remember { mutableStateOf(false) }
     val isHighlighted = isSelected || isPressed
 
@@ -153,10 +169,11 @@ private fun TraySlot(
         canFit -> 1f
         else -> 0.92f
     }
-    val pieceScale = animateFloatAsState(targetScale, animationSpec = spring(), label = "pieceScale")
-    val applyBreath = canFit && !isPressed && !isSelected
-    val applyWiggle = !canFit
-
+    val pieceScale = if (spatialMotionEnabled) {
+        animateFloatAsState(targetScale, animationSpec = spring(), label = "pieceScale")
+    } else {
+        null
+    }
     val pieceAlpha = animateFloatAsState(
         targetValue = if (canFit) 1f else 0.45f,
         animationSpec = tween(220),
@@ -176,24 +193,17 @@ private fun TraySlot(
         modifier = modifier
             .padding(6.dp)
             .aspectRatio(1f)
-            // First layer: entrance fly-in (keyed on pieceId, fires once per
-            // fresh piece). Second layer: idle/press transforms that read
-            // animated values inside the layer lambda so frame ticks don't
-            // recompose us — only the draw layer invalidates.
+            // A restrained, non-overshooting entrance keeps tray refreshes
+            // legible without competing with the grid for attention.
             .graphicsLayer {
                 scaleX = entrance.scale.value
                 scaleY = entrance.scale.value
-                alpha = entrance.scale.value
-                translationX = entrance.translateX.value
+                alpha = entrance.alpha.value
                 translationY = entrance.translateY.value
             }
             .graphicsLayer {
-                val s = pieceScale.value
-                val breath = if (applyBreath) ambient.breathScale.value else 1f
-                val combined = s * breath
-                scaleX = combined
-                scaleY = combined
-                rotationZ = if (applyWiggle) wiggleAngle(ambient.wigglePhase.value) else 0f
+                scaleX = pieceScale?.value ?: 1f
+                scaleY = pieceScale?.value ?: 1f
             }
             .clip(RoundedCornerShape(14.dp))
             .drawBehind { drawRect(slotBg.value) }
@@ -203,6 +213,7 @@ private fun TraySlot(
             )
             .traySlotPointerInput(
                 piece = piece,
+                enabled = dragEnabled,
                 onPressedChange = { isPressed = it },
                 onTap = slot::onTap,
                 onDragStart = onDragStart,
@@ -217,6 +228,7 @@ private fun TraySlot(
                 shape = piece.shape,
                 color = visibleColor,
                 shimmerKey = piece.pieceId,
+                spatialMotionEnabled = spatialMotionEnabled,
             )
         }
     }
@@ -226,79 +238,41 @@ private fun TraySlot(
 
 private class SlotEntrance(
     val scale: Animatable<Float, *>,
-    val translateX: Animatable<Float, *>,
+    val alpha: Animatable<Float, *>,
     val translateY: Animatable<Float, *>,
 )
 
 /**
- * Spring-overshoot entrance, staggered by [spawnIndex]: slot 0 flies in from
- * the left, slot 2 from the right, slot 1 from below. Keyed on [pieceId] so
- * survivors of a partial placement keep their already-settled state.
+ * Compact entrance keyed on [pieceId], so survivors keep their settled state.
+ * A short stagger communicates that a new tray was dealt without turning the
+ * refresh into a sequence the player has to wait through.
  */
 @Composable
-private fun rememberSlotEntrance(pieceId: Long, spawnIndex: Int): SlotEntrance {
-    val (initialX, initialY) = when (spawnIndex) {
-        0 -> -160f to 30f
-        2 -> 160f to 30f
-        else -> 0f to 80f
+private fun rememberSlotEntrance(
+    pieceId: Long,
+    spawnIndex: Int,
+    spatialMotionEnabled: Boolean,
+): SlotEntrance {
+    val initialY = with(LocalDensity.current) { 8.dp.toPx() }
+    val scale = remember(pieceId, spatialMotionEnabled) {
+        Animatable(if (spatialMotionEnabled) 0.95f else 1f)
     }
-    val scale = remember(pieceId) { Animatable(0f) }
-    val translateX = remember(pieceId) { Animatable(initialX) }
-    val translateY = remember(pieceId) { Animatable(initialY) }
-    LaunchedEffect(pieceId) {
-        delay(spawnIndex * 80L)
-        launch {
-            scale.animateTo(
-                1f,
-                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = 380f),
-            )
-        }
-        launch { translateX.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = 320f)) }
-        launch { translateY.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 380f)) }
+    val alpha = remember(pieceId, spatialMotionEnabled) {
+        Animatable(if (spatialMotionEnabled) 0f else 1f)
     }
-    return remember(pieceId) { SlotEntrance(scale, translateX, translateY) }
+    val translateY = remember(pieceId, spatialMotionEnabled) {
+        Animatable(if (spatialMotionEnabled) initialY else 0f)
+    }
+    LaunchedEffect(pieceId, spatialMotionEnabled) {
+        if (!spatialMotionEnabled) return@LaunchedEffect
+        delay(spawnIndex * 40L)
+        val settle = tween<Float>(durationMillis = 180, easing = LinearOutSlowInEasing)
+        launch { scale.animateTo(1f, settle) }
+        launch { alpha.animateTo(1f, settle) }
+        launch { translateY.animateTo(0f, settle) }
+    }
+    return remember(pieceId, spatialMotionEnabled) { SlotEntrance(scale, alpha, translateY) }
 }
-
-private class AmbientLoops(
-    val breathScale: androidx.compose.runtime.State<Float>,
-    val wigglePhase: androidx.compose.runtime.State<Float>,
-)
-
-/**
- * Continuous breathing + wiggle phases. Returned as `State<Float>` (not `Float`)
- * so callers must read them inside a draw-phase lambda — reading in composition
- * scope would recompose the whole slot 60×/s.
- */
-@Composable
-private fun rememberAmbientLoops(): AmbientLoops {
-    val breath = rememberInfiniteTransition(label = "breath").animateFloat(
-        initialValue = 1f,
-        targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(
-            tween(1400, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "breathScale",
-    )
-    val wiggle = rememberInfiniteTransition(label = "wiggle").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(2400, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "wigglePhase",
-    )
-    return remember { AmbientLoops(breath, wiggle) }
-}
-
-/** Short bursts of rotation at the start of each wiggle cycle. */
-private fun wiggleAngle(phase: Float): Float =
-    if (phase < 0.05f) {
-        kotlin.math.sin(phase / 0.05f * kotlin.math.PI.toFloat() * 4f) * 5f
-    } else {
-        0f
-    }
 
 /* ──────────────────────────────── Pointer input ───────────────────────────── */
 
@@ -309,13 +283,17 @@ private fun wiggleAngle(phase: Float): Float =
 @Composable
 private fun Modifier.traySlotPointerInput(
     piece: Piece,
+    enabled: Boolean,
     onPressedChange: (Boolean) -> Unit,
     onTap: () -> Unit,
     onDragStart: DragStart?,
     onDragMove: DragMove?,
     onDragEnd: DragEnd?,
 ): Modifier {
+    if (!enabled) return this
+
     var slotOriginInWindow by remember { mutableStateOf(Offset.Zero) }
+    var slotCenterInWindow by remember { mutableStateOf(Offset.Zero) }
     val touchSlop = LocalViewConfiguration.current.touchSlop
 
     val onDragStartLatest by rememberUpdatedState(onDragStart)
@@ -325,8 +303,14 @@ private fun Modifier.traySlotPointerInput(
     val onPressedChangeLatest by rememberUpdatedState(onPressedChange)
 
     return this
-        .onGloballyPositioned { coords -> slotOriginInWindow = coords.positionInWindow() }
-        .pointerInput(piece.pieceId) {
+        .onGloballyPositioned { coords ->
+            slotOriginInWindow = coords.positionInWindow()
+            slotCenterInWindow = slotOriginInWindow + Offset(
+                x = coords.size.width / 2f,
+                y = coords.size.height / 2f,
+            )
+        }
+        .pointerInput(piece.pieceId, enabled) {
             awaitPointerEventScope {
                 while (true) {
                     val downEvent = awaitPointerEvent()
@@ -336,6 +320,7 @@ private fun Modifier.traySlotPointerInput(
                     onPressedChangeLatest(true)
                     val downPos = downChange.position
                     var dragging = false
+                    var endedNormally = false
 
                     while (true) {
                         val event = awaitPointerEvent()
@@ -350,6 +335,7 @@ private fun Modifier.traySlotPointerInput(
                                         piece,
                                         slotOriginInWindow + downPos,
                                         downPos,
+                                        slotCenterInWindow,
                                     )
                                 }
                                 if (dragging) {
@@ -358,6 +344,7 @@ private fun Modifier.traySlotPointerInput(
                                 }
                             }
                             PointerEventType.Release -> {
+                                endedNormally = true
                                 onPressedChangeLatest(false)
                                 if (dragging) onDragEndLatest?.invoke() else onTapLatest()
                                 break
@@ -367,7 +354,7 @@ private fun Modifier.traySlotPointerInput(
 
                     // Defensive: cancel paths skip the Release branch.
                     onPressedChangeLatest(false)
-                    if (dragging) onDragEndLatest?.invoke()
+                    if (dragging && !endedNormally) onDragEndLatest?.invoke()
                 }
             }
         }
@@ -389,14 +376,18 @@ private fun MiniPiece(
     cellSize: Dp = 10.dp,
     gap: Dp = 2.dp,
     shimmerKey: Any? = null,
+    spatialMotionEnabled: Boolean,
 ) {
     val cols = shape.width
     val rows = shape.height
     val totalW = cols * cellSize + (cols - 1) * gap
     val totalH = rows * cellSize + (rows - 1) * gap
 
-    val shimmer = remember(shimmerKey) { Animatable(-0.4f) }
-    LaunchedEffect(shimmerKey) {
+    val shimmer = remember(shimmerKey, spatialMotionEnabled) {
+        Animatable(if (spatialMotionEnabled) -0.4f else 1.4f)
+    }
+    LaunchedEffect(shimmerKey, spatialMotionEnabled) {
+        if (!spatialMotionEnabled) return@LaunchedEffect
         delay(180)
         shimmer.snapTo(-0.4f)
         shimmer.animateTo(1.4f, tween(650, easing = LinearEasing))

@@ -1,11 +1,16 @@
 package ge.yet3.blokblast.screen.game
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -34,29 +39,71 @@ fun DraggedPieceOverlay(
     gap: Dp,
     verticalLift: Dp,
     dragDropState: DragDropState,
+    reducedMotion: Boolean,
+    onReturnFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shadowCells = remember(piece) {
         piece.shape.cells.map { CellOffset(it.x, it.y) }
     }
+    val returnProgress = remember(piece.pieceId) { Animatable(0f) }
+
+    LaunchedEffect(dragDropState.isReturning, reducedMotion) {
+        if (!dragDropState.isReturning) {
+            returnProgress.snapTo(0f)
+            return@LaunchedEffect
+        }
+
+        returnProgress.snapTo(0f)
+        if (reducedMotion) {
+            returnProgress.animateTo(1f, tween(140))
+        } else {
+            returnProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+            )
+        }
+        onReturnFinished()
+    }
 
     Box(
         modifier = modifier
             .offset {
-                val dragPosition = dragDropState.dragPosition
                 val ghostW = cellSize.toPx() * piece.shape.width +
                     gap.toPx() * (piece.shape.width - 1).coerceAtLeast(0)
                 val ghostH = cellSize.toPx() * piece.shape.height +
                     gap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
+                val progress = returnProgress.value
+                val dragPosition = if (dragDropState.isReturning) {
+                    val start = dragDropState.returnStartPosition
+                    if (reducedMotion) {
+                        start
+                    } else {
+                        val target = dragDropState.sourcePosition + Offset(
+                            x = 0f,
+                            y = ghostH / 2f + verticalLift.toPx(),
+                        )
+                        start + (target - start) * progress
+                    }
+                } else {
+                    dragDropState.dragPosition
+                }
                 IntOffset(
                     x = (dragPosition.x - ghostW / 2f).toInt(),
                     y = (dragPosition.y - ghostH - verticalLift.toPx()).toInt(),
                 )
             }
             .graphicsLayer {
-                scaleX = 1.15f
-                scaleY = 1.15f
-                alpha = 0.85f
+                val progress = returnProgress.value.coerceIn(0f, 1f)
+                val returning = dragDropState.isReturning
+                val returnScale = if (returning && !reducedMotion) 1.15f - 0.2f * progress else 1.15f
+                scaleX = returnScale
+                scaleY = returnScale
+                alpha = when {
+                    returning && reducedMotion -> 0.85f * (1f - progress)
+                    returning -> 0.85f * (1f - progress)
+                    else -> 0.85f
+                }
             },
     ) {
         val totalW = piece.shape.width * cellSize + (piece.shape.width - 1) * gap

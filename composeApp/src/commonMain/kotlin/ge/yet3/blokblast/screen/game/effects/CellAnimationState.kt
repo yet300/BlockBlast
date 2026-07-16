@@ -2,7 +2,6 @@ package ge.yet3.blokblast.screen.game.effects
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import kotlinx.coroutines.coroutineScope
@@ -43,7 +42,11 @@ class CellAnimState {
      * dropped: staggering the squash across cells of a single piece made
      * the visual collision much worse.
      */
-    suspend fun popIn(delayMs: Long) {
+    suspend fun popIn(delayMs: Long, spatialMotionEnabled: Boolean = true) {
+        if (!spatialMotionEnabled) {
+            reset()
+            return
+        }
         scale.snapTo(0.92f)
         scaleX.snapTo(1.05f)
         scaleY.snapTo(0.95f)
@@ -66,30 +69,31 @@ class CellAnimState {
     }
 
     /**
-     * Wave pop on line clear — quick flash, scale-up & slight rotation before
+     * Restrained wave exit on line clear — quick flash and slight rotation before
      * fading out. The [delayMs] stagger is applied by the caller so the wave
      * propagates along the cleared row/column.
      */
-    suspend fun clear(delayMs: Long) {
-        delay(delayMs)
+    suspend fun clear(delayMs: Long, spatialMotionEnabled: Boolean = true) {
+        delay(if (spatialMotionEnabled) delayMs else 0L)
+        if (!spatialMotionEnabled) {
+            alpha.animateTo(0f, tween(140))
+            return
+        }
         coroutineScope {
             launch {
-                flashAlpha.animateTo(0.8f, tween(70))
+                flashAlpha.animateTo(0.5f, tween(60))
                 flashAlpha.animateTo(0f, tween(120))
             }
             launch {
-                scale.animateTo(1.35f, tween(120, easing = LinearOutSlowInEasing))
-                scale.animateTo(0f, tween(220, easing = FastOutSlowInEasing))
+                scale.animateTo(0.94f, tween(180, easing = FastOutSlowInEasing))
             }
             launch {
-                // Tiny tilt that randomizes per-cell via the delay parity —
-                // good-enough randomness without an extra source of state.
-                val tilt = if ((delayMs / 30L) % 2L == 0L) 18f else -18f
-                rotation.animateTo(tilt, tween(220, easing = FastOutSlowInEasing))
+                val tilt = if ((delayMs / 30L) % 2L == 0L) 8f else -8f
+                rotation.animateTo(tilt, tween(180, easing = FastOutSlowInEasing))
             }
             launch {
-                delay(120)
-                alpha.animateTo(0f, tween(220, easing = FastOutSlowInEasing))
+                delay(40)
+                alpha.animateTo(0f, tween(140, easing = FastOutSlowInEasing))
             }
         }
     }
@@ -110,8 +114,16 @@ class CellAnimState {
      * supplied in pixels by the caller because cells don't know their
      * absolute size here.
      */
-    suspend fun fall(delayMs: Long, distancePx: Float) {
-        delay(delayMs)
+    suspend fun fall(
+        delayMs: Long,
+        distancePx: Float,
+        spatialMotionEnabled: Boolean = true,
+    ) {
+        delay(if (spatialMotionEnabled) delayMs else 0L)
+        if (!spatialMotionEnabled) {
+            alpha.animateTo(0f, tween(140))
+            return
+        }
         coroutineScope {
             launch {
                 rotation.animateTo(

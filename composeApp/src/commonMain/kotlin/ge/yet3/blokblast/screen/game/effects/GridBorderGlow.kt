@@ -8,7 +8,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
@@ -16,22 +15,27 @@ import ge.yet3.blokblast.theme.PieceColors
 import kotlin.math.sin
 
 @Composable
-fun Modifier.gridBorderGlow(comboLevel: Int): Modifier = composed {
-    val infiniteTransition = rememberInfiniteTransition()
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 2f * kotlin.math.PI.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+fun Modifier.gridBorderGlow(comboLevel: Int, animate: Boolean): Modifier = composed {
+    val phaseState = if (animate) {
+        rememberInfiniteTransition(label = "gridBorderGlow").animateFloat(
+            initialValue = 0f,
+            targetValue = 2f * kotlin.math.PI.toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "gridBorderPhase",
         )
-    )
+    } else {
+        null
+    }
     
     val outlineColor = MaterialTheme.colorScheme.outline
     val primaryColor = MaterialTheme.colorScheme.primary
     val colors = PieceColors
 
     drawBehind {
+        val phase = phaseState?.value ?: 0f
         val dotRadius = 9f
         val spacing = 60f
         

@@ -62,6 +62,7 @@ fun GameGrid(
     comboStripes: ComboStripesState? = null,
     particleBurst: ParticleBurstState? = null,
     comboLevel: Int = 0,
+    reducedMotion: Boolean = false,
     clearedEvent: ClearEvent = ClearEvent(),
     isGameOver: Boolean = false,
     onGridMeasured: ((gridOriginX: Float, gridOriginY: Float, cellSizePx: Float, gapPx: Float) -> Unit)? = null,
@@ -69,6 +70,12 @@ fun GameGrid(
     val surfaceColor = MaterialTheme.colorScheme.surface
     val density = LocalDensity.current
     val gapPx = with(density) { GAP_DP.toPx() }
+    val borderMotion = gameMotionPolicy(
+        comboLevel = comboLevel,
+        hasDragHoverTarget = false,
+        hasPrediction = false,
+        reducedMotion = reducedMotion,
+    )
 
     // Danger ramp — fraction of the board filled.
     val dangerLevel = remember(grid) {
@@ -85,7 +92,7 @@ fun GameGrid(
             .padding(GRID_PADDING_DP)
             .then(if (comboStripes != null) Modifier.comboStripes(comboStripes) else Modifier)
             .then(if (particleBurst != null) Modifier.particleBurst(particleBurst) else Modifier)
-            .gridBorderGlow(comboLevel)
+            .gridBorderGlow(comboLevel, animate = borderMotion.animateBorderGlow)
             .dangerVignette(dangerLevel)
             .onGloballyPositioned { coords ->
                 val pos = coords.positionInWindow()
@@ -134,35 +141,49 @@ fun GameGrid(
             }
         }
         val hasPrediction = predictedRows.isNotEmpty() || predictedCols.isNotEmpty()
-        
+        val motionPolicy = gameMotionPolicy(
+            comboLevel = comboLevel,
+            hasDragHoverTarget = isDragging && hoverAnchor != null,
+            hasPrediction = hasPrediction,
+            reducedMotion = reducedMotion,
+        )
+
         // Pulses are exposed as State<Float> and passed downward as () -> Float
         // lambdas so the read happens inside each cell's body — and only inside
         // the branches that actually use it. Cells that are neither hovered nor
         // in a predicted line never read the State, so they stay skippable and
         // don't recompose at the animation frame rate.
-        val predictPulse = rememberInfiniteTransition(label = "predictPulse")
-        val predictAlphaState = predictPulse.animateFloat(
-            initialValue = 0.35f,
-            targetValue = 0.75f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(450, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "predictAlpha",
-        )
-        val predictAlpha: () -> Float = remember(predictAlphaState) { { predictAlphaState.value } }
+        val predictAlpha: () -> Float = if (motionPolicy.animatePredictionPulse) {
+            val predictPulse = rememberInfiniteTransition(label = "predictPulse")
+            val predictAlphaState = predictPulse.animateFloat(
+                initialValue = 0.45f,
+                targetValue = 0.72f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(450, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "predictAlpha",
+            )
+            remember(predictAlphaState) { { predictAlphaState.value } }
+        } else {
+            remember { { 0.62f } }
+        }
 
-        val hoverPulse = rememberInfiniteTransition(label = "hoverPulse")
-        val hoverPulseAlphaState = hoverPulse.animateFloat(
-            initialValue = 0.55f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(750, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "hoverPulseAlpha",
-        )
-        val hoverPulseAlpha: () -> Float = remember(hoverPulseAlphaState) { { hoverPulseAlphaState.value } }
+        val hoverPulseAlpha: () -> Float = if (motionPolicy.animateHoverPulse) {
+            val hoverPulse = rememberInfiniteTransition(label = "hoverPulse")
+            val hoverPulseAlphaState = hoverPulse.animateFloat(
+                initialValue = 0.62f,
+                targetValue = 0.92f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(750, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "hoverPulseAlpha",
+            )
+            remember(hoverPulseAlphaState) { { hoverPulseAlphaState.value } }
+        } else {
+            remember { { 0.82f } }
+        }
 
         val saturation by animateFloatAsState(
             targetValue = if (isGameOver) 0.2f else 1f,
@@ -196,6 +217,7 @@ fun GameGrid(
                         clearedNonce = clearedEvent.nonce,
                         isInClearedEvent = (col to row) in clearedSet,
                         isGameOver = isGameOver,
+                        spatialMotionEnabled = motionPolicy.spatialMotionEnabled,
                         isHoverGhost = (col to row) in hoverCells,
                         hoverColorId = hoverColorId,
                         hoverValid = hoverValid,
@@ -220,6 +242,7 @@ private fun GridCell(
     clearedNonce: Int,
     isInClearedEvent: Boolean,
     isGameOver: Boolean,
+    spatialMotionEnabled: Boolean,
     isHoverGhost: Boolean,
     hoverColorId: Int?,
     hoverValid: Boolean,
@@ -243,7 +266,11 @@ private fun GridCell(
             val rowStagger = (COLS - 1 - y) * 35L
             val colJitter = x * 12L
             val falls = with(density) { 240.dp.toPx() }
-            cellAnim.fall(delayMs = rowStagger + colJitter, distancePx = falls)
+            cellAnim.fall(
+                delayMs = rowStagger + colJitter,
+                distancePx = falls,
+                spatialMotionEnabled = spatialMotionEnabled,
+            )
         } else if (!isGameOver) {
             cellAnim.reset()
         }
@@ -253,7 +280,7 @@ private fun GridCell(
     var lastSeenCellId by remember { mutableIntStateOf(cellId) }
     LaunchedEffect(cellId) {
         if (cellId != -1 && lastSeenCellId == -1) {
-            cellAnim.popIn(delayMs = 0L)
+            cellAnim.popIn(delayMs = 0L, spatialMotionEnabled = spatialMotionEnabled)
         }
         lastSeenCellId = cellId
     }
@@ -263,7 +290,10 @@ private fun GridCell(
         if (clearedNonce != cellPrevNonce && isInClearedEvent) {
             cellPrevNonce = clearedNonce
             isClearing = true
-            cellAnim.clear(delayMs = (x + y) * 30L)
+            cellAnim.clear(
+                delayMs = (x + y) * 30L,
+                spatialMotionEnabled = spatialMotionEnabled,
+            )
             isClearing = false
             displayColor = -1
             cellAnim.reset()

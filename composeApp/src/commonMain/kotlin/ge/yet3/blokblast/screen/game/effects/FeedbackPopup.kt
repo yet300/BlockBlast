@@ -2,6 +2,7 @@ package ge.yet3.blokblast.screen.game.effects
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,11 +42,20 @@ import kotlin.time.Clock
 import org.jetbrains.compose.resources.stringResource
 
 class FeedbackPopupState {
+    private var nextId = 0L
+
     val popups: List<FeedbackItem>
         field = mutableStateListOf<FeedbackItem>()
 
     fun add(type: FeedbackType?, comboLevel: Int?) {
-        popups.add(FeedbackItem(type, comboLevel, Clock.System.now().toEpochMilliseconds()))
+        popups.add(
+            FeedbackItem(
+                id = nextId++,
+                type = type,
+                comboLevel = comboLevel,
+                timestamp = Clock.System.now().toEpochMilliseconds(),
+            ),
+        )
     }
 
     fun remove(item: FeedbackItem) {
@@ -52,16 +63,28 @@ class FeedbackPopupState {
     }
 }
 
-data class FeedbackItem(val type: FeedbackType?, val comboLevel: Int?, val timestamp: Long)
+data class FeedbackItem(
+    val id: Long,
+    val type: FeedbackType?,
+    val comboLevel: Int?,
+    val timestamp: Long,
+)
 
 @Composable
 fun FeedbackPopupOverlay(
     state: FeedbackPopupState,
+    reducedMotion: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         for (item in state.popups) {
-            FeedbackPopupItem(item = item, onFinished = { state.remove(item) })
+            key(item.id) {
+                FeedbackPopupItem(
+                    item = item,
+                    reducedMotion = reducedMotion,
+                    onFinished = { state.remove(item) },
+                )
+            }
         }
     }
 }
@@ -69,6 +92,7 @@ fun FeedbackPopupOverlay(
 @Composable
 private fun FeedbackPopupItem(
     item: FeedbackItem,
+    reducedMotion: Boolean,
     onFinished: () -> Unit
 ) {
     val visible = remember { mutableStateOf(false) }
@@ -77,21 +101,44 @@ private fun FeedbackPopupItem(
         visible.value = true
         delay(1200)
         visible.value = false
-        delay(300) // wait for exit animation
+        delay(140) // wait for exit animation
         onFinished()
+    }
+
+    val enterTransition = if (reducedMotion) {
+        fadeIn(tween(140))
+    } else if (item.type == FeedbackType.UNBELIEVABLE) {
+        scaleIn(
+            initialScale = 0.92f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        ) + fadeIn(tween(180))
+    } else {
+        scaleIn(
+            initialScale = 0.95f,
+            animationSpec = tween(180, easing = LinearOutSlowInEasing),
+        ) + fadeIn(tween(180))
+    }
+
+    val exitTransition = if (reducedMotion) {
+        fadeOut(tween(120))
+    } else {
+        scaleOut(targetScale = 0.95f, animationSpec = tween(140)) + fadeOut(tween(140))
     }
 
     AnimatedVisibility(
         visible = visible.value,
-        enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
-        exit = scaleOut(targetScale = 0.8f, animationSpec = tween(200)) + fadeOut(tween(200))
+        enter = enterTransition,
+        exit = exitTransition,
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (item.comboLevel != null && item.comboLevel >= 2) {
                 ComboText(item.comboLevel)
             } else if (item.type != null) {
                 FeedbackText(item.type)
-                if (item.type == FeedbackType.UNBELIEVABLE) {
+                if (item.type == FeedbackType.UNBELIEVABLE && !reducedMotion) {
                     ConfettiEffect()
                 }
             }

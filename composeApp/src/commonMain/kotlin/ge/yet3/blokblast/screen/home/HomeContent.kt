@@ -1,7 +1,5 @@
 package ge.yet3.blokblast.screen.home
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,12 +16,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -50,17 +45,13 @@ import blockblast.composeapp.generated.resources.play
 fun HomeContent(component: HomeComponent) {
     val model by component.model.subscribeAsState()
 
-    val fadeIn = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { fadeIn.animateTo(1f, tween(500)) }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
     ) { innerPadding ->
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .alpha(fadeIn.value),
+                .fillMaxSize(),
         ) {
             AmbientMeshBackground(
                 modifier = Modifier.fillMaxSize(),

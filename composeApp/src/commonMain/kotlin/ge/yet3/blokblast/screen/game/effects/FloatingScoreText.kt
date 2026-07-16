@@ -9,12 +9,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
@@ -22,11 +23,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class FloatingScoreState {
+    private var nextId = 0L
+
     val popups: List<ScorePopup>
         field = mutableStateListOf<ScorePopup>()
 
     fun add(points: Long, origin: Offset) {
-        popups.add(ScorePopup(points, origin))
+        popups.add(ScorePopup(id = nextId++, points = points, origin = origin))
     }
 
     fun remove(popup: ScorePopup) {
@@ -34,19 +37,23 @@ class FloatingScoreState {
     }
 }
 
-data class ScorePopup(val points: Long, val origin: Offset)
+data class ScorePopup(val id: Long, val points: Long, val origin: Offset)
 
 @Composable
 fun FloatingScoreOverlay(
     state: FloatingScoreState,
+    reducedMotion: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Box(modifier) {
         for (popup in state.popups) {
-            FloatingScoreItem(
-                popup = popup,
-                onFinished = { state.remove(popup) }
-            )
+            key(popup.id) {
+                FloatingScoreItem(
+                    popup = popup,
+                    reducedMotion = reducedMotion,
+                    onFinished = { state.remove(popup) }
+                )
+            }
         }
     }
 }
@@ -54,31 +61,39 @@ fun FloatingScoreOverlay(
 @Composable
 private fun FloatingScoreItem(
     popup: ScorePopup,
+    reducedMotion: Boolean,
     onFinished: () -> Unit
 ) {
+    val density = LocalDensity.current
     val animAlpha = remember { Animatable(1f) }
     val animY = remember { Animatable(0f) }
     val animScale = remember { Animatable(1f) }
 
     LaunchedEffect(popup) {
-        val duration = 800
+        if (reducedMotion) {
+            animAlpha.animateTo(0f, tween(140))
+            onFinished()
+            return@LaunchedEffect
+        }
+        val duration = 240
+        val travelPx = with(density) { -32.dp.toPx() }
         launch {
             animY.animateTo(
-                targetValue = -60f,
+                targetValue = travelPx,
                 animationSpec = tween(duration, easing = FastOutSlowInEasing)
             )
         }
         launch {
             animScale.animateTo(
-                targetValue = 1.2f,
+                targetValue = 1.04f,
                 animationSpec = tween(duration, easing = FastOutSlowInEasing)
             )
         }
         launch {
-            delay(400)
+            delay(100)
             animAlpha.animateTo(
                 targetValue = 0f,
-                animationSpec = tween(400, easing = FastOutSlowInEasing)
+                animationSpec = tween(140, easing = FastOutSlowInEasing)
             )
             onFinished()
         }
@@ -97,9 +112,9 @@ private fun FloatingScoreItem(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .offset(y = animY.value.dp)
-                .alpha(animAlpha.value)
                 .graphicsLayer {
+                    translationY = animY.value
+                    alpha = animAlpha.value
                     scaleX = animScale.value
                     scaleY = animScale.value
                 }

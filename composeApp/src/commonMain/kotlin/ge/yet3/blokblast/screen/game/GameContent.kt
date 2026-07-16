@@ -1,7 +1,5 @@
 package ge.yet3.blokblast.screen.game
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,8 +77,6 @@ import ge.yet3.blokblast.screen.game.effects.rememberComboPunchState
 import ge.yet3.blokblast.screen.game.effects.rememberComboStripesState
 import ge.yet3.blokblast.screen.game.effects.rememberParticleBurstState
 import ge.yet3.blokblast.screen.game.effects.rememberGlitchState
-import ge.yet3.blokblast.screen.game.effects.rememberShakeState
-import ge.yet3.blokblast.screen.game.effects.shake
 import ge.yet3.blokblast.theme.pieceColor
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -108,7 +104,6 @@ fun GameContent(component: GameComponent) {
 
     // ── Effect states ────────────────────────────────────────────────────
     val dragDrop = rememberDragDropState()
-    val shakeState = rememberShakeState()
     val glitchState = rememberGlitchState()
     val comboStripes = rememberComboStripesState()
     val particleBurst = rememberParticleBurstState()
@@ -119,6 +114,13 @@ fun GameContent(component: GameComponent) {
     val vibrationEnabled = LocalVibrationEnabled.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val reducedMotion = rememberReducedMotion()
+    val screenMotion = gameMotionPolicy(
+        comboLevel = model.comboLevel,
+        hasDragHoverTarget = false,
+        hasPrediction = false,
+        reducedMotion = reducedMotion,
+    )
 
     // Grid measurement (populated by GameGrid's onGloballyPositioned)
     var gridOriginX by remember { mutableFloatStateOf(0f) }
@@ -144,7 +146,7 @@ fun GameContent(component: GameComponent) {
     }
 
     var prevComboLevel by remember { mutableStateOf(model.comboLevel) }
-    LaunchedEffect(model.comboLevel) {
+    LaunchedEffect(model.comboLevel, reducedMotion) {
         if (model.comboLevel > prevComboLevel && model.comboLevel > 0) {
             // First pulse — always fires
             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
@@ -173,7 +175,9 @@ fun GameContent(component: GameComponent) {
                         y = gridOriginY + avgY * step + cellSizePx / 2f,
                     )
                 } else null
-                scope.launch { comboPunch.punch(model.comboLevel, origin) }
+                if (!reducedMotion) {
+                    scope.launch { comboPunch.punch(model.comboLevel, origin) }
+                }
             }
         }
         prevComboLevel = model.comboLevel
@@ -201,7 +205,8 @@ fun GameContent(component: GameComponent) {
         }
     }
 
-    LaunchedEffect(model.lastClearedCells) {
+    LaunchedEffect(model.lastClearedCells, reducedMotion) {
+        if (reducedMotion) return@LaunchedEffect
         val cells = model.lastClearedCells.cells
         if (cells.isNotEmpty()) {
             val rows = cells.groupBy { it.y }.filterValues { it.size == 8 }.keys.toList()
@@ -254,9 +259,9 @@ fun GameContent(component: GameComponent) {
     }
 
     // ── Game over → glitch effect ────────────────────────────────────────
-    LaunchedEffect(model.isGameOver) {
+    LaunchedEffect(model.isGameOver, reducedMotion) {
         if (model.isGameOver) {
-            glitchState.trigger()
+            if (!reducedMotion) glitchState.trigger()
             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
         }
     }
@@ -305,14 +310,6 @@ fun GameContent(component: GameComponent) {
             ) {
                 Spacer(Modifier.height(20.dp))
 
-                val entranceAnim = remember { Animatable(0f) }
-                LaunchedEffect(Unit) {
-                    entranceAnim.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                    )
-                }
-
                 GameGrid(
                     grid = model.grid,
                     selectedPiece = selectedPiece,
@@ -326,17 +323,12 @@ fun GameContent(component: GameComponent) {
                     modifier = Modifier
                         .weight(1f, fill = false)
                         .widthIn(max = 500.dp)
-                        .graphicsLayer {
-                            scaleX = entranceAnim.value
-                            scaleY = entranceAnim.value
-                            alpha = entranceAnim.value
-                        }
-                        .shake(shakeState)
                         .onGloballyPositioned { gridBounds = it.boundsInRoot() },
                     dragDropState = dragDrop,
                     comboStripes = comboStripes,
                     particleBurst = particleBurst,
                     comboLevel = model.comboLevel,
+                    reducedMotion = reducedMotion,
                     clearedEvent = model.lastClearedCells,
                     isGameOver = model.isGameOver,
                     onGridMeasured = { ox, oy, cs, gp ->
@@ -351,13 +343,15 @@ fun GameContent(component: GameComponent) {
 
                 PieceTray(
                     tray = component.pieceTray,
+                    dragEnabled = !dragDrop.isReturning,
+                    spatialMotionEnabled = screenMotion.spatialMotionEnabled,
                     modifier = Modifier
                         .widthIn(max = 500.dp)
                         .padding(bottom = 8.dp)
                         .onGloballyPositioned { trayBounds = it.boundsInRoot() },
-                    onDragStart = { piece, startPos, offset ->
-                        if (!dragDrop.isDragging) {
-                            dragDrop.startDrag(piece, startPos, offset)
+                    onDragStart = { piece, startPos, offset, sourcePosition ->
+                        if (!dragDrop.isDragging && !dragDrop.isReturning) {
+                            dragDrop.startDrag(piece, startPos, offset, sourcePosition)
                             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
                         }
                     },
@@ -380,12 +374,15 @@ fun GameContent(component: GameComponent) {
                             // Valid drop — place piece
                             component.onCellClicked(piece.pieceId, anchor.first, anchor.second)
                             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.TextHandleMove)
+                            dragDrop.endDrag()
                         } else if (piece != null) {
-                            // Invalid drop — shake + haptic reject
-                            scope.launch { shakeState.shake() }
+                            // Invalid drop — retain the overlay while it returns
+                            // to the source slot; the haptic supplies the reject cue.
                             haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+                            dragDrop.beginReturn()
+                        } else {
+                            dragDrop.endDrag()
                         }
-                        dragDrop.endDrag()
                     },
                 )
             }
@@ -410,7 +407,7 @@ fun GameContent(component: GameComponent) {
             }
 
             // ── Floating dragged piece overlay ───────────────────────────
-            if (dragDrop.isDragging) {
+            if (dragDrop.isDragging || dragDrop.isReturning) {
                 val piece = dragDrop.draggedPiece!!
                 DraggedPieceOverlay(
                     piece = piece,
@@ -419,6 +416,8 @@ fun GameContent(component: GameComponent) {
                     gap = DRAG_GHOST_GAP,
                     verticalLift = DRAG_GHOST_VERTICAL_LIFT,
                     dragDropState = dragDrop,
+                    reducedMotion = reducedMotion,
+                    onReturnFinished = dragDrop::finishReturn,
                 )
             }
 
@@ -426,7 +425,7 @@ fun GameContent(component: GameComponent) {
             // A wordless looping hand demonstrates the drag gesture. Persisted
             // via Settings so it never appears again, and only renders once both
             // targets have been measured so the spotlight lands on real geometry.
-            if (!tutorialSeen && !tutorialDismissed &&
+            if (!reducedMotion && !tutorialSeen && !tutorialDismissed &&
                 trayBounds != Rect.Zero && gridBounds != Rect.Zero && !model.isGameOver
             ) {
                 GestureTutorial(
@@ -446,10 +445,12 @@ fun GameContent(component: GameComponent) {
             // ── Floating score & feedback overlays ──────────────────────────
             FloatingScoreOverlay(
                 state = floatingScore,
+                reducedMotion = reducedMotion,
                 modifier = Modifier.fillMaxSize()
             )
             FeedbackPopupOverlay(
                 state = feedbackPopups,
+                reducedMotion = reducedMotion,
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset(y = 200.dp)
@@ -503,14 +504,6 @@ private fun GameTopBar(
     onExitClicked: () -> Unit,
     onSettingsClicked: () -> Unit,
 ) {
-    val scoreScale = remember { androidx.compose.animation.core.Animatable(1f) }
-    LaunchedEffect(score) {
-        if (score > 0) {
-            scoreScale.animateTo(1.2f, androidx.compose.animation.core.spring())
-            scoreScale.animateTo(1f, androidx.compose.animation.core.spring())
-        }
-    }
-
     CenterAlignedTopAppBar(
         navigationIcon = {
             IconCircleButton(
@@ -524,14 +517,7 @@ private fun GameTopBar(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .graphicsLayer {
-                            scaleX = scoreScale.value
-                            scaleY = scoreScale.value
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Box(modifier = Modifier
                         .size(48.dp)
                         .graphicsLayer { rotationZ = 45f }

@@ -11,6 +11,12 @@ import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 
+enum class DragPresentation {
+    Idle,
+    Dragging,
+    Returning,
+}
+
 /**
  * UI-side drag-and-drop state for moving pieces from the tray onto the grid.
  *
@@ -21,6 +27,9 @@ import ge.yet.blokblast.domain.model.Polyomino
  * - whether the current anchor is a valid placement
  */
 class DragDropState {
+    var presentation by mutableStateOf(DragPresentation.Idle)
+        private set
+
     /** The piece currently being dragged, or null. */
     var draggedPiece by mutableStateOf<Piece?>(null)
         private set
@@ -41,19 +50,36 @@ class DragDropState {
     var fingerOffset by mutableStateOf(Offset.Zero)
         private set
 
+    /** Center of the source tray slot in window coordinates. */
+    var sourcePosition by mutableStateOf(Offset.Zero)
+        private set
+
+    /** Position from which an invalid-drop return begins. */
+    var returnStartPosition by mutableStateOf(Offset.Zero)
+        private set
+
     /** Finger position where the drag started. */
     private var dragStartFingerPos by mutableStateOf(Offset.Zero)
 
-    val isDragging: Boolean get() = draggedPiece != null
+    val isDragging: Boolean get() = presentation == DragPresentation.Dragging
+    val isReturning: Boolean get() = presentation == DragPresentation.Returning
 
-    fun startDrag(piece: Piece, startPosition: Offset, pieceOriginOffset: Offset) {
-        if (isDragging) return          // never hijack an active drag with a second finger
+    fun startDrag(
+        piece: Piece,
+        startPosition: Offset,
+        pieceOriginOffset: Offset,
+        sourcePosition: Offset,
+    ) {
+        if (presentation != DragPresentation.Idle) return
         draggedPiece = piece
         dragPosition = startPosition
         dragStartFingerPos = startPosition
         fingerOffset = pieceOriginOffset
+        this.sourcePosition = sourcePosition
+        returnStartPosition = Offset.Zero
         hoverAnchor = null
         isValidPlacement = false
+        presentation = DragPresentation.Dragging
     }
 
     fun updateDrag(
@@ -66,6 +92,7 @@ class DragDropState {
         ghostGapPx: Float,
         verticalLiftPx: Float,
     ) {
+        if (!isDragging) return
         // Apply sensitivity: the piece moves faster than the finger relative
         // to the pickup point. This allows reaching screen corners with less
         // physical thumb movement.
@@ -108,12 +135,32 @@ class DragDropState {
         isValidPlacement = canPlacePiece(piece.shape, anchorX, anchorY, grid)
     }
 
-    fun endDrag() {
-        draggedPiece = null
-        dragPosition = Offset.Zero
+    fun beginReturn() {
+        if (!isDragging || draggedPiece == null) return
+        returnStartPosition = dragPosition
         hoverAnchor = null
         isValidPlacement = false
         fingerOffset = Offset.Zero
+        presentation = DragPresentation.Returning
+    }
+
+    fun finishReturn() {
+        if (!isReturning) return
+        clearPresentation()
+    }
+
+    fun endDrag() = clearPresentation()
+
+    private fun clearPresentation() {
+        draggedPiece = null
+        dragPosition = Offset.Zero
+        dragStartFingerPos = Offset.Zero
+        hoverAnchor = null
+        isValidPlacement = false
+        fingerOffset = Offset.Zero
+        sourcePosition = Offset.Zero
+        returnStartPosition = Offset.Zero
+        presentation = DragPresentation.Idle
     }
 }
 
