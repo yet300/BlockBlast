@@ -178,6 +178,9 @@ class DefaultRootComponentTest {
         setup.resultFactory.created.single().continueRequested()
         assertEquals(1, restoredGame.reviveCalls)
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
+        assertEquals(1, setup.resultFactory.created.single().continueFailureCount)
+        setup.resultFactory.created.single().homeRequested()
+        assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
     }
 
     @Test
@@ -344,6 +347,7 @@ class DefaultRootComponentTest {
             onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
+            onReviveFailed: () -> Unit,
         ): GameComponent {
             requestedIsNewGame += isNewGame
             return FakeGame(
@@ -354,6 +358,7 @@ class DefaultRootComponentTest {
                 externalScope = externalScope,
                 onGameCompleted = onGameCompleted,
                 onReviveCompleted = onReviveCompleted,
+                onReviveFailed = onReviveFailed,
             ).also { created += it }
         }
     }
@@ -366,6 +371,7 @@ class DefaultRootComponentTest {
         private val externalScope: CoroutineScope,
         private val onGameCompleted: (GameState, Boolean) -> Unit,
         private val onReviveCompleted: (GameState) -> Unit,
+        private val onReviveFailed: () -> Unit,
     ) : GameComponent {
         var reviveCalls = 0
         val engine = GameEngine(
@@ -406,7 +412,10 @@ class DefaultRootComponentTest {
         }
         override fun onReviveClicked() {
             reviveCalls += 1
-            if (failRevive || !engine.continueWithSmallBlocks()) return
+            if (failRevive || !engine.continueWithSmallBlocks()) {
+                onReviveFailed()
+                return
+            }
             model.value = GameComponent.Model(game = engine.state.value)
             externalScope.launch {
                 val playableState = engine.state.value
@@ -473,6 +482,7 @@ class DefaultRootComponentTest {
         val newGameRequested: () -> Unit,
         val homeRequested: () -> Unit,
     ) : GameResultComponent {
+        var continueFailureCount = 0
         override val model = com.arkivanov.decompose.value.MutableValue(
             GameResultComponent.Model(
                 snapshot = snapshot,
@@ -487,6 +497,10 @@ class DefaultRootComponentTest {
 
         override fun onHomeClicked() {
             homeRequested()
+        }
+
+        override fun onContinueFailed() {
+            continueFailureCount += 1
         }
     }
 

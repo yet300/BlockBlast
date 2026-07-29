@@ -129,6 +129,7 @@ internal class DefaultRootComponent(
                             playableState = playableState,
                         )
                     },
+                    onReviveFailed = ::failContinue,
                 )
             )
         }
@@ -189,6 +190,11 @@ internal class DefaultRootComponent(
                 }
             }
         }
+    }
+
+    private fun failContinue() {
+        val result = stack.value.active.instance as? RootComponent.Child.Result
+        result?.component?.onContinueFailed()
     }
 
     private fun navigateHome() {

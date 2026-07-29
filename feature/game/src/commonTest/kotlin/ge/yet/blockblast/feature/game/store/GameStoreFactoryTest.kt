@@ -19,6 +19,7 @@ import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -253,6 +254,71 @@ class GameStoreFactoryTest {
         assertEquals(321L, deps.settings.bestScore.value)
         assertTrue(labels.single() is GameStore.Label.GameCompleted)
         labelScope.cancel()
+        deps.dispose()
+    }
+
+    @Test
+    fun terminal_save_failure_still_publishes_completion_and_logs_failure() = runTest {
+        val deps = TestDeps(saveRepositoryOverride = ThrowingSaveRepository())
+        val store = deps.factory().create(isNewGame = true)
+        val labels = mutableListOf<GameStore.Label>()
+        deps.scope.launch { store.labels.collect { labels += it } }
+
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        runCurrent()
+
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(
+            deps.analytics.has(
+                "game_persistence_failed",
+                mapOf("operation" to "terminal_save"),
+            ),
+        )
+        deps.dispose()
+    }
+
+    @Test
+    fun terminal_cancellation_is_rethrown_without_completion_or_failure_log() = runTest {
+        val deps = TestDeps(
+            saveRepositoryOverride = ThrowingSaveRepository(
+                failure = CancellationException("cancelled"),
+            ),
+        )
+        val store = deps.factory().create(isNewGame = true)
+        val labels = mutableListOf<GameStore.Label>()
+        deps.scope.launch { store.labels.collect { labels += it } }
+
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        runCurrent()
+
+        assertTrue(labels.none { it is GameStore.Label.GameCompleted })
+        assertFalse(deps.analytics.has("game_persistence_failed"))
+        deps.dispose()
+    }
+
+    @Test
+    fun terminal_best_score_failure_still_publishes_completion_and_logs_failure() = runTest {
+        val deps = TestDeps(settingsRepositoryOverride = ThrowingBestSettingsRepository())
+        val store = deps.factory().create(isNewGame = true)
+        val labels = mutableListOf<GameStore.Label>()
+        deps.scope.launch { store.labels.collect { labels += it } }
+
+        deps.engine.restore(
+            deps.engine.state.value.copy(
+                score = 321L,
+                bestScore = 321L,
+                isGameOver = true,
+            ),
+        )
+        runCurrent()
+
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(
+            deps.analytics.has(
+                "game_persistence_failed",
+                mapOf("operation" to "terminal_best_score"),
+            ),
+        )
         deps.dispose()
     }
 
@@ -546,6 +612,37 @@ class GameStoreFactoryTest {
         deps.dispose()
     }
 
+    @Test
+    fun revive_save_failure_restores_terminal_state_and_publishes_failure() = runTest {
+        val terminalState = GameState(
+            grid = Grid().withCell(3, 4, 2),
+            score = 900L,
+            bestScore = 1_200L,
+            isGameOver = true,
+        )
+        val deps = TestDeps(saveRepositoryOverride = ThrowingSaveRepository())
+        val store = deps.factory().create(
+            isNewGame = false,
+            restoredResultState = terminalState,
+        )
+        val labels = mutableListOf<GameStore.Label>()
+        deps.scope.launch { store.labels.collect { labels += it } }
+
+        store.accept(GameStore.Intent.Revive)
+        runCurrent()
+
+        assertEquals(terminalState, deps.engine.state.value)
+        assertTrue(labels.any { it is GameStore.Label.ReviveFailed })
+        assertTrue(labels.none { it is GameStore.Label.ReviveCompleted })
+        assertTrue(
+            deps.analytics.has(
+                "game_persistence_failed",
+                mapOf("operation" to "revive_save"),
+            ),
+        )
+        deps.dispose()
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────
 
     private fun playableState(score: Long = 0L): GameState = GameState(
@@ -565,6 +662,7 @@ class GameStoreFactoryTest {
         reviewCount: Int = 0,
         saveDelayMillis: Long = 0L,
         saveRepositoryOverride: GameSaveRepository? = null,
+        settingsRepositoryOverride: SettingsRepository? = null,
     ) {
         val operations = mutableListOf<String>()
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
@@ -579,6 +677,7 @@ class GameStoreFactoryTest {
             reviewPromptCount = reviewCount,
             onBestScoreSet = { operations += "best" },
         )
+        private val settingsRepository = settingsRepositoryOverride ?: settings
         val audio = RecordingAudio()
         val analytics = RecordingAnalytics()
         val storeReview = NoopStoreReview()
@@ -594,7 +693,7 @@ class GameStoreFactoryTest {
             engine = engine,
             audio = audio,
             saveRepository = saveRepository,
-            settings = settings,
+            settings = settingsRepository,
             analytics = analytics,
         )
 
@@ -630,6 +729,38 @@ private class BlockingFirstSaveRepository : GameSaveRepository {
     fun releaseFirstSave() {
         firstSaveRelease.complete(Unit)
     }
+}
+
+private class ThrowingSaveRepository(
+    private val failure: Throwable = IllegalStateException("save failed"),
+) : GameSaveRepository {
+    override suspend fun save(state: GameState) {
+        throw failure
+    }
+
+    override suspend fun load(): GameState? = null
+
+    override suspend fun clear() = Unit
+}
+
+private class ThrowingBestSettingsRepository : SettingsRepository {
+    override val musicEnabled = MutableStateFlow(true).asStateFlow()
+    override val sfxEnabled = MutableStateFlow(true).asStateFlow()
+    override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
+    override val darkTheme = MutableStateFlow(false).asStateFlow()
+    override val bestScore = MutableStateFlow(0L).asStateFlow()
+    override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
+    override val tutorialSeen = MutableStateFlow(false).asStateFlow()
+    override suspend fun setMusicEnabled(enabled: Boolean) = Unit
+    override suspend fun setSfxEnabled(enabled: Boolean) = Unit
+    override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
+    override suspend fun setDarkTheme(enabled: Boolean) = Unit
+    override suspend fun setBestScore(score: Long) {
+        if (score > 0L) error("best score failed")
+    }
+    override suspend fun incrementReviewPromptCount() = Unit
+    override suspend fun suppressReviewPrompts(max: Int) = Unit
+    override suspend fun setTutorialSeen() = Unit
 }
 
 private class OneByOneGenerator : ShapeGenerator {

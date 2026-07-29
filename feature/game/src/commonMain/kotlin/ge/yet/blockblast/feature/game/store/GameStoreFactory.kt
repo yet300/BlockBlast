@@ -14,6 +14,7 @@ import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -41,6 +42,8 @@ internal class GameStoreFactory(
                 name = "GameStore",
                 initialState = GameStoreState(game = engine.state.value),
                 executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, GameStore.Label> {
+                    var suppressNextGameOverCompletion = false
+
                     onAction<GameStore.Action> {
                         // ── 0. Bootstrap ──────────────────────────────────────────────────
                         // seedBestScore must run before the state collector below, otherwise
@@ -73,7 +76,15 @@ internal class GameStoreFactory(
                             engine.state
                                 .map { it.bestScore }
                                 .distinctUntilChanged()
-                                .collect { best -> settings.setBestScore(best) }
+                                .collect { best ->
+                                    attemptPersistence(
+                                        logger = logger,
+                                        operation = "best_score",
+                                        state = engine.state.value,
+                                    ) {
+                                        settings.setBestScore(best)
+                                    }
+                                }
                         }
 
                         // ── 3. Game-over edge → persisted Result ──────────────────────────
@@ -84,13 +95,29 @@ internal class GameStoreFactory(
                                 if (isGameOver == previousIsGameOver) return@collect
                                 previousIsGameOver = isGameOver
                                 if (isGameOver) {
+                                    if (suppressNextGameOverCompletion) {
+                                        suppressNextGameOverCompletion = false
+                                        return@collect
+                                    }
                                     logger.log("game_over", gameState)
                                     val finalState = gameState.copy(
                                         grid = Grid(gameState.grid.cells.copyOf()),
                                     )
                                     // Result navigation must never race the final save.
-                                    engine.saveNow(finalState)
-                                    settings.setBestScore(finalState.bestScore)
+                                    attemptPersistence(
+                                        logger = logger,
+                                        operation = "terminal_save",
+                                        state = finalState,
+                                    ) {
+                                        engine.saveNow(finalState)
+                                    }
+                                    attemptPersistence(
+                                        logger = logger,
+                                        operation = "terminal_best_score",
+                                        state = finalState,
+                                    ) {
+                                        settings.setBestScore(finalState.bestScore)
+                                    }
                                     publish(
                                         GameStore.Label.GameCompleted(
                                             finalState = finalState,
@@ -163,7 +190,10 @@ internal class GameStoreFactory(
                         )
                     }
                     onIntent<GameStore.Intent.Revive> {
-                        logger.log("revive_clicked", engine.state.value)
+                        val terminalState = engine.state.value.copy(
+                            grid = Grid(engine.state.value.grid.cells.copyOf()),
+                        )
+                        logger.log("revive_clicked", terminalState)
                         val revived = engine.continueWithSmallBlocks()
                         val state = engine.state.value
                         dispatch(GameStore.Msg.Snapshot(state))
@@ -174,9 +204,24 @@ internal class GameStoreFactory(
                                 grid = Grid(state.grid.cells.copyOf()),
                             )
                             launch {
-                                engine.saveNow(playableState)
-                                publish(GameStore.Label.ReviveCompleted(playableState))
+                                val saved = attemptPersistence(
+                                    logger = logger,
+                                    operation = "revive_save",
+                                    state = playableState,
+                                ) {
+                                    engine.saveNow(playableState)
+                                }
+                                if (saved) {
+                                    publish(GameStore.Label.ReviveCompleted(playableState))
+                                } else {
+                                    suppressNextGameOverCompletion = true
+                                    engine.restoreResult(terminalState)
+                                    dispatch(GameStore.Msg.Snapshot(engine.state.value))
+                                    publish(GameStore.Label.ReviveFailed)
+                                }
                             }
+                        } else {
+                            publish(GameStore.Label.ReviveFailed)
                         }
                     }
                     onIntent<GameStore.Intent.Restart> {
@@ -201,5 +246,25 @@ internal class GameStoreFactory(
             is GameStore.Msg.Snapshot -> copy(game = msg.state)
         }
     }
+
+    private suspend fun attemptPersistence(
+        logger: GameAnalyticsLogger,
+        operation: String,
+        state: GameState,
+        block: suspend () -> Unit,
+    ): Boolean =
+        try {
+            block()
+            true
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Throwable) {
+            logger.log(
+                eventName = "game_persistence_failed",
+                state = state,
+                extra = mapOf("operation" to operation),
+            )
+            false
+        }
 
 }

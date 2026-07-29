@@ -53,6 +53,7 @@ interface GameComponent {
             onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
+            onReviveFailed: () -> Unit,
         ): GameComponent
     }
 

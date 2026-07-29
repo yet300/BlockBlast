@@ -148,6 +148,25 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
+    fun failed_continue_unlocks_retry_and_home_actions() = runTest(testDispatcher) {
+        val setup = build(canContinue = true)
+
+        setup.component.onPrimaryClicked(approveImmediately)
+        runCurrent()
+        assertEquals(1, setup.continueCalls)
+
+        setup.component.onContinueFailed()
+        setup.component.onPrimaryClicked(approveImmediately)
+        runCurrent()
+        assertEquals(2, setup.continueCalls)
+
+        setup.component.onContinueFailed()
+        setup.component.onHomeClicked()
+        assertEquals(1, setup.homeCalls)
+        setup.lifecycle.destroy()
+    }
+
+    @Test
     fun approval_after_destroy_does_not_continue() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
         var approveContinue: (() -> Unit)? = null

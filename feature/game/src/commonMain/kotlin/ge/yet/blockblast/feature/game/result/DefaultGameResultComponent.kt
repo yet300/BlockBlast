@@ -71,6 +71,10 @@ internal class DefaultGameResultComponent(
         onHomeRequested()
     }
 
+    override fun onContinueFailed() {
+        terminalActionHandled = false
+    }
+
     private fun claimTerminalAction(): Boolean {
         if (terminalActionHandled) return false
         terminalActionHandled = true

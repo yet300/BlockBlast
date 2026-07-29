@@ -45,6 +45,7 @@ internal class DefaultGameComponent(
     private val onExitClickedCb: () -> Unit,
     private val onGameCompletedCb: (GameState, Boolean) -> Unit,
     private val onReviveCompletedCb: (GameState) -> Unit,
+    private val onReviveFailedCb: () -> Unit,
 ) : ComponentContext by componentContext,
     GameComponent {
     private val store = instanceKeeper.getStore {
@@ -89,6 +90,7 @@ internal class DefaultGameComponent(
                         onGameCompletedCb(label.finalState, label.canContinue)
                     is GameStore.Label.ReviveCompleted ->
                         onReviveCompletedCb(label.playableState)
+                    GameStore.Label.ReviveFailed -> onReviveFailedCb()
                 }
             }
         }
@@ -187,6 +189,7 @@ internal class DefaultGameComponentFactory(
         onExitClicked: () -> Unit,
         onGameCompleted: (GameState, Boolean) -> Unit,
         onReviveCompleted: (GameState) -> Unit,
+        onReviveFailed: () -> Unit,
     ): GameComponent = DefaultGameComponent(
         componentContext = componentContext,
         gameStoreFactory = gameStoreFactory,
@@ -200,5 +203,6 @@ internal class DefaultGameComponentFactory(
         onExitClickedCb = onExitClicked,
         onGameCompletedCb = onGameCompleted,
         onReviveCompletedCb = onReviveCompleted,
+        onReviveFailedCb = onReviveFailed,
     )
 }

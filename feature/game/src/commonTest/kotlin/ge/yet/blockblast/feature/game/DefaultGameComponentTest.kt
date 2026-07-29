@@ -102,6 +102,7 @@ class DefaultGameComponentTest {
                 completions += finalState to canContinue
             },
             onReviveCompletedCb = { reviveCompletions += it },
+            onReviveFailedCb = {},
         )
         return Setup(
             component,

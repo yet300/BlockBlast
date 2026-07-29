@@ -36,5 +36,7 @@ internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore
         data class ReviveCompleted(
             val playableState: GameState,
         ) : Label
+
+        data object ReviveFailed : Label
     }
 }

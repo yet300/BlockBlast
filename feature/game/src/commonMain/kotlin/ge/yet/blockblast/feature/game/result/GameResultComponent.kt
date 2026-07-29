@@ -9,6 +9,7 @@ interface GameResultComponent {
 
     fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit)
     fun onHomeClicked()
+    fun onContinueFailed()
 
     data class Model(
         val snapshot: BlockBlastResultSnapshot,
