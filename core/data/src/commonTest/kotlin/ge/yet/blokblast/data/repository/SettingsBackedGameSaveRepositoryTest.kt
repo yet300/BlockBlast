@@ -8,6 +8,8 @@ import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -123,6 +125,33 @@ class SettingsBackedGameSaveRepositoryTest {
         assertEquals(terminalState, repo.load())
     }
 
+    @Test
+    fun cancellation_after_successful_disk_write_keeps_cache_in_sync() = runTest {
+        val settings = CancellingPutSettings()
+        val repo = newRepo(settings)
+        lateinit var saveJob: Job
+        settings.afterPut = { saveJob.cancel() }
+
+        val updatedState = sampleState.copy(score = 8_888L)
+        saveJob = launch { repo.save(updatedState) }
+        saveJob.join()
+
+        assertEquals(updatedState, repo.load())
+    }
+
+    @Test
+    fun failed_clear_keeps_warm_cached_state() = runTest {
+        val settings = FailingRemoveSettings()
+        val repo = newRepo(settings)
+        repo.save(sampleState)
+        assertEquals(sampleState, repo.load())
+
+        settings.failRemoves = true
+        assertFailsWith<IllegalStateException> { repo.clear() }
+
+        assertEquals(sampleState, repo.load())
+    }
+
     /** Wraps MapSettings to count getStringOrNull invocations. */
     private class CountingSettings(
         private val delegate: MapSettings = MapSettings(),
@@ -142,6 +171,28 @@ class SettingsBackedGameSaveRepositoryTest {
         override fun putString(key: String, value: String) {
             if (failWrites) error("disk write failed")
             delegate.putString(key, value)
+        }
+    }
+
+    private class CancellingPutSettings(
+        private val delegate: MapSettings = MapSettings(),
+    ) : com.russhwolf.settings.Settings by delegate {
+        var afterPut: () -> Unit = {}
+
+        override fun putString(key: String, value: String) {
+            delegate.putString(key, value)
+            afterPut()
+        }
+    }
+
+    private class FailingRemoveSettings(
+        private val delegate: MapSettings = MapSettings(),
+    ) : com.russhwolf.settings.Settings by delegate {
+        var failRemoves: Boolean = false
+
+        override fun remove(key: String) {
+            if (failRemoves) error("disk remove failed")
+            delegate.remove(key)
         }
     }
 }

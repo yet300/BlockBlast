@@ -47,8 +47,9 @@ internal class SettingsBackedGameSaveRepository(
             val envelope = SavedGame(version = CURRENT_SAVE_VERSION, state = state)
             withContext(dispatchers.io) {
                 settings.putString(KEY_SAVE, json.encodeToString(SavedGame.serializer(), envelope))
+                cached = state
+                loaded = true
             }
-            cached = state
         }
     }
 
@@ -70,9 +71,11 @@ internal class SettingsBackedGameSaveRepository(
 
     override suspend fun clear() {
         mutex.withLock {
-            cached = null
-            loaded = true
-            withContext(dispatchers.io) { settings.remove(KEY_SAVE) }
+            withContext(dispatchers.io) {
+                settings.remove(KEY_SAVE)
+                cached = null
+                loaded = true
+            }
         }
     }
 
