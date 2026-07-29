@@ -17,6 +17,39 @@ internal data class GameMotionPolicy(
     val spatialMotionEnabled: Boolean,
 )
 
+internal data class OneShotMotionDecision(
+    val isNewEvent: Boolean,
+    val shouldRunMotion: Boolean,
+)
+
+/**
+ * Consumes each event identity once, independently from whether motion is currently allowed.
+ *
+ * This prevents a retained event from replaying when reduced motion changes while still letting
+ * callers preserve non-motion feedback for a newly consumed event.
+ */
+internal class OneShotMotionGate<K> {
+    private var hasConsumedEvent = false
+    private var consumedIdentity: K? = null
+
+    fun consume(eventIdentity: K, motionEnabled: Boolean): OneShotMotionDecision {
+        val isNewEvent = !hasConsumedEvent || consumedIdentity != eventIdentity
+        if (isNewEvent) {
+            hasConsumedEvent = true
+            consumedIdentity = eventIdentity
+        }
+        return OneShotMotionDecision(
+            isNewEvent = isNewEvent,
+            shouldRunMotion = isNewEvent && motionEnabled,
+        )
+    }
+
+    fun reset() {
+        hasConsumedEvent = false
+        consumedIdentity = null
+    }
+}
+
 internal fun gameMotionPolicy(
     comboLevel: Int,
     hasDragHoverTarget: Boolean,

@@ -115,6 +115,8 @@ fun GameContent(component: GameComponent) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val reducedMotion = rememberReducedMotion()
+    val clearMotionGate = remember { OneShotMotionGate<Int>() }
+    val gameOverMotionGate = remember { OneShotMotionGate<Unit>() }
     val screenMotion = gameMotionPolicy(
         comboLevel = model.comboLevel,
         hasDragHoverTarget = false,
@@ -205,14 +207,20 @@ fun GameContent(component: GameComponent) {
         }
     }
 
-    LaunchedEffect(model.lastClearedCells, reducedMotion) {
-        if (reducedMotion) return@LaunchedEffect
-        val cells = model.lastClearedCells.cells
+    LaunchedEffect(model.lastClearedCells.nonce, reducedMotion) {
+        val clearEvent = model.lastClearedCells
+        val motionDecision = clearMotionGate.consume(
+            eventIdentity = clearEvent.nonce,
+            motionEnabled = !reducedMotion,
+        )
+        if (!motionDecision.shouldRunMotion) return@LaunchedEffect
+
+        val cells = clearEvent.cells
         if (cells.isNotEmpty()) {
             val rows = cells.groupBy { it.y }.filterValues { it.size == 8 }.keys.toList()
             val cols = cells.groupBy { it.x }.filterValues { it.size == 8 }.keys.toList()
             if (rows.isNotEmpty() || cols.isNotEmpty()) {
-                scope.launch { comboStripes.sweep(rows, cols) }
+                launch { comboStripes.sweep(rows, cols) }
 
                 // Cascade ordering: each cleared line gets its own slot in a
                 // sequence (rows first, then cols, in their natural order),
@@ -238,7 +246,7 @@ fun GameContent(component: GameComponent) {
                     val c = ge.yet3.blokblast.theme.pieceColor(
                         ((pos.x * 7 + pos.y * 13) and 0x7FFFFFFF) % 6,
                     )
-                    scope.launch {
+                    launch {
                         kotlinx.coroutines.delay(slot * perLineDelay)
                         particleBurst.burst(pos.x, pos.y, c, count = particleCount)
                     }
@@ -249,7 +257,7 @@ fun GameContent(component: GameComponent) {
                     val rSlot = lineKeys.indexOf('r' to r)
                     val cSlot = lineKeys.indexOf('c' to c)
                     val slot = maxOf(rSlot, cSlot).coerceAtLeast(0)
-                    scope.launch {
+                    launch {
                         kotlinx.coroutines.delay(slot * perLineDelay)
                         particleBurst.shockwave(c, r, Color.White)
                     }
@@ -260,10 +268,19 @@ fun GameContent(component: GameComponent) {
 
     // ── Game over → glitch effect ────────────────────────────────────────
     LaunchedEffect(model.isGameOver, reducedMotion) {
-        if (model.isGameOver) {
-            if (!reducedMotion) glitchState.trigger()
-            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+        if (!model.isGameOver) {
+            gameOverMotionGate.reset()
+            return@LaunchedEffect
         }
+
+        val motionDecision = gameOverMotionGate.consume(
+            eventIdentity = Unit,
+            motionEnabled = !reducedMotion,
+        )
+        if (!motionDecision.isNewEvent) return@LaunchedEffect
+
+        if (motionDecision.shouldRunMotion) glitchState.trigger()
+        haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
     }
 
     // ── Game Over: interstitial (on Continue click). The countdown timer is

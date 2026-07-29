@@ -90,6 +90,43 @@ class GameMotionPolicyTest {
         assertFalse(null.isReducedMotion())
     }
 
+    @Test
+    fun one_shot_motion_gate_runs_first_enabled_event_only_once() {
+        val gate = OneShotMotionGate<String>()
+
+        val first = gate.consume(eventIdentity = "clear-1", motionEnabled = true)
+        val repeated = gate.consume(eventIdentity = "clear-1", motionEnabled = true)
+
+        assertTrue(first.isNewEvent)
+        assertTrue(first.shouldRunMotion)
+        assertFalse(repeated.isNewEvent)
+        assertFalse(repeated.shouldRunMotion)
+    }
+
+    @Test
+    fun one_shot_motion_gate_consumes_disabled_event_without_replaying_on_enable() {
+        val gate = OneShotMotionGate<String>()
+
+        val disabled = gate.consume(eventIdentity = "clear-1", motionEnabled = false)
+        val laterEnabled = gate.consume(eventIdentity = "clear-1", motionEnabled = true)
+
+        assertTrue(disabled.isNewEvent)
+        assertFalse(disabled.shouldRunMotion)
+        assertFalse(laterEnabled.isNewEvent)
+        assertFalse(laterEnabled.shouldRunMotion)
+    }
+
+    @Test
+    fun resetting_one_shot_motion_gate_allows_a_later_edge() {
+        val gate = OneShotMotionGate<Unit>()
+
+        assertTrue(gate.consume(Unit, motionEnabled = true).shouldRunMotion)
+
+        gate.reset()
+
+        assertTrue(gate.consume(Unit, motionEnabled = true).shouldRunMotion)
+    }
+
     private fun durationScale(scaleFactor: Float): MotionDurationScale =
         object : MotionDurationScale {
             override val scaleFactor: Float = scaleFactor

@@ -254,24 +254,35 @@ private fun rememberSlotEntrance(
     spatialMotionEnabled: Boolean,
 ): SlotEntrance {
     val initialY = with(LocalDensity.current) { 8.dp.toPx() }
-    val scale = remember(pieceId, spatialMotionEnabled) {
+    val scale = remember(pieceId) {
         Animatable(if (spatialMotionEnabled) 0.95f else 1f)
     }
-    val alpha = remember(pieceId, spatialMotionEnabled) {
+    val alpha = remember(pieceId) {
         Animatable(if (spatialMotionEnabled) 0f else 1f)
     }
-    val translateY = remember(pieceId, spatialMotionEnabled) {
+    val translateY = remember(pieceId) {
         Animatable(if (spatialMotionEnabled) initialY else 0f)
     }
+    val entranceGate = remember(pieceId) { OneShotMotionGate<Unit>() }
     LaunchedEffect(pieceId, spatialMotionEnabled) {
-        if (!spatialMotionEnabled) return@LaunchedEffect
+        val motionDecision = entranceGate.consume(
+            eventIdentity = Unit,
+            motionEnabled = spatialMotionEnabled,
+        )
+        if (!spatialMotionEnabled) {
+            scale.snapTo(1f)
+            alpha.snapTo(1f)
+            translateY.snapTo(0f)
+        }
+        if (!motionDecision.shouldRunMotion) return@LaunchedEffect
+
         delay(spawnIndex * 40L)
         val settle = tween<Float>(durationMillis = 180, easing = LinearOutSlowInEasing)
         launch { scale.animateTo(1f, settle) }
         launch { alpha.animateTo(1f, settle) }
         launch { translateY.animateTo(0f, settle) }
     }
-    return remember(pieceId, spatialMotionEnabled) { SlotEntrance(scale, alpha, translateY) }
+    return remember(pieceId) { SlotEntrance(scale, alpha, translateY) }
 }
 
 /* ──────────────────────────────── Pointer input ───────────────────────────── */
@@ -383,11 +394,20 @@ private fun MiniPiece(
     val totalW = cols * cellSize + (cols - 1) * gap
     val totalH = rows * cellSize + (rows - 1) * gap
 
-    val shimmer = remember(shimmerKey, spatialMotionEnabled) {
+    val shimmer = remember(shimmerKey) {
         Animatable(if (spatialMotionEnabled) -0.4f else 1.4f)
     }
+    val shimmerGate = remember(shimmerKey) { OneShotMotionGate<Unit>() }
     LaunchedEffect(shimmerKey, spatialMotionEnabled) {
-        if (!spatialMotionEnabled) return@LaunchedEffect
+        val motionDecision = shimmerGate.consume(
+            eventIdentity = Unit,
+            motionEnabled = spatialMotionEnabled,
+        )
+        if (!spatialMotionEnabled) {
+            shimmer.snapTo(1.4f)
+        }
+        if (!motionDecision.shouldRunMotion) return@LaunchedEffect
+
         delay(180)
         shimmer.snapTo(-0.4f)
         shimmer.animateTo(1.4f, tween(650, easing = LinearEasing))
