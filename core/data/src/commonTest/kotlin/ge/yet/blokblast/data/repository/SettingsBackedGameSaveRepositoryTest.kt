@@ -159,6 +159,35 @@ class SettingsBackedGameSaveRepositoryTest {
         assertEquals(sampleState, repo.load())
     }
 
+    @Test
+    fun caller_mutation_after_save_does_not_change_cached_snapshot() = runTest {
+        val repo = newRepo()
+        val mutablePieces = sampleState.currentPieces.toMutableList()
+        val state = sampleState.copy(currentPieces = mutablePieces)
+        repo.save(state)
+
+        state.grid.cells[state.grid.index(2, 3)] = Grid.EMPTY
+        mutablePieces.clear()
+
+        val loaded = assertNotNull(repo.load())
+        assertEquals(5, loaded.grid.colorAt(2, 3))
+        assertEquals(1, loaded.currentPieces.size)
+    }
+
+    @Test
+    fun caller_mutation_after_load_does_not_change_future_cached_reads() = runTest {
+        val repo = newRepo()
+        repo.save(sampleState)
+
+        val first = assertNotNull(repo.load())
+        first.grid.cells[first.grid.index(2, 3)] = Grid.EMPTY
+        (first.currentPieces as MutableList).clear()
+
+        val second = assertNotNull(repo.load())
+        assertEquals(5, second.grid.colorAt(2, 3))
+        assertEquals(1, second.currentPieces.size)
+    }
+
     /** Wraps MapSettings to count getStringOrNull invocations. */
     private class CountingSettings(
         private val delegate: MapSettings = MapSettings(),

@@ -6,6 +6,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.GameState
+import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -44,29 +45,33 @@ internal class SettingsBackedGameSaveRepository(
 
     override suspend fun save(state: GameState) {
         mutex.withLock {
-            val envelope = SavedGame(version = CURRENT_SAVE_VERSION, state = state)
+            val snapshot = state.deepCopy()
+            val envelope = SavedGame(version = CURRENT_SAVE_VERSION, state = snapshot)
             withContext(dispatchers.io) {
                 settings.putString(KEY_SAVE, json.encodeToString(SavedGame.serializer(), envelope))
-                cached = state
+                cached = snapshot
                 loaded = true
             }
         }
     }
 
     override suspend fun load(): GameState? = mutex.withLock {
-        if (loaded) return@withLock cached
+        if (loaded) return@withLock cached?.deepCopy()
         val raw = withContext(dispatchers.io) { settings.getStringOrNull(KEY_SAVE) }
         val parsed = raw?.let {
             runCatching { json.decodeFromString(SavedGame.serializer(), it) }.getOrNull()
         }
-        cached = parsed?.takeIf { it.version == CURRENT_SAVE_VERSION }?.state
+        cached = parsed
+            ?.takeIf { it.version == CURRENT_SAVE_VERSION }
+            ?.state
+            ?.deepCopy()
         // Drop unreadable / wrong-version blobs so we don't pay the parse cost
         // every cold start and don't keep a one-way trap for users.
         if (raw != null && cached == null) {
             withContext(dispatchers.io) { settings.remove(KEY_SAVE) }
         }
         loaded = true
-        cached
+        cached?.deepCopy()
     }
 
     override suspend fun clear() {
@@ -84,3 +89,13 @@ internal class SettingsBackedGameSaveRepository(
         val json = Json { ignoreUnknownKeys = true }
     }
 }
+
+private fun GameState.deepCopy(): GameState = copy(
+    grid = Grid(grid.cells.copyOf()),
+    currentPieces = currentPieces.map { piece ->
+        piece.copy(
+            shape = piece.shape.copy(cells = piece.shape.cells.toList()),
+        )
+    },
+    lastClearedCells = lastClearedCells.copy(cells = lastClearedCells.cells.toList()),
+)
