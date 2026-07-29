@@ -409,9 +409,8 @@ class DefaultRootComponentTest {
             if (failRevive || !engine.continueWithSmallBlocks()) return
             model.value = GameComponent.Model(game = engine.state.value)
             externalScope.launch {
-                engine.cancelPendingAutoSaveAndJoin()
                 val playableState = engine.state.value
-                saveRepository.save(playableState)
+                engine.saveNow(playableState)
                 onReviveCompleted(playableState)
             }
         }

@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * The single source of truth for game state. Singleton-scoped via Metro.
@@ -49,6 +51,8 @@ class GameEngine(
     private var pieceIdCounter: Long = 0
     private var deterministicSeed: Long? = null
     private var saveJob: Job? = null
+    private var autoSaveGeneration: Long = 0
+    private val saveMutex = Mutex()
 
     // ---------- Lifecycle ----------
 
@@ -115,6 +119,7 @@ class GameEngine(
      * state was persisted before Result navigation.
      */
     fun restoreResult(state: GameState) {
+        autoSaveGeneration += 1
         saveJob?.cancel()
         saveJob = null
         this.state.value = state.copy(
@@ -124,16 +129,15 @@ class GameEngine(
     }
 
     /**
-     * Drains the debounced autosave before a caller performs an explicit,
-     * navigation-critical save.
-     *
-     * Clearing [saveJob] first prevents a completed job from remaining visible
-     * while [cancelAndJoin] waits for cancellation handlers to finish.
+     * Invalidates every older autosave and persists [state] in the same
+     * serialized write lane. When this returns, no stale autosave can still
+     * complete after the explicit snapshot.
      */
-    suspend fun cancelPendingAutoSaveAndJoin() {
-        val pendingSave = saveJob
-        saveJob = null
-        pendingSave?.cancelAndJoin()
+    suspend fun saveNow(state: GameState) {
+        cancelPendingAutoSave()
+        saveMutex.withLock {
+            saveRepository.save(state)
+        }
     }
 
     /**
@@ -303,6 +307,13 @@ class GameEngine(
 
     // ---------- Internals ----------
 
+    private suspend fun cancelPendingAutoSave() {
+        autoSaveGeneration += 1
+        val pendingSave = saveJob
+        saveJob = null
+        pendingSave?.cancelAndJoin()
+    }
+
     private fun generateTray(): List<Piece> {
         val pieces = shapeGenerator.nextTray(deterministicSeed).map { wrapInPiece(it) }
         // Advance the seed so the next tray is different but still deterministic.
@@ -353,10 +364,16 @@ class GameEngine(
     private fun autoSave() {
         // Debounce: cancel any pending save and reschedule. During rapid placements
         // this coalesces N disk writes into one, fired 300 ms after the last move.
+        autoSaveGeneration += 1
+        val generation = autoSaveGeneration
         saveJob?.cancel()
         saveJob = externalScope.launch {
             delay(300)
-            saveRepository.save(state.value)
+            saveMutex.withLock {
+                if (generation == autoSaveGeneration) {
+                    saveRepository.save(state.value)
+                }
+            }
         }
     }
 }

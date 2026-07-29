@@ -89,8 +89,7 @@ internal class GameStoreFactory(
                                         grid = Grid(gameState.grid.cells.copyOf()),
                                     )
                                     // Result navigation must never race the final save.
-                                    engine.cancelPendingAutoSaveAndJoin()
-                                    saveRepository.save(finalState)
+                                    engine.saveNow(finalState)
                                     settings.setBestScore(finalState.bestScore)
                                     publish(
                                         GameStore.Label.GameCompleted(
@@ -175,8 +174,7 @@ internal class GameStoreFactory(
                                 grid = Grid(state.grid.cells.copyOf()),
                             )
                             launch {
-                                engine.cancelPendingAutoSaveAndJoin()
-                                saveRepository.save(playableState)
+                                engine.saveNow(playableState)
                                 publish(GameStore.Label.ReviveCompleted(playableState))
                             }
                         }

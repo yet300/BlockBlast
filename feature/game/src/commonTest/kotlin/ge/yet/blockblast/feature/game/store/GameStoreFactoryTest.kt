@@ -18,6 +18,7 @@ import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -276,6 +278,33 @@ class GameStoreFactoryTest {
 
         assertEquals(1, deps.saveRepo.saveCount)
         labelScope.cancel()
+        deps.dispose()
+    }
+
+    @Test
+    fun terminal_save_drains_replaced_in_flight_autosave_and_remains_last() = runTest {
+        val repository = BlockingFirstSaveRepository()
+        val deps = TestDeps(saveRepositoryOverride = repository)
+        deps.factory().create(isNewGame = true)
+
+        advanceTimeBy(300)
+        runCurrent()
+        val staleState = repository.startedStates.single()
+
+        val piece = deps.engine.state.value.currentPieces.first()
+        deps.engine.placePiece(piece.pieceId, 0, 0)
+        val finalState = deps.engine.state.value.copy(isGameOver = true)
+        deps.engine.restore(finalState)
+        val emittedFinalState = deps.engine.state.value
+        runCurrent()
+
+        val finalStartedBeforeRelease = repository.startedStates.any { it.isGameOver }
+        repository.releaseFirstSave()
+        advanceUntilIdle()
+
+        assertFalse(finalStartedBeforeRelease)
+        assertEquals(listOf(staleState, emittedFinalState), repository.completedStates)
+        assertEquals(emittedFinalState, repository.stored)
         deps.dispose()
     }
 
@@ -535,6 +564,7 @@ class GameStoreFactoryTest {
         settingsBest: Long = 0L,
         reviewCount: Int = 0,
         saveDelayMillis: Long = 0L,
+        saveRepositoryOverride: GameSaveRepository? = null,
     ) {
         val operations = mutableListOf<String>()
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
@@ -543,6 +573,7 @@ class GameStoreFactoryTest {
             saveDelayMillis = saveDelayMillis,
             onSave = { operations += "save" },
         )
+        private val saveRepository = saveRepositoryOverride ?: saveRepo
         val settings = FakeSettings(
             bestScore = settingsBest,
             reviewPromptCount = reviewCount,
@@ -554,7 +585,7 @@ class GameStoreFactoryTest {
         val engine = GameEngine(
             shapeGenerator = OneByOneGenerator(),
             scoreCalculator = ScoreCalculator(),
-            saveRepository = saveRepo,
+            saveRepository = saveRepository,
             externalScope = scope,
         )
 
@@ -562,12 +593,42 @@ class GameStoreFactoryTest {
             storeFactory = DefaultStoreFactory(),
             engine = engine,
             audio = audio,
-            saveRepository = saveRepo,
+            saveRepository = saveRepository,
             settings = settings,
             analytics = analytics,
         )
 
         fun dispose() { scope.cancel() }
+    }
+}
+
+private class BlockingFirstSaveRepository : GameSaveRepository {
+    private val firstSaveRelease = CompletableDeferred<Unit>()
+
+    val startedStates = mutableListOf<GameState>()
+    val completedStates = mutableListOf<GameState>()
+    var stored: GameState? = null
+        private set
+
+    override suspend fun save(state: GameState) {
+        startedStates += state
+        if (startedStates.size == 1) {
+            withContext(NonCancellable) {
+                firstSaveRelease.await()
+            }
+        }
+        completedStates += state
+        stored = state
+    }
+
+    override suspend fun load(): GameState? = stored
+
+    override suspend fun clear() {
+        stored = null
+    }
+
+    fun releaseFirstSave() {
+        firstSaveRelease.complete(Unit)
     }
 }
 
