@@ -49,22 +49,14 @@ import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best
 import blockblast.composeapp.generated.resources.cd_back
 import blockblast.composeapp.generated.resources.cd_settings
-import blockblast.composeapp.generated.resources.exit_to_home
-import blockblast.composeapp.generated.resources.game_over
-import blockblast.composeapp.generated.resources.game_over_subtitle
-import blockblast.composeapp.generated.resources.new_best
-import blockblast.composeapp.generated.resources.restart
-import blockblast.composeapp.generated.resources.revive
 import blockblast.composeapp.generated.resources.score
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet3.blokblast.ads.AdBanner
-import ge.yet3.blokblast.ads.rememberGameOverInterstitial
 import ge.yet3.blokblast.component.background.AmbientMeshBackground
 import ge.yet3.blokblast.component.button.IconCircleButton
 import ge.yet3.blokblast.component.icon.ArrowBack
 import ge.yet3.blokblast.component.icon.Settings
-import ge.yet3.blokblast.component.overlay.GameOverOverlay
 import ge.yet3.blokblast.component.score.ScoreChip
 import ge.yet3.blokblast.screen.game.effects.FeedbackPopupOverlay
 import ge.yet3.blokblast.screen.game.effects.FeedbackPopupState
@@ -283,14 +275,6 @@ fun GameContent(component: GameComponent) {
         haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
     }
 
-    // ── Game Over: interstitial (on Continue click). The countdown timer is
-    // owned by the GameStore (see GameStoreFactory) and projected onto a
-    // Value<Int> via DefaultGameComponent. ──
-    val interstitial = rememberGameOverInterstitial()
-    // Store emits -1 (COUNTDOWN_INACTIVE) when no game-over countdown is
-    // active; the overlay API uses a nullable Int for the same concept.
-    val continueCountdown: Int? = uiModel.continueCountdown.takeIf { it >= 0 }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -471,39 +455,6 @@ fun GameContent(component: GameComponent) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset(y = 200.dp)
-            )
-
-            val isNewBest = model.isGameOver &&
-                model.score > 0L &&
-                model.score >= model.bestScore
-
-            GameOverOverlay(
-                visible = model.isGameOver,
-                score = model.score,
-                bestScore = model.bestScore,
-                isNewBest = isNewBest,
-                canRevive = model.revivesUsed < 1,
-                continueCountdownSeconds = continueCountdown,
-                onReviveClicked = {
-                    component.pieceTray.clearSelection()
-                    // Show interstitial; revive fires only after it's dismissed.
-                    interstitial.show {
-                        component.onReviveClicked()
-                    }
-                },
-                onRestartClicked = {
-                    component.pieceTray.clearSelection()
-                    component.onRestartClicked()
-                },
-                onExitClicked = component::onExitClicked,
-                title = stringResource(Res.string.game_over),
-                subtitle = stringResource(Res.string.game_over_subtitle),
-                scoreLabel = stringResource(Res.string.score),
-                bestLabel = stringResource(Res.string.best),
-                newBestLabel = stringResource(Res.string.new_best),
-                reviveLabel = stringResource(Res.string.revive),
-                restartLabel = stringResource(Res.string.restart),
-                exitLabel = stringResource(Res.string.exit_to_home),
             )
 
             GameSheet(component = component)

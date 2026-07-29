@@ -8,6 +8,7 @@ import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.engine.ScoreCalculator
@@ -84,6 +85,7 @@ class DefaultGameComponentTest {
             analytics = analytics,
         )
         val exitCalls = mutableListOf<Unit>()
+        val completions = mutableListOf<Pair<BlockBlastResultSnapshot, Boolean>>()
         val component = DefaultGameComponent(
             componentContext = DefaultComponentContext(lifecycle),
             gameStoreFactory = storeFactory,
@@ -94,8 +96,22 @@ class DefaultGameComponentTest {
             analytics = analytics,
             isNewGame = isNewGame,
             onExitClickedCb = { exitCalls += Unit },
+            onGameCompletedCb = { snapshot, canContinue ->
+                completions += snapshot to canContinue
+            },
         )
-        return Setup(component, lifecycle, scope, engine, audio, analytics, settings, storeReview, exitCalls)
+        return Setup(
+            component,
+            lifecycle,
+            scope,
+            engine,
+            audio,
+            analytics,
+            settings,
+            storeReview,
+            exitCalls,
+            completions,
+        )
     }
 
     // ── Navigation: settings sheet ───────────────────────────────────────
@@ -162,10 +178,28 @@ class DefaultGameComponentTest {
         s.dispose()
     }
 
+    @Test
+    fun game_completion_label_invokes_parent_callback_with_snapshot() = runTest(testDispatcher) {
+        val s = build()
+        val finalState = s.engine.state.value.copy(
+            score = 123L,
+            bestScore = 456L,
+            isGameOver = true,
+        )
+        s.engine.restore(finalState)
+        val emittedFinalState = s.engine.state.value
+        runCurrent()
+        assertEquals(
+            listOf(BlockBlastResultSnapshot.from(emittedFinalState) to true),
+            s.completions,
+        )
+        s.dispose()
+    }
+
     // ── Review prompt sheet ──────────────────────────────────────────────
 
     @Test
-    fun review_request_label_activates_review_prompt_sheet() = runTest(testDispatcher) {
+    fun qualifying_review_is_dismissed_before_parent_receives_completion() = runTest(testDispatcher) {
         val s = build(reviewCount = 0)
         // Trigger qualifying game-over → store publishes RequestReview label.
         s.engine.restore(
@@ -178,6 +212,10 @@ class DefaultGameComponentTest {
         runCurrent()
         assertIs<GameComponent.SheetChild.ReviewPrompt>(s.component.sheetSlot.value.child?.instance)
         assertNotNull(s.analytics.events.find { it.first == "review_prompt_shown" })
+        assertTrue(s.completions.isEmpty())
+        s.component.onDismissSheet()
+        assertNull(s.component.sheetSlot.value.child)
+        assertEquals(1, s.completions.size)
         s.dispose()
     }
 
@@ -206,6 +244,7 @@ class DefaultGameComponentTest {
         val settings: FakeSettings,
         val storeReview: RecordingStoreReview,
         val exitCalls: MutableList<Unit>,
+        val completions: MutableList<Pair<BlockBlastResultSnapshot, Boolean>>,
     ) {
         fun dispose() { scope.cancel() }
     }

@@ -17,6 +17,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.integration.stateToModel
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
 import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
@@ -41,12 +42,14 @@ internal class DefaultGameComponent(
     private val storeReview: StoreReviewRepository,
     private val isNewGame: Boolean,
     private val onExitClickedCb: () -> Unit,
+    private val onGameCompletedCb: (BlockBlastResultSnapshot, Boolean) -> Unit,
 ) : ComponentContext by componentContext,
     GameComponent {
     private val store = instanceKeeper.getStore { gameStoreFactory.create(isNewGame = isNewGame) }
     private val sheetNavigation = SlotNavigation<SheetConfig>()
     private val lifecycleScope = coroutineScope()
     private val logger = GameAnalyticsLogger(analytics)
+    private var pendingCompletion: GameStore.Label.GameCompleted? = null
 
     override val model: Value<GameComponent.Model> = store.asValue().map(stateToModel)
 
@@ -76,6 +79,13 @@ internal class DefaultGameComponent(
                         log("review_prompt_shown")
                         sheetNavigation.activate(SheetConfig.ReviewPrompt)
                     }
+                    is GameStore.Label.GameCompleted -> {
+                        if (sheetSlot.value.child?.instance is GameComponent.SheetChild.ReviewPrompt) {
+                            pendingCompletion = label
+                        } else {
+                            deliverCompletion(label)
+                        }
+                    }
                 }
             }
         }
@@ -99,12 +109,16 @@ internal class DefaultGameComponent(
     }
 
     override fun onDismissSheet() {
-        when (sheetSlot.value.child?.instance) {
+        val dismissedChild = sheetSlot.value.child?.instance
+        when (dismissedChild) {
             is GameComponent.SheetChild.Settings -> log("settings_closed")
             is GameComponent.SheetChild.ReviewPrompt -> log("review_prompt_closed")
             null -> Unit
         }
         sheetNavigation.dismiss()
+        if (dismissedChild is GameComponent.SheetChild.ReviewPrompt) {
+            pendingCompletion?.let(::deliverCompletion)
+        }
     }
 
     private fun onReviewPromptDontShowAgainClicked() {
@@ -123,6 +137,11 @@ internal class DefaultGameComponent(
 
     private fun log(eventName: String) = logger.log(eventName, store.state.game)
 
+    private fun deliverCompletion(completion: GameStore.Label.GameCompleted) {
+        pendingCompletion = null
+        onGameCompletedCb(completion.snapshot, completion.canContinue)
+    }
+
     private fun createSheetChild(
         config: SheetConfig,
         componentContext: ComponentContext,
@@ -140,7 +159,7 @@ internal class DefaultGameComponent(
                     DefaultReviewPromptComponent(
                         componentContext = componentContext,
                         onDontShowAgainRequested = ::onReviewPromptDontShowAgainClicked,
-                        onDismissed = { sheetNavigation.dismiss() },
+                        onDismissed = ::onDismissSheet,
                         onReviewRequested = ::onReviewPromptLeaveFeedbackClicked,
                     ),
                 )
@@ -170,6 +189,7 @@ internal class DefaultGameComponentFactory(
         componentContext: ComponentContext,
         isNewGame: Boolean,
         onExitClicked: () -> Unit,
+        onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
     ): GameComponent = DefaultGameComponent(
         componentContext = componentContext,
         gameStoreFactory = gameStoreFactory,
@@ -180,5 +200,6 @@ internal class DefaultGameComponentFactory(
         analytics = analytics,
         isNewGame = isNewGame,
         onExitClickedCb = onExitClicked,
+        onGameCompletedCb = onGameCompleted,
     )
 }

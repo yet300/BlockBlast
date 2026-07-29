@@ -6,6 +6,8 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
 import ge.yet.blockblast.feature.game.GameComponent
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
+import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.blockblast.feature.home.HomeComponent
 import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.repository.AudioRepository
@@ -27,14 +29,16 @@ class DefaultRootComponentTest {
         val settings = FakeSettings()
         val homeFactory = RecordingHomeFactory()
         val gameFactory = RecordingGameFactory()
+        val resultFactory = RecordingResultFactory()
         val component = DefaultRootComponent(
             componentContext = DefaultComponentContext(lifecycle),
             homeFactory = homeFactory,
             gameFactory = gameFactory,
+            resultFactory = resultFactory,
             audio = audio,
             settingsRepository = settings,
         )
-        return Setup(component, lifecycle, audio, settings, homeFactory, gameFactory)
+        return Setup(component, lifecycle, audio, settings, homeFactory, gameFactory, resultFactory)
     }
 
     @Test
@@ -106,6 +110,80 @@ class DefaultRootComponentTest {
         assertIs<RootComponent.Child.Home>(component.stack.value.active.instance)
     }
 
+    @Test
+    fun game_completion_pushes_result_with_final_snapshot() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        val snapshot = resultSnapshot()
+        setup.gameFactory.created.single().complete(snapshot, canContinue = true)
+        assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
+        assertEquals(snapshot, setup.resultFactory.created.single().snapshot)
+        assertTrue(setup.resultFactory.created.single().canContinue)
+    }
+
+    @Test
+    fun duplicate_game_completion_does_not_push_duplicate_result() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        val game = setup.gameFactory.created.single()
+        val snapshot = resultSnapshot()
+        game.complete(snapshot, canContinue = true)
+        game.complete(snapshot, canContinue = true)
+        assertEquals(3, setup.component.stack.value.items.size)
+        assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun result_continue_revives_live_game_and_pops_to_it() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        val game = setup.gameFactory.created.single()
+        game.complete(resultSnapshot(), canContinue = true)
+        setup.resultFactory.created.single().continueRequested()
+        assertEquals(1, game.reviveCalls)
+        assertIs<RootComponent.Child.Game>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun result_new_game_replaces_finished_flow_with_fresh_game() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(resultSnapshot(), canContinue = true)
+        setup.resultFactory.created.single().newGameRequested()
+        assertEquals(listOf(true, true), setup.gameFactory.requestedIsNewGame)
+        assertEquals(2, setup.component.stack.value.items.size)
+        assertIs<RootComponent.Child.Game>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun result_home_destroys_finished_game_and_returns_home() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(resultSnapshot(), canContinue = true)
+        setup.resultFactory.created.single().homeRequested()
+        assertEquals(1, setup.component.stack.value.items.size)
+        assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun back_from_result_returns_home_without_revealing_dead_game() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(resultSnapshot(), canContinue = true)
+        setup.component.onBackClicked()
+        assertEquals(1, setup.component.stack.value.items.size)
+        assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
+    }
+
+    private fun resultSnapshot(): BlockBlastResultSnapshot =
+        BlockBlastResultSnapshot.from(
+            ge.yet.blokblast.domain.model.GameState(
+                score = 42L,
+                bestScore = 100L,
+                isGameOver = true,
+            ),
+        )
+
     private fun Setup.destructure() = this
 
     private data class Setup(
@@ -115,6 +193,7 @@ class DefaultRootComponentTest {
         val settings: FakeSettings,
         val homeFactory: RecordingHomeFactory,
         val gameFactory: RecordingGameFactory,
+        val resultFactory: RecordingResultFactory,
     )
 
     // ── Fakes ────────────────────────────────────────────────────────────
@@ -141,21 +220,25 @@ class DefaultRootComponentTest {
 
     private class RecordingGameFactory : GameComponent.Factory {
         val requestedIsNewGame = mutableListOf<Boolean>()
+        val created = mutableListOf<FakeGame>()
         override fun create(
             componentContext: ComponentContext,
             isNewGame: Boolean,
             onExitClicked: () -> Unit,
+            onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
         ): GameComponent {
             requestedIsNewGame += isNewGame
-            return FakeGame()
+            return FakeGame(onGameCompleted).also { created += it }
         }
     }
 
-    private class FakeGame : GameComponent {
+    private class FakeGame(
+        private val onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
+    ) : GameComponent {
+        var reviveCalls = 0
         override val model = com.arkivanov.decompose.value.MutableValue(
             GameComponent.Model(
                 game = ge.yet.blokblast.domain.model.GameState(),
-                continueCountdown = -1,
             ),
         )
         override val sheetSlot = com.arkivanov.decompose.value.MutableValue(
@@ -171,11 +254,58 @@ class DefaultRootComponentTest {
                 override fun clearSelection() {}
             }
         override fun onCellClicked(pieceId: Long, x: Int, y: Int) {}
-        override fun onReviveClicked() {}
+        override fun onReviveClicked() { reviveCalls += 1 }
         override fun onRestartClicked() {}
         override fun onSettingsClicked() {}
         override fun onExitClicked() {}
         override fun onDismissSheet() {}
+        fun complete(snapshot: BlockBlastResultSnapshot, canContinue: Boolean) {
+            onGameCompleted(snapshot, canContinue)
+        }
+    }
+
+    private class RecordingResultFactory : GameResultComponent.Factory {
+        val created = mutableListOf<FakeResult>()
+
+        override fun create(
+            componentContext: ComponentContext,
+            snapshot: BlockBlastResultSnapshot,
+            canContinue: Boolean,
+            onContinueRequested: () -> Unit,
+            onNewGameRequested: () -> Unit,
+            onHomeRequested: () -> Unit,
+        ): GameResultComponent =
+            FakeResult(
+                snapshot = snapshot,
+                canContinue = canContinue,
+                continueRequested = onContinueRequested,
+                newGameRequested = onNewGameRequested,
+                homeRequested = onHomeRequested,
+            ).also { created += it }
+    }
+
+    private class FakeResult(
+        val snapshot: BlockBlastResultSnapshot,
+        val canContinue: Boolean,
+        val continueRequested: () -> Unit,
+        val newGameRequested: () -> Unit,
+        val homeRequested: () -> Unit,
+    ) : GameResultComponent {
+        override val model = com.arkivanov.decompose.value.MutableValue(
+            GameResultComponent.Model(
+                snapshot = snapshot,
+                canContinue = canContinue,
+                continueSecondsRemaining = 5,
+            ),
+        )
+
+        override fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit) {
+            continueRequested()
+        }
+
+        override fun onHomeClicked() {
+            homeRequested()
+        }
     }
 
     private class RecordingAudio : AudioRepository {

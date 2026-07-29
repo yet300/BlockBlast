@@ -1,6 +1,7 @@
 package ge.yet.blockblast.feature.game.store
 
 import com.arkivanov.mvikotlin.core.store.Store
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blokblast.domain.model.GameState
 
 internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore.Label> {
@@ -17,7 +18,6 @@ internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore
 
     sealed interface Msg {
         data class Snapshot(val state: GameState) : Msg
-        data class CountdownTick(val secondsRemaining: Int) : Msg
     }
 
     /**
@@ -28,5 +28,10 @@ internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore
     sealed interface Label {
         /** Trigger the platform in-app review flow. The component decides where/how. */
         data object RequestReview : Label
+
+        data class GameCompleted(
+            val snapshot: BlockBlastResultSnapshot,
+            val canContinue: Boolean,
+        ) : Label
     }
 }

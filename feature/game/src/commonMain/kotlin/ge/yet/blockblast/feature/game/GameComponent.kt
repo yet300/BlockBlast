@@ -5,6 +5,7 @@ import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
 import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 
@@ -25,7 +26,6 @@ interface GameComponent {
 
     data class Model(
         val game: GameState,
-        val continueCountdown: Int,
     )
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
@@ -51,6 +51,7 @@ interface GameComponent {
             componentContext: ComponentContext,
             isNewGame: Boolean,
             onExitClicked: () -> Unit,
+            onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
         ): GameComponent
     }
 

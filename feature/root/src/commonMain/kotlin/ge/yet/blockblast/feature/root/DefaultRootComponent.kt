@@ -3,15 +3,21 @@ package ge.yet.blockblast.feature.root
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.pushNew
+import com.arkivanov.decompose.router.stack.replaceAll
 import com.app.common.decompose.coroutineScope
-import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.backhandler.BackCallback
+import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.essenty.lifecycle.doOnStop
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.GameComponent
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
+import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.blockblast.feature.home.HomeComponent
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
@@ -31,12 +37,19 @@ internal class DefaultRootComponent(
     componentContext: ComponentContext,
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
+    private val resultFactory: GameResultComponent.Factory,
     private val audio: AudioRepository,
     private val settingsRepository: SettingsRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
     private val navigation = StackNavigation<Config>()
+    private var lastGameInstanceId = 0L
+    private val resultBackCallback = BackCallback(
+        isEnabled = false,
+        priority = BackCallback.PRIORITY_MAX,
+        onBack = ::navigateHome,
+    )
 
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
     override val vibrationEnabled: StateFlow<Boolean> = settingsRepository.vibrationEnabled
@@ -56,6 +69,14 @@ internal class DefaultRootComponent(
     )
 
     init {
+        backHandler.register(resultBackCallback)
+        val stackSubscription = stack.subscribe {
+            resultBackCallback.isEnabled = it.active.instance is RootComponent.Child.Result
+        }
+        lifecycle.doOnDestroy {
+            stackSubscription.cancel()
+            backHandler.unregister(resultBackCallback)
+        }
         // App goes to background → pause audio immediately
         lifecycle.doOnStop {
             scope.launch { audio.onAppBackground() }
@@ -67,7 +88,11 @@ internal class DefaultRootComponent(
     }
 
     override fun onBackClicked() {
-        navigation.pop()
+        if (stack.value.active.instance is RootComponent.Child.Result) {
+            navigateHome()
+        } else {
+            navigation.pop()
+        }
     }
 
     private fun createChild(
@@ -77,19 +102,63 @@ internal class DefaultRootComponent(
         is Config.Home -> RootComponent.Child.Home(
             homeFactory.create(
                 componentContext = componentContext,
-                onContinueClicked = { navigation.bringToFront(Config.Game(isNewGame = false)) },
-                onNewGameClicked = { navigation.bringToFront(Config.Game(isNewGame = true)) },
+                onContinueClicked = { navigation.bringToFront(newGameConfig(isNewGame = false)) },
+                onNewGameClicked = { navigation.bringToFront(newGameConfig(isNewGame = true)) },
             )
         )
 
-        is Config.Game -> RootComponent.Child.Game(
-            gameFactory.create(
-                componentContext = componentContext,
-                isNewGame = config.isNewGame,
-                onExitClicked = { navigation.pop() },
+        is Config.Game -> {
+            lastGameInstanceId = maxOf(lastGameInstanceId, config.instanceId)
+            RootComponent.Child.Game(
+                gameFactory.create(
+                    componentContext = componentContext,
+                    isNewGame = config.isNewGame,
+                    onExitClicked = { navigation.pop() },
+                    onGameCompleted = { snapshot, canContinue ->
+                        navigation.pushNew(Config.Result(snapshot, canContinue))
+                    },
+                )
             )
+        }
+
+        is Config.Result -> RootComponent.Child.Result(
+            resultFactory.create(
+                componentContext = componentContext,
+                snapshot = config.snapshot,
+                canContinue = config.canContinue,
+                onContinueRequested = ::continueGame,
+                onNewGameRequested = {
+                    navigation.replaceAll(Config.Home, newGameConfig(isNewGame = true))
+                },
+                onHomeRequested = ::navigateHome,
+            ),
         )
     }
+
+    private fun continueGame() {
+        val game = stack.value.items
+            .asReversed()
+            .firstNotNullOfOrNull { it.instance as? RootComponent.Child.Game }
+            ?.component
+
+        if (game == null) {
+            navigateHome()
+            return
+        }
+
+        game.onReviveClicked()
+        navigation.pop()
+    }
+
+    private fun navigateHome() {
+        navigation.replaceAll(Config.Home)
+    }
+
+    private fun newGameConfig(isNewGame: Boolean): Config.Game =
+        Config.Game(
+            isNewGame = isNewGame,
+            instanceId = ++lastGameInstanceId,
+        )
 
     @Serializable
     private sealed interface Config {
@@ -97,7 +166,16 @@ internal class DefaultRootComponent(
         data object Home : Config
 
         @Serializable
-        data class Game(val isNewGame: Boolean) : Config
+        data class Game(
+            val isNewGame: Boolean,
+            val instanceId: Long,
+        ) : Config
+
+        @Serializable
+        data class Result(
+            val snapshot: BlockBlastResultSnapshot,
+            val canContinue: Boolean,
+        ) : Config
     }
 }
 
@@ -105,6 +183,7 @@ internal class DefaultRootComponent(
 internal class DefaultRootComponentFactory(
     private val homeFactory: HomeComponent.Factory,
     private val gameFactory: GameComponent.Factory,
+    private val resultFactory: GameResultComponent.Factory,
     private val audio: AudioRepository,
     private val settingsRepository: SettingsRepository,
 ) : RootComponent.Factory {
@@ -113,6 +192,7 @@ internal class DefaultRootComponentFactory(
             componentContext = componentContext,
             homeFactory = homeFactory,
             gameFactory = gameFactory,
+            resultFactory = resultFactory,
             audio = audio,
             settingsRepository = settingsRepository,
         )

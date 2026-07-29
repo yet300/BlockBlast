@@ -18,6 +18,7 @@ import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,7 +31,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -193,43 +193,98 @@ class GameStoreFactoryTest {
         deps.dispose()
     }
 
-    // ── Game-over edge → countdown ───────────────────────────────────────
+    // ── Game-over edge → immutable Result hand-off ──────────────────────
 
     @Test
-    fun gameOver_edge_starts_countdown_at_five() = runTest {
+    fun gameOver_persists_final_state_and_best_before_completion_label() = runTest {
         val deps = TestDeps()
         val store = deps.factory().create(isNewGame = true)
-        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch {
+            store.labels.collect {
+                deps.operations += "label"
+                labels += it
+            }
+        }
+        deps.operations.clear()
+        val finalState = deps.engine.state.value.copy(
+            score = 321L,
+            bestScore = 321L,
+            isGameOver = true,
+        )
+        deps.engine.restore(finalState)
+        val emittedFinalState = deps.engine.state.value
         runCurrent()
-        assertEquals(GameStoreState.CONTINUE_COUNTDOWN_SECONDS, store.state.continueCountdown)
+        assertEquals(listOf("save", "best", "label"), deps.operations.takeLast(3))
+        assertEquals(emittedFinalState, deps.saveRepo.saved)
+        assertEquals(321L, deps.settings.bestScore.value)
+        assertTrue(labels.single() is GameStore.Label.GameCompleted)
+        labelScope.cancel()
         deps.dispose()
     }
 
     @Test
-    fun countdown_ticks_down_each_second() = runTest {
+    fun gameOver_emits_deep_copied_snapshot_and_continue_availability() = runTest {
         val deps = TestDeps()
         val store = deps.factory().create(isNewGame = true)
-        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch { store.labels.collect { labels += it } }
+        val finalState = deps.engine.state.value.copy(
+            grid = Grid().withCell(2, 3, 4),
+            score = 777L,
+            bestScore = 900L,
+            revivesUsed = 0,
+            isGameOver = true,
+        )
+        deps.engine.restore(finalState)
+        val emittedFinalState = deps.engine.state.value
         runCurrent()
-        assertEquals(5, store.state.continueCountdown)
-        advanceTimeBy(1100)
-        assertEquals(4, store.state.continueCountdown)
-        advanceTimeBy(4000)
-        assertEquals(0, store.state.continueCountdown)
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertEquals(BlockBlastResultSnapshot.from(emittedFinalState), completed.snapshot)
+        assertTrue(completed.canContinue)
+        finalState.grid.cells[3 * Grid.SIZE + 2] = 0
+        assertEquals(4, completed.snapshot.finalGrid.colorAt(2, 3))
+        labelScope.cancel()
         deps.dispose()
     }
 
     @Test
-    fun revive_clears_countdown() = runTest {
+    fun gameOver_with_all_revives_used_disables_continue() = runTest {
         val deps = TestDeps()
         val store = deps.factory().create(isNewGame = true)
-        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch { store.labels.collect { labels += it } }
+        deps.engine.restore(
+            deps.engine.state.value.copy(
+                revivesUsed = GameState.MAX_REVIVES,
+                isGameOver = true,
+            ),
+        )
         runCurrent()
-        assertEquals(5, store.state.continueCountdown)
-        // Simulate revive
+        assertFalse((labels.single() as GameStore.Label.GameCompleted).canContinue)
+        labelScope.cancel()
+        deps.dispose()
+    }
+
+    @Test
+    fun gameOver_emits_completion_once_until_play_resumes() = runTest {
+        val deps = TestDeps()
+        val store = deps.factory().create(isNewGame = true)
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch { store.labels.collect { labels += it } }
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        deps.engine.restore(deps.engine.state.value.copy(score = 5L, isGameOver = true))
+        runCurrent()
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
         deps.engine.restore(deps.engine.state.value.copy(isGameOver = false))
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
         runCurrent()
-        assertEquals(GameStoreState.COUNTDOWN_INACTIVE, store.state.continueCountdown)
+        assertEquals(2, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        labelScope.cancel()
         deps.dispose()
     }
 
@@ -251,7 +306,16 @@ class GameStoreFactoryTest {
         )
         deps.engine.restore(qualifying)
         runCurrent()
-        assertEquals(listOf<GameStore.Label>(GameStore.Label.RequestReview), labels)
+        assertEquals(
+            listOf(
+                GameStore.Label.RequestReview,
+                GameStore.Label.GameCompleted(
+                    snapshot = BlockBlastResultSnapshot.from(deps.engine.state.value),
+                    canContinue = true,
+                ),
+            ),
+            labels,
+        )
         assertTrue(deps.engine.state.value.reviewPromptFiredThisRound)
         labelScope.cancel()
         deps.dispose()
@@ -272,7 +336,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertTrue(labels.isEmpty())
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(labels.none { it is GameStore.Label.RequestReview })
         scope.cancel()
         deps.dispose()
     }
@@ -293,7 +358,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertTrue(labels.isEmpty())
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(labels.none { it is GameStore.Label.RequestReview })
         scope.cancel()
         deps.dispose()
     }
@@ -313,7 +379,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertTrue(labels.isEmpty())
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(labels.none { it is GameStore.Label.RequestReview })
         scope.cancel()
         deps.dispose()
     }
@@ -334,7 +401,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertTrue(labels.isEmpty())
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(labels.none { it is GameStore.Label.RequestReview })
         scope.cancel()
         deps.dispose()
     }
@@ -411,9 +479,14 @@ class GameStoreFactoryTest {
         settingsBest: Long = 0L,
         reviewCount: Int = 0,
     ) {
+        val operations = mutableListOf<String>()
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
-        val saveRepo = StubSaveRepo(savedState)
-        val settings = FakeSettings(bestScore = settingsBest, reviewPromptCount = reviewCount)
+        val saveRepo = StubSaveRepo(savedState) { operations += "save" }
+        val settings = FakeSettings(
+            bestScore = settingsBest,
+            reviewPromptCount = reviewCount,
+            onBestScoreSet = { operations += "best" },
+        )
         val audio = RecordingAudio()
         val analytics = RecordingAnalytics()
         val storeReview = NoopStoreReview()
@@ -443,9 +516,16 @@ private class OneByOneGenerator : ShapeGenerator {
     override fun smallReviveTray(): List<Polyomino> = listOf(one, one, one)
 }
 
-private class StubSaveRepo(initial: GameState? = null) : GameSaveRepository {
+private class StubSaveRepo(
+    initial: GameState? = null,
+    private val onSave: () -> Unit = {},
+) : GameSaveRepository {
     private var stored: GameState? = initial
-    override suspend fun save(state: GameState) { stored = state }
+    val saved: GameState? get() = stored
+    override suspend fun save(state: GameState) {
+        stored = state
+        onSave()
+    }
     override suspend fun load(): GameState? = stored
     override suspend fun clear() { stored = null }
 }
@@ -453,6 +533,7 @@ private class StubSaveRepo(initial: GameState? = null) : GameSaveRepository {
 private class FakeSettings(
     bestScore: Long = 0L,
     reviewPromptCount: Int = 0,
+    private val onBestScoreSet: () -> Unit = {},
 ) : SettingsRepository {
     private val bestScoreFlow = MutableStateFlow(bestScore)
     private val reviewFlow = MutableStateFlow(reviewPromptCount)
@@ -467,7 +548,10 @@ private class FakeSettings(
     override suspend fun setSfxEnabled(enabled: Boolean) {}
     override suspend fun setVibrationEnabled(enabled: Boolean) {}
     override suspend fun setDarkTheme(enabled: Boolean) {}
-    override suspend fun setBestScore(score: Long) { if (score > bestScoreFlow.value) bestScoreFlow.value = score }
+    override suspend fun setBestScore(score: Long) {
+        onBestScoreSet()
+        if (score > bestScoreFlow.value) bestScoreFlow.value = score
+    }
     override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
     override suspend fun suppressReviewPrompts(max: Int) { if (reviewFlow.value < max) reviewFlow.value = max }
     override suspend fun setTutorialSeen() {}
@@ -504,4 +588,3 @@ private class NoopStoreReview : StoreReviewRepository {
     override fun requestInAppReview(): Flow<ReviewCode> = emptyFlow()
     override fun requestInMarketReview(): Flow<ReviewCode> = emptyFlow()
 }
-

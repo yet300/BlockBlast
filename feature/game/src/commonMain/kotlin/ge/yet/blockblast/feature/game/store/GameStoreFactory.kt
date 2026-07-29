@@ -9,11 +9,12 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameEvent
+import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
-import ge.yet.blokblast.domain.repository.StoreReviewRepository
+import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -35,10 +36,7 @@ internal class GameStoreFactory(
             GameStore,
             Store<GameStore.Intent, GameStoreState, GameStore.Label> by storeFactory.create(
                 name = "GameStore",
-                initialState = GameStoreState(
-                    game = engine.state.value,
-                    continueCountdown = GameStoreState.COUNTDOWN_INACTIVE,
-                ),
+                initialState = GameStoreState(game = engine.state.value),
                 executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, GameStore.Label> {
                     onAction<GameStore.Action> {
                         // ── 0. Bootstrap ──────────────────────────────────────────────────
@@ -68,40 +66,34 @@ internal class GameStoreFactory(
                                 .collect { best -> settings.setBestScore(best) }
                         }
 
-                        // ── 3. Game-over edge → countdown + (one-shot) review ─────────────
+                        // ── 3. Game-over edge → persisted Result + review ────────────────
                         // bestAtRoundStart / reviewPromptFiredThisRound live on GameState so
                         // the qualifier survives store recreation across Home → Play. The
                         // executor stays stateless wrt those flags.
-                        val countdown = ReviveCountdownManager(
-                            onTick = { secs -> dispatch(GameStore.Msg.CountdownTick(secs)) },
-                            onExpired = {
-                                logger.log(
-                                    eventName = "revive_countdown_expired",
-                                    state = engine.state.value,
-                                    extra = mapOf("countdown_seconds" to 0),
-                                )
-                            },
-                        )
                         launch {
                             var previousIsGameOver = engine.state.value.isGameOver
-                            engine.state
-                                .map { it.isGameOver }
-                                .collect { isGameOver ->
-                                    if (isGameOver == previousIsGameOver) return@collect
-                                    previousIsGameOver = isGameOver
-                                    val gameState = engine.state.value
-                                    if (isGameOver) {
-                                        logger.log("game_over", gameState)
-                                        if (qualifiesForReview(gameState)) {
-                                            engine.markReviewPromptFired()
-                                            launch { settings.incrementReviewPromptCount() }
-                                            publish(GameStore.Label.RequestReview)
-                                        }
-                                        countdown.start(this)
-                                    } else {
-                                        countdown.cancel()
+                            engine.state.collect { gameState ->
+                                val isGameOver = gameState.isGameOver
+                                if (isGameOver == previousIsGameOver) return@collect
+                                previousIsGameOver = isGameOver
+                                if (isGameOver) {
+                                    logger.log("game_over", gameState)
+                                    // Result navigation must never race the final save.
+                                    saveRepository.save(gameState)
+                                    settings.setBestScore(gameState.bestScore)
+                                    if (qualifiesForReview(gameState)) {
+                                        engine.markReviewPromptFired()
+                                        settings.incrementReviewPromptCount()
+                                        publish(GameStore.Label.RequestReview)
                                     }
+                                    publish(
+                                        GameStore.Label.GameCompleted(
+                                            snapshot = BlockBlastResultSnapshot.from(gameState),
+                                            canContinue = gameState.revivesUsed < GameState.MAX_REVIVES,
+                                        ),
+                                    )
                                 }
+                            }
                         }
 
                         // ── 4a. SFX/voice: edge-triggered from engine events ──────────────
@@ -195,7 +187,6 @@ internal class GameStoreFactory(
     internal object GameReducer : Reducer<GameStoreState, GameStore.Msg> {
         override fun GameStoreState.reduce(msg: GameStore.Msg): GameStoreState = when (msg) {
             is GameStore.Msg.Snapshot -> copy(game = msg.state)
-            is GameStore.Msg.CountdownTick -> copy(continueCountdown = msg.secondsRemaining)
         }
     }
 

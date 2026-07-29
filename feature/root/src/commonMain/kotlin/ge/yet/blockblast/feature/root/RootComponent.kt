@@ -5,12 +5,13 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import ge.yet.blockblast.feature.game.GameComponent
+import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.blockblast.feature.home.HomeComponent
 import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Top-level navigation host. Owns the [ChildStack] and routes between
- * [HomeComponent], [GameComponent]
+ * [HomeComponent], [GameComponent], and [GameResultComponent].
  *
  * Settings is reachable from BOTH Home and Game by pushing
  */
@@ -38,6 +39,7 @@ interface RootComponent : BackHandlerOwner {
     sealed interface Child {
         class Home(val component: HomeComponent) : Child
         class Game(val component: GameComponent) : Child
+        class Result(val component: GameResultComponent) : Child
     }
 
     /** DI-friendly factory; the concrete impl is created with the Metro graph. */
