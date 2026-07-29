@@ -7,6 +7,23 @@ import kotlin.test.assertTrue
 class ResultLayoutPolicyTest {
 
     @Test
+    fun every_layout_tier_preserves_minimum_touch_target_height() {
+        val policies = listOf(
+            resultLayoutPolicy(widthDp = 390f, heightDp = 844f),
+            resultLayoutPolicy(widthDp = 320f, heightDp = 568f),
+            resultLayoutPolicy(widthDp = 568f, heightDp = 320f),
+            resultLayoutPolicy(widthDp = 568f, heightDp = 288f),
+        )
+
+        policies.forEach { policy ->
+            assertTrue(
+                policy.buttonHeightDp >= MIN_TOUCH_TARGET_HEIGHT_DP,
+                "Button height ${policy.buttonHeightDp}dp is below the 48dp touch target",
+            )
+        }
+    }
+
+    @Test
     fun compact_phone_keeps_timed_cta_inside_320_by_568_viewport() {
         val budget = resultLayoutBudget(widthDp = 320f, heightDp = 568f)
 
@@ -58,5 +75,9 @@ class ResultLayoutPolicyTest {
         assertTrue(budget.fixedContentFits)
         assertTrue(budget.boardSizeDp > 0f)
         assertTrue(budget.contentHeightDp <= 844f)
+    }
+
+    private companion object {
+        const val MIN_TOUCH_TARGET_HEIGHT_DP = 48f
     }
 }

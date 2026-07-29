@@ -91,8 +91,8 @@ private val UltraCompactResultLayoutPolicy = ResultLayoutPolicy(
     cardVerticalPaddingDp = 6f,
     scoreSpacingDp = 0f,
     actionsSpacingDp = 4f,
-    buttonHeightDp = 44f,
-    fixedContentGuardrailHeightDp = 264f,
+    buttonHeightDp = 48f,
+    fixedContentGuardrailHeightDp = 272f,
 )
 
 private val CompactResultLayoutPolicy = ResultLayoutPolicy(
