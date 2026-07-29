@@ -35,17 +35,9 @@ import kotlin.math.sin
 fun AmbientMeshBackground(
     modifier: Modifier = Modifier,
     baseColor: Color = Ivory,
+    animated: Boolean = true,
 ) {
-    val transition = rememberInfiniteTransition(label = "ambient-mesh")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 24_000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "ambient-phase",
-    )
+    val phase = if (animated) animatedAmbientPhase() else 0f
 
     // Scale blob opacity: light canvas → full effect; dark canvas → subtle glow only.
     // luminance() returns 0 (black) … 1 (white).
@@ -58,6 +50,21 @@ fun AmbientMeshBackground(
             .background(baseColor)
             .drawBehind { drawAmbientBlobs(phase, blobScale) },
     )
+}
+
+@Composable
+private fun animatedAmbientPhase(): Float {
+    val transition = rememberInfiniteTransition(label = "ambient-mesh")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 24_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "ambient-phase",
+    )
+    return phase
 }
 
 private fun DrawScope.drawAmbientBlobs(phase: Float, scale: Float) {

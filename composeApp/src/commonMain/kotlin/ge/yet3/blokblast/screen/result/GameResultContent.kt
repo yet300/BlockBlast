@@ -74,6 +74,7 @@ fun GameResultContent(
             AmbientMeshBackground(
                 modifier = Modifier.fillMaxSize(),
                 baseColor = MaterialTheme.colorScheme.background,
+                animated = resultAmbientMotionEnabled(reducedMotion),
             )
 
             Column(
@@ -131,3 +132,5 @@ fun GameResultContent(
         }
     }
 }
+
+internal fun resultAmbientMotionEnabled(reducedMotion: Boolean): Boolean = !reducedMotion
