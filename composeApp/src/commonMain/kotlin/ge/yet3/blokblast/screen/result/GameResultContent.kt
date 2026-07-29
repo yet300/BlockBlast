@@ -50,11 +50,7 @@ fun GameResultContent(
     GameResultContent(
         model = model,
         onPrimaryClicked = {
-            if (model.isContinuePhase) {
-                interstitial.show(component::onPrimaryClicked)
-            } else {
-                component.onPrimaryClicked()
-            }
+            component.onPrimaryClicked(interstitial.show)
         },
         onHomeClicked = component::onHomeClicked,
         reducedMotion = reducedMotion,

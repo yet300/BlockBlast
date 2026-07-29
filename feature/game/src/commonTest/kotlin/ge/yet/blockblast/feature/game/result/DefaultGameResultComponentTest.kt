@@ -79,8 +79,8 @@ class DefaultGameResultComponentTest {
     fun primary_action_continues_once_while_countdown_is_active() {
         val setup = build(canContinue = true)
 
-        setup.component.onPrimaryClicked()
-        setup.component.onPrimaryClicked()
+        setup.component.onPrimaryClicked(approveImmediately)
+        setup.component.onPrimaryClicked(approveImmediately)
 
         assertEquals(1, setup.continueCalls)
         assertEquals(0, setup.newGameCalls)
@@ -93,8 +93,8 @@ class DefaultGameResultComponentTest {
         advanceTimeBy(5_000)
         runCurrent()
 
-        setup.component.onPrimaryClicked()
-        setup.component.onPrimaryClicked()
+        setup.component.onPrimaryClicked(failIfContinueGateRequested)
+        setup.component.onPrimaryClicked(failIfContinueGateRequested)
 
         assertEquals(0, setup.continueCalls)
         assertEquals(1, setup.newGameCalls)
@@ -102,10 +102,51 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
+    fun continue_click_keeps_continue_action_after_delayed_approval() = runTest(testDispatcher) {
+        val setup = build(canContinue = true)
+        var continueGateRequests = 0
+        var approveContinue: (() -> Unit)? = null
+
+        setup.component.onPrimaryClicked { onApproved ->
+            continueGateRequests += 1
+            approveContinue = onApproved
+        }
+        advanceTimeBy(6_000)
+        runCurrent()
+        approveContinue?.invoke()
+
+        assertEquals(1, continueGateRequests)
+        assertEquals(1, setup.continueCalls)
+        assertEquals(0, setup.newGameCalls)
+        setup.lifecycle.destroy()
+    }
+
+    @Test
+    fun double_tap_requests_continue_gate_once_and_continues_once_after_approval() {
+        val setup = build(canContinue = true)
+        var continueGateRequests = 0
+        var approveContinue: (() -> Unit)? = null
+        val requestContinue: ((() -> Unit) -> Unit) = { onApproved ->
+            continueGateRequests += 1
+            approveContinue = onApproved
+        }
+
+        setup.component.onPrimaryClicked(requestContinue)
+        setup.component.onPrimaryClicked(requestContinue)
+        approveContinue?.invoke()
+        approveContinue?.invoke()
+
+        assertEquals(1, continueGateRequests)
+        assertEquals(1, setup.continueCalls)
+        assertEquals(0, setup.newGameCalls)
+        setup.lifecycle.destroy()
+    }
+
+    @Test
     fun primary_action_starts_new_game_immediately_when_continue_is_unavailable() {
         val setup = build(canContinue = false)
 
-        setup.component.onPrimaryClicked()
+        setup.component.onPrimaryClicked(failIfContinueGateRequested)
 
         assertEquals(0, setup.continueCalls)
         assertEquals(1, setup.newGameCalls)
@@ -118,7 +159,7 @@ class DefaultGameResultComponentTest {
 
         setup.component.onHomeClicked()
         setup.component.onHomeClicked()
-        setup.component.onPrimaryClicked()
+        setup.component.onPrimaryClicked(failIfContinueGateRequested)
 
         assertEquals(1, setup.homeCalls)
         assertEquals(0, setup.continueCalls)
@@ -176,6 +217,10 @@ class DefaultGameResultComponentTest {
     }
 
     private companion object {
+        val approveImmediately: ((() -> Unit) -> Unit) = { onApproved -> onApproved() }
+        val failIfContinueGateRequested: ((() -> Unit) -> Unit) = {
+            error("Continue gate must not be requested")
+        }
         val snapshot = BlockBlastResultSnapshot(
             score = 120L,
             bestScore = 200L,

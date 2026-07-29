@@ -7,7 +7,7 @@ interface GameResultComponent {
 
     val model: Value<Model>
 
-    fun onPrimaryClicked()
+    fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit)
     fun onHomeClicked()
 
     data class Model(

@@ -46,12 +46,18 @@ internal class DefaultGameResultComponent(
         }
     }
 
-    override fun onPrimaryClicked() {
+    override fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit) {
         if (!claimTerminalAction()) return
+        val continueSelected = modelState.value.isContinuePhase
         countdownJob?.cancel()
 
-        if (modelState.value.isContinuePhase) {
-            onContinueRequested()
+        if (continueSelected) {
+            var approvalHandled = false
+            requestContinue {
+                if (approvalHandled) return@requestContinue
+                approvalHandled = true
+                onContinueRequested()
+            }
         } else {
             onNewGameRequested()
         }
