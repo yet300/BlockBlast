@@ -1,0 +1,1 @@
+Meet the new results screen! See your final board, score, and best score after every game. Continue your run by watching an ad before the timer expires, start a new game afterward, or return home. This update also brings smoother animations, reduced-motion support, improved landscape layouts, and more reliable save and restore.
