@@ -33,17 +33,7 @@ internal class DefaultGameResultComponent(
     private var terminalActionHandled = false
 
     init {
-        if (modelState.value.isContinuePhase) {
-            countdownJob = componentScope.launch {
-                while (modelState.value.continueSecondsRemaining > 0) {
-                    delay(COUNTDOWN_TICK_MILLIS)
-                    modelState.value = modelState.value.copy(
-                        continueSecondsRemaining =
-                            (modelState.value.continueSecondsRemaining - 1).coerceAtLeast(0),
-                    )
-                }
-            }
-        }
+        startCountdown()
     }
 
     override fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit) {
@@ -73,6 +63,21 @@ internal class DefaultGameResultComponent(
 
     override fun onContinueFailed() {
         terminalActionHandled = false
+        startCountdown()
+    }
+
+    private fun startCountdown() {
+        countdownJob?.cancel()
+        if (!modelState.value.isContinuePhase) return
+        countdownJob = componentScope.launch {
+            while (modelState.value.continueSecondsRemaining > 0) {
+                delay(COUNTDOWN_TICK_MILLIS)
+                modelState.value = modelState.value.copy(
+                    continueSecondsRemaining =
+                        (modelState.value.continueSecondsRemaining - 1).coerceAtLeast(0),
+                )
+            }
+        }
     }
 
     private fun claimTerminalAction(): Boolean {

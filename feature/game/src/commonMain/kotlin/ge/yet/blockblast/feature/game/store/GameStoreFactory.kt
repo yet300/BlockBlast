@@ -42,7 +42,7 @@ internal class GameStoreFactory(
                 name = "GameStore",
                 initialState = GameStoreState(game = engine.state.value),
                 executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, GameStore.Label> {
-                    var suppressNextGameOverCompletion = false
+                    var rollbackStateToSuppress: GameState? = null
 
                     onAction<GameStore.Action> {
                         // ── 0. Bootstrap ──────────────────────────────────────────────────
@@ -92,13 +92,18 @@ internal class GameStoreFactory(
                             var previousIsGameOver = engine.state.value.isGameOver
                             engine.state.collect { gameState ->
                                 val isGameOver = gameState.isGameOver
+                                val rollbackState = rollbackStateToSuppress
+                                if (rollbackState != null &&
+                                    isGameOver &&
+                                    gameState == rollbackState
+                                ) {
+                                    rollbackStateToSuppress = null
+                                    previousIsGameOver = true
+                                    return@collect
+                                }
                                 if (isGameOver == previousIsGameOver) return@collect
                                 previousIsGameOver = isGameOver
                                 if (isGameOver) {
-                                    if (suppressNextGameOverCompletion) {
-                                        suppressNextGameOverCompletion = false
-                                        return@collect
-                                    }
                                     logger.log("game_over", gameState)
                                     val finalState = gameState.copy(
                                         grid = Grid(gameState.grid.cells.copyOf()),
@@ -190,6 +195,7 @@ internal class GameStoreFactory(
                         )
                     }
                     onIntent<GameStore.Intent.Revive> {
+                        rollbackStateToSuppress = null
                         val terminalState = engine.state.value.copy(
                             grid = Grid(engine.state.value.grid.cells.copyOf()),
                         )
@@ -214,8 +220,8 @@ internal class GameStoreFactory(
                                 if (saved) {
                                     publish(GameStore.Label.ReviveCompleted(playableState))
                                 } else {
-                                    suppressNextGameOverCompletion = true
                                     engine.restoreResult(terminalState)
+                                    rollbackStateToSuppress = engine.state.value
                                     dispatch(GameStore.Msg.Snapshot(engine.state.value))
                                     publish(GameStore.Label.ReviveFailed)
                                 }

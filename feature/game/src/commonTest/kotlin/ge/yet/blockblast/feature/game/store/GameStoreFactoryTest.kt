@@ -643,6 +643,31 @@ class GameStoreFactoryTest {
         deps.dispose()
     }
 
+    @Test
+    fun failed_rollback_then_successful_retry_does_not_suppress_next_real_game_over() = runTest {
+        val repository = FailFirstSaveRepository()
+        val terminalState = GameState(isGameOver = true)
+        val deps = TestDeps(saveRepositoryOverride = repository)
+        val store = deps.factory().create(
+            isNewGame = false,
+            restoredResultState = terminalState,
+        )
+        val labels = mutableListOf<GameStore.Label>()
+        deps.scope.launch { store.labels.collect { labels += it } }
+
+        store.accept(GameStore.Intent.Revive)
+        runCurrent()
+        store.accept(GameStore.Intent.Revive)
+        runCurrent()
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        runCurrent()
+
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.ReviveFailed>().size)
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.ReviveCompleted>().size)
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        deps.dispose()
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────
 
     private fun playableState(score: Long = 0L): GameState = GameState(
@@ -741,6 +766,18 @@ private class ThrowingSaveRepository(
     override suspend fun load(): GameState? = null
 
     override suspend fun clear() = Unit
+}
+
+private class FailFirstSaveRepository : GameSaveRepository {
+    private var attempts = 0
+    private var stored: GameState? = null
+    override suspend fun save(state: GameState) {
+        attempts += 1
+        if (attempts == 1) error("first save failed")
+        stored = state
+    }
+    override suspend fun load(): GameState? = stored
+    override suspend fun clear() { stored = null }
 }
 
 private class ThrowingBestSettingsRepository : SettingsRepository {

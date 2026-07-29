@@ -129,7 +129,7 @@ internal class DefaultRootComponent(
                             playableState = playableState,
                         )
                     },
-                    onReviveFailed = ::failContinue,
+                    onReviveFailed = { failContinue(config.instanceId) },
                 )
             )
         }
@@ -169,7 +169,8 @@ internal class DefaultRootComponent(
         if (playableState.isGameOver) return
 
         navigation.navigate { configurations ->
-            if (configurations.lastOrNull() !is Config.Result) {
+            val activeResult = configurations.lastOrNull() as? Config.Result
+            if (activeResult == null || activeResult.gameInstanceId != gameInstanceId) {
                 configurations
             } else if (
                 configurations.none {
@@ -192,9 +193,11 @@ internal class DefaultRootComponent(
         }
     }
 
-    private fun failContinue() {
-        val result = stack.value.active.instance as? RootComponent.Child.Result
-        result?.component?.onContinueFailed()
+    private fun failContinue(gameInstanceId: Long) {
+        val active = stack.value.active
+        val config = active.configuration as? Config.Result
+        if (config?.gameInstanceId != gameInstanceId) return
+        (active.instance as? RootComponent.Child.Result)?.component?.onContinueFailed()
     }
 
     private fun navigateHome() {
@@ -224,6 +227,7 @@ internal class DefaultRootComponent(
                         config
                     }
                 } + Config.Result(
+                    gameInstanceId = gameInstanceId,
                     finalState = finalState,
                     canContinue = canContinue,
                 )
@@ -245,6 +249,7 @@ internal class DefaultRootComponent(
 
         @Serializable
         data class Result(
+            val gameInstanceId: Long,
             val finalState: GameState,
             val canContinue: Boolean,
         ) : Config

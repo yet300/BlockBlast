@@ -184,6 +184,22 @@ class DefaultRootComponentTest {
     }
 
     @Test
+    fun stale_game_failure_cannot_unlock_newer_result() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        val oldGame = setup.gameFactory.created.single()
+        oldGame.complete(resultState(), canContinue = true)
+        setup.resultFactory.created.single().newGameRequested()
+        val newGame = setup.gameFactory.created.last()
+        newGame.complete(resultState().copy(score = 999L), canContinue = true)
+        val newerResult = setup.resultFactory.created.last()
+
+        oldGame.failRevive()
+
+        assertEquals(0, newerResult.continueFailureCount)
+    }
+
+    @Test
     fun result_new_game_replaces_finished_flow_with_fresh_game() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
@@ -430,6 +446,7 @@ class DefaultRootComponentTest {
         fun complete(finalState: GameState, canContinue: Boolean) {
             onGameCompleted(finalState, canContinue)
         }
+        fun failRevive() = onReviveFailed()
     }
 
     private class OneByOneGenerator : ShapeGenerator {
