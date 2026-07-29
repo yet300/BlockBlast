@@ -49,7 +49,7 @@ internal class DefaultRootComponent(
     private val resultBackCallback = BackCallback(
         isEnabled = false,
         priority = BackCallback.PRIORITY_MAX,
-        onBack = ::navigateHome,
+        onBack = ::onBackClicked,
     )
 
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
@@ -89,7 +89,11 @@ internal class DefaultRootComponent(
     }
 
     override fun onBackClicked() {
-        if (stack.value.active.instance is RootComponent.Child.Result) {
+        val result = stack.value.active.instance as? RootComponent.Child.Result
+        if (result?.component?.onDismissReviewPrompt() == true) {
+            return
+        }
+        if (result != null) {
             navigateHome()
         } else {
             navigation.pop()
@@ -116,11 +120,12 @@ internal class DefaultRootComponent(
                     isNewGame = config.isNewGame,
                     restoredResultState = config.restoredResultState,
                     onExitClicked = { navigation.pop() },
-                    onGameCompleted = { finalState, canContinue ->
+                    onGameCompleted = { finalState, canContinue, shouldRequestReview ->
                         showResult(
                             gameInstanceId = config.instanceId,
                             finalState = finalState,
                             canContinue = canContinue,
+                            shouldRequestReview = shouldRequestReview,
                         )
                     },
                     onReviveCompleted = { playableState ->
@@ -139,11 +144,15 @@ internal class DefaultRootComponent(
                 componentContext = componentContext,
                 snapshot = BlockBlastResultSnapshot.from(config.finalState),
                 canContinue = config.canContinue,
+                shouldRequestReview = config.shouldRequestReview,
                 onContinueRequested = ::continueGame,
                 onNewGameRequested = {
                     navigation.replaceAll(Config.Home, newGameConfig(isNewGame = true))
                 },
                 onHomeRequested = ::navigateHome,
+                onReviewPromptConsumed = {
+                    consumeReviewPrompt(config.gameInstanceId)
+                },
             ),
         )
     }
@@ -215,6 +224,7 @@ internal class DefaultRootComponent(
         gameInstanceId: Long,
         finalState: GameState,
         canContinue: Boolean,
+        shouldRequestReview: Boolean,
     ) {
         navigation.navigate { configurations ->
             if (configurations.lastOrNull() is Config.Result) {
@@ -230,7 +240,24 @@ internal class DefaultRootComponent(
                     gameInstanceId = gameInstanceId,
                     finalState = finalState,
                     canContinue = canContinue,
+                    shouldRequestReview = shouldRequestReview,
                 )
+            }
+        }
+    }
+
+    private fun consumeReviewPrompt(gameInstanceId: Long) {
+        navigation.navigate { configurations ->
+            configurations.mapIndexed { index, config ->
+                if (
+                    index == configurations.lastIndex &&
+                    config is Config.Result &&
+                    config.gameInstanceId == gameInstanceId
+                ) {
+                    config.copy(shouldRequestReview = false)
+                } else {
+                    config
+                }
             }
         }
     }
@@ -252,6 +279,7 @@ internal class DefaultRootComponent(
             val gameInstanceId: Long,
             val finalState: GameState,
             val canContinue: Boolean,
+            val shouldRequestReview: Boolean = false,
         ) : Config
     }
 }

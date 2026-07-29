@@ -25,12 +25,10 @@ internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore
      * they don't replay on resubscription. Per the mvikotlin-code skill.
      */
     sealed interface Label {
-        /** Trigger the platform in-app review flow. The component decides where/how. */
-        data object RequestReview : Label
-
         data class GameCompleted(
             val finalState: GameState,
             val canContinue: Boolean,
+            val shouldRequestReview: Boolean,
         ) : Label
 
         data class ReviveCompleted(

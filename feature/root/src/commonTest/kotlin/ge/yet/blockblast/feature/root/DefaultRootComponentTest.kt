@@ -11,6 +11,7 @@ import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.game.result.GameResultComponent
+import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
 import ge.yet.blockblast.feature.home.HomeComponent
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.engine.ScoreCalculator
@@ -138,11 +139,75 @@ class DefaultRootComponentTest {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
         val finalState = resultState()
-        setup.gameFactory.created.single().complete(finalState, canContinue = true)
+        setup.gameFactory.created.single().complete(
+            finalState,
+            canContinue = true,
+            shouldRequestReview = true,
+        )
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
         assertEquals(BlockBlastResultSnapshot.from(finalState), setup.resultFactory.created.single().snapshot)
         assertEquals(finalState, setup.gameFactory.created.last().restoredResultState)
         assertTrue(setup.resultFactory.created.single().canContinue)
+        assertTrue(setup.resultFactory.created.single().shouldRequestReview)
+    }
+
+    @Test
+    fun back_dismisses_review_prompt_before_leaving_result() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            shouldRequestReview = true,
+        )
+
+        setup.component.onBackClicked()
+
+        assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
+        assertFalse(setup.resultFactory.created.last().shouldRequestReview)
+        setup.component.onBackClicked()
+        assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun consumed_review_prompt_stays_consumed_after_state_restore() {
+        val stateKeeper = StateKeeperDispatcher()
+        val first = build(stateKeeper = stateKeeper)
+        first.homeFactory.created.first().onNewGameClicked(true)
+        first.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            shouldRequestReview = true,
+        )
+        first.resultFactory.created.single().dismissReviewPrompt()
+        val saved = stateKeeper.save()
+        first.lifecycle.destroy()
+
+        val restored = build(stateKeeper = StateKeeperDispatcher(saved))
+
+        assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
+        assertFalse(restored.resultFactory.created.single().shouldRequestReview)
+        assertEquals(null, restored.resultFactory.created.single().reviewPrompt.value.component)
+    }
+
+    @Test
+    fun open_review_prompt_is_restored_until_user_consumes_it() {
+        val stateKeeper = StateKeeperDispatcher()
+        val first = build(stateKeeper = stateKeeper)
+        first.homeFactory.created.first().onNewGameClicked(true)
+        first.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            shouldRequestReview = true,
+        )
+        val saved = stateKeeper.save()
+        first.lifecycle.destroy()
+
+        val restored = build(stateKeeper = StateKeeperDispatcher(saved))
+
+        assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
+        assertTrue(restored.resultFactory.created.single().shouldRequestReview)
+        assertTrue(restored.resultFactory.created.single().reviewPrompt.value.component != null)
     }
 
     @Test
@@ -361,7 +426,7 @@ class DefaultRootComponentTest {
             isNewGame: Boolean,
             restoredResultState: GameState?,
             onExitClicked: () -> Unit,
-            onGameCompleted: (GameState, Boolean) -> Unit,
+            onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
             onReviveFailed: () -> Unit,
         ): GameComponent {
@@ -385,7 +450,7 @@ class DefaultRootComponentTest {
         private val failRevive: Boolean,
         private val saveRepository: RecordingGameSaveRepository,
         private val externalScope: CoroutineScope,
-        private val onGameCompleted: (GameState, Boolean) -> Unit,
+        private val onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
         private val onReviveCompleted: (GameState) -> Unit,
         private val onReviveFailed: () -> Unit,
     ) : GameComponent {
@@ -443,8 +508,12 @@ class DefaultRootComponentTest {
         override fun onSettingsClicked() {}
         override fun onExitClicked() {}
         override fun onDismissSheet() {}
-        fun complete(finalState: GameState, canContinue: Boolean) {
-            onGameCompleted(finalState, canContinue)
+        fun complete(
+            finalState: GameState,
+            canContinue: Boolean,
+            shouldRequestReview: Boolean = false,
+        ) {
+            onGameCompleted(finalState, canContinue, shouldRequestReview)
         }
         fun failRevive() = onReviveFailed()
     }
@@ -479,27 +548,38 @@ class DefaultRootComponentTest {
             componentContext: ComponentContext,
             snapshot: BlockBlastResultSnapshot,
             canContinue: Boolean,
+            shouldRequestReview: Boolean,
             onContinueRequested: () -> Unit,
             onNewGameRequested: () -> Unit,
             onHomeRequested: () -> Unit,
+            onReviewPromptConsumed: () -> Unit,
         ): GameResultComponent =
             FakeResult(
                 snapshot = snapshot,
                 canContinue = canContinue,
+                shouldRequestReview = shouldRequestReview,
                 continueRequested = onContinueRequested,
                 newGameRequested = onNewGameRequested,
                 homeRequested = onHomeRequested,
+                reviewPromptConsumed = onReviewPromptConsumed,
             ).also { created += it }
     }
 
     private class FakeResult(
         val snapshot: BlockBlastResultSnapshot,
         val canContinue: Boolean,
+        val shouldRequestReview: Boolean,
         val continueRequested: () -> Unit,
         val newGameRequested: () -> Unit,
         val homeRequested: () -> Unit,
+        val reviewPromptConsumed: () -> Unit,
     ) : GameResultComponent {
         var continueFailureCount = 0
+        override val reviewPrompt = com.arkivanov.decompose.value.MutableValue(
+            GameResultComponent.ReviewPromptSlot(
+                component = if (shouldRequestReview) FakeReviewPrompt() else null,
+            ),
+        )
         override val model = com.arkivanov.decompose.value.MutableValue(
             GameResultComponent.Model(
                 snapshot = snapshot,
@@ -519,6 +599,22 @@ class DefaultRootComponentTest {
         override fun onContinueFailed() {
             continueFailureCount += 1
         }
+
+        override fun onDismissReviewPrompt(): Boolean {
+            if (reviewPrompt.value.component == null) return false
+            reviewPrompt.value = GameResultComponent.ReviewPromptSlot(component = null)
+            reviewPromptConsumed()
+            return true
+        }
+
+        fun dismissReviewPrompt() {
+            onDismissReviewPrompt()
+        }
+    }
+
+    private class FakeReviewPrompt : ReviewPromptComponent {
+        override fun onDontShowAgainClicked() = Unit
+        override fun onLeaveFeedbackClicked() = Unit
     }
 
     private class RecordingAudio : AudioRepository {

@@ -1,13 +1,23 @@
 package ge.yet.blockblast.feature.game.result
 
+import com.app.common.AppDispatchers
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import ge.yet.blokblast.domain.model.Grid
+import ge.yet.blokblast.domain.repository.AnalyticRepository
+import ge.yet.blokblast.domain.repository.ReviewCode
+import ge.yet.blokblast.domain.repository.SettingsRepository
+import ge.yet.blokblast.domain.repository.StoreReviewRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -20,6 +30,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -74,6 +86,48 @@ class DefaultGameResultComponentTest {
         assertEquals(0, setup.component.model.value.continueSecondsRemaining)
         assertFalse(setup.component.model.value.isContinuePhase)
 
+        setup.lifecycle.destroy()
+    }
+
+    @Test
+    fun review_prompt_is_visible_only_when_requested_and_dismiss_consumes_once() {
+        val requested = build(canContinue = false, shouldRequestReview = true)
+        val notRequested = build(canContinue = false, shouldRequestReview = false)
+
+        assertNotNull(requested.component.reviewPrompt.value.component)
+        assertNull(notRequested.component.reviewPrompt.value.component)
+        assertTrue(requested.component.onDismissReviewPrompt())
+        assertFalse(requested.component.onDismissReviewPrompt())
+        assertNull(requested.component.reviewPrompt.value.component)
+        assertEquals(1, requested.reviewConsumedCalls)
+
+        requested.lifecycle.destroy()
+        notRequested.lifecycle.destroy()
+    }
+
+    @Test
+    fun review_leave_feedback_requests_store_review_and_consumes_prompt() = runTest(testDispatcher) {
+        val setup = build(canContinue = false, shouldRequestReview = true)
+
+        assertNotNull(setup.component.reviewPrompt.value.component).onLeaveFeedbackClicked()
+        setup.lifecycle.destroy()
+        runCurrent()
+
+        assertEquals(1, setup.storeReview.inAppRequests)
+        assertEquals(1, setup.reviewConsumedCalls)
+        assertNull(setup.component.reviewPrompt.value.component)
+    }
+
+    @Test
+    fun review_dont_show_again_suppresses_future_prompts_and_consumes() = runTest(testDispatcher) {
+        val setup = build(canContinue = false, shouldRequestReview = true)
+
+        assertNotNull(setup.component.reviewPrompt.value.component).onDontShowAgainClicked()
+        runCurrent()
+
+        assertEquals(2, setup.settings.reviewPromptCount.value)
+        assertEquals(1, setup.reviewConsumedCalls)
+        assertNull(setup.component.reviewPrompt.value.component)
         setup.lifecycle.destroy()
     }
 
@@ -268,22 +322,38 @@ class DefaultGameResultComponentTest {
 
     private fun build(
         canContinue: Boolean,
+        shouldRequestReview: Boolean = false,
         onContinueRequested: () -> Unit = {},
     ): Setup {
         val lifecycle = LifecycleRegistry()
+        val settings = FakeSettings()
+        val storeReview = RecordingStoreReview()
         var continueCalls = 0
         var newGameCalls = 0
         var homeCalls = 0
+        var reviewConsumedCalls = 0
         val component = DefaultGameResultComponent(
             componentContext = DefaultComponentContext(lifecycle),
             snapshot = snapshot,
             canContinue = canContinue,
+            shouldRequestReview = shouldRequestReview,
+            settings = settings,
+            storeReview = storeReview,
+            analytics = RecordingAnalytics(),
+            appScope = CoroutineScope(testDispatcher),
+            dispatchers = AppDispatchers(
+                default = testDispatcher,
+                io = testDispatcher,
+                main = Dispatchers.Main,
+                unconfined = testDispatcher,
+            ),
             onContinueRequested = {
                 continueCalls += 1
                 onContinueRequested()
             },
             onNewGameRequested = { newGameCalls += 1 },
             onHomeRequested = { homeCalls += 1 },
+            onReviewPromptConsumed = { reviewConsumedCalls += 1 },
         )
         lifecycle.resume()
         return Setup(
@@ -292,6 +362,9 @@ class DefaultGameResultComponentTest {
             continueCallsProvider = { continueCalls },
             newGameCallsProvider = { newGameCalls },
             homeCallsProvider = { homeCalls },
+            reviewConsumedCallsProvider = { reviewConsumedCalls },
+            settings = settings,
+            storeReview = storeReview,
         )
     }
 
@@ -301,10 +374,51 @@ class DefaultGameResultComponentTest {
         val continueCallsProvider: () -> Int,
         val newGameCallsProvider: () -> Int,
         val homeCallsProvider: () -> Int,
+        val reviewConsumedCallsProvider: () -> Int,
+        val settings: FakeSettings,
+        val storeReview: RecordingStoreReview,
     ) {
         val continueCalls: Int get() = continueCallsProvider()
         val newGameCalls: Int get() = newGameCallsProvider()
         val homeCalls: Int get() = homeCallsProvider()
+        val reviewConsumedCalls: Int get() = reviewConsumedCallsProvider()
+    }
+
+    private class FakeSettings : SettingsRepository {
+        private val reviewFlow = MutableStateFlow(0)
+        override val musicEnabled = MutableStateFlow(true).asStateFlow()
+        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
+        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
+        override val darkTheme = MutableStateFlow(false).asStateFlow()
+        override val bestScore = MutableStateFlow(0L).asStateFlow()
+        override val reviewPromptCount = reviewFlow.asStateFlow()
+        override val tutorialSeen = MutableStateFlow(false).asStateFlow()
+        override suspend fun setMusicEnabled(enabled: Boolean) = Unit
+        override suspend fun setSfxEnabled(enabled: Boolean) = Unit
+        override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
+        override suspend fun setDarkTheme(enabled: Boolean) = Unit
+        override suspend fun setBestScore(score: Long) = Unit
+        override suspend fun incrementReviewPromptCount() {
+            reviewFlow.value += 1
+        }
+        override suspend fun suppressReviewPrompts(max: Int) {
+            reviewFlow.value = maxOf(reviewFlow.value, max)
+        }
+        override suspend fun setTutorialSeen() = Unit
+    }
+
+    private class RecordingStoreReview : StoreReviewRepository {
+        var inAppRequests = 0
+        override fun requestInAppReview(): Flow<ReviewCode> {
+            inAppRequests += 1
+            return flowOf(ReviewCode.NO_ERROR)
+        }
+        override fun requestInMarketReview(): Flow<ReviewCode> = flowOf(ReviewCode.NO_ERROR)
+    }
+
+    private class RecordingAnalytics : AnalyticRepository {
+        override fun logEvent(eventName: String, params: Map<String, Any>?) = Unit
+        override fun deleteData() = Unit
     }
 
     private companion object {

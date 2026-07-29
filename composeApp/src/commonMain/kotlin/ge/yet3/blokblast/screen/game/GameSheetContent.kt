@@ -18,7 +18,6 @@ fun GameSheet(component: GameComponent) {
         ) {
             when (child) {
                 is GameComponent.SheetChild.Settings -> SettingsContent(component = child.component)
-                is GameComponent.SheetChild.ReviewPrompt -> ReviewPromptContent(component = child.component)
             }
         }
     }

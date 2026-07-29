@@ -1,6 +1,5 @@
 package ge.yet.blockblast.feature.game
 
-import com.app.common.config.AppConfig
 import com.app.common.decompose.asValue
 import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.ComponentContext
@@ -17,7 +16,6 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.integration.stateToModel
-import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
 import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
@@ -27,8 +25,6 @@ import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
-import ge.yet.blokblast.domain.repository.SettingsRepository
-import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -38,12 +34,10 @@ internal class DefaultGameComponent(
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
-    private val settings: SettingsRepository,
-    private val storeReview: StoreReviewRepository,
     private val isNewGame: Boolean,
     private val restoredResultState: GameState?,
     private val onExitClickedCb: () -> Unit,
-    private val onGameCompletedCb: (GameState, Boolean) -> Unit,
+    private val onGameCompletedCb: (GameState, Boolean, Boolean) -> Unit,
     private val onReviveCompletedCb: (GameState) -> Unit,
     private val onReviveFailedCb: () -> Unit,
 ) : ComponentContext by componentContext,
@@ -82,12 +76,12 @@ internal class DefaultGameComponent(
         lifecycleScope.launch {
             store.labels.collect { label ->
                 when (label) {
-                    GameStore.Label.RequestReview -> {
-                        log("review_prompt_shown")
-                        sheetNavigation.activate(SheetConfig.ReviewPrompt)
-                    }
                     is GameStore.Label.GameCompleted ->
-                        onGameCompletedCb(label.finalState, label.canContinue)
+                        onGameCompletedCb(
+                            label.finalState,
+                            label.canContinue,
+                            label.shouldRequestReview,
+                        )
                     is GameStore.Label.ReviveCompleted ->
                         onReviveCompletedCb(label.playableState)
                     GameStore.Label.ReviveFailed -> onReviveFailedCb()
@@ -95,7 +89,6 @@ internal class DefaultGameComponent(
             }
         }
     }
-
 
     override fun onCellClicked(pieceId: Long, x: Int, y: Int) {
         store.accept(GameStore.Intent.Place(pieceId, x, y))
@@ -117,24 +110,9 @@ internal class DefaultGameComponent(
         val dismissedChild = sheetSlot.value.child?.instance
         when (dismissedChild) {
             is GameComponent.SheetChild.Settings -> log("settings_closed")
-            is GameComponent.SheetChild.ReviewPrompt -> log("review_prompt_closed")
             null -> Unit
         }
         sheetNavigation.dismiss()
-    }
-
-    private fun onReviewPromptDontShowAgainClicked() {
-        log("review_prompt_suppressed")
-        lifecycleScope.launch {
-            settings.suppressReviewPrompts(AppConfig.REVIEW_MAX_PROMPTS)
-        }
-    }
-
-    private fun onReviewPromptLeaveFeedbackClicked() {
-        log("review_requested")
-        lifecycleScope.launch {
-            storeReview.requestInAppReview().collect {}
-        }
     }
 
     private fun log(eventName: String) = logger.log(eventName, store.state.game)
@@ -151,35 +129,20 @@ internal class DefaultGameComponent(
                         onBackClicked = ::onDismissSheet
                     ),
                 )
-            is SheetConfig.ReviewPrompt ->
-                GameComponent.SheetChild.ReviewPrompt(
-                    DefaultReviewPromptComponent(
-                        componentContext = componentContext,
-                        onDontShowAgainRequested = ::onReviewPromptDontShowAgainClicked,
-                        onDismissed = ::onDismissSheet,
-                        onReviewRequested = ::onReviewPromptLeaveFeedbackClicked,
-                    ),
-                )
         }
 
     @Serializable
     sealed interface SheetConfig {
         @Serializable
         data object Settings : SheetConfig
-
-        @Serializable
-        data object ReviewPrompt : SheetConfig
     }
 }
-
 
 @Inject
 internal class DefaultGameComponentFactory(
     private val gameStoreFactory: GameStoreFactory,
     private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
-    private val settings: SettingsRepository,
-    private val storeReview: StoreReviewRepository,
     private val analytics: AnalyticRepository,
 ) : GameComponent.Factory {
     override fun create(
@@ -187,7 +150,7 @@ internal class DefaultGameComponentFactory(
         isNewGame: Boolean,
         restoredResultState: GameState?,
         onExitClicked: () -> Unit,
-        onGameCompleted: (GameState, Boolean) -> Unit,
+        onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
         onReviveCompleted: (GameState) -> Unit,
         onReviveFailed: () -> Unit,
     ): GameComponent = DefaultGameComponent(
@@ -195,8 +158,6 @@ internal class DefaultGameComponentFactory(
         gameStoreFactory = gameStoreFactory,
         settingsComponent = settingsComponent,
         audio = audio,
-        settings = settings,
-        storeReview = storeReview,
         analytics = analytics,
         isNewGame = isNewGame,
         restoredResultState = restoredResultState,

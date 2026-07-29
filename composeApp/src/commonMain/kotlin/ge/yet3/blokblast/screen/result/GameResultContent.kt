@@ -28,7 +28,9 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet3.blokblast.ads.rememberGameOverInterstitial
 import ge.yet3.blokblast.component.background.AmbientMeshBackground
+import ge.yet3.blokblast.component.sheet.ClaudeBottomSheet
 import ge.yet3.blokblast.screen.game.GameGrid
+import ge.yet3.blokblast.screen.game.ReviewPromptContent
 import ge.yet3.blokblast.screen.game.rememberReducedMotion
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best
@@ -48,6 +50,7 @@ fun GameResultContent(
     modifier: Modifier = Modifier,
 ) {
     val model by component.model.subscribeAsState()
+    val reviewPrompt by component.reviewPrompt.subscribeAsState()
     val interstitial = rememberGameOverInterstitial()
     val reducedMotion = rememberReducedMotion()
 
@@ -60,6 +63,14 @@ fun GameResultContent(
         reducedMotion = reducedMotion,
         modifier = modifier,
     )
+
+    reviewPrompt.component?.let { prompt ->
+        ClaudeBottomSheet(
+            onDismiss = { component.onDismissReviewPrompt() },
+        ) {
+            ReviewPromptContent(component = prompt)
+        }
+    }
 }
 
 @Composable

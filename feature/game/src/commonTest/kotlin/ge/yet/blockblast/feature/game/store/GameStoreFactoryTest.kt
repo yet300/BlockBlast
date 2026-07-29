@@ -444,7 +444,7 @@ class GameStoreFactoryTest {
     // ── Review prompt qualifier ──────────────────────────────────────────
 
     @Test
-    fun qualifying_review_is_suppressed_when_result_navigation_is_immediate() = runTest {
+    fun qualifying_review_is_marked_and_persisted_before_result_navigation() = runTest {
         val deps = TestDeps(settingsBest = 0L, reviewCount = 0)
         val store = deps.factory().create(isNewGame = true)
         val labels = mutableListOf<GameStore.Label>()
@@ -459,10 +459,65 @@ class GameStoreFactoryTest {
         )
         deps.engine.restore(qualifying)
         runCurrent()
-        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
-        assertTrue(labels.none { it is GameStore.Label.RequestReview })
-        assertFalse(deps.engine.state.value.reviewPromptFiredThisRound)
-        assertEquals(0, deps.settings.reviewPromptCount.value)
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertTrue(completed.shouldRequestReview)
+        assertTrue(deps.engine.state.value.reviewPromptFiredThisRound)
+        assertTrue(completed.finalState.reviewPromptFiredThisRound)
+        assertEquals(completed.finalState, deps.saveRepo.saved)
+        assertEquals(1, deps.settings.reviewPromptCount.value)
+        labelScope.cancel()
+        deps.dispose()
+    }
+
+    @Test
+    fun qualifying_review_is_counted_only_once_across_repeated_terminal_edges() = runTest {
+        val deps = TestDeps(settingsBest = 0L, reviewCount = 0)
+        val store = deps.factory().create(isNewGame = true)
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch { store.labels.collect { labels += it } }
+        val qualifying = deps.engine.state.value.copy(
+            score = AppConfig.REVIEW_MIN_SCORE.toLong() + AppConfig.REVIEW_BEST_SCORE_DELTA + 10L,
+            bestAtRoundStart = 0L,
+            isGameOver = true,
+        )
+
+        deps.engine.restore(qualifying)
+        runCurrent()
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = false))
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        runCurrent()
+
+        val completions = labels.filterIsInstance<GameStore.Label.GameCompleted>()
+        assertEquals(listOf(true, false), completions.map { it.shouldRequestReview })
+        assertEquals(1, deps.settings.reviewPromptCount.value)
+        labelScope.cancel()
+        deps.dispose()
+    }
+
+    @Test
+    fun review_count_failure_does_not_show_prompt_or_block_result_navigation() = runTest {
+        val deps = TestDeps(failReviewPromptCount = true)
+        val store = deps.factory().create(isNewGame = true)
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch { store.labels.collect { labels += it } }
+
+        deps.engine.restore(
+            deps.engine.state.value.copy(
+                score = AppConfig.REVIEW_MIN_SCORE.toLong() +
+                    AppConfig.REVIEW_BEST_SCORE_DELTA +
+                    10L,
+                bestAtRoundStart = 0L,
+                isGameOver = true,
+            ),
+        )
+        runCurrent()
+
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertFalse(completed.shouldRequestReview)
+        assertFalse(completed.finalState.reviewPromptFiredThisRound)
+        assertTrue(deps.analytics.has("game_persistence_failed"))
         labelScope.cancel()
         deps.dispose()
     }
@@ -482,8 +537,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
-        assertTrue(labels.none { it is GameStore.Label.RequestReview })
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertFalse(completed.shouldRequestReview)
         scope.cancel()
         deps.dispose()
     }
@@ -504,8 +559,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
-        assertTrue(labels.none { it is GameStore.Label.RequestReview })
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertFalse(completed.shouldRequestReview)
         scope.cancel()
         deps.dispose()
     }
@@ -525,8 +580,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
-        assertTrue(labels.none { it is GameStore.Label.RequestReview })
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertFalse(completed.shouldRequestReview)
         scope.cancel()
         deps.dispose()
     }
@@ -547,8 +602,8 @@ class GameStoreFactoryTest {
             ),
         )
         runCurrent()
-        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
-        assertTrue(labels.none { it is GameStore.Label.RequestReview })
+        val completed = labels.single() as GameStore.Label.GameCompleted
+        assertFalse(completed.shouldRequestReview)
         scope.cancel()
         deps.dispose()
     }
@@ -688,6 +743,7 @@ class GameStoreFactoryTest {
         savedState: GameState? = null,
         settingsBest: Long = 0L,
         reviewCount: Int = 0,
+        failReviewPromptCount: Boolean = false,
         saveDelayMillis: Long = 0L,
         saveRepositoryOverride: GameSaveRepository? = null,
         settingsRepositoryOverride: SettingsRepository? = null,
@@ -703,6 +759,7 @@ class GameStoreFactoryTest {
         val settings = FakeSettings(
             bestScore = settingsBest,
             reviewPromptCount = reviewCount,
+            failReviewPromptCount = failReviewPromptCount,
             onBestScoreSet = { operations += "best" },
         )
         private val settingsRepository = settingsRepositoryOverride ?: settings
@@ -833,6 +890,7 @@ private class StubSaveRepo(
 private class FakeSettings(
     bestScore: Long = 0L,
     reviewPromptCount: Int = 0,
+    private val failReviewPromptCount: Boolean = false,
     private val onBestScoreSet: () -> Unit = {},
 ) : SettingsRepository {
     private val bestScoreFlow = MutableStateFlow(bestScore)
@@ -852,7 +910,10 @@ private class FakeSettings(
         onBestScoreSet()
         if (score > bestScoreFlow.value) bestScoreFlow.value = score
     }
-    override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
+    override suspend fun incrementReviewPromptCount() {
+        if (failReviewPromptCount) error("review prompt count failed")
+        reviewFlow.value += 1
+    }
     override suspend fun suppressReviewPrompts(max: Int) { if (reviewFlow.value < max) reviewFlow.value = max }
     override suspend fun setTutorialSeen() {}
 }

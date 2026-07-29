@@ -1,5 +1,6 @@
 package ge.yet.blockblast.feature.game.store
 
+import com.app.common.config.AppConfig
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
@@ -105,8 +106,22 @@ internal class GameStoreFactory(
                                 previousIsGameOver = isGameOver
                                 if (isGameOver) {
                                     logger.log("game_over", gameState)
-                                    val finalState = gameState.copy(
-                                        grid = Grid(gameState.grid.cells.copyOf()),
+                                    val shouldRequestReview =
+                                        qualifiesForReview(gameState) &&
+                                            attemptPersistence(
+                                                logger = logger,
+                                                operation = "review_prompt_count",
+                                                state = gameState,
+                                            ) {
+                                                settings.incrementReviewPromptCount()
+                                            }
+                                    if (shouldRequestReview) {
+                                        engine.markReviewPromptFired()
+                                    }
+                                    val markedState =
+                                        if (shouldRequestReview) engine.state.value else gameState
+                                    val finalState = markedState.copy(
+                                        grid = Grid(markedState.grid.cells.copyOf()),
                                     )
                                     // Result navigation must never race the final save.
                                     attemptPersistence(
@@ -127,6 +142,7 @@ internal class GameStoreFactory(
                                         GameStore.Label.GameCompleted(
                                             finalState = finalState,
                                             canContinue = finalState.revivesUsed < GameState.MAX_REVIVES,
+                                            shouldRequestReview = shouldRequestReview,
                                         ),
                                     )
                                 }
@@ -276,4 +292,11 @@ internal class GameStoreFactory(
             false
         }
 
+    private fun qualifiesForReview(state: GameState): Boolean {
+        val beatBy = state.score - state.bestAtRoundStart
+        return !state.reviewPromptFiredThisRound &&
+            state.score >= AppConfig.REVIEW_MIN_SCORE.toLong() &&
+            beatBy >= AppConfig.REVIEW_BEST_SCORE_DELTA &&
+            settings.reviewPromptCount.value < AppConfig.REVIEW_MAX_PROMPTS
+    }
 }

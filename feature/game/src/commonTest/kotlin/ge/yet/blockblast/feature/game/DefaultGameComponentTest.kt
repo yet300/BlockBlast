@@ -19,19 +19,15 @@ import ge.yet.blokblast.domain.model.Position
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
-import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.SettingsRepository
-import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -67,7 +63,6 @@ class DefaultGameComponentTest {
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
         val analytics = RecordingAnalytics()
         val audio = RecordingAudio()
-        val storeReview = RecordingStoreReview()
         val settings = FakeSettings(bestScore = bestScore, reviewPromptCount = reviewCount)
         val save = StubSaveRepo()
         val engine = GameEngine(
@@ -85,21 +80,19 @@ class DefaultGameComponentTest {
             analytics = analytics,
         )
         val exitCalls = mutableListOf<Unit>()
-        val completions = mutableListOf<Pair<GameState, Boolean>>()
+        val completions = mutableListOf<Triple<GameState, Boolean, Boolean>>()
         val reviveCompletions = mutableListOf<GameState>()
         val component = DefaultGameComponent(
             componentContext = DefaultComponentContext(lifecycle),
             gameStoreFactory = storeFactory,
             settingsComponent = StubSettingsFactory(),
             audio = audio,
-            settings = settings,
-            storeReview = storeReview,
             analytics = analytics,
             isNewGame = isNewGame,
             restoredResultState = restoredResultState,
             onExitClickedCb = { exitCalls += Unit },
-            onGameCompletedCb = { finalState, canContinue ->
-                completions += finalState to canContinue
+            onGameCompletedCb = { finalState, canContinue, shouldRequestReview ->
+                completions += Triple(finalState, canContinue, shouldRequestReview)
             },
             onReviveCompletedCb = { reviveCompletions += it },
             onReviveFailedCb = {},
@@ -112,7 +105,6 @@ class DefaultGameComponentTest {
             audio,
             analytics,
             settings,
-            storeReview,
             exitCalls,
             completions,
             reviveCompletions,
@@ -216,7 +208,7 @@ class DefaultGameComponentTest {
         val emittedFinalState = s.engine.state.value
         runCurrent()
         assertEquals(
-            listOf(emittedFinalState to true),
+            listOf(Triple(emittedFinalState, true, false)),
             s.completions,
         )
         s.dispose()
@@ -225,7 +217,7 @@ class DefaultGameComponentTest {
     // ── Review prompt sheet ──────────────────────────────────────────────
 
     @Test
-    fun qualifying_game_over_navigates_immediately_without_hidden_review_sheet() = runTest(testDispatcher) {
+    fun qualifying_game_over_navigates_immediately_with_result_review_flag() = runTest(testDispatcher) {
         val s = build(reviewCount = 0)
         // A qualifying completed round must still navigate immediately.
         s.engine.restore(
@@ -238,8 +230,9 @@ class DefaultGameComponentTest {
         runCurrent()
         assertNull(s.component.sheetSlot.value.child)
         assertEquals(1, s.completions.size)
-        assertEquals(0, s.settings.reviewPromptCount.value)
-        assertEquals(false, s.engine.state.value.reviewPromptFiredThisRound)
+        assertTrue(s.completions.single().third)
+        assertEquals(1, s.settings.reviewPromptCount.value)
+        assertTrue(s.engine.state.value.reviewPromptFiredThisRound)
         assertNull(s.analytics.events.find { it.first == "review_prompt_shown" })
         s.dispose()
     }
@@ -267,9 +260,8 @@ class DefaultGameComponentTest {
         val audio: RecordingAudio,
         val analytics: RecordingAnalytics,
         val settings: FakeSettings,
-        val storeReview: RecordingStoreReview,
         val exitCalls: MutableList<Unit>,
-        val completions: MutableList<Pair<GameState, Boolean>>,
+        val completions: MutableList<Triple<GameState, Boolean, Boolean>>,
         val reviveCompletions: MutableList<GameState>,
         val save: StubSaveRepo,
     ) {
@@ -330,15 +322,6 @@ class DefaultGameComponentTest {
             events += eventName to (params ?: emptyMap())
         }
         override fun deleteData() {}
-    }
-
-    private class RecordingStoreReview : StoreReviewRepository {
-        var inAppRequests = 0
-        override fun requestInAppReview(): Flow<ReviewCode> {
-            inAppRequests += 1
-            return flowOf(ReviewCode.NO_ERROR)
-        }
-        override fun requestInMarketReview(): Flow<ReviewCode> = flowOf(ReviewCode.NO_ERROR)
     }
 
     private class StubSettingsFactory : SettingsComponent.Factory {

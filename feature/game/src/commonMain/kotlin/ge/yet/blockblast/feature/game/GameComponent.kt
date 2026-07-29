@@ -3,7 +3,6 @@ package ge.yet.blockblast.feature.game
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
-import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
@@ -39,10 +38,6 @@ interface GameComponent {
         class Settings(
             val component: SettingsComponent,
         ) : SheetChild
-
-        class ReviewPrompt(
-            val component: ReviewPromptComponent,
-        ) : SheetChild
     }
 
     fun interface Factory {
@@ -51,7 +46,7 @@ interface GameComponent {
             isNewGame: Boolean,
             restoredResultState: GameState?,
             onExitClicked: () -> Unit,
-            onGameCompleted: (GameState, Boolean) -> Unit,
+            onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
             onReviveFailed: () -> Unit,
         ): GameComponent
