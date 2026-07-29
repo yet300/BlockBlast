@@ -163,29 +163,51 @@ class SettingsBackedGameSaveRepositoryTest {
     fun caller_mutation_after_save_does_not_change_cached_snapshot() = runTest {
         val repo = newRepo()
         val mutablePieces = sampleState.currentPieces.toMutableList()
-        val state = sampleState.copy(currentPieces = mutablePieces)
+        val mutableShapeCells = sampleState.currentPieces.single().shape.cells.toMutableList()
+        val mutableClearedCells = mutableListOf(Position(4, 5))
+        mutablePieces[0] = mutablePieces.single().copy(
+            shape = mutablePieces.single().shape.copy(cells = mutableShapeCells),
+        )
+        val state = sampleState.copy(
+            currentPieces = mutablePieces,
+            lastClearedCells = sampleState.lastClearedCells.copy(cells = mutableClearedCells),
+        )
         repo.save(state)
 
         state.grid.cells[state.grid.index(2, 3)] = Grid.EMPTY
         mutablePieces.clear()
+        mutableShapeCells.clear()
+        mutableClearedCells.clear()
 
         val loaded = assertNotNull(repo.load())
         assertEquals(5, loaded.grid.colorAt(2, 3))
         assertEquals(1, loaded.currentPieces.size)
+        assertEquals(2, loaded.currentPieces.single().shape.cells.size)
+        assertEquals(listOf(Position(4, 5)), loaded.lastClearedCells.cells)
     }
 
     @Test
     fun caller_mutation_after_load_does_not_change_future_cached_reads() = runTest {
         val repo = newRepo()
-        repo.save(sampleState)
+        repo.save(
+            sampleState.copy(
+                lastClearedCells = sampleState.lastClearedCells.copy(
+                    cells = listOf(Position(4, 5)),
+                ),
+            ),
+        )
 
         val first = assertNotNull(repo.load())
         first.grid.cells[first.grid.index(2, 3)] = Grid.EMPTY
+        (first.currentPieces.single().shape.cells as MutableList).clear()
+        (first.lastClearedCells.cells as MutableList).clear()
         (first.currentPieces as MutableList).clear()
 
         val second = assertNotNull(repo.load())
         assertEquals(5, second.grid.colorAt(2, 3))
         assertEquals(1, second.currentPieces.size)
+        assertEquals(2, second.currentPieces.single().shape.cells.size)
+        assertEquals(listOf(Position(4, 5)), second.lastClearedCells.cells)
     }
 
     /** Wraps MapSettings to count getStringOrNull invocations. */
