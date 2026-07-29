@@ -29,13 +29,16 @@ class ComboStripesState {
     suspend fun sweep(rows: List<Int>, cols: List<Int>, durationMillis: Int = 350) {
         activeRows = rows
         activeCols = cols
-        progress.snapTo(0f)
-        progress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis, easing = LinearEasing),
-        )
-        activeRows = emptyList()
-        activeCols = emptyList()
+        try {
+            progress.snapTo(0f)
+            progress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis, easing = LinearEasing),
+            )
+        } finally {
+            activeRows = emptyList()
+            activeCols = emptyList()
+        }
     }
 }
 

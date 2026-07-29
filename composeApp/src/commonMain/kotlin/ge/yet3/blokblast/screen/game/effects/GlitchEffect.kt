@@ -10,6 +10,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 /**
@@ -28,11 +30,17 @@ class GlitchState {
     val intensity = Animatable(0f)
 
     suspend fun trigger(durationMillis: Int = 400) {
-        intensity.snapTo(1f)
-        intensity.animateTo(
-            targetValue = 0f,
-            animationSpec = tween(durationMillis),
-        )
+        try {
+            intensity.snapTo(1f)
+            intensity.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis),
+            )
+        } finally {
+            withContext(NonCancellable) {
+                intensity.snapTo(0f)
+            }
+        }
     }
 }
 
@@ -89,4 +97,3 @@ fun Modifier.glitchEffect(state: GlitchState): Modifier =
             y += lineSpacing
         }
     }
-

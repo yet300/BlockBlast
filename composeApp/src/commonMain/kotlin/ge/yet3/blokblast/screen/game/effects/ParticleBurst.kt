@@ -48,8 +48,11 @@ class ParticleBurstState {
                 )
                 particles.add(particle)
                 launch {
-                    particle.progress.animateTo(1f, tween(700, easing = LinearEasing))
-                    particles.remove(particle)
+                    try {
+                        particle.progress.animateTo(1f, tween(700, easing = LinearEasing))
+                    } finally {
+                        particles.remove(particle)
+                    }
                 }
             }
         }
@@ -62,8 +65,11 @@ class ParticleBurstState {
             color = color,
         )
         shockwaves.add(sw)
-        sw.progress.animateTo(1f, tween(450, easing = LinearEasing))
-        shockwaves.remove(sw)
+        try {
+            sw.progress.animateTo(1f, tween(450, easing = LinearEasing))
+        } finally {
+            shockwaves.remove(sw)
+        }
     }
 }
 
