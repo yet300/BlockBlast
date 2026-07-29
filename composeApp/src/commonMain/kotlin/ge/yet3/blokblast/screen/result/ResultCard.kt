@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,11 +42,13 @@ internal fun ResultCard(
     continueLabel: String,
     newGameLabel: String,
     homeLabel: String,
+    advertisementLabel: String,
+    layoutPolicy: ResultLayoutPolicy,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(if (layoutPolicy.isCompact) 24.dp else 28.dp)
     Column(
         modifier = modifier
             .whisperShadow(shape = shape, elevation = 24.dp)
@@ -53,7 +57,10 @@ internal fun ResultCard(
                 shape = shape,
             )
             .background(MaterialTheme.colorScheme.surface, shape)
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(
+                horizontal = layoutPolicy.cardHorizontalPaddingDp.dp,
+                vertical = layoutPolicy.cardVerticalPaddingDp.dp,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -66,11 +73,15 @@ internal fun ResultCard(
         )
         Text(
             text = model.snapshot.score.formatScore(),
-            style = MaterialTheme.typography.displayMedium,
+            style = if (layoutPolicy.isCompact) {
+                MaterialTheme.typography.headlineLarge
+            } else {
+                MaterialTheme.typography.displayMedium
+            },
             color = MaterialTheme.colorScheme.onSurface,
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(layoutPolicy.scoreSpacingDp.dp))
 
         Text(
             text = if (model.snapshot.isNewBest) {
@@ -87,7 +98,7 @@ internal fun ResultCard(
             fontWeight = if (model.snapshot.isNewBest) FontWeight.SemiBold else FontWeight.Normal,
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(layoutPolicy.sectionSpacingDp.dp))
 
         ResultPrimaryButton(
             text = if (model.isContinuePhase) {
@@ -96,16 +107,20 @@ internal fun ResultCard(
                 newGameLabel
             },
             showAdIcon = model.isContinuePhase,
+            advertisementLabel = advertisementLabel,
+            buttonHeight = layoutPolicy.buttonHeightDp.dp,
             onClick = onPrimaryClicked,
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(layoutPolicy.actionsSpacingDp.dp))
 
         SecondaryWarmSandButton(
             text = homeLabel,
             onClick = onHomeClicked,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(layoutPolicy.buttonHeightDp.dp),
         )
     }
 }
@@ -114,14 +129,30 @@ internal fun ResultCard(
 private fun ResultPrimaryButton(
     text: String,
     showAdIcon: Boolean,
+    advertisementLabel: String,
+    buttonHeight: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(16.dp)
+    val accessibilityLabel = resultPrimaryContentDescription(
+        isContinuePhase = showAdIcon,
+        primaryText = text,
+        advertisementLabel = advertisementLabel,
+    )
     Button(
         onClick = onClick,
         modifier = modifier
-            .height(56.dp)
+            .then(
+                if (accessibilityLabel != null) {
+                    Modifier.semantics {
+                        contentDescription = accessibilityLabel
+                    }
+                } else {
+                    Modifier
+                },
+            )
+            .height(buttonHeight)
             .ringShadow(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.30f),
                 shape = shape,
@@ -174,3 +205,9 @@ private fun AdPlayIcon(modifier: Modifier = Modifier) {
         drawPath(path = triangle, color = color)
     }
 }
+
+internal fun resultPrimaryContentDescription(
+    isContinuePhase: Boolean,
+    primaryText: String,
+    advertisementLabel: String,
+): String? = "$primaryText, $advertisementLabel".takeIf { isContinuePhase }

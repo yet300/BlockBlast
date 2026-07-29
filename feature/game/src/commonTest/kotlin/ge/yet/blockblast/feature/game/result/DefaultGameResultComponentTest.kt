@@ -1,6 +1,7 @@
 package ge.yet.blockblast.feature.game.result
 
 import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
@@ -13,6 +14,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -76,11 +78,12 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun primary_action_continues_once_while_countdown_is_active() {
+    fun primary_action_continues_once_while_countdown_is_active() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
 
         setup.component.onPrimaryClicked(approveImmediately)
         setup.component.onPrimaryClicked(approveImmediately)
+        runCurrent()
 
         assertEquals(1, setup.continueCalls)
         assertEquals(0, setup.newGameCalls)
@@ -114,6 +117,7 @@ class DefaultGameResultComponentTest {
         advanceTimeBy(6_000)
         runCurrent()
         approveContinue?.invoke()
+        runCurrent()
 
         assertEquals(1, continueGateRequests)
         assertEquals(1, setup.continueCalls)
@@ -122,7 +126,7 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun double_tap_requests_continue_gate_once_and_continues_once_after_approval() {
+    fun double_tap_requests_continue_gate_once_and_continues_once_after_approval() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
         var continueGateRequests = 0
         var approveContinue: (() -> Unit)? = null
@@ -135,9 +139,52 @@ class DefaultGameResultComponentTest {
         setup.component.onPrimaryClicked(requestContinue)
         approveContinue?.invoke()
         approveContinue?.invoke()
+        runCurrent()
 
         assertEquals(1, continueGateRequests)
         assertEquals(1, setup.continueCalls)
+        assertEquals(0, setup.newGameCalls)
+        setup.lifecycle.destroy()
+    }
+
+    @Test
+    fun approval_after_destroy_does_not_continue() = runTest(testDispatcher) {
+        val setup = build(canContinue = true)
+        var approveContinue: (() -> Unit)? = null
+
+        setup.component.onPrimaryClicked { onApproved ->
+            approveContinue = onApproved
+        }
+        setup.lifecycle.destroy()
+        approveContinue?.invoke()
+        runCurrent()
+
+        assertEquals(0, setup.continueCalls)
+        assertEquals(0, setup.newGameCalls)
+    }
+
+    @Test
+    fun approval_from_background_dispatcher_is_marshaled_to_main_once() = runTest(testDispatcher) {
+        val mainConfinedValue = MutableValue(0)
+        val setup = build(
+            canContinue = true,
+            onContinueRequested = {
+                mainConfinedValue.value += 1
+            },
+        )
+        var approveContinue: (() -> Unit)? = null
+
+        setup.component.onPrimaryClicked { onApproved ->
+            approveContinue = onApproved
+        }
+        withContext(Dispatchers.Default) {
+            approveContinue?.invoke()
+            approveContinue?.invoke()
+        }
+
+        runCurrent()
+        assertEquals(1, setup.continueCalls)
+        assertEquals(1, mainConfinedValue.value)
         assertEquals(0, setup.newGameCalls)
         setup.lifecycle.destroy()
     }
@@ -181,7 +228,10 @@ class DefaultGameResultComponentTest {
         assertEquals(4, setup.component.model.value.continueSecondsRemaining)
     }
 
-    private fun build(canContinue: Boolean): Setup {
+    private fun build(
+        canContinue: Boolean,
+        onContinueRequested: () -> Unit = {},
+    ): Setup {
         val lifecycle = LifecycleRegistry()
         var continueCalls = 0
         var newGameCalls = 0
@@ -190,7 +240,10 @@ class DefaultGameResultComponentTest {
             componentContext = DefaultComponentContext(lifecycle),
             snapshot = snapshot,
             canContinue = canContinue,
-            onContinueRequested = { continueCalls += 1 },
+            onContinueRequested = {
+                continueCalls += 1
+                onContinueRequested()
+            },
             onNewGameRequested = { newGameCalls += 1 },
             onHomeRequested = { homeCalls += 1 },
         )

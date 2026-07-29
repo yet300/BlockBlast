@@ -54,9 +54,11 @@ internal class DefaultGameResultComponent(
         if (continueSelected) {
             var approvalHandled = false
             requestContinue {
-                if (approvalHandled) return@requestContinue
-                approvalHandled = true
-                onContinueRequested()
+                componentScope.launch {
+                    if (approvalHandled) return@launch
+                    approvalHandled = true
+                    onContinueRequested()
+                }
             }
         } else {
             onNewGameRequested()

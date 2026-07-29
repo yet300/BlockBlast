@@ -58,6 +58,7 @@ fun GameGrid(
     selectedPiece: Piece?,
     onCellTapped: (x: Int, y: Int) -> Unit,
     modifier: Modifier = Modifier,
+    interactive: Boolean = true,
     dragDropState: DragDropState? = null,
     comboStripes: ComboStripesState? = null,
     particleBurst: ParticleBurstState? = null,
@@ -199,7 +200,10 @@ fun GameGrid(
         val clearedSet = remember(clearedEvent) {
             buildSet { for (c in clearedEvent.cells) add(c.x to c.y) }
         }
-        val tapEnabled = selectedPiece != null
+        val tapEnabled = gridCellTapEnabled(
+            interactive = interactive,
+            hasSelectedPiece = selectedPiece != null,
+        )
 
         // Wrap cells in a layer to apply saturation effect once to the whole
         Box(
@@ -336,8 +340,17 @@ private fun GridCell(
                 x = x * (cellSize + GAP_DP),
                 y = y * (cellSize + GAP_DP),
             )
-            .clickable(enabled = tapEnabled) {
-                onCellTapped(x, y)
-            },
+            .then(
+                if (tapEnabled) {
+                    Modifier.clickable { onCellTapped(x, y) }
+                } else {
+                    Modifier
+                },
+            ),
     )
 }
+
+internal fun gridCellTapEnabled(
+    interactive: Boolean,
+    hasSelectedPiece: Boolean,
+): Boolean = interactive && hasSelectedPiece

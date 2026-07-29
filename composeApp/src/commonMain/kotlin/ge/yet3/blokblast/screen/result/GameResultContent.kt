@@ -1,16 +1,18 @@
 package ge.yet3.blokblast.screen.result
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.result.GameResultComponent
@@ -29,6 +32,7 @@ import ge.yet3.blokblast.screen.game.GameGrid
 import ge.yet3.blokblast.screen.game.rememberReducedMotion
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best
+import blockblast.composeapp.generated.resources.cd_advertisement
 import blockblast.composeapp.generated.resources.exit_to_home
 import blockblast.composeapp.generated.resources.game_over
 import blockblast.composeapp.generated.resources.game_over_subtitle
@@ -77,60 +81,205 @@ fun GameResultContent(
                 animated = resultAmbientMotionEnabled(reducedMotion),
             )
 
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(innerPadding)
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                    .padding(innerPadding),
             ) {
-                Text(
-                    text = stringResource(Res.string.game_over),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = stringResource(Res.string.game_over_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                GameGrid(
-                    grid = model.snapshot.finalGrid,
-                    selectedPiece = null,
-                    onCellTapped = { _, _ -> },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 420.dp),
-                    reducedMotion = reducedMotion,
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                ResultCard(
-                    model = model,
-                    scoreLabel = stringResource(Res.string.score),
-                    bestLabel = stringResource(Res.string.best),
-                    newBestLabel = stringResource(Res.string.new_best),
-                    continueLabel = stringResource(Res.string.revive),
-                    newGameLabel = stringResource(Res.string.new_game),
-                    homeLabel = stringResource(Res.string.exit_to_home),
-                    onPrimaryClicked = onPrimaryClicked,
-                    onHomeClicked = onHomeClicked,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 420.dp),
-                )
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val layoutPolicy = resultLayoutPolicy(
+                        widthDp = maxWidth.value,
+                        heightDp = maxHeight.value,
+                    )
+                    if (maxWidth > maxHeight) {
+                        LandscapeResultLayout(
+                            model = model,
+                            layoutPolicy = layoutPolicy,
+                            reducedMotion = reducedMotion,
+                            onPrimaryClicked = onPrimaryClicked,
+                            onHomeClicked = onHomeClicked,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        PortraitResultLayout(
+                            model = model,
+                            layoutPolicy = layoutPolicy,
+                            reducedMotion = reducedMotion,
+                            onPrimaryClicked = onPrimaryClicked,
+                            onHomeClicked = onHomeClicked,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+@Composable
+private fun PortraitResultLayout(
+    model: GameResultComponent.Model,
+    layoutPolicy: ResultLayoutPolicy,
+    reducedMotion: Boolean,
+    onPrimaryClicked: () -> Unit,
+    onHomeClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(
+            horizontal = layoutPolicy.horizontalPaddingDp.dp,
+            vertical = layoutPolicy.verticalPaddingDp.dp,
+        ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ResultTitle(
+            layoutPolicy = layoutPolicy,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(layoutPolicy.sectionSpacingDp.dp))
+        ResultBoard(
+            model = model,
+            reducedMotion = reducedMotion,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        )
+        Spacer(Modifier.height(layoutPolicy.sectionSpacingDp.dp))
+        ResultActions(
+            model = model,
+            layoutPolicy = layoutPolicy,
+            onPrimaryClicked = onPrimaryClicked,
+            onHomeClicked = onHomeClicked,
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 420.dp),
+        )
+    }
+}
+
+@Composable
+private fun LandscapeResultLayout(
+    model: GameResultComponent.Model,
+    layoutPolicy: ResultLayoutPolicy,
+    reducedMotion: Boolean,
+    onPrimaryClicked: () -> Unit,
+    onHomeClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(
+            horizontal = layoutPolicy.horizontalPaddingDp.dp,
+            vertical = layoutPolicy.verticalPaddingDp.dp,
+        ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ResultBoard(
+            model = model,
+            reducedMotion = reducedMotion,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+        Spacer(Modifier.width(layoutPolicy.sectionSpacingDp.dp))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            ResultTitle(
+                layoutPolicy = layoutPolicy,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(layoutPolicy.sectionSpacingDp.dp))
+            ResultActions(
+                model = model,
+                layoutPolicy = layoutPolicy,
+                onPrimaryClicked = onPrimaryClicked,
+                onHomeClicked = onHomeClicked,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 420.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResultTitle(
+    layoutPolicy: ResultLayoutPolicy,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(Res.string.game_over),
+            style = if (layoutPolicy.isCompact) {
+                MaterialTheme.typography.headlineMedium
+            } else {
+                MaterialTheme.typography.headlineLarge
+            },
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(layoutPolicy.titleSpacingDp.dp))
+        Text(
+            text = stringResource(Res.string.game_over_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun ResultBoard(
+    model: GameResultComponent.Model,
+    reducedMotion: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        val boardSize = minOf(maxWidth, maxHeight, MAX_RESULT_BOARD_SIZE)
+        GameGrid(
+            grid = model.snapshot.finalGrid,
+            selectedPiece = null,
+            onCellTapped = { _, _ -> },
+            modifier = Modifier.size(boardSize),
+            interactive = false,
+            reducedMotion = reducedMotion,
+        )
+    }
+}
+
+@Composable
+private fun ResultActions(
+    model: GameResultComponent.Model,
+    layoutPolicy: ResultLayoutPolicy,
+    onPrimaryClicked: () -> Unit,
+    onHomeClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ResultCard(
+        model = model,
+        scoreLabel = stringResource(Res.string.score),
+        bestLabel = stringResource(Res.string.best),
+        newBestLabel = stringResource(Res.string.new_best),
+        continueLabel = stringResource(Res.string.revive),
+        newGameLabel = stringResource(Res.string.new_game),
+        homeLabel = stringResource(Res.string.exit_to_home),
+        advertisementLabel = stringResource(Res.string.cd_advertisement),
+        layoutPolicy = layoutPolicy,
+        onPrimaryClicked = onPrimaryClicked,
+        onHomeClicked = onHomeClicked,
+        modifier = modifier,
+    )
+}
+
 internal fun resultAmbientMotionEnabled(reducedMotion: Boolean): Boolean = !reducedMotion
+
+private val MAX_RESULT_BOARD_SIZE: Dp = 420.dp
