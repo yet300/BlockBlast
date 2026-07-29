@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 internal class DefaultGameResultComponent(
     componentContext: ComponentContext,
@@ -31,11 +32,13 @@ internal class DefaultGameResultComponent(
     private val onContinueRequested: () -> Unit,
     private val onNewGameRequested: () -> Unit,
     private val onHomeRequested: () -> Unit,
-    private val onReviewPromptConsumed: () -> Unit,
 ) : GameResultComponent,
     ComponentContext by componentContext {
 
     private val componentScope = coroutineScope()
+    private var reviewPromptConsumed =
+        stateKeeper.consume(REVIEW_PROMPT_STATE_KEY, ReviewPromptState.serializer())
+            ?.consumed == true
     private val modelState = MutableValue(
         GameResultComponent.Model(
             snapshot = snapshot,
@@ -46,7 +49,7 @@ internal class DefaultGameResultComponent(
     override val model: Value<GameResultComponent.Model> = modelState
     private val reviewPromptState = MutableValue(
         GameResultComponent.ReviewPromptSlot(
-            component = if (shouldRequestReview) {
+            component = if (shouldRequestReview && !reviewPromptConsumed) {
                 DefaultReviewPromptComponent(
                     componentContext = childContext(key = "ReviewPrompt"),
                     onDontShowAgainRequested = ::onReviewPromptDontShowAgainClicked,
@@ -64,7 +67,13 @@ internal class DefaultGameResultComponent(
     private var terminalActionHandled = false
 
     init {
-        if (shouldRequestReview) logReview("review_prompt_shown")
+        stateKeeper.register(
+            REVIEW_PROMPT_STATE_KEY,
+            ReviewPromptState.serializer(),
+        ) {
+            ReviewPromptState(consumed = reviewPromptConsumed)
+        }
+        if (reviewPromptState.value.component != null) logReview("review_prompt_shown")
         startCountdown()
     }
 
@@ -103,9 +112,9 @@ internal class DefaultGameResultComponent(
 
     override fun onDismissReviewPrompt(): Boolean {
         if (reviewPromptState.value.component == null) return false
+        reviewPromptConsumed = true
         reviewPromptState.value = GameResultComponent.ReviewPromptSlot(component = null)
         logReview("review_prompt_closed")
-        onReviewPromptConsumed()
         return true
     }
 
@@ -173,7 +182,13 @@ internal class DefaultGameResultComponent(
     private companion object {
         const val CONTINUE_COUNTDOWN_SECONDS = 5
         const val COUNTDOWN_TICK_MILLIS = 1_000L
+        const val REVIEW_PROMPT_STATE_KEY = "ReviewPromptState"
     }
+
+    @Serializable
+    private data class ReviewPromptState(
+        val consumed: Boolean = false,
+    )
 }
 
 @Inject
@@ -192,7 +207,6 @@ internal class DefaultGameResultComponentFactory(
         onContinueRequested: () -> Unit,
         onNewGameRequested: () -> Unit,
         onHomeRequested: () -> Unit,
-        onReviewPromptConsumed: () -> Unit,
     ): GameResultComponent =
         DefaultGameResultComponent(
             componentContext = componentContext,
@@ -207,6 +221,5 @@ internal class DefaultGameResultComponentFactory(
             onContinueRequested = onContinueRequested,
             onNewGameRequested = onNewGameRequested,
             onHomeRequested = onHomeRequested,
-            onReviewPromptConsumed = onReviewPromptConsumed,
         )
 }

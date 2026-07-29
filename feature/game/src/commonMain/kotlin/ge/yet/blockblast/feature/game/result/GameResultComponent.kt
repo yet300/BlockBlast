@@ -36,7 +36,6 @@ interface GameResultComponent {
             onContinueRequested: () -> Unit,
             onNewGameRequested: () -> Unit,
             onHomeRequested: () -> Unit,
-            onReviewPromptConsumed: () -> Unit,
         ): GameResultComponent
     }
 }

@@ -160,54 +160,17 @@ class DefaultRootComponentTest {
             canContinue = true,
             shouldRequestReview = true,
         )
+        val result = setup.resultFactory.created.single()
+        result.model.value = result.model.value.copy(continueSecondsRemaining = 3)
 
         setup.component.onBackClicked()
 
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
-        assertFalse(setup.resultFactory.created.last().shouldRequestReview)
+        assertEquals(1, setup.resultFactory.created.size)
+        assertEquals(3, result.model.value.continueSecondsRemaining)
+        assertEquals(null, result.reviewPrompt.value.component)
         setup.component.onBackClicked()
         assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
-    }
-
-    @Test
-    fun consumed_review_prompt_stays_consumed_after_state_restore() {
-        val stateKeeper = StateKeeperDispatcher()
-        val first = build(stateKeeper = stateKeeper)
-        first.homeFactory.created.first().onNewGameClicked(true)
-        first.gameFactory.created.single().complete(
-            resultState(),
-            canContinue = true,
-            shouldRequestReview = true,
-        )
-        first.resultFactory.created.single().dismissReviewPrompt()
-        val saved = stateKeeper.save()
-        first.lifecycle.destroy()
-
-        val restored = build(stateKeeper = StateKeeperDispatcher(saved))
-
-        assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
-        assertFalse(restored.resultFactory.created.single().shouldRequestReview)
-        assertEquals(null, restored.resultFactory.created.single().reviewPrompt.value.component)
-    }
-
-    @Test
-    fun open_review_prompt_is_restored_until_user_consumes_it() {
-        val stateKeeper = StateKeeperDispatcher()
-        val first = build(stateKeeper = stateKeeper)
-        first.homeFactory.created.first().onNewGameClicked(true)
-        first.gameFactory.created.single().complete(
-            resultState(),
-            canContinue = true,
-            shouldRequestReview = true,
-        )
-        val saved = stateKeeper.save()
-        first.lifecycle.destroy()
-
-        val restored = build(stateKeeper = StateKeeperDispatcher(saved))
-
-        assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
-        assertTrue(restored.resultFactory.created.single().shouldRequestReview)
-        assertTrue(restored.resultFactory.created.single().reviewPrompt.value.component != null)
     }
 
     @Test
@@ -552,7 +515,6 @@ class DefaultRootComponentTest {
             onContinueRequested: () -> Unit,
             onNewGameRequested: () -> Unit,
             onHomeRequested: () -> Unit,
-            onReviewPromptConsumed: () -> Unit,
         ): GameResultComponent =
             FakeResult(
                 snapshot = snapshot,
@@ -561,7 +523,6 @@ class DefaultRootComponentTest {
                 continueRequested = onContinueRequested,
                 newGameRequested = onNewGameRequested,
                 homeRequested = onHomeRequested,
-                reviewPromptConsumed = onReviewPromptConsumed,
             ).also { created += it }
     }
 
@@ -572,7 +533,6 @@ class DefaultRootComponentTest {
         val continueRequested: () -> Unit,
         val newGameRequested: () -> Unit,
         val homeRequested: () -> Unit,
-        val reviewPromptConsumed: () -> Unit,
     ) : GameResultComponent {
         var continueFailureCount = 0
         override val reviewPrompt = com.arkivanov.decompose.value.MutableValue(
@@ -603,12 +563,7 @@ class DefaultRootComponentTest {
         override fun onDismissReviewPrompt(): Boolean {
             if (reviewPrompt.value.component == null) return false
             reviewPrompt.value = GameResultComponent.ReviewPromptSlot(component = null)
-            reviewPromptConsumed()
             return true
-        }
-
-        fun dismissReviewPrompt() {
-            onDismissReviewPrompt()
         }
     }
 

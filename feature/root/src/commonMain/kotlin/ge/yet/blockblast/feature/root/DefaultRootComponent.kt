@@ -150,9 +150,6 @@ internal class DefaultRootComponent(
                     navigation.replaceAll(Config.Home, newGameConfig(isNewGame = true))
                 },
                 onHomeRequested = ::navigateHome,
-                onReviewPromptConsumed = {
-                    consumeReviewPrompt(config.gameInstanceId)
-                },
             ),
         )
     }
@@ -242,22 +239,6 @@ internal class DefaultRootComponent(
                     canContinue = canContinue,
                     shouldRequestReview = shouldRequestReview,
                 )
-            }
-        }
-    }
-
-    private fun consumeReviewPrompt(gameInstanceId: Long) {
-        navigation.navigate { configurations ->
-            configurations.mapIndexed { index, config ->
-                if (
-                    index == configurations.lastIndex &&
-                    config is Config.Result &&
-                    config.gameInstanceId == gameInstanceId
-                ) {
-                    config.copy(shouldRequestReview = false)
-                } else {
-                    config
-                }
             }
         }
     }
