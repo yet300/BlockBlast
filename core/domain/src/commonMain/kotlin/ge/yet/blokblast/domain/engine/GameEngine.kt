@@ -114,6 +114,8 @@ class GameEngine(
      * state was persisted before Result navigation.
      */
     fun restoreResult(state: GameState) {
+        saveJob?.cancel()
+        saveJob = null
         this.state.value = state.copy(
             grid = Grid(state.grid.cells.copyOf()),
         )

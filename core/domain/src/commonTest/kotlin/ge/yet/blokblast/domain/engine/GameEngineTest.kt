@@ -528,6 +528,40 @@ class GameEngineTest {
         testScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun result_restore_cancels_pending_save_and_revive_reenables_autosave() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val testScope = CoroutineScope(SupervisorJob() + testDispatcher)
+        val repo = CountingSaveRepo()
+        val engineLocal = GameEngine(
+            shapeGenerator = ControllableShapeGenerator(),
+            scoreCalculator = ScoreCalculator(),
+            saveRepository = repo,
+            externalScope = testScope,
+        )
+        engineLocal.startNewGame()
+        advanceTimeBy(300)
+        runCurrent()
+        repo.count = 0
+
+        val piece = engineLocal.state.value.currentPieces.first()
+        engineLocal.placePiece(piece.pieceId, 0, 0)
+        val finalState = engineLocal.state.value.copy(isGameOver = true)
+        repo.save(finalState)
+        engineLocal.restoreResult(finalState)
+
+        advanceTimeBy(300)
+        runCurrent()
+        assertEquals(1, repo.count, "only explicit final persistence may remain")
+
+        assertTrue(engineLocal.continueWithSmallBlocks())
+        advanceTimeBy(300)
+        runCurrent()
+        assertEquals(2, repo.count, "revive must schedule future autosaves normally")
+        testScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────
 
     private fun fillRow(row: Int, cols: IntRange): Grid {
