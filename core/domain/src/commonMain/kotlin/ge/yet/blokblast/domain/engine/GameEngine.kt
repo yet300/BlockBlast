@@ -106,6 +106,21 @@ class GameEngine(
     }
 
     /**
+     * Restores the exact terminal round kept underneath a Result screen.
+     *
+     * Unlike [restore], this must not normalize round metadata or emit a
+     * GameStarted event: the round is still over until a rewarded revive
+     * succeeds. It also deliberately does not autosave, because the terminal
+     * state was persisted before Result navigation.
+     */
+    fun restoreResult(state: GameState) {
+        this.state.value = state.copy(
+            grid = Grid(state.grid.cells.copyOf()),
+        )
+        pieceIdCounter = state.currentPieces.maxOfOrNull { it.pieceId } ?: 0
+    }
+
+    /**
      * Lift the engine's known best score to [persistedBest] without disturbing
      * the rest of the state. Called when a fresh process learns the user's
      * lifetime best from disk — the engine starts at 0 and otherwise wouldn't

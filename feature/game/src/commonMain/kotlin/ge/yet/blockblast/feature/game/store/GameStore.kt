@@ -1,7 +1,6 @@
 package ge.yet.blockblast.feature.game.store
 
 import com.arkivanov.mvikotlin.core.store.Store
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blokblast.domain.model.GameState
 
 internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore.Label> {
@@ -30,7 +29,7 @@ internal interface GameStore : Store<GameStore.Intent, GameStoreState, GameStore
         data object RequestReview : Label
 
         data class GameCompleted(
-            val snapshot: BlockBlastResultSnapshot,
+            val finalState: GameState,
             val canContinue: Boolean,
         ) : Label
     }

@@ -3,15 +3,29 @@ package ge.yet.blockblast.feature.root
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
+import com.arkivanov.essenty.statekeeper.StateKeeper
+import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.blockblast.feature.home.HomeComponent
+import ge.yet.blokblast.domain.engine.GameEngine
+import ge.yet.blokblast.domain.engine.ScoreCalculator
+import ge.yet.blokblast.domain.engine.ShapeGenerator
 import ge.yet.blokblast.domain.model.FeedbackType
+import ge.yet.blokblast.domain.model.GameState
+import ge.yet.blokblast.domain.model.Grid
+import ge.yet.blokblast.domain.model.Polyomino
+import ge.yet.blokblast.domain.model.Position
 import ge.yet.blokblast.domain.repository.AudioRepository
+import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.runTest
@@ -23,15 +37,20 @@ import kotlin.test.assertTrue
 
 class DefaultRootComponentTest {
 
-    private fun build(): Setup {
+    private fun build(
+        stateKeeper: StateKeeper? = null,
+        gameFactory: RecordingGameFactory = RecordingGameFactory(),
+        resultFactory: RecordingResultFactory = RecordingResultFactory(),
+    ): Setup {
         val lifecycle = LifecycleRegistry()
         val audio = RecordingAudio()
         val settings = FakeSettings()
         val homeFactory = RecordingHomeFactory()
-        val gameFactory = RecordingGameFactory()
-        val resultFactory = RecordingResultFactory()
         val component = DefaultRootComponent(
-            componentContext = DefaultComponentContext(lifecycle),
+            componentContext = DefaultComponentContext(
+                lifecycle = lifecycle,
+                stateKeeper = stateKeeper,
+            ),
             homeFactory = homeFactory,
             gameFactory = gameFactory,
             resultFactory = resultFactory,
@@ -114,10 +133,11 @@ class DefaultRootComponentTest {
     fun game_completion_pushes_result_with_final_snapshot() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
-        val snapshot = resultSnapshot()
-        setup.gameFactory.created.single().complete(snapshot, canContinue = true)
+        val finalState = resultState()
+        setup.gameFactory.created.single().complete(finalState, canContinue = true)
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
-        assertEquals(snapshot, setup.resultFactory.created.single().snapshot)
+        assertEquals(BlockBlastResultSnapshot.from(finalState), setup.resultFactory.created.single().snapshot)
+        assertEquals(finalState, setup.gameFactory.created.last().restoredResultState)
         assertTrue(setup.resultFactory.created.single().canContinue)
     }
 
@@ -126,9 +146,9 @@ class DefaultRootComponentTest {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
         val game = setup.gameFactory.created.single()
-        val snapshot = resultSnapshot()
-        game.complete(snapshot, canContinue = true)
-        game.complete(snapshot, canContinue = true)
+        val finalState = resultState()
+        game.complete(finalState, canContinue = true)
+        game.complete(finalState, canContinue = true)
         assertEquals(3, setup.component.stack.value.items.size)
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
     }
@@ -137,20 +157,32 @@ class DefaultRootComponentTest {
     fun result_continue_revives_live_game_and_pops_to_it() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
-        val game = setup.gameFactory.created.single()
-        game.complete(resultSnapshot(), canContinue = true)
+        setup.gameFactory.created.single().complete(resultState(), canContinue = true)
+        val restoredGame = setup.gameFactory.created.last()
         setup.resultFactory.created.single().continueRequested()
-        assertEquals(1, game.reviveCalls)
+        assertEquals(1, restoredGame.reviveCalls)
         assertIs<RootComponent.Child.Game>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun failed_result_continue_keeps_result_visible() {
+        val gameFactory = RecordingGameFactory(failRevive = true)
+        val setup = build(gameFactory = gameFactory)
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(resultState(), canContinue = true)
+        val restoredGame = setup.gameFactory.created.last()
+        setup.resultFactory.created.single().continueRequested()
+        assertEquals(1, restoredGame.reviveCalls)
+        assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
     }
 
     @Test
     fun result_new_game_replaces_finished_flow_with_fresh_game() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
-        setup.gameFactory.created.single().complete(resultSnapshot(), canContinue = true)
+        setup.gameFactory.created.single().complete(resultState(), canContinue = true)
         setup.resultFactory.created.single().newGameRequested()
-        assertEquals(listOf(true, true), setup.gameFactory.requestedIsNewGame)
+        assertTrue(setup.gameFactory.requestedIsNewGame.last())
         assertEquals(2, setup.component.stack.value.items.size)
         assertIs<RootComponent.Child.Game>(setup.component.stack.value.active.instance)
     }
@@ -159,7 +191,7 @@ class DefaultRootComponentTest {
     fun result_home_destroys_finished_game_and_returns_home() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
-        setup.gameFactory.created.single().complete(resultSnapshot(), canContinue = true)
+        setup.gameFactory.created.single().complete(resultState(), canContinue = true)
         setup.resultFactory.created.single().homeRequested()
         assertEquals(1, setup.component.stack.value.items.size)
         assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
@@ -169,19 +201,50 @@ class DefaultRootComponentTest {
     fun back_from_result_returns_home_without_revealing_dead_game() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
-        setup.gameFactory.created.single().complete(resultSnapshot(), canContinue = true)
+        setup.gameFactory.created.single().complete(resultState(), canContinue = true)
         setup.component.onBackClicked()
         assertEquals(1, setup.component.stack.value.items.size)
         assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
     }
 
-    private fun resultSnapshot(): BlockBlastResultSnapshot =
-        BlockBlastResultSnapshot.from(
-            ge.yet.blokblast.domain.model.GameState(
-                score = 42L,
-                bestScore = 100L,
-                isGameOver = true,
-            ),
+    @Test
+    fun stateKeeper_round_trip_restores_final_game_and_revives_before_popping_result() {
+        val finalState = resultState()
+        val firstStateKeeper = StateKeeperDispatcher()
+        val first = build(stateKeeper = firstStateKeeper)
+        first.homeFactory.created.first().onNewGameClicked(true)
+        first.gameFactory.created.single().complete(finalState, canContinue = true)
+        val savedNavigation = firstStateKeeper.save()
+        first.lifecycle.destroy()
+
+        val restoredGameFactory = RecordingGameFactory()
+        val restored = build(
+            stateKeeper = StateKeeperDispatcher(savedNavigation),
+            gameFactory = restoredGameFactory,
+        )
+
+        assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
+        val restoredGame = restoredGameFactory.created.single()
+        assertEquals(finalState.score, restoredGame.engine.state.value.score)
+        assertEquals(finalState.grid, restoredGame.engine.state.value.grid)
+        assertTrue(restoredGame.engine.state.value.isGameOver)
+
+        restored.resultFactory.created.single().continueRequested()
+
+        assertIs<RootComponent.Child.Game>(restored.component.stack.value.active.instance)
+        assertEquals(finalState.score, restoredGame.engine.state.value.score)
+        assertEquals(finalState.grid, restoredGame.engine.state.value.grid)
+        assertFalse(restoredGame.engine.state.value.isGameOver)
+        assertEquals(finalState.revivesUsed + 1, restoredGame.engine.state.value.revivesUsed)
+    }
+
+    private fun resultState(): GameState =
+        GameState(
+            grid = Grid().withCell(3, 4, 5),
+            score = 42L,
+            bestScore = 100L,
+            bestAtRoundStart = 12L,
+            isGameOver = true,
         )
 
     private fun Setup.destructure() = this
@@ -218,28 +281,52 @@ class DefaultRootComponentTest {
         override fun onNewGameClicked() = onNewGameClicked(true)
     }
 
-    private class RecordingGameFactory : GameComponent.Factory {
+    private class RecordingGameFactory(
+        private val failRevive: Boolean = false,
+    ) : GameComponent.Factory {
         val requestedIsNewGame = mutableListOf<Boolean>()
         val created = mutableListOf<FakeGame>()
         override fun create(
             componentContext: ComponentContext,
             isNewGame: Boolean,
+            restoredResultState: GameState?,
             onExitClicked: () -> Unit,
-            onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
+            onGameCompleted: (GameState, Boolean) -> Unit,
         ): GameComponent {
             requestedIsNewGame += isNewGame
-            return FakeGame(onGameCompleted).also { created += it }
+            return FakeGame(
+                restoredResultState = restoredResultState,
+                failRevive = failRevive,
+                onGameCompleted = onGameCompleted,
+            ).also { created += it }
         }
     }
 
     private class FakeGame(
-        private val onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
+        val restoredResultState: GameState?,
+        private val failRevive: Boolean,
+        private val onGameCompleted: (GameState, Boolean) -> Unit,
     ) : GameComponent {
         var reviveCalls = 0
+        private val scope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+        private val saveRepository = RecordingGameSaveRepository()
+        val engine = GameEngine(
+            shapeGenerator = OneByOneGenerator(),
+            scoreCalculator = ScoreCalculator(),
+            saveRepository = saveRepository,
+            externalScope = scope,
+        )
+
+        init {
+            if (restoredResultState != null) {
+                engine.restoreResult(restoredResultState)
+            } else {
+                engine.startNewGame(bestScore = 0L)
+            }
+        }
+
         override val model = com.arkivanov.decompose.value.MutableValue(
-            GameComponent.Model(
-                game = ge.yet.blokblast.domain.model.GameState(),
-            ),
+            GameComponent.Model(game = engine.state.value),
         )
         override val sheetSlot = com.arkivanov.decompose.value.MutableValue(
             com.arkivanov.decompose.router.slot.ChildSlot<Any, GameComponent.SheetChild>(child = null),
@@ -254,13 +341,35 @@ class DefaultRootComponentTest {
                 override fun clearSelection() {}
             }
         override fun onCellClicked(pieceId: Long, x: Int, y: Int) {}
-        override fun onReviveClicked() { reviveCalls += 1 }
+        override fun onReviveClicked(): Boolean {
+            reviveCalls += 1
+            val revived = !failRevive && engine.continueWithSmallBlocks()
+            model.value = GameComponent.Model(game = engine.state.value)
+            return revived
+        }
         override fun onRestartClicked() {}
         override fun onSettingsClicked() {}
         override fun onExitClicked() {}
         override fun onDismissSheet() {}
-        fun complete(snapshot: BlockBlastResultSnapshot, canContinue: Boolean) {
-            onGameCompleted(snapshot, canContinue)
+        fun complete(finalState: GameState, canContinue: Boolean) {
+            onGameCompleted(finalState, canContinue)
+        }
+    }
+
+    private class OneByOneGenerator : ShapeGenerator {
+        private val one = Polyomino("1x1", listOf(Position(0, 0)))
+        override fun nextTray(seed: Long?): List<Polyomino> = listOf(one, one, one)
+        override fun smallReviveTray(): List<Polyomino> = listOf(one, one, one)
+    }
+
+    private class RecordingGameSaveRepository : GameSaveRepository {
+        private var state: GameState? = null
+        override suspend fun save(state: GameState) {
+            this.state = state
+        }
+        override suspend fun load(): GameState? = state
+        override suspend fun clear() {
+            state = null
         }
     }
 

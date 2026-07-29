@@ -1,6 +1,7 @@
 package ge.yet.blockblast.feature.game.store
 
 import ge.yet.blokblast.domain.engine.GameEngine
+import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 
@@ -18,13 +19,21 @@ internal class GameInitializer(
     enum class Source(val tag: String) {
         New("new"),
         Continue("continue"),
+        ResultRestore("result_restore"),
     }
 
     fun seedBestScore() {
         engine.seedBestScore(settings.bestScore.value)
     }
 
-    suspend fun initialize(isNewGame: Boolean): Source {
+    suspend fun initialize(
+        isNewGame: Boolean,
+        restoredResultState: GameState? = null,
+    ): Source {
+        if (restoredResultState != null) {
+            return Source.ResultRestore
+        }
+
         val current = engine.state.value
 
         if (isNewGame || current.isGameOver) {

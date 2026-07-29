@@ -5,8 +5,8 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.navigate
 import com.arkivanov.decompose.router.stack.pop
-import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.value.Value
@@ -19,6 +19,7 @@ import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.blockblast.feature.home.HomeComponent
+import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.StateFlow
@@ -113,9 +114,14 @@ internal class DefaultRootComponent(
                 gameFactory.create(
                     componentContext = componentContext,
                     isNewGame = config.isNewGame,
+                    restoredResultState = config.restoredResultState,
                     onExitClicked = { navigation.pop() },
-                    onGameCompleted = { snapshot, canContinue ->
-                        navigation.pushNew(Config.Result(snapshot, canContinue))
+                    onGameCompleted = { finalState, canContinue ->
+                        showResult(
+                            gameInstanceId = config.instanceId,
+                            finalState = finalState,
+                            canContinue = canContinue,
+                        )
                     },
                 )
             )
@@ -124,7 +130,7 @@ internal class DefaultRootComponent(
         is Config.Result -> RootComponent.Child.Result(
             resultFactory.create(
                 componentContext = componentContext,
-                snapshot = config.snapshot,
+                snapshot = BlockBlastResultSnapshot.from(config.finalState),
                 canContinue = config.canContinue,
                 onContinueRequested = ::continueGame,
                 onNewGameRequested = {
@@ -146,8 +152,9 @@ internal class DefaultRootComponent(
             return
         }
 
-        game.onReviveClicked()
-        navigation.pop()
+        if (game.onReviveClicked()) {
+            navigation.pop()
+        }
     }
 
     private fun navigateHome() {
@@ -158,7 +165,31 @@ internal class DefaultRootComponent(
         Config.Game(
             isNewGame = isNewGame,
             instanceId = ++lastGameInstanceId,
+            restoredResultState = null,
         )
+
+    private fun showResult(
+        gameInstanceId: Long,
+        finalState: GameState,
+        canContinue: Boolean,
+    ) {
+        navigation.navigate { configurations ->
+            if (configurations.lastOrNull() is Config.Result) {
+                configurations
+            } else {
+                configurations.map { config ->
+                    if (config is Config.Game && config.instanceId == gameInstanceId) {
+                        config.copy(restoredResultState = finalState)
+                    } else {
+                        config
+                    }
+                } + Config.Result(
+                    finalState = finalState,
+                    canContinue = canContinue,
+                )
+            }
+        }
+    }
 
     @Serializable
     private sealed interface Config {
@@ -169,11 +200,12 @@ internal class DefaultRootComponent(
         data class Game(
             val isNewGame: Boolean,
             val instanceId: Long,
+            val restoredResultState: GameState?,
         ) : Config
 
         @Serializable
         data class Result(
-            val snapshot: BlockBlastResultSnapshot,
+            val finalState: GameState,
             val canContinue: Boolean,
         ) : Config
     }

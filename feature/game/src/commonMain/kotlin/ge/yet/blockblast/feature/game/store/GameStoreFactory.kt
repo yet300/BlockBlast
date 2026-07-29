@@ -1,6 +1,5 @@
 package ge.yet.blockblast.feature.game.store
 
-import com.app.common.config.AppConfig
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
@@ -10,11 +9,11 @@ import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameEvent
 import ge.yet.blokblast.domain.model.GameState
+import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -28,9 +27,13 @@ internal class GameStoreFactory(
     private val settings: SettingsRepository,
     private val analytics: AnalyticRepository,
 ) {
-    fun create(isNewGame: Boolean): GameStore {
+    fun create(
+        isNewGame: Boolean,
+        restoredResultState: GameState? = null,
+    ): GameStore {
         val logger = GameAnalyticsLogger(analytics)
         val initializer = GameInitializer(engine, saveRepository, settings)
+        restoredResultState?.let(engine::restoreResult)
 
         return object :
             GameStore,
@@ -42,14 +45,21 @@ internal class GameStoreFactory(
                         // ── 0. Bootstrap ──────────────────────────────────────────────────
                         // seedBestScore must run before the state collector below, otherwise
                         // the engine's initial bestScore=0 emission could clobber initialState.
-                        initializer.seedBestScore()
+                        if (restoredResultState == null) {
+                            initializer.seedBestScore()
+                        }
                         launch {
-                            val source = initializer.initialize(isNewGame)
-                            logger.log(
-                                eventName = "game_started",
-                                state = engine.state.value,
-                                extra = mapOf("source" to source.tag),
+                            val source = initializer.initialize(
+                                isNewGame = isNewGame,
+                                restoredResultState = restoredResultState,
                             )
+                            if (source != GameInitializer.Source.ResultRestore) {
+                                logger.log(
+                                    eventName = "game_started",
+                                    state = engine.state.value,
+                                    extra = mapOf("source" to source.tag),
+                                )
+                            }
                         }
 
                         // ── 1. State snapshots ────────────────────────────────────────────
@@ -66,10 +76,7 @@ internal class GameStoreFactory(
                                 .collect { best -> settings.setBestScore(best) }
                         }
 
-                        // ── 3. Game-over edge → persisted Result + review ────────────────
-                        // bestAtRoundStart / reviewPromptFiredThisRound live on GameState so
-                        // the qualifier survives store recreation across Home → Play. The
-                        // executor stays stateless wrt those flags.
+                        // ── 3. Game-over edge → persisted Result ──────────────────────────
                         launch {
                             var previousIsGameOver = engine.state.value.isGameOver
                             engine.state.collect { gameState ->
@@ -81,14 +88,11 @@ internal class GameStoreFactory(
                                     // Result navigation must never race the final save.
                                     saveRepository.save(gameState)
                                     settings.setBestScore(gameState.bestScore)
-                                    if (qualifiesForReview(gameState)) {
-                                        engine.markReviewPromptFired()
-                                        settings.incrementReviewPromptCount()
-                                        publish(GameStore.Label.RequestReview)
-                                    }
                                     publish(
                                         GameStore.Label.GameCompleted(
-                                            snapshot = BlockBlastResultSnapshot.from(gameState),
+                                            finalState = gameState.copy(
+                                                grid = Grid(gameState.grid.cells.copyOf()),
+                                            ),
                                             canContinue = gameState.revivesUsed < GameState.MAX_REVIVES,
                                         ),
                                     )
@@ -159,12 +163,12 @@ internal class GameStoreFactory(
                     }
                     onIntent<GameStore.Intent.Revive> {
                         logger.log("revive_clicked", engine.state.value)
-                        launch {
-                            if (engine.continueWithSmallBlocks()) {
-                                val state = engine.state.value
-                                logger.log("revive_completed", state, mapOf("source" to "revive"))
-                                logger.log("game_started", state, mapOf("source" to "revive"))
-                            }
+                        val revived = engine.continueWithSmallBlocks()
+                        val state = engine.state.value
+                        dispatch(GameStore.Msg.Snapshot(state))
+                        if (revived) {
+                            logger.log("revive_completed", state, mapOf("source" to "revive"))
+                            logger.log("game_started", state, mapOf("source" to "revive"))
                         }
                     }
                     onIntent<GameStore.Intent.Restart> {
@@ -190,11 +194,4 @@ internal class GameStoreFactory(
         }
     }
 
-    private fun qualifiesForReview(state: ge.yet.blokblast.domain.model.GameState): Boolean {
-        val beatBy = state.score - state.bestAtRoundStart
-        return !state.reviewPromptFiredThisRound &&
-            state.score >= AppConfig.REVIEW_MIN_SCORE &&
-            beatBy >= AppConfig.REVIEW_BEST_SCORE_DELTA &&
-            settings.reviewPromptCount.value < AppConfig.REVIEW_MAX_PROMPTS
-    }
 }

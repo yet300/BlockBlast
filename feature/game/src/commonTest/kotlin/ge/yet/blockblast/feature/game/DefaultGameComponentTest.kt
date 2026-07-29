@@ -8,7 +8,6 @@ import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.engine.ScoreCalculator
@@ -42,6 +41,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertNotNull
@@ -62,6 +62,7 @@ class DefaultGameComponentTest {
         isNewGame: Boolean = true,
         reviewCount: Int = 0,
         bestScore: Long = 0L,
+        restoredResultState: GameState? = null,
     ): Setup {
         val lifecycle = LifecycleRegistry()
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
@@ -85,7 +86,7 @@ class DefaultGameComponentTest {
             analytics = analytics,
         )
         val exitCalls = mutableListOf<Unit>()
-        val completions = mutableListOf<Pair<BlockBlastResultSnapshot, Boolean>>()
+        val completions = mutableListOf<Pair<GameState, Boolean>>()
         val component = DefaultGameComponent(
             componentContext = DefaultComponentContext(lifecycle),
             gameStoreFactory = storeFactory,
@@ -95,9 +96,10 @@ class DefaultGameComponentTest {
             storeReview = storeReview,
             analytics = analytics,
             isNewGame = isNewGame,
+            restoredResultState = restoredResultState,
             onExitClickedCb = { exitCalls += Unit },
-            onGameCompletedCb = { snapshot, canContinue ->
-                completions += snapshot to canContinue
+            onGameCompletedCb = { finalState, canContinue ->
+                completions += finalState to canContinue
             },
         )
         return Setup(
@@ -172,9 +174,22 @@ class DefaultGameComponentTest {
     fun onReviveClicked_restores_play_when_game_over() {
         val s = build()
         s.engine.restore(s.engine.state.value.copy(isGameOver = true))
-        s.component.onReviveClicked()
+        assertTrue(s.component.onReviveClicked())
         assertEquals(false, s.engine.state.value.isGameOver)
         assertEquals(1, s.engine.state.value.revivesUsed)
+        s.dispose()
+    }
+
+    @Test
+    fun onReviveClicked_reports_failure_and_keeps_game_over_when_revive_is_unavailable() {
+        val finalState = GameState(
+            isGameOver = true,
+            revivesUsed = GameState.MAX_REVIVES,
+        )
+        val s = build(restoredResultState = finalState)
+        assertFalse(s.component.onReviveClicked())
+        assertTrue(s.engine.state.value.isGameOver)
+        assertEquals(GameState.MAX_REVIVES, s.engine.state.value.revivesUsed)
         s.dispose()
     }
 
@@ -190,7 +205,7 @@ class DefaultGameComponentTest {
         val emittedFinalState = s.engine.state.value
         runCurrent()
         assertEquals(
-            listOf(BlockBlastResultSnapshot.from(emittedFinalState) to true),
+            listOf(emittedFinalState to true),
             s.completions,
         )
         s.dispose()
@@ -199,9 +214,9 @@ class DefaultGameComponentTest {
     // ── Review prompt sheet ──────────────────────────────────────────────
 
     @Test
-    fun qualifying_review_is_dismissed_before_parent_receives_completion() = runTest(testDispatcher) {
+    fun qualifying_game_over_navigates_immediately_without_hidden_review_sheet() = runTest(testDispatcher) {
         val s = build(reviewCount = 0)
-        // Trigger qualifying game-over → store publishes RequestReview label.
+        // A qualifying completed round must still navigate immediately.
         s.engine.restore(
             s.engine.state.value.copy(
                 score = AppConfig.REVIEW_MIN_SCORE + AppConfig.REVIEW_BEST_SCORE_DELTA + 10L,
@@ -210,12 +225,11 @@ class DefaultGameComponentTest {
             ),
         )
         runCurrent()
-        assertIs<GameComponent.SheetChild.ReviewPrompt>(s.component.sheetSlot.value.child?.instance)
-        assertNotNull(s.analytics.events.find { it.first == "review_prompt_shown" })
-        assertTrue(s.completions.isEmpty())
-        s.component.onDismissSheet()
         assertNull(s.component.sheetSlot.value.child)
         assertEquals(1, s.completions.size)
+        assertEquals(0, s.settings.reviewPromptCount.value)
+        assertEquals(false, s.engine.state.value.reviewPromptFiredThisRound)
+        assertNull(s.analytics.events.find { it.first == "review_prompt_shown" })
         s.dispose()
     }
 
@@ -244,7 +258,7 @@ class DefaultGameComponentTest {
         val settings: FakeSettings,
         val storeReview: RecordingStoreReview,
         val exitCalls: MutableList<Unit>,
-        val completions: MutableList<Pair<BlockBlastResultSnapshot, Boolean>>,
+        val completions: MutableList<Pair<GameState, Boolean>>,
     ) {
         fun dispose() { scope.cancel() }
     }

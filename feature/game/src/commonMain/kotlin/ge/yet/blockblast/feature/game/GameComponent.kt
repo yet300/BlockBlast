@@ -5,7 +5,6 @@ import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
 import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 
@@ -29,7 +28,7 @@ interface GameComponent {
     )
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
-    fun onReviveClicked()
+    fun onReviveClicked(): Boolean
     fun onRestartClicked()
     fun onSettingsClicked()
     fun onExitClicked()
@@ -50,8 +49,9 @@ interface GameComponent {
         fun create(
             componentContext: ComponentContext,
             isNewGame: Boolean,
+            restoredResultState: GameState?,
             onExitClicked: () -> Unit,
-            onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
+            onGameCompleted: (GameState, Boolean) -> Unit,
         ): GameComponent
     }
 

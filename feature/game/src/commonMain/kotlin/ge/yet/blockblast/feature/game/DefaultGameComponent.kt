@@ -17,7 +17,6 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.integration.stateToModel
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
 import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
@@ -25,6 +24,7 @@ import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
 import ge.yet.blockblast.feature.settings.SettingsComponent
+import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
@@ -41,15 +41,20 @@ internal class DefaultGameComponent(
     private val settings: SettingsRepository,
     private val storeReview: StoreReviewRepository,
     private val isNewGame: Boolean,
+    private val restoredResultState: GameState?,
     private val onExitClickedCb: () -> Unit,
-    private val onGameCompletedCb: (BlockBlastResultSnapshot, Boolean) -> Unit,
+    private val onGameCompletedCb: (GameState, Boolean) -> Unit,
 ) : ComponentContext by componentContext,
     GameComponent {
-    private val store = instanceKeeper.getStore { gameStoreFactory.create(isNewGame = isNewGame) }
+    private val store = instanceKeeper.getStore {
+        gameStoreFactory.create(
+            isNewGame = isNewGame,
+            restoredResultState = restoredResultState,
+        )
+    }
     private val sheetNavigation = SlotNavigation<SheetConfig>()
     private val lifecycleScope = coroutineScope()
     private val logger = GameAnalyticsLogger(analytics)
-    private var pendingCompletion: GameStore.Label.GameCompleted? = null
 
     override val model: Value<GameComponent.Model> = store.asValue().map(stateToModel)
 
@@ -79,13 +84,8 @@ internal class DefaultGameComponent(
                         log("review_prompt_shown")
                         sheetNavigation.activate(SheetConfig.ReviewPrompt)
                     }
-                    is GameStore.Label.GameCompleted -> {
-                        if (sheetSlot.value.child?.instance is GameComponent.SheetChild.ReviewPrompt) {
-                            pendingCompletion = label
-                        } else {
-                            deliverCompletion(label)
-                        }
-                    }
+                    is GameStore.Label.GameCompleted ->
+                        onGameCompletedCb(label.finalState, label.canContinue)
                 }
             }
         }
@@ -96,7 +96,12 @@ internal class DefaultGameComponent(
         store.accept(GameStore.Intent.Place(pieceId, x, y))
     }
 
-    override fun onReviveClicked() = store.accept(GameStore.Intent.Revive)
+    override fun onReviveClicked(): Boolean {
+        val revivesBefore = store.state.game.revivesUsed
+        store.accept(GameStore.Intent.Revive)
+        val state = store.state.game
+        return !state.isGameOver && state.revivesUsed == revivesBefore + 1
+    }
     override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
     override fun onSettingsClicked() {
         log("settings_opened")
@@ -116,9 +121,6 @@ internal class DefaultGameComponent(
             null -> Unit
         }
         sheetNavigation.dismiss()
-        if (dismissedChild is GameComponent.SheetChild.ReviewPrompt) {
-            pendingCompletion?.let(::deliverCompletion)
-        }
     }
 
     private fun onReviewPromptDontShowAgainClicked() {
@@ -136,11 +138,6 @@ internal class DefaultGameComponent(
     }
 
     private fun log(eventName: String) = logger.log(eventName, store.state.game)
-
-    private fun deliverCompletion(completion: GameStore.Label.GameCompleted) {
-        pendingCompletion = null
-        onGameCompletedCb(completion.snapshot, completion.canContinue)
-    }
 
     private fun createSheetChild(
         config: SheetConfig,
@@ -188,8 +185,9 @@ internal class DefaultGameComponentFactory(
     override fun create(
         componentContext: ComponentContext,
         isNewGame: Boolean,
+        restoredResultState: GameState?,
         onExitClicked: () -> Unit,
-        onGameCompleted: (BlockBlastResultSnapshot, Boolean) -> Unit,
+        onGameCompleted: (GameState, Boolean) -> Unit,
     ): GameComponent = DefaultGameComponent(
         componentContext = componentContext,
         gameStoreFactory = gameStoreFactory,
@@ -199,6 +197,7 @@ internal class DefaultGameComponentFactory(
         storeReview = storeReview,
         analytics = analytics,
         isNewGame = isNewGame,
+        restoredResultState = restoredResultState,
         onExitClickedCb = onExitClicked,
         onGameCompletedCb = onGameCompleted,
     )

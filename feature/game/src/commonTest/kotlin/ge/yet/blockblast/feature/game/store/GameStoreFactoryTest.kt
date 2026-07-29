@@ -18,7 +18,6 @@ import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.ReviewCode
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import ge.yet.blokblast.domain.repository.StoreReviewRepository
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -113,6 +112,32 @@ class GameStoreFactoryTest {
         // Engine state untouched (same first piece id; engine.startNewGame was NOT called again)
         assertEquals(pieceCountBefore, deps.engine.state.value.currentPieces.size)
         assertEquals(firstPieceId, deps.engine.state.value.currentPieces.first().pieceId)
+        deps.dispose()
+    }
+
+    @Test
+    fun bootstrap_result_restore_preserves_exact_final_state_without_republishing_or_saving() = runTest {
+        val finalState = playableState(score = 812L).copy(
+            grid = Grid().withCell(4, 5, 3),
+            bestScore = 1_200L,
+            bestAtRoundStart = 700L,
+            isGameOver = true,
+        )
+        val deps = TestDeps(savedState = finalState, settingsBest = finalState.bestScore)
+        val store = deps.factory().create(
+            isNewGame = true,
+            restoredResultState = finalState,
+        )
+        val labels = mutableListOf<GameStore.Label>()
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch { store.labels.collect { labels += it } }
+        runCurrent()
+        assertEquals(finalState, deps.engine.state.value)
+        assertEquals(finalState, store.state.game)
+        assertEquals(0, deps.saveRepo.saveCount)
+        assertTrue(labels.none { it is GameStore.Label.GameCompleted })
+        assertFalse(deps.analytics.has("game_over"))
+        labelScope.cancel()
         deps.dispose()
     }
 
@@ -242,10 +267,10 @@ class GameStoreFactoryTest {
         val emittedFinalState = deps.engine.state.value
         runCurrent()
         val completed = labels.single() as GameStore.Label.GameCompleted
-        assertEquals(BlockBlastResultSnapshot.from(emittedFinalState), completed.snapshot)
+        assertEquals(emittedFinalState, completed.finalState)
         assertTrue(completed.canContinue)
         finalState.grid.cells[3 * Grid.SIZE + 2] = 0
-        assertEquals(4, completed.snapshot.finalGrid.colorAt(2, 3))
+        assertEquals(4, completed.finalState.grid.colorAt(2, 3))
         labelScope.cancel()
         deps.dispose()
     }
@@ -291,7 +316,7 @@ class GameStoreFactoryTest {
     // ── Review prompt qualifier ──────────────────────────────────────────
 
     @Test
-    fun review_label_fires_when_all_conditions_met() = runTest {
+    fun qualifying_review_is_suppressed_when_result_navigation_is_immediate() = runTest {
         val deps = TestDeps(settingsBest = 0L, reviewCount = 0)
         val store = deps.factory().create(isNewGame = true)
         val labels = mutableListOf<GameStore.Label>()
@@ -306,17 +331,10 @@ class GameStoreFactoryTest {
         )
         deps.engine.restore(qualifying)
         runCurrent()
-        assertEquals(
-            listOf(
-                GameStore.Label.RequestReview,
-                GameStore.Label.GameCompleted(
-                    snapshot = BlockBlastResultSnapshot.from(deps.engine.state.value),
-                    canContinue = true,
-                ),
-            ),
-            labels,
-        )
-        assertTrue(deps.engine.state.value.reviewPromptFiredThisRound)
+        assertEquals(1, labels.filterIsInstance<GameStore.Label.GameCompleted>().size)
+        assertTrue(labels.none { it is GameStore.Label.RequestReview })
+        assertFalse(deps.engine.state.value.reviewPromptFiredThisRound)
+        assertEquals(0, deps.settings.reviewPromptCount.value)
         labelScope.cancel()
         deps.dispose()
     }
@@ -521,9 +539,12 @@ private class StubSaveRepo(
     private val onSave: () -> Unit = {},
 ) : GameSaveRepository {
     private var stored: GameState? = initial
+    var saveCount: Int = 0
+        private set
     val saved: GameState? get() = stored
     override suspend fun save(state: GameState) {
         stored = state
+        saveCount += 1
         onSave()
     }
     override suspend fun load(): GameState? = stored
