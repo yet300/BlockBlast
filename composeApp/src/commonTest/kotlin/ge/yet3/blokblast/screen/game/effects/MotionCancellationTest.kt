@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -31,6 +32,40 @@ class MotionCancellationTest {
     }
 
     @Test
+    fun newer_stripe_sweep_keeps_ownership_after_previous_sweep_unwinds() = runTest {
+        val state = ComboStripesState()
+        val first = launch {
+            state.sweep(rows = listOf(1), cols = listOf(2), durationMillis = 10_000)
+        }
+        runCurrent()
+
+        assertEquals(listOf(1), state.activeRows)
+        assertEquals(listOf(2), state.activeCols)
+        assertTrue(state.progress.isRunning)
+
+        val second = launch {
+            state.sweep(rows = listOf(6), cols = listOf(7), durationMillis = 10_000)
+        }
+        runCurrent()
+        first.join()
+
+        assertTrue(first.isCompleted)
+        assertEquals(listOf(6), state.activeRows)
+        assertEquals(listOf(7), state.activeCols)
+        assertTrue(second.isActive)
+        assertTrue(state.progress.isRunning)
+
+        advanceTimeBy(32)
+        runCurrent()
+
+        assertTrue(state.progress.value > 0f)
+        assertEquals(listOf(6), state.activeRows)
+        assertEquals(listOf(7), state.activeCols)
+
+        second.cancelAndJoin()
+    }
+
+    @Test
     fun cancelling_glitch_resets_intensity() = runTest {
         val state = GlitchState()
         val glitch = launch(start = CoroutineStart.UNDISPATCHED) {
@@ -41,6 +76,38 @@ class MotionCancellationTest {
 
         glitch.cancelAndJoin()
 
+        assertEquals(0f, state.intensity.value)
+    }
+
+    @Test
+    fun newer_glitch_trigger_keeps_ownership_after_previous_trigger_unwinds() = runTest {
+        val state = GlitchState()
+        val first = launch {
+            state.trigger(durationMillis = 10_000)
+        }
+        runCurrent()
+
+        assertTrue(state.intensity.isRunning)
+
+        val second = launch {
+            state.trigger(durationMillis = 10_000)
+        }
+        runCurrent()
+        first.join()
+
+        assertTrue(first.isCompleted)
+        assertTrue(second.isActive)
+        assertTrue(state.intensity.isRunning)
+        assertTrue(state.intensity.value > 0f)
+
+        val initialIntensity = state.intensity.value
+        advanceTimeBy(32)
+        runCurrent()
+
+        assertTrue(state.intensity.value in 0f..<initialIntensity)
+        assertTrue(second.isActive)
+
+        second.cancelAndJoin()
         assertEquals(0f, state.intensity.value)
     }
 

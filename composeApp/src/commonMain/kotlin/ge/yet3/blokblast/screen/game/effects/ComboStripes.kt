@@ -3,6 +3,7 @@ package ge.yet3.blokblast.screen.game.effects
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.MutatorMutex
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -22,11 +23,17 @@ import androidx.compose.ui.graphics.Color
  * sweeping bar at [ComboStripesState.progress] (0f–1f).
  */
 class ComboStripesState {
+    private val mutationMutex = MutatorMutex()
+
     val progress = Animatable(0f)
     var activeRows = emptyList<Int>()
     var activeCols = emptyList<Int>()
 
-    suspend fun sweep(rows: List<Int>, cols: List<Int>, durationMillis: Int = 350) {
+    suspend fun sweep(
+        rows: List<Int>,
+        cols: List<Int>,
+        durationMillis: Int = 350,
+    ) = mutationMutex.mutate {
         activeRows = rows
         activeCols = cols
         try {

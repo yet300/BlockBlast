@@ -2,6 +2,7 @@ package ge.yet3.blokblast.screen.game.effects
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.MutatorMutex
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,9 +28,11 @@ import kotlin.random.Random
  * is drawn first, then the glitch artifacts are composited on top.
  */
 class GlitchState {
+    private val mutationMutex = MutatorMutex()
+
     val intensity = Animatable(0f)
 
-    suspend fun trigger(durationMillis: Int = 400) {
+    suspend fun trigger(durationMillis: Int = 400) = mutationMutex.mutate {
         try {
             intensity.snapTo(1f)
             intensity.animateTo(
