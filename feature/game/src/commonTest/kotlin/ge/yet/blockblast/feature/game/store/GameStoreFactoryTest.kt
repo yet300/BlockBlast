@@ -271,7 +271,10 @@ class GameStoreFactoryTest {
         assertTrue(
             deps.analytics.has(
                 "game_persistence_failed",
-                mapOf("operation" to "terminal_save"),
+                mapOf(
+                    "operation" to "terminal_save",
+                    "error_type" to "IllegalStateException",
+                ),
             ),
         )
         deps.dispose()

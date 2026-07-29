@@ -63,6 +63,9 @@ internal class DefaultGameResultComponent(
 
     override fun onContinueFailed() {
         terminalActionHandled = false
+        modelState.value = modelState.value.copy(
+            continueSecondsRemaining = CONTINUE_COUNTDOWN_SECONDS,
+        )
         startCountdown()
     }
 

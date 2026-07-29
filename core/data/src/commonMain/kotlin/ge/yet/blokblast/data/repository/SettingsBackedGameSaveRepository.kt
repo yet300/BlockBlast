@@ -44,11 +44,11 @@ internal class SettingsBackedGameSaveRepository(
 
     override suspend fun save(state: GameState) {
         mutex.withLock {
-            cached = state
             val envelope = SavedGame(version = CURRENT_SAVE_VERSION, state = state)
             withContext(dispatchers.io) {
                 settings.putString(KEY_SAVE, json.encodeToString(SavedGame.serializer(), envelope))
             }
+            cached = state
         }
     }
 

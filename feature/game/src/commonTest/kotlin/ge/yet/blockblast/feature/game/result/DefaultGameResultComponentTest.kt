@@ -169,10 +169,13 @@ class DefaultGameResultComponentTest {
     @Test
     fun failed_continue_restarts_countdown_until_new_game_becomes_available() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
+        advanceTimeBy(4_000)
+        runCurrent()
         setup.component.onPrimaryClicked(approveImmediately)
         runCurrent()
 
         setup.component.onContinueFailed()
+        assertEquals(5, setup.component.model.value.continueSecondsRemaining)
         advanceTimeBy(5_000)
         runCurrent()
         setup.component.onPrimaryClicked(failIfContinueGateRequested)

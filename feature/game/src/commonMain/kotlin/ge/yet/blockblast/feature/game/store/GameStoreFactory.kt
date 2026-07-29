@@ -264,11 +264,14 @@ internal class GameStoreFactory(
             true
         } catch (error: CancellationException) {
             throw error
-        } catch (_: Throwable) {
+        } catch (error: Exception) {
             logger.log(
                 eventName = "game_persistence_failed",
                 state = state,
-                extra = mapOf("operation" to operation),
+                extra = mapOf(
+                    "operation" to operation,
+                    "error_type" to (error::class.simpleName ?: "Exception"),
+                ),
             )
             false
         }

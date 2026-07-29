@@ -11,12 +11,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SettingsBackedGameSaveRepositoryTest {
 
-    private fun newRepo(settings: MapSettings = MapSettings()) =
+    private fun newRepo(settings: com.russhwolf.settings.Settings = MapSettings()) =
         SettingsBackedGameSaveRepository(
             settings = settings,
             dispatchers = AppDispatchers(
@@ -106,6 +107,22 @@ class SettingsBackedGameSaveRepositoryTest {
         assertNull(repo.load())
     }
 
+    @Test
+    fun failed_disk_write_does_not_replace_warm_cached_state() = runTest {
+        val settings = FailingPutSettings()
+        val repo = newRepo(settings)
+        val terminalState = sampleState.copy(isGameOver = true)
+        repo.save(terminalState)
+        assertEquals(terminalState, repo.load())
+
+        settings.failWrites = true
+        assertFailsWith<IllegalStateException> {
+            repo.save(sampleState.copy(score = 9_999L))
+        }
+
+        assertEquals(terminalState, repo.load())
+    }
+
     /** Wraps MapSettings to count getStringOrNull invocations. */
     private class CountingSettings(
         private val delegate: MapSettings = MapSettings(),
@@ -114,6 +131,17 @@ class SettingsBackedGameSaveRepositoryTest {
         override fun getStringOrNull(key: String): String? {
             readCount += 1
             return delegate.getStringOrNull(key)
+        }
+    }
+
+    private class FailingPutSettings(
+        private val delegate: MapSettings = MapSettings(),
+    ) : com.russhwolf.settings.Settings by delegate {
+        var failWrites: Boolean = false
+
+        override fun putString(key: String, value: String) {
+            if (failWrites) error("disk write failed")
+            delegate.putString(key, value)
         }
     }
 }
