@@ -87,7 +87,7 @@ private val DRAG_GHOST_GAP = 2.dp
 private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
-fun GameContent(component: GameComponent) {
+fun BlockBlastGameContent(component: GameComponent) {
     val uiModel by component.model.subscribeAsState()
     val model = uiModel.game
     val traySelection by component.pieceTray.selection.subscribeAsState()

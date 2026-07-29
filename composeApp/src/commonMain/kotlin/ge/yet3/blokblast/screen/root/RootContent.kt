@@ -9,7 +9,7 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.root.RootComponent
 import ge.yet3.blokblast.component.utils.cupertinoPredictiveBackAnimation
-import ge.yet3.blokblast.screen.game.GameContent
+import ge.yet3.blokblast.screen.game.BlockBlastGameContent
 import ge.yet3.blokblast.screen.home.HomeContent
 import ge.yet3.blokblast.screen.result.GameResultContent
 
@@ -30,7 +30,7 @@ fun RootContent(
         ),
     ) { child ->
         when (val instance = child.instance) {
-            is RootComponent.Child.Game -> GameContent(component = instance.component)
+            is RootComponent.Child.Game -> BlockBlastGameContent(component = instance.component)
             is RootComponent.Child.Home -> HomeContent(component = instance.component)
             is RootComponent.Child.Result -> GameResultContent(component = instance.component)
         }

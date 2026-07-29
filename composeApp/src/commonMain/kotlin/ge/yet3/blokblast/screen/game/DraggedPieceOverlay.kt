@@ -27,7 +27,7 @@ import ge.yet3.blokblast.component.modifier.liftedPieceShadow
  *   - the lift transform (scale + alpha)
  *   - the single silhouette shadow (one graphics layer regardless of cell count)
  *
- * Extracted from `GameContent` so the screen file stays readable as more
+ * Extracted from `BlockBlastGameContent` so the screen file stays readable as more
  * features land. All inputs are values; nothing about the drag pipeline lives
  * here besides rendering.
  */
