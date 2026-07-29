@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -199,15 +200,18 @@ class SettingsBackedGameSaveRepositoryTest {
 
         val first = assertNotNull(repo.load())
         first.grid.cells[first.grid.index(2, 3)] = Grid.EMPTY
-        (first.currentPieces.single().shape.cells as MutableList).clear()
-        (first.lastClearedCells.cells as MutableList).clear()
-        (first.currentPieces as MutableList).clear()
 
         val second = assertNotNull(repo.load())
         assertEquals(5, second.grid.colorAt(2, 3))
         assertEquals(1, second.currentPieces.size)
         assertEquals(2, second.currentPieces.single().shape.cells.size)
         assertEquals(listOf(Position(4, 5)), second.lastClearedCells.cells)
+        assertFalse(first.currentPieces === second.currentPieces)
+        assertFalse(
+            first.currentPieces.single().shape.cells ===
+                second.currentPieces.single().shape.cells,
+        )
+        assertFalse(first.lastClearedCells.cells === second.lastClearedCells.cells)
     }
 
     /** Wraps MapSettings to count getStringOrNull invocations. */
