@@ -123,6 +123,12 @@ internal class DefaultRootComponent(
                             canContinue = canContinue,
                         )
                     },
+                    onReviveCompleted = { playableState ->
+                        finishContinue(
+                            gameInstanceId = config.instanceId,
+                            playableState = playableState,
+                        )
+                    },
                 )
             )
         }
@@ -152,8 +158,36 @@ internal class DefaultRootComponent(
             return
         }
 
-        if (game.onReviveClicked()) {
-            navigation.pop()
+        game.onReviveClicked()
+    }
+
+    private fun finishContinue(
+        gameInstanceId: Long,
+        playableState: GameState,
+    ) {
+        if (playableState.isGameOver) return
+
+        navigation.navigate { configurations ->
+            if (configurations.lastOrNull() !is Config.Result) {
+                configurations
+            } else if (
+                configurations.none {
+                    it is Config.Game && it.instanceId == gameInstanceId
+                }
+            ) {
+                configurations
+            } else {
+                configurations.dropLast(1).map { config ->
+                    if (config is Config.Game && config.instanceId == gameInstanceId) {
+                        config.copy(
+                            isNewGame = false,
+                            restoredResultState = null,
+                        )
+                    } else {
+                        config
+                    }
+                }
+            }
         }
     }
 

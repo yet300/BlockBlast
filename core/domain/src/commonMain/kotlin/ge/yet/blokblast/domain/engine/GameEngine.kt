@@ -16,6 +16,7 @@ import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.model.PointsEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,6 +121,19 @@ class GameEngine(
             grid = Grid(state.grid.cells.copyOf()),
         )
         pieceIdCounter = state.currentPieces.maxOfOrNull { it.pieceId } ?: 0
+    }
+
+    /**
+     * Drains the debounced autosave before a caller performs an explicit,
+     * navigation-critical save.
+     *
+     * Clearing [saveJob] first prevents a completed job from remaining visible
+     * while [cancelAndJoin] waits for cancellation handlers to finish.
+     */
+    suspend fun cancelPendingAutoSaveAndJoin() {
+        val pendingSave = saveJob
+        saveJob = null
+        pendingSave?.cancelAndJoin()
     }
 
     /**

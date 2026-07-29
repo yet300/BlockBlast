@@ -25,9 +25,13 @@ import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -207,19 +211,32 @@ class DefaultRootComponentTest {
         assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun stateKeeper_round_trip_restores_final_game_and_revives_before_popping_result() {
+    fun stateKeeper_after_continue_restores_durably_saved_playable_game() = runTest {
         val finalState = resultState()
         val firstStateKeeper = StateKeeperDispatcher()
-        val first = build(stateKeeper = firstStateKeeper)
+        val firstRepository = RecordingGameSaveRepository()
+        val first = build(
+            stateKeeper = firstStateKeeper,
+            gameFactory = RecordingGameFactory(
+                saveRepository = firstRepository,
+                externalScope = this,
+            ),
+        )
         first.homeFactory.created.first().onNewGameClicked(true)
         first.gameFactory.created.single().complete(finalState, canContinue = true)
         val savedNavigation = firstStateKeeper.save()
         first.lifecycle.destroy()
 
-        val restoredGameFactory = RecordingGameFactory()
+        val restoredRepository = RecordingGameSaveRepository()
+        val restoredGameFactory = RecordingGameFactory(
+            saveRepository = restoredRepository,
+            externalScope = this,
+        )
+        val continuedStateKeeper = StateKeeperDispatcher(savedNavigation)
         val restored = build(
-            stateKeeper = StateKeeperDispatcher(savedNavigation),
+            stateKeeper = continuedStateKeeper,
             gameFactory = restoredGameFactory,
         )
 
@@ -230,12 +247,43 @@ class DefaultRootComponentTest {
         assertTrue(restoredGame.engine.state.value.isGameOver)
 
         restored.resultFactory.created.single().continueRequested()
+        runCurrent()
 
         assertIs<RootComponent.Child.Game>(restored.component.stack.value.active.instance)
-        assertEquals(finalState.score, restoredGame.engine.state.value.score)
-        assertEquals(finalState.grid, restoredGame.engine.state.value.grid)
-        assertFalse(restoredGame.engine.state.value.isGameOver)
-        assertEquals(finalState.revivesUsed + 1, restoredGame.engine.state.value.revivesUsed)
+        val playableState = restoredRepository.saved
+        requireNotNull(playableState)
+        assertEquals(finalState.score, playableState.score)
+        assertEquals(finalState.grid, playableState.grid)
+        assertFalse(playableState.isGameOver)
+        assertEquals(finalState.revivesUsed + 1, playableState.revivesUsed)
+
+        val normalizedNavigation = restored.component.stack.value
+        assertEquals(2, normalizedNavigation.items.size)
+        val savedAfterContinue = continuedStateKeeper.save()
+        restored.lifecycle.destroy()
+
+        val freshRepository = RecordingGameSaveRepository(initial = playableState)
+        val freshFactory = RecordingGameFactory(
+            saveRepository = freshRepository,
+            externalScope = this,
+        )
+        val fresh = build(
+            stateKeeper = StateKeeperDispatcher(savedAfterContinue),
+            gameFactory = freshFactory,
+        )
+        assertIs<RootComponent.Child.Game>(fresh.component.stack.value.active.instance)
+        val freshGame = freshFactory.created.single()
+        assertEquals(playableState.score, freshGame.engine.state.value.score)
+        assertEquals(playableState.grid, freshGame.engine.state.value.grid)
+        assertEquals(playableState.revivesUsed, freshGame.engine.state.value.revivesUsed)
+        assertFalse(freshGame.engine.state.value.isGameOver)
+
+        val saveCountBeforePlacement = freshRepository.saveCount
+        val piece = freshGame.engine.state.value.currentPieces.first()
+        freshGame.onCellClicked(piece.pieceId, 0, 0)
+        advanceTimeBy(300)
+        runCurrent()
+        assertEquals(saveCountBeforePlacement + 1, freshRepository.saveCount)
     }
 
     private fun resultState(): GameState =
@@ -283,6 +331,9 @@ class DefaultRootComponentTest {
 
     private class RecordingGameFactory(
         private val failRevive: Boolean = false,
+        private val saveRepository: RecordingGameSaveRepository = RecordingGameSaveRepository(),
+        private val externalScope: CoroutineScope =
+            CoroutineScope(Dispatchers.Unconfined + SupervisorJob()),
     ) : GameComponent.Factory {
         val requestedIsNewGame = mutableListOf<Boolean>()
         val created = mutableListOf<FakeGame>()
@@ -292,34 +343,43 @@ class DefaultRootComponentTest {
             restoredResultState: GameState?,
             onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean) -> Unit,
+            onReviveCompleted: (GameState) -> Unit,
         ): GameComponent {
             requestedIsNewGame += isNewGame
             return FakeGame(
                 restoredResultState = restoredResultState,
+                isNewGame = isNewGame,
                 failRevive = failRevive,
+                saveRepository = saveRepository,
+                externalScope = externalScope,
                 onGameCompleted = onGameCompleted,
+                onReviveCompleted = onReviveCompleted,
             ).also { created += it }
         }
     }
 
     private class FakeGame(
         val restoredResultState: GameState?,
+        isNewGame: Boolean,
         private val failRevive: Boolean,
+        private val saveRepository: RecordingGameSaveRepository,
+        private val externalScope: CoroutineScope,
         private val onGameCompleted: (GameState, Boolean) -> Unit,
+        private val onReviveCompleted: (GameState) -> Unit,
     ) : GameComponent {
         var reviveCalls = 0
-        private val scope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
-        private val saveRepository = RecordingGameSaveRepository()
         val engine = GameEngine(
             shapeGenerator = OneByOneGenerator(),
             scoreCalculator = ScoreCalculator(),
             saveRepository = saveRepository,
-            externalScope = scope,
+            externalScope = externalScope,
         )
 
         init {
             if (restoredResultState != null) {
                 engine.restoreResult(restoredResultState)
+            } else if (!isNewGame && saveRepository.saved != null) {
+                engine.restore(checkNotNull(saveRepository.saved))
             } else {
                 engine.startNewGame(bestScore = 0L)
             }
@@ -340,12 +400,20 @@ class DefaultRootComponentTest {
                     com.arkivanov.decompose.value.MutableValue(ge.yet.blockblast.feature.game.tray.TraySelection.NONE)
                 override fun clearSelection() {}
             }
-        override fun onCellClicked(pieceId: Long, x: Int, y: Int) {}
-        override fun onReviveClicked(): Boolean {
-            reviveCalls += 1
-            val revived = !failRevive && engine.continueWithSmallBlocks()
+        override fun onCellClicked(pieceId: Long, x: Int, y: Int) {
+            engine.placePiece(pieceId, x, y)
             model.value = GameComponent.Model(game = engine.state.value)
-            return revived
+        }
+        override fun onReviveClicked() {
+            reviveCalls += 1
+            if (failRevive || !engine.continueWithSmallBlocks()) return
+            model.value = GameComponent.Model(game = engine.state.value)
+            externalScope.launch {
+                engine.cancelPendingAutoSaveAndJoin()
+                val playableState = engine.state.value
+                saveRepository.save(playableState)
+                onReviveCompleted(playableState)
+            }
         }
         override fun onRestartClicked() {}
         override fun onSettingsClicked() {}
@@ -362,14 +430,20 @@ class DefaultRootComponentTest {
         override fun smallReviveTray(): List<Polyomino> = listOf(one, one, one)
     }
 
-    private class RecordingGameSaveRepository : GameSaveRepository {
-        private var state: GameState? = null
+    private class RecordingGameSaveRepository(
+        initial: GameState? = null,
+    ) : GameSaveRepository {
+        var saved: GameState? = initial
+            private set
+        var saveCount: Int = 0
+            private set
         override suspend fun save(state: GameState) {
-            this.state = state
+            saved = state
+            saveCount += 1
         }
-        override suspend fun load(): GameState? = state
+        override suspend fun load(): GameState? = saved
         override suspend fun clear() {
-            state = null
+            saved = null
         }
     }
 

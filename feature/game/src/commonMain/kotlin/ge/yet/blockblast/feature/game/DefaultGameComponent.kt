@@ -44,6 +44,7 @@ internal class DefaultGameComponent(
     private val restoredResultState: GameState?,
     private val onExitClickedCb: () -> Unit,
     private val onGameCompletedCb: (GameState, Boolean) -> Unit,
+    private val onReviveCompletedCb: (GameState) -> Unit,
 ) : ComponentContext by componentContext,
     GameComponent {
     private val store = instanceKeeper.getStore {
@@ -86,6 +87,8 @@ internal class DefaultGameComponent(
                     }
                     is GameStore.Label.GameCompleted ->
                         onGameCompletedCb(label.finalState, label.canContinue)
+                    is GameStore.Label.ReviveCompleted ->
+                        onReviveCompletedCb(label.playableState)
                 }
             }
         }
@@ -96,12 +99,7 @@ internal class DefaultGameComponent(
         store.accept(GameStore.Intent.Place(pieceId, x, y))
     }
 
-    override fun onReviveClicked(): Boolean {
-        val revivesBefore = store.state.game.revivesUsed
-        store.accept(GameStore.Intent.Revive)
-        val state = store.state.game
-        return !state.isGameOver && state.revivesUsed == revivesBefore + 1
-    }
+    override fun onReviveClicked() = store.accept(GameStore.Intent.Revive)
     override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
     override fun onSettingsClicked() {
         log("settings_opened")
@@ -188,6 +186,7 @@ internal class DefaultGameComponentFactory(
         restoredResultState: GameState?,
         onExitClicked: () -> Unit,
         onGameCompleted: (GameState, Boolean) -> Unit,
+        onReviveCompleted: (GameState) -> Unit,
     ): GameComponent = DefaultGameComponent(
         componentContext = componentContext,
         gameStoreFactory = gameStoreFactory,
@@ -200,5 +199,6 @@ internal class DefaultGameComponentFactory(
         restoredResultState = restoredResultState,
         onExitClickedCb = onExitClicked,
         onGameCompletedCb = onGameCompleted,
+        onReviveCompletedCb = onReviveCompleted,
     )
 }

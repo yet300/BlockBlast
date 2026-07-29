@@ -21,15 +21,19 @@ import ge.yet.blokblast.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -39,6 +43,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -245,6 +250,31 @@ class GameStoreFactoryTest {
         assertEquals(emittedFinalState, deps.saveRepo.saved)
         assertEquals(321L, deps.settings.bestScore.value)
         assertTrue(labels.single() is GameStore.Label.GameCompleted)
+        labelScope.cancel()
+        deps.dispose()
+    }
+
+    @Test
+    fun terminal_edge_cancels_pending_autosave_before_delayed_explicit_save() = runTest {
+        val deps = TestDeps(saveDelayMillis = 500L)
+        val store = deps.factory().create(isNewGame = true)
+        val labelScope = CoroutineScope(testDispatcher + SupervisorJob())
+        labelScope.launch {
+            store.labels.collect { label ->
+                if (label is GameStore.Label.GameCompleted) {
+                    deps.engine.restoreResult(label.finalState)
+                }
+            }
+        }
+
+        val piece = deps.engine.state.value.currentPieces.first()
+        deps.engine.placePiece(piece.pieceId, 0, 0)
+        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        runCurrent()
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(1, deps.saveRepo.saveCount)
         labelScope.cancel()
         deps.dispose()
     }
@@ -467,14 +497,22 @@ class GameStoreFactoryTest {
     }
 
     @Test
-    fun revive_intent_continues_with_small_blocks_when_game_over() = runTest {
+    fun revive_intent_saves_playable_state_before_publishing_completion() = runTest {
         val deps = TestDeps()
-        val store = deps.factory().create(isNewGame = true)
-        deps.engine.restore(deps.engine.state.value.copy(isGameOver = true))
+        val store = deps.factory().create(
+            isNewGame = false,
+            restoredResultState = GameState(isGameOver = true),
+        )
+        val labels = mutableListOf<GameStore.Label>()
+        deps.scope.launch { store.labels.collect { labels += it } }
         store.accept(GameStore.Intent.Revive)
         runCurrent()
+
         assertFalse(deps.engine.state.value.isGameOver)
         assertEquals(1, deps.engine.state.value.revivesUsed)
+        assertEquals(1, deps.saveRepo.saveCount)
+        val completion = assertIs<GameStore.Label.ReviveCompleted>(labels.single())
+        assertEquals(deps.engine.state.value, completion.playableState)
         assertTrue(deps.analytics.has("revive_clicked"))
         deps.dispose()
     }
@@ -496,10 +534,15 @@ class GameStoreFactoryTest {
         savedState: GameState? = null,
         settingsBest: Long = 0L,
         reviewCount: Int = 0,
+        saveDelayMillis: Long = 0L,
     ) {
         val operations = mutableListOf<String>()
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
-        val saveRepo = StubSaveRepo(savedState) { operations += "save" }
+        val saveRepo = StubSaveRepo(
+            initial = savedState,
+            saveDelayMillis = saveDelayMillis,
+            onSave = { operations += "save" },
+        )
         val settings = FakeSettings(
             bestScore = settingsBest,
             reviewPromptCount = reviewCount,
@@ -536,6 +579,7 @@ private class OneByOneGenerator : ShapeGenerator {
 
 private class StubSaveRepo(
     initial: GameState? = null,
+    private val saveDelayMillis: Long = 0L,
     private val onSave: () -> Unit = {},
 ) : GameSaveRepository {
     private var stored: GameState? = initial
@@ -543,9 +587,12 @@ private class StubSaveRepo(
         private set
     val saved: GameState? get() = stored
     override suspend fun save(state: GameState) {
-        stored = state
-        saveCount += 1
-        onSave()
+        withContext(NonCancellable) {
+            if (saveDelayMillis > 0L) delay(saveDelayMillis)
+            stored = state
+            saveCount += 1
+            onSave()
+        }
     }
     override suspend fun load(): GameState? = stored
     override suspend fun clear() { stored = null }

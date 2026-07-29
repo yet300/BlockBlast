@@ -41,7 +41,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertNotNull
@@ -87,6 +86,7 @@ class DefaultGameComponentTest {
         )
         val exitCalls = mutableListOf<Unit>()
         val completions = mutableListOf<Pair<GameState, Boolean>>()
+        val reviveCompletions = mutableListOf<GameState>()
         val component = DefaultGameComponent(
             componentContext = DefaultComponentContext(lifecycle),
             gameStoreFactory = storeFactory,
@@ -101,6 +101,7 @@ class DefaultGameComponentTest {
             onGameCompletedCb = { finalState, canContinue ->
                 completions += finalState to canContinue
             },
+            onReviveCompletedCb = { reviveCompletions += it },
         )
         return Setup(
             component,
@@ -113,6 +114,8 @@ class DefaultGameComponentTest {
             storeReview,
             exitCalls,
             completions,
+            reviveCompletions,
+            save,
         )
     }
 
@@ -171,25 +174,32 @@ class DefaultGameComponentTest {
     }
 
     @Test
-    fun onReviveClicked_restores_play_when_game_over() {
+    fun onReviveClicked_persists_playable_state_before_notifying_parent() = runTest(testDispatcher) {
         val s = build()
         s.engine.restore(s.engine.state.value.copy(isGameOver = true))
-        assertTrue(s.component.onReviveClicked())
+        s.component.onReviveClicked()
+        runCurrent()
+
         assertEquals(false, s.engine.state.value.isGameOver)
         assertEquals(1, s.engine.state.value.revivesUsed)
+        assertEquals(listOf(s.engine.state.value), s.reviveCompletions)
+        assertEquals(s.engine.state.value, s.save.stored)
         s.dispose()
     }
 
     @Test
-    fun onReviveClicked_reports_failure_and_keeps_game_over_when_revive_is_unavailable() {
+    fun onReviveClicked_keeps_result_when_revive_is_unavailable() = runTest(testDispatcher) {
         val finalState = GameState(
             isGameOver = true,
             revivesUsed = GameState.MAX_REVIVES,
         )
         val s = build(restoredResultState = finalState)
-        assertFalse(s.component.onReviveClicked())
+        s.component.onReviveClicked()
+        runCurrent()
+
         assertTrue(s.engine.state.value.isGameOver)
         assertEquals(GameState.MAX_REVIVES, s.engine.state.value.revivesUsed)
+        assertTrue(s.reviveCompletions.isEmpty())
         s.dispose()
     }
 
@@ -259,6 +269,8 @@ class DefaultGameComponentTest {
         val storeReview: RecordingStoreReview,
         val exitCalls: MutableList<Unit>,
         val completions: MutableList<Pair<GameState, Boolean>>,
+        val reviveCompletions: MutableList<GameState>,
+        val save: StubSaveRepo,
     ) {
         fun dispose() { scope.cancel() }
     }
@@ -270,7 +282,8 @@ class DefaultGameComponentTest {
     }
 
     private class StubSaveRepo : GameSaveRepository {
-        private var stored: GameState? = null
+        var stored: GameState? = null
+            private set
         override suspend fun save(state: GameState) { stored = state }
         override suspend fun load(): GameState? = stored
         override suspend fun clear() { stored = null }

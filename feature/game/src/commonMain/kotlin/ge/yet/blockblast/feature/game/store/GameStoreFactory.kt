@@ -85,15 +85,17 @@ internal class GameStoreFactory(
                                 previousIsGameOver = isGameOver
                                 if (isGameOver) {
                                     logger.log("game_over", gameState)
+                                    val finalState = gameState.copy(
+                                        grid = Grid(gameState.grid.cells.copyOf()),
+                                    )
                                     // Result navigation must never race the final save.
-                                    saveRepository.save(gameState)
-                                    settings.setBestScore(gameState.bestScore)
+                                    engine.cancelPendingAutoSaveAndJoin()
+                                    saveRepository.save(finalState)
+                                    settings.setBestScore(finalState.bestScore)
                                     publish(
                                         GameStore.Label.GameCompleted(
-                                            finalState = gameState.copy(
-                                                grid = Grid(gameState.grid.cells.copyOf()),
-                                            ),
-                                            canContinue = gameState.revivesUsed < GameState.MAX_REVIVES,
+                                            finalState = finalState,
+                                            canContinue = finalState.revivesUsed < GameState.MAX_REVIVES,
                                         ),
                                     )
                                 }
@@ -169,6 +171,14 @@ internal class GameStoreFactory(
                         if (revived) {
                             logger.log("revive_completed", state, mapOf("source" to "revive"))
                             logger.log("game_started", state, mapOf("source" to "revive"))
+                            val playableState = state.copy(
+                                grid = Grid(state.grid.cells.copyOf()),
+                            )
+                            launch {
+                                engine.cancelPendingAutoSaveAndJoin()
+                                saveRepository.save(playableState)
+                                publish(GameStore.Label.ReviveCompleted(playableState))
+                            }
                         }
                     }
                     onIntent<GameStore.Intent.Restart> {

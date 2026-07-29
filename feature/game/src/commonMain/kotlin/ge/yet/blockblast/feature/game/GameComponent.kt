@@ -28,7 +28,7 @@ interface GameComponent {
     )
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
-    fun onReviveClicked(): Boolean
+    fun onReviveClicked()
     fun onRestartClicked()
     fun onSettingsClicked()
     fun onExitClicked()
@@ -52,6 +52,7 @@ interface GameComponent {
             restoredResultState: GameState?,
             onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean) -> Unit,
+            onReviveCompleted: (GameState) -> Unit,
         ): GameComponent
     }
 
