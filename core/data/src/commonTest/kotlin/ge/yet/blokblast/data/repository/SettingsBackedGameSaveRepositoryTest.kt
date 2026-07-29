@@ -70,10 +70,12 @@ class SettingsBackedGameSaveRepositoryTest {
 
     @Test
     fun clear_removes_persisted_save() = runTest {
-        val repo = newRepo()
+        val settings = MapSettings()
+        val repo = newRepo(settings)
         repo.save(sampleState)
         repo.clear()
         assertNull(repo.load())
+        assertNull(newRepo(settings).load())
     }
 
     @Test
@@ -87,12 +89,12 @@ class SettingsBackedGameSaveRepositoryTest {
             ),
         )
         repo.save(sampleState)
-        // First load primes `loaded = true` from disk (one read).
         repo.load()
         val readsAfterPrime = settings.readCount
         // Subsequent loads hit the cache.
         repo.load()
         repo.load()
+        assertEquals(0, readsAfterPrime)
         assertEquals(readsAfterPrime, settings.readCount)
     }
 
@@ -129,6 +131,10 @@ class SettingsBackedGameSaveRepositoryTest {
     fun cancellation_after_successful_disk_write_keeps_cache_in_sync() = runTest {
         val settings = CancellingPutSettings()
         val repo = newRepo(settings)
+        val oldState = sampleState.copy(score = 1_111L)
+        repo.save(oldState)
+        assertEquals(oldState, repo.load())
+
         lateinit var saveJob: Job
         settings.afterPut = { saveJob.cancel() }
 
@@ -136,6 +142,7 @@ class SettingsBackedGameSaveRepositoryTest {
         saveJob = launch { repo.save(updatedState) }
         saveJob.join()
 
+        assertEquals(true, saveJob.isCancelled)
         assertEquals(updatedState, repo.load())
     }
 
