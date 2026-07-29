@@ -216,10 +216,10 @@ private fun ResultTitle(
     ) {
         Text(
             text = stringResource(Res.string.game_over),
-            style = if (layoutPolicy.isCompact) {
-                MaterialTheme.typography.headlineMedium
-            } else {
-                MaterialTheme.typography.headlineLarge
+            style = when {
+                layoutPolicy.isUltraCompact -> MaterialTheme.typography.headlineSmall
+                layoutPolicy.isCompact -> MaterialTheme.typography.headlineMedium
+                else -> MaterialTheme.typography.headlineLarge
             },
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
@@ -227,7 +227,11 @@ private fun ResultTitle(
         Spacer(Modifier.height(layoutPolicy.titleSpacingDp.dp))
         Text(
             text = stringResource(Res.string.game_over_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (layoutPolicy.isUltraCompact) {
+                MaterialTheme.typography.bodySmall
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )

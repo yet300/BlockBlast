@@ -48,7 +48,13 @@ internal fun ResultCard(
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(if (layoutPolicy.isCompact) 24.dp else 28.dp)
+    val shape = RoundedCornerShape(
+        when {
+            layoutPolicy.isUltraCompact -> 20.dp
+            layoutPolicy.isCompact -> 24.dp
+            else -> 28.dp
+        },
+    )
     Column(
         modifier = modifier
             .whisperShadow(shape = shape, elevation = 24.dp)
@@ -73,10 +79,10 @@ internal fun ResultCard(
         )
         Text(
             text = model.snapshot.score.formatScore(),
-            style = if (layoutPolicy.isCompact) {
-                MaterialTheme.typography.headlineLarge
-            } else {
-                MaterialTheme.typography.displayMedium
+            style = when {
+                layoutPolicy.isUltraCompact -> MaterialTheme.typography.headlineMedium
+                layoutPolicy.isCompact -> MaterialTheme.typography.headlineLarge
+                else -> MaterialTheme.typography.displayMedium
             },
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -89,7 +95,11 @@ internal fun ResultCard(
             } else {
                 "$bestLabel · ${model.snapshot.bestScore.formatScore()}"
             },
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (layoutPolicy.isUltraCompact) {
+                MaterialTheme.typography.bodySmall
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
             color = if (model.snapshot.isNewBest) {
                 MaterialTheme.colorScheme.primary
             } else {

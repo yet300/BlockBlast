@@ -11,6 +11,7 @@ class ResultLayoutPolicyTest {
         val budget = resultLayoutBudget(widthDp = 320f, heightDp = 568f)
 
         assertTrue(budget.policy.isCompact)
+        assertFalse(budget.policy.isUltraCompact)
         assertTrue(budget.fixedContentFits)
         assertTrue(budget.boardSizeDp > 0f)
         assertTrue(budget.contentHeightDp <= 568f)
@@ -21,9 +22,31 @@ class ResultLayoutPolicyTest {
         val budget = resultLayoutBudget(widthDp = 360f, heightDp = 640f)
 
         assertTrue(budget.policy.isCompact)
+        assertFalse(budget.policy.isUltraCompact)
         assertTrue(budget.fixedContentFits)
         assertTrue(budget.boardSizeDp > 0f)
         assertTrue(budget.contentHeightDp <= 640f)
+    }
+
+    @Test
+    fun short_landscape_uses_ultra_compact_layout_with_all_actions_visible() {
+        val budget = resultLayoutBudget(widthDp = 568f, heightDp = 320f)
+
+        assertTrue(budget.policy.isCompact)
+        assertTrue(budget.policy.isUltraCompact)
+        assertTrue(budget.fixedContentFits)
+        assertTrue(budget.boardSizeDp > 0f)
+        assertTrue(budget.contentHeightDp <= 320f)
+    }
+
+    @Test
+    fun short_landscape_fits_after_safe_insets_reduce_effective_height() {
+        val budget = resultLayoutBudget(widthDp = 568f, heightDp = 288f)
+
+        assertTrue(budget.policy.isUltraCompact)
+        assertTrue(budget.fixedContentFits)
+        assertTrue(budget.boardSizeDp > 0f)
+        assertTrue(budget.contentHeightDp <= 288f)
     }
 
     @Test
@@ -31,6 +54,7 @@ class ResultLayoutPolicyTest {
         val budget = resultLayoutBudget(widthDp = 390f, heightDp = 844f)
 
         assertFalse(budget.policy.isCompact)
+        assertFalse(budget.policy.isUltraCompact)
         assertTrue(budget.fixedContentFits)
         assertTrue(budget.boardSizeDp > 0f)
         assertTrue(budget.contentHeightDp <= 844f)
