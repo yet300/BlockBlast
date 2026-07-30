@@ -44,6 +44,17 @@
     <string name="open_source_libraries">مكتبات مفتوحة المصدر</string>
     <string name="open_source_libraries_subtitle">الاعتمادات والشكر</string>
 
+    <string name="advertising">الإعلانات</string>
+    <string name="advertising_enabled_subtitle">تدعم استمرار التطوير مجانًا</string>
+    <string name="advertising_disabled_subtitle">معطّلة — الإحياء مجاني</string>
+    <string name="support_game">ادعم اللعبة</string>
+    <string name="support_game_subtitle">ضع نجمة للمشروع على GitHub أو تبرّع</string>
+    <string name="disable_ads">هل تريد تعطيل الإعلانات؟</string>
+    <string name="disable_ads_title">الإعلانات تُبقي Logica مجانية</string>
+    <string name="disable_ads_body">تساعدنا الإعلانات على تحسين اللعبة وإبقاء جميع الميزات متاحة مجانًا. إذا عطّلتها، فسيظل الإحياء مجانيًا — ويمكنك دعم Logica بوضع نجمة على GitHub أو بالتبرع.</string>
+    <string name="keep_ads">الإبقاء على الإعلانات</string>
+    <string name="disable_ads_anyway">التعطيل على أي حال</string>
+
     <!-- Common -->
     <string name="exit">خروج</string>
 

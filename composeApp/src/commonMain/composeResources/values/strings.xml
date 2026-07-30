@@ -43,6 +43,16 @@
     <string name="github_subtitle">View the source code</string>
     <string name="open_source_libraries">Open-source libraries</string>
     <string name="open_source_libraries_subtitle">Credits and acknowledgments</string>
+    <string name="advertising">Advertising</string>
+    <string name="advertising_enabled_subtitle">Supports free development</string>
+    <string name="advertising_disabled_subtitle">Disabled — revives are free</string>
+    <string name="support_game">Support the game</string>
+    <string name="support_game_subtitle">Star the project on GitHub or donate</string>
+    <string name="disable_ads">Disable advertising?</string>
+    <string name="disable_ads_title">Ads keep Logica free</string>
+    <string name="disable_ads_body">Advertising helps us improve the game and keep every feature available for free. If you turn it off, revives will remain free — and you can still support Logica with a GitHub star or a donation.</string>
+    <string name="keep_ads">Keep ads</string>
+    <string name="disable_ads_anyway">Disable anyway</string>
 
     <!-- Common -->
     <string name="exit">Exit</string>

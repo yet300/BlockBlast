@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Open-Source-Bibliotheken</string>
     <string name="open_source_libraries_subtitle">Danksagungen</string>
 
+    <string name="advertising">Werbung</string>
+    <string name="advertising_enabled_subtitle">Unterstützt die kostenlose Entwicklung</string>
+    <string name="advertising_disabled_subtitle">Deaktiviert — Wiederbelebungen sind kostenlos</string>
+    <string name="support_game">Spiel unterstützen</string>
+    <string name="support_game_subtitle">Gib dem Projekt auf GitHub einen Stern oder spende</string>
+    <string name="disable_ads">Werbung deaktivieren?</string>
+    <string name="disable_ads_title">Werbung hält Logica kostenlos</string>
+    <string name="disable_ads_body">Werbung hilft uns, das Spiel zu verbessern und alle Funktionen kostenlos anzubieten. Wenn du sie deaktivierst, bleiben Wiederbelebungen kostenlos — und du kannst Logica weiterhin mit einem GitHub-Stern oder einer Spende unterstützen.</string>
+    <string name="keep_ads">Werbung beibehalten</string>
+    <string name="disable_ads_anyway">Trotzdem deaktivieren</string>
+
     <!-- Common -->
     <string name="exit">Beenden</string>
 

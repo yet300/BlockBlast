@@ -66,7 +66,12 @@ fun AdMobBanner(
                         }
                     }
 
-                    if (ConsentManager.canRequestAds(ctx)) {
+                    if (
+                        shouldRequestAds(
+                            preferenceEnabled = AdsManager.enabled,
+                            consentAllowsRequests = ConsentManager.canRequestAds(ctx),
+                        )
+                    ) {
                         loadAd(AdRequest.Builder().build())
                     }
                     adView.value = this

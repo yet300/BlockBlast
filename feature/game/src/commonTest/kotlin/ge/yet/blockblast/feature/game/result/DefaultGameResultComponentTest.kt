@@ -200,6 +200,18 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
+    fun disabled_ads_make_continue_free_without_requesting_ad_gate() = runTest(testDispatcher) {
+        val setup = build(canContinue = true, adsEnabled = false)
+
+        setup.component.onPrimaryClicked(failIfContinueGateRequested)
+        runCurrent()
+
+        assertEquals(1, setup.continueCalls)
+        assertEquals(0, setup.newGameCalls)
+        setup.lifecycle.destroy()
+    }
+
+    @Test
     fun primary_action_starts_new_game_once_after_countdown_expires() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
         advanceTimeBy(5_000)
@@ -379,10 +391,11 @@ class DefaultGameResultComponentTest {
         canContinue: Boolean,
         shouldRequestReview: Boolean = false,
         stateKeeper: StateKeeper? = null,
+        adsEnabled: Boolean = true,
         onContinueRequested: () -> Unit = {},
     ): Setup {
         val lifecycle = LifecycleRegistry()
-        val settings = FakeSettings()
+        val settings = FakeSettings(adsEnabled)
         val storeReview = RecordingStoreReview()
         var continueCalls = 0
         var newGameCalls = 0
@@ -438,12 +451,14 @@ class DefaultGameResultComponentTest {
         val homeCalls: Int get() = homeCallsProvider()
     }
 
-    private class FakeSettings : SettingsRepository {
+    private class FakeSettings(adsEnabled: Boolean) : SettingsRepository {
         private val reviewFlow = MutableStateFlow(0)
+        private val adsFlow = MutableStateFlow(adsEnabled)
         override val musicEnabled = MutableStateFlow(true).asStateFlow()
         override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
+        override val adsEnabled = adsFlow.asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = reviewFlow.asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -451,6 +466,9 @@ class DefaultGameResultComponentTest {
         override suspend fun setSfxEnabled(enabled: Boolean) = Unit
         override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
         override suspend fun setDarkTheme(enabled: Boolean) = Unit
+        override suspend fun setAdsEnabled(enabled: Boolean) {
+            adsFlow.value = enabled
+        }
         override suspend fun setBestScore(score: Long) = Unit
         override suspend fun incrementReviewPromptCount() {
             reviewFlow.value += 1

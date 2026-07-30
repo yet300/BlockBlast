@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Ашық бастапқы кітапханалар</string>
     <string name="open_source_libraries_subtitle">Алғыс пен мойындау</string>
 
+    <string name="advertising">Жарнама</string>
+    <string name="advertising_enabled_subtitle">Тегін әзірлеуді қолдайды</string>
+    <string name="advertising_disabled_subtitle">Өшірілген — қайта тірілу тегін</string>
+    <string name="support_game">Ойынды қолдау</string>
+    <string name="support_game_subtitle">Жобаға GitHub-та жұлдыз қойыңыз немесе қайырымдылық жасаңыз</string>
+    <string name="disable_ads">Жарнаманы өшіру керек пе?</string>
+    <string name="disable_ads_title">Жарнама Logica-ны тегін етеді</string>
+    <string name="disable_ads_body">Жарнама ойынды жақсартуға және барлық мүмкіндікті тегін ұсынуға көмектеседі. Оны өшірсеңіз де, қайта тірілу тегін болып қалады — Logica-ны GitHub-тағы жұлдызбен немесе қайырымдылықпен қолдай аласыз.</string>
+    <string name="keep_ads">Жарнаманы қалдыру</string>
+    <string name="disable_ads_anyway">Бәрібір өшіру</string>
+
     <!-- Common -->
     <string name="exit">Шығу</string>
 

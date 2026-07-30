@@ -845,6 +845,7 @@ private class ThrowingBestSettingsRepository : SettingsRepository {
     override val sfxEnabled = MutableStateFlow(true).asStateFlow()
     override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
     override val darkTheme = MutableStateFlow(false).asStateFlow()
+    override val adsEnabled = MutableStateFlow(true).asStateFlow()
     override val bestScore = MutableStateFlow(0L).asStateFlow()
     override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
     override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -852,6 +853,7 @@ private class ThrowingBestSettingsRepository : SettingsRepository {
     override suspend fun setSfxEnabled(enabled: Boolean) = Unit
     override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
     override suspend fun setDarkTheme(enabled: Boolean) = Unit
+    override suspend fun setAdsEnabled(enabled: Boolean) = Unit
     override suspend fun setBestScore(score: Long) {
         if (score > 0L) error("best score failed")
     }
@@ -899,6 +901,7 @@ private class FakeSettings(
     override val sfxEnabled = MutableStateFlow(true).asStateFlow()
     override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
     override val darkTheme = MutableStateFlow(false).asStateFlow()
+    override val adsEnabled = MutableStateFlow(true).asStateFlow()
     override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
     override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
     override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -906,6 +909,7 @@ private class FakeSettings(
     override suspend fun setSfxEnabled(enabled: Boolean) {}
     override suspend fun setVibrationEnabled(enabled: Boolean) {}
     override suspend fun setDarkTheme(enabled: Boolean) {}
+    override suspend fun setAdsEnabled(enabled: Boolean) {}
     override suspend fun setBestScore(score: Long) {
         onBestScoreSet()
         if (score > bestScoreFlow.value) bestScoreFlow.value = score

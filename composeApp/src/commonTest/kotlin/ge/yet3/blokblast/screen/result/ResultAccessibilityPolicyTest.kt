@@ -28,4 +28,15 @@ class ResultAccessibilityPolicyTest {
             ),
         )
     }
+
+    @Test
+    fun free_continue_does_not_announce_an_advertisement() {
+        assertNull(
+            resultPrimaryContentDescription(
+                isContinuePhase = true,
+                primaryText = "Continue (5)",
+                advertisementLabel = null,
+            ),
+        )
+    }
 }

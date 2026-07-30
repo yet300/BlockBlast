@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Açıq mənbəli kitabxanalar</string>
     <string name="open_source_libraries_subtitle">Təşəkkürlər və qeydlər</string>
 
+    <string name="advertising">Reklam</string>
+    <string name="advertising_enabled_subtitle">Pulsuz inkişafı dəstəkləyir</string>
+    <string name="advertising_disabled_subtitle">Söndürülüb — dirilmələr pulsuzdur</string>
+    <string name="support_game">Oyunu dəstəklə</string>
+    <string name="support_game_subtitle">Layihəyə GitHub-da ulduz verin və ya ianə edin</string>
+    <string name="disable_ads">Reklam söndürülsün?</string>
+    <string name="disable_ads_title">Reklam Logica-nı pulsuz saxlayır</string>
+    <string name="disable_ads_body">Reklam oyunu təkmilləşdirməyə və bütün imkanları pulsuz saxlamağa kömək edir. Onu söndürsəniz, dirilmələr pulsuz qalacaq — Logica-nı GitHub-da ulduz və ya ianə ilə dəstəkləyə bilərsiniz.</string>
+    <string name="keep_ads">Reklamı saxla</string>
+    <string name="disable_ads_anyway">Yenə də söndür</string>
+
     <!-- Common -->
     <string name="exit">Çıxış</string>
 

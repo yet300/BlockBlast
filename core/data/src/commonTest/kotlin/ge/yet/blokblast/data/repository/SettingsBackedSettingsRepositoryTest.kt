@@ -41,9 +41,29 @@ class SettingsBackedSettingsRepositoryTest {
         assertTrue(repo.sfxEnabled.value)
         assertTrue(repo.vibrationEnabled.value)
         assertFalse(repo.darkTheme.value)
+        assertTrue(repo.adsEnabled.value)
         assertEquals(0L, repo.bestScore.value)
         assertEquals(0, repo.reviewPromptCount.value)
         assertFalse(repo.tutorialSeen.value)
+    }
+
+    @Test
+    fun ads_preference_survives_repository_recreation() = runTest {
+        repo.setAdsEnabled(false)
+        assertFalse(repo.adsEnabled.value)
+
+        val recreated = SettingsBackedSettingsRepository(
+            settings = settings,
+            scope = scope,
+            dispatchers = AppDispatchers(
+                default = Dispatchers.Unconfined,
+                io = Dispatchers.Unconfined,
+            ),
+        )
+        assertFalse(recreated.adsEnabled.value)
+
+        recreated.setAdsEnabled(true)
+        assertTrue(repo.adsEnabled.value)
     }
 
     @Test

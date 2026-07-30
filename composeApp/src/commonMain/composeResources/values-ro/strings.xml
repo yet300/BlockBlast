@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Biblioteci open-source</string>
     <string name="open_source_libraries_subtitle">Recunoștințe și mulțumiri</string>
 
+    <string name="advertising">Reclame</string>
+    <string name="advertising_enabled_subtitle">Susțin dezvoltarea gratuită</string>
+    <string name="advertising_disabled_subtitle">Dezactivate — reînvierile sunt gratuite</string>
+    <string name="support_game">Susține jocul</string>
+    <string name="support_game_subtitle">Acordă proiectului o stea pe GitHub sau donează</string>
+    <string name="disable_ads">Dezactivezi reclamele?</string>
+    <string name="disable_ads_title">Reclamele mențin Logica gratuit</string>
+    <string name="disable_ads_body">Reclamele ne ajută să îmbunătățim jocul și să păstrăm toate funcțiile gratuite. Dacă le dezactivezi, reînvierile vor rămâne gratuite — iar Logica poate fi susținut cu o stea pe GitHub sau o donație.</string>
+    <string name="keep_ads">Păstrează reclamele</string>
+    <string name="disable_ads_anyway">Dezactivează oricum</string>
+
     <!-- Common -->
     <string name="exit">Ieșire</string>
 

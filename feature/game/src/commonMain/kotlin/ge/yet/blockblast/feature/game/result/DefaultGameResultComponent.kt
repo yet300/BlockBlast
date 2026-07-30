@@ -83,6 +83,12 @@ internal class DefaultGameResultComponent(
         countdownJob?.cancel()
 
         if (continueSelected) {
+            if (!settings.adsEnabled.value) {
+                componentScope.launch {
+                    onContinueRequested()
+                }
+                return
+            }
             var approvalHandled = false
             requestContinue {
                 componentScope.launch {

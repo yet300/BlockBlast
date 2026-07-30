@@ -20,7 +20,7 @@ class InterstitialAdManager(
     private var loading: Boolean = false
 
     fun load(context: Context) {
-        if (loading || cached != null) return
+        if (!AdsManager.enabled || loading || cached != null) return
         loading = true
         InterstitialAd.load(
             context.applicationContext,
@@ -28,7 +28,7 @@ class InterstitialAdManager(
             AdRequest.Builder().build(),
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {
-                    cached = ad
+                    cached = ad.takeIf { AdsManager.enabled }
                     loading = false
                 }
 
@@ -48,6 +48,10 @@ class InterstitialAdManager(
      * @return `true` when the show was attempted, `false` when no ad was available.
      */
     fun show(activity: Activity, onDismiss: () -> Unit = {}): Boolean {
+        if (!AdsManager.enabled) {
+            clear()
+            return false
+        }
         val ad = cached
         if (ad == null) {
             load(activity)
@@ -68,5 +72,10 @@ class InterstitialAdManager(
         ad.show(activity)
         cached = null
         return true
+    }
+
+    fun clear() {
+        cached = null
+        loading = false
     }
 }

@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Biblioteki open source</string>
     <string name="open_source_libraries_subtitle">Podziękowania</string>
 
+    <string name="advertising">Reklamy</string>
+    <string name="advertising_enabled_subtitle">Wspierają bezpłatny rozwój</string>
+    <string name="advertising_disabled_subtitle">Wyłączone — wskrzeszenia są bezpłatne</string>
+    <string name="support_game">Wesprzyj grę</string>
+    <string name="support_game_subtitle">Dodaj projekt do gwiazdek na GitHubie lub przekaż darowiznę</string>
+    <string name="disable_ads">Wyłączyć reklamy?</string>
+    <string name="disable_ads_title">Reklamy pozwalają utrzymać Logicę bezpłatną</string>
+    <string name="disable_ads_body">Reklamy pomagają nam ulepszać grę i udostępniać wszystkie funkcje bezpłatnie. Jeśli je wyłączysz, wskrzeszenia nadal będą bezpłatne — a Logicę możesz wesprzeć gwiazdką na GitHubie lub darowizną.</string>
+    <string name="keep_ads">Pozostaw reklamy</string>
+    <string name="disable_ads_anyway">Mimo to wyłącz</string>
+
     <!-- Common -->
     <string name="exit">Wyjdź</string>
 

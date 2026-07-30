@@ -4,6 +4,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
+import ge.yet.blockblast.feature.settings.disableads.DisableAdsComponent
 import ge.yet.blockblast.feature.settings.libraries.LibrariesSettingsComponent
 import ge.yet.blockblast.feature.settings.main.MainSettingsComponent
 import ge.yet.blockblast.feature.settings.more.MoreSettingsComponent
@@ -22,6 +23,7 @@ interface SettingsComponent : BackHandlerOwner {
     sealed interface Child {
         class Main(val component: MainSettingsComponent) : Child
         class More(val component: MoreSettingsComponent) : Child
+        class DisableAds(val component: DisableAdsComponent) : Child
         class Libraries(val component: LibrariesSettingsComponent) : Child
     }
 

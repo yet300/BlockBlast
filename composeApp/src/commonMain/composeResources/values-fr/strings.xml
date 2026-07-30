@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Bibliothèques open source</string>
     <string name="open_source_libraries_subtitle">Crédits et remerciements</string>
 
+    <string name="advertising">Publicités</string>
+    <string name="advertising_enabled_subtitle">Soutiennent le développement gratuit</string>
+    <string name="advertising_disabled_subtitle">Désactivées — les résurrections sont gratuites</string>
+    <string name="support_game">Soutenir le jeu</string>
+    <string name="support_game_subtitle">Ajoutez une étoile au projet sur GitHub ou faites un don</string>
+    <string name="disable_ads">Désactiver les publicités ?</string>
+    <string name="disable_ads_title">Les publicités permettent à Logica de rester gratuit</string>
+    <string name="disable_ads_body">Les publicités nous aident à améliorer le jeu et à garder toutes les fonctionnalités gratuites. Si vous les désactivez, les résurrections resteront gratuites — et vous pourrez toujours soutenir Logica avec une étoile GitHub ou un don.</string>
+    <string name="keep_ads">Garder les publicités</string>
+    <string name="disable_ads_anyway">Désactiver quand même</string>
+
     <!-- Common -->
     <string name="exit">Quitter</string>
 

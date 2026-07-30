@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Βιβλιοθήκες ανοιχτού κώδικα</string>
     <string name="open_source_libraries_subtitle">Εύσημα και αναγνωρίσεις</string>
 
+    <string name="advertising">Διαφημίσεις</string>
+    <string name="advertising_enabled_subtitle">Υποστηρίζουν τη δωρεάν ανάπτυξη</string>
+    <string name="advertising_disabled_subtitle">Απενεργοποιημένες — οι αναβιώσεις είναι δωρεάν</string>
+    <string name="support_game">Υποστηρίξτε το παιχνίδι</string>
+    <string name="support_game_subtitle">Βάλτε αστέρι στο έργο στο GitHub ή κάντε δωρεά</string>
+    <string name="disable_ads">Απενεργοποίηση διαφημίσεων;</string>
+    <string name="disable_ads_title">Οι διαφημίσεις κρατούν το Logica δωρεάν</string>
+    <string name="disable_ads_body">Οι διαφημίσεις μάς βοηθούν να βελτιώνουμε το παιχνίδι και να διατηρούμε όλες τις λειτουργίες δωρεάν. Αν τις απενεργοποιήσετε, οι αναβιώσεις θα παραμείνουν δωρεάν — και μπορείτε να υποστηρίξετε το Logica με ένα αστέρι στο GitHub ή μια δωρεά.</string>
+    <string name="keep_ads">Διατήρηση διαφημίσεων</string>
+    <string name="disable_ads_anyway">Απενεργοποίηση ούτως ή άλλως</string>
+
     <!-- Common -->
     <string name="exit">Έξοδος</string>
 

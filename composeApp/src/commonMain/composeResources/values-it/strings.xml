@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Librerie open-source</string>
     <string name="open_source_libraries_subtitle">Crediti e ringraziamenti</string>
 
+    <string name="advertising">Pubblicità</string>
+    <string name="advertising_enabled_subtitle">Sostiene lo sviluppo gratuito</string>
+    <string name="advertising_disabled_subtitle">Disattivata — le resurrezioni sono gratuite</string>
+    <string name="support_game">Sostieni il gioco</string>
+    <string name="support_game_subtitle">Metti una stella al progetto su GitHub o fai una donazione</string>
+    <string name="disable_ads">Disattivare la pubblicità?</string>
+    <string name="disable_ads_title">La pubblicità mantiene Logica gratuita</string>
+    <string name="disable_ads_body">La pubblicità ci aiuta a migliorare il gioco e a mantenere gratuite tutte le funzionalità. Se la disattivi, le resurrezioni resteranno gratuite — e potrai comunque sostenere Logica con una stella su GitHub o una donazione.</string>
+    <string name="keep_ads">Mantieni la pubblicità</string>
+    <string name="disable_ads_anyway">Disattiva comunque</string>
+
     <!-- Common -->
     <string name="exit">Esci</string>
 

@@ -44,6 +44,17 @@
     <string name="open_source_libraries">オープンソース ライブラリ</string>
     <string name="open_source_libraries_subtitle">クレジットと謝辞</string>
 
+    <string name="advertising">広告</string>
+    <string name="advertising_enabled_subtitle">無料開発を支えています</string>
+    <string name="advertising_disabled_subtitle">無効 — 復活は無料です</string>
+    <string name="support_game">ゲームを応援</string>
+    <string name="support_game_subtitle">GitHubでプロジェクトにスターを付けるか寄付する</string>
+    <string name="disable_ads">広告を無効にしますか？</string>
+    <string name="disable_ads_title">広告によってLogicaを無料で提供できます</string>
+    <string name="disable_ads_body">広告はゲームの改善と、すべての機能の無料提供に役立っています。無効にしても復活は無料のままです。GitHubのスターや寄付でLogicaを応援することもできます。</string>
+    <string name="keep_ads">広告を残す</string>
+    <string name="disable_ads_anyway">無効にする</string>
+
     <!-- Common -->
     <string name="exit">終了</string>
 

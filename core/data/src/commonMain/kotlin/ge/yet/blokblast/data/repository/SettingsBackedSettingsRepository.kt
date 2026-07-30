@@ -61,6 +61,9 @@ internal class SettingsBackedSettingsRepository(
     override val darkTheme: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_DARK, defaultValue = false)
 
+    override val adsEnabled: StateFlow<Boolean> =
+        settings.getBooleanStateFlow(scope, KEY_ADS_ENABLED, defaultValue = true)
+
     override val bestScore: StateFlow<Long> =
         settings.getLongStateFlow(scope, KEY_BEST_SCORE, defaultValue = 0L)
 
@@ -84,6 +87,10 @@ internal class SettingsBackedSettingsRepository(
 
     override suspend fun setDarkTheme(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_DARK, enabled)
+    }
+
+    override suspend fun setAdsEnabled(enabled: Boolean) = withContext(dispatchers.io) {
+        settings.putBoolean(KEY_ADS_ENABLED, enabled)
     }
 
     override suspend fun setBestScore(score: Long) = withContext(dispatchers.io) {
@@ -133,6 +140,7 @@ internal class SettingsBackedSettingsRepository(
         const val KEY_SOUND_LEGACY = "blockblast.sound"
         const val KEY_VIBRATION = "blockblast.vibration"
         const val KEY_DARK = "blockblast.dark_theme"
+        const val KEY_ADS_ENABLED = "blockblast.ads_enabled"
         const val KEY_BEST_SCORE = "blockblast.best_score"
         const val KEY_REVIEW_PROMPT_COUNT = "blockblast.review_prompt_count"
         const val KEY_TUTORIAL_SEEN = "blockblast.tutorial_seen"

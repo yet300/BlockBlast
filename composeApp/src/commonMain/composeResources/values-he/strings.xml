@@ -44,6 +44,17 @@
     <string name="open_source_libraries">ספריות קוד פתוח</string>
     <string name="open_source_libraries_subtitle">קרדיטים והכרת תודה</string>
 
+    <string name="advertising">פרסומות</string>
+    <string name="advertising_enabled_subtitle">תומכות בפיתוח החינמי</string>
+    <string name="advertising_disabled_subtitle">מושבתות — החייאות הן בחינם</string>
+    <string name="support_game">תמיכה במשחק</string>
+    <string name="support_game_subtitle">תנו לפרויקט כוכב ב-GitHub או תרמו</string>
+    <string name="disable_ads">להשבית פרסומות?</string>
+    <string name="disable_ads_title">הפרסומות משאירות את Logica בחינם</string>
+    <string name="disable_ads_body">הפרסומות עוזרות לנו לשפר את המשחק ולהשאיר את כל התכונות בחינם. אם תשביתו אותן, ההחייאות יישארו בחינם — ועדיין תוכלו לתמוך ב-Logica באמצעות כוכב ב-GitHub או תרומה.</string>
+    <string name="keep_ads">להשאיר פרסומות</string>
+    <string name="disable_ads_anyway">להשבית בכל זאת</string>
+
     <!-- Common -->
     <string name="exit">יציאה</string>
 

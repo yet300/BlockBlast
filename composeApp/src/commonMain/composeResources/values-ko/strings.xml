@@ -44,6 +44,17 @@
     <string name="open_source_libraries">오픈 소스 라이브러리</string>
     <string name="open_source_libraries_subtitle">크레딧 및 감사의 말</string>
 
+    <string name="advertising">광고</string>
+    <string name="advertising_enabled_subtitle">무료 개발을 지원합니다</string>
+    <string name="advertising_disabled_subtitle">사용 안 함 — 부활이 무료입니다</string>
+    <string name="support_game">게임 후원하기</string>
+    <string name="support_game_subtitle">GitHub에서 프로젝트에 별을 주거나 후원하세요</string>
+    <string name="disable_ads">광고를 사용 중지할까요?</string>
+    <string name="disable_ads_title">광고는 Logica를 무료로 유지해 줍니다</string>
+    <string name="disable_ads_body">광고는 게임을 개선하고 모든 기능을 무료로 제공하는 데 도움이 됩니다. 광고를 꺼도 부활은 계속 무료이며, GitHub 별이나 후원으로 Logica를 지원할 수 있습니다.</string>
+    <string name="keep_ads">광고 유지</string>
+    <string name="disable_ads_anyway">그래도 사용 중지</string>
+
     <!-- Common -->
     <string name="exit">나가기</string>
 

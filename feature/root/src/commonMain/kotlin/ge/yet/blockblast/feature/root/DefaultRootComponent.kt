@@ -55,6 +55,7 @@ internal class DefaultRootComponent(
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
     override val vibrationEnabled: StateFlow<Boolean> = settingsRepository.vibrationEnabled
     override val sfxEnabled: StateFlow<Boolean> = settingsRepository.sfxEnabled
+    override val adsEnabled: StateFlow<Boolean> = settingsRepository.adsEnabled
     override val tutorialSeen: StateFlow<Boolean> = settingsRepository.tutorialSeen
 
     override fun onTutorialSeen() {

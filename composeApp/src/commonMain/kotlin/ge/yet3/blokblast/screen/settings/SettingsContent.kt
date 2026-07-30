@@ -13,6 +13,7 @@ import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet3.blokblast.screen.settings.content.LibrariesSettingsContent
 import ge.yet3.blokblast.screen.settings.content.MainSettingsContent
 import ge.yet3.blokblast.screen.settings.content.MoreSettingsContent
+import ge.yet3.blokblast.screen.settings.content.DisableAdsContent
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -28,6 +29,7 @@ fun SettingsContent(
         when (val instance = child.instance) {
             is SettingsComponent.Child.Main -> MainSettingsContent(component = instance.component)
             is SettingsComponent.Child.More -> MoreSettingsContent(component = instance.component)
+            is SettingsComponent.Child.DisableAds -> DisableAdsContent(component = instance.component)
             is SettingsComponent.Child.Libraries -> LibrariesSettingsContent(component = instance.component)
         }
     }

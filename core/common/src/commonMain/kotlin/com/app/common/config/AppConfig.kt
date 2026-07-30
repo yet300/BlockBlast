@@ -62,6 +62,10 @@ object AppConfig {
     const val GITHUB_URL: String =
         "https://github.com/yet300/BlockBlast"
 
+    /** README section containing the current donation addresses. */
+    const val GITHUB_SUPPORT_URL: String =
+        "$GITHUB_URL#support-me"
+
     // ── Drag & Drop ────────────────────────────────────────────────────────
     /**
      * Multiplier for drag speed. Values > 1.0 make the piece move faster than

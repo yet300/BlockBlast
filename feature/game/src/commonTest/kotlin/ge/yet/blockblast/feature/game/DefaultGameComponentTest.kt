@@ -289,6 +289,7 @@ class DefaultGameComponentTest {
         override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
+        override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
         override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -296,6 +297,7 @@ class DefaultGameComponentTest {
         override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
         override suspend fun setDarkTheme(enabled: Boolean) {}
+        override suspend fun setAdsEnabled(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {
             if (score > bestScoreFlow.value) bestScoreFlow.value = score
         }

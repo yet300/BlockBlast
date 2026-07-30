@@ -44,6 +44,17 @@
     <string name="open_source_libraries">ओपन-सोर्स लाइब्रेरीज़</string>
     <string name="open_source_libraries_subtitle">श्रेय और आभार</string>
 
+    <string name="advertising">विज्ञापन</string>
+    <string name="advertising_enabled_subtitle">मुफ़्त विकास को समर्थन देते हैं</string>
+    <string name="advertising_disabled_subtitle">बंद — पुनर्जीवन मुफ़्त हैं</string>
+    <string name="support_game">गेम को समर्थन दें</string>
+    <string name="support_game_subtitle">GitHub पर प्रोजेक्ट को स्टार दें या दान करें</string>
+    <string name="disable_ads">विज्ञापन बंद करें?</string>
+    <string name="disable_ads_title">विज्ञापन Logica को मुफ़्त रखते हैं</string>
+    <string name="disable_ads_body">विज्ञापन गेम को बेहतर बनाने और सभी सुविधाएँ मुफ़्त रखने में हमारी मदद करते हैं। इन्हें बंद करने पर भी पुनर्जीवन मुफ़्त रहेंगे — और आप GitHub स्टार या दान से Logica को समर्थन दे सकते हैं।</string>
+    <string name="keep_ads">विज्ञापन चालू रखें</string>
+    <string name="disable_ads_anyway">फिर भी बंद करें</string>
+
     <!-- Common -->
     <string name="exit">बाहर निकलें</string>
 

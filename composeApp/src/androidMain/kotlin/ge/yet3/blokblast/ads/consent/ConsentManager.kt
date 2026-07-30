@@ -8,6 +8,9 @@ import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Google User Messaging Platform (UMP) wrapper.
@@ -27,6 +30,9 @@ object ConsentManager {
 
     private val mobileAdsInitialized = AtomicBoolean(false)
     private val readyFired = AtomicBoolean(false)
+    private val _canRequestAdsFlow = MutableStateFlow(false)
+
+    val canRequestAdsFlow: StateFlow<Boolean> = _canRequestAdsFlow.asStateFlow()
 
     @Volatile
     private var consentInformation: ConsentInformation? = null
@@ -92,6 +98,7 @@ object ConsentManager {
     }
 
     private fun fireReady(context: Context, onReadyToRequestAds: () -> Unit) {
+        _canRequestAdsFlow.value = true
         if (mobileAdsInitialized.compareAndSet(false, true)) {
             MobileAds.initialize(context.applicationContext) { /* no-op */ }
         }
