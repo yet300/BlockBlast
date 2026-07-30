@@ -4,6 +4,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
+import ge.yet.blockblast.feature.settings.libraries.LibrariesProvider
 import ge.yet.blokblast.domain.repository.AudioFileProvider
 
 @ContributesTo(AppScope::class)
@@ -12,4 +13,7 @@ abstract class ComposeAppBindings {
 
     @Binds
     internal abstract val ComposeAudioFileProvider.bindAudioFileProvider: AudioFileProvider
+
+    @Binds
+    internal abstract val ComposeLibrariesProvider.bindLibrariesProvider: LibrariesProvider
 }

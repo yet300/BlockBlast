@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.aboutLibraries)
 
     alias(libs.plugins.metro)
 }
@@ -69,6 +70,7 @@ kotlin {
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.confettikit)
+            implementation(libs.aboutlibraries.core)
 
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
@@ -84,4 +86,15 @@ kotlin {
             implementation(libs.multiplatform.settings.test)
         }
     }
+}
+
+aboutLibraries {
+    export {
+        outputFile = file("src/commonMain/composeResources/files/aboutlibraries.json")
+        prettyPrint = true
+    }
+}
+
+tasks.named("copyNonXmlValueResourcesForCommonMain") {
+    dependsOn("exportLibraryDefinitions")
 }

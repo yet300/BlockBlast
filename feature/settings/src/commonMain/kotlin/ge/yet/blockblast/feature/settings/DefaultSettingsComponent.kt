@@ -10,6 +10,7 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.settings.libraries.DefaultLibrariesSettingsComponent
+import ge.yet.blockblast.feature.settings.libraries.LibrariesProvider
 import ge.yet.blockblast.feature.settings.main.DefaultMainSettingsComponent
 import ge.yet.blockblast.feature.settings.main.store.SettingsStoreFactory
 import ge.yet.blockblast.feature.settings.more.DefaultMoreSettingsComponent
@@ -19,6 +20,7 @@ import kotlinx.serialization.Serializable
 internal class DefaultSettingsComponent(
     componentContext: ComponentContext,
     storeFactory: SettingsStoreFactory,
+    private val librariesProvider: LibrariesProvider,
     private val analytics: AnalyticRepository,
     private val onBackClickedCb: () -> Unit,
 ) : SettingsComponent, ComponentContext by componentContext {
@@ -67,6 +69,7 @@ internal class DefaultSettingsComponent(
         Config.Libraries -> SettingsComponent.Child.Libraries(
             DefaultLibrariesSettingsComponent(
                 componentContext = componentContext,
+                librariesProvider = librariesProvider,
                 onBackClickedCb = ::onBackClicked,
             )
         )
@@ -98,6 +101,7 @@ internal class DefaultSettingsComponent(
 @Inject
 internal class DefaultSettingsComponentFactory(
     private val storeFactory: SettingsStoreFactory,
+    private val librariesProvider: LibrariesProvider,
     private val analytics: AnalyticRepository,
 ) : SettingsComponent.Factory {
     override fun create(
@@ -106,6 +110,7 @@ internal class DefaultSettingsComponentFactory(
     ): SettingsComponent = DefaultSettingsComponent(
         componentContext = componentContext,
         storeFactory = storeFactory,
+        librariesProvider = librariesProvider,
         analytics = analytics,
         onBackClickedCb = onBackClicked,
     )
