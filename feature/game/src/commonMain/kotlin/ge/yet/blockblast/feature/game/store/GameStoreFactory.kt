@@ -165,8 +165,7 @@ internal class GameStoreFactory(
                                             ),
                                         )
                                     }
-                                    is GameEvent.Feedback -> Unit
-                                    is GameEvent.VoiceFeedback -> audio.playVoiceFeedback(event.type)
+                                    is GameEvent.Feedback -> audio.playVoiceFeedback(event.type)
                                     is GameEvent.ComboActive -> {
                                         logger.log(
                                             eventName = "combo_reached",

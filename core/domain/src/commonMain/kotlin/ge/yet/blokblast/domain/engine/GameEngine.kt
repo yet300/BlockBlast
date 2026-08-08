@@ -12,7 +12,6 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.ClearEvent
 import ge.yet.blokblast.domain.model.FeedbackEvent
-import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.model.PointsEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -262,8 +261,7 @@ class GameEngine(
 
         // Precompute once — used in both the state copy and the event emissions below.
         val clearedList = if (clearedCells.isNotEmpty()) clearedCells.toList() else null
-        val feedback = feedbackFor(fullRows, fullCols, isBoardEmpty)
-        val voiceFeedback = selectVoiceFeedback(
+        val feedback = selectVoiceFeedback(
             linesCount = totalLines,
             isCrossClear = isCrossClear,
             isBoardEmpty = isBoardEmpty,
@@ -304,7 +302,6 @@ class GameEngine(
             )
             feedback?.let { events.tryEmit(GameEvent.Feedback(it)) }
             if (newCombo >= 2) events.tryEmit(GameEvent.ComboActive(newCombo))
-            voiceFeedback?.let { events.tryEmit(GameEvent.VoiceFeedback(it)) }
         }
         if (gameOver) events.tryEmit(GameEvent.GameOver)
 
@@ -364,31 +361,6 @@ class GameEngine(
             }
         }
         return false
-    }
-
-    /**
-     * Rules (checked in priority order):
-     *   UNBELIEVABLE — entire board wiped clean in one move
-     *   EXCELLENT    — cross-clear (both rows AND cols) or 4+ lines at once
-     *   GREAT        — exactly 3 columns cleared (no rows involved)
-     *   GOOD         — any 2+ lines cleared
-     *   null         — 0-1 lines: no voice
-     */
-    private fun feedbackFor(
-        fullRows: List<Int>,
-        fullCols: List<Int>,
-        isBoardEmpty: Boolean,
-    ): FeedbackType? {
-        val totalLines = fullRows.size + fullCols.size
-        val isCross = fullRows.isNotEmpty() && fullCols.isNotEmpty()
-        return when {
-            totalLines == 0 -> null
-            isBoardEmpty -> FeedbackType.UNBELIEVABLE
-            isCross || totalLines >= 4 -> FeedbackType.EXCELLENT
-            fullCols.size == 3 && fullRows.isEmpty() -> FeedbackType.GREAT
-            totalLines >= 2 -> FeedbackType.GOOD
-            else -> null
-        }
     }
 
     private fun autoSave() {

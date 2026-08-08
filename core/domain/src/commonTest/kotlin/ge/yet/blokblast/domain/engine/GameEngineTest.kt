@@ -20,6 +20,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
@@ -387,6 +388,35 @@ class GameEngineTest {
     }
 
     @Test
+    fun clearing_three_rows_emits_one_great_feedback_for_ui_and_voice() = runTest {
+        var grid = Grid().withCell(4, 5, 1)
+        for (row in 0..2) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val placePiece = piece(
+            id = 1,
+            shape = Polyomino(
+                id = "v3",
+                cells = listOf(Position(0, 0), Position(0, 1), Position(0, 2)),
+            ),
+        )
+        engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
+
+        engine.events.test {
+            assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
+            assertIs<GameEvent.PiecePlaced>(awaitItem())
+            assertIs<GameEvent.LinesCleared>(awaitItem())
+            assertEquals(
+                GameEvent.Feedback(FeedbackType.GREAT),
+                awaitItem(),
+            )
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(FeedbackType.GREAT, engine.state.value.lastFeedback.type)
+    }
+
+    @Test
     fun clearing_full_board_emits_UNBELIEVABLE() {
         var g = Grid()
         for (y in 0 until Grid.SIZE) for (x in 0 until Grid.SIZE) g = g.withCell(x, y, 1)
@@ -611,7 +641,7 @@ class GameEngineTest {
 
             assertEquals(
                 listOf(FeedbackType.AMAZING),
-                events.filterIsInstance<GameEvent.VoiceFeedback>().map { it.type },
+                events.filterIsInstance<GameEvent.Feedback>().map { it.type },
             )
             cancelAndIgnoreRemainingEvents()
         }
