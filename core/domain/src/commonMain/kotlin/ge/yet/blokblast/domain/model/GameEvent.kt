@@ -20,6 +20,10 @@ sealed interface GameEvent {
     @Serializable
     data class Feedback(val type: FeedbackType) : GameEvent
 
+    /** The single domain-selected voice response for this move, if any. */
+    @Serializable
+    data class VoiceFeedback(val type: FeedbackType) : GameEvent
+
     @Serializable
     data object GameOver : GameEvent
 

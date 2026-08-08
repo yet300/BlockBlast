@@ -127,11 +127,9 @@ class DefaultAudioRepositoryTest {
         repo.playPlacementSound()
         repo.playClearSound(2)
         repo.playVoiceFeedback(FeedbackType.GOOD)
-        repo.playVoiceCombo(3)
         assertTrue(player.placement)
         assertEquals(listOf(2), player.clears)
         assertEquals(listOf(FeedbackType.GOOD), player.voiceFeedback)
-        assertEquals(listOf(3), player.voiceCombo)
     }
 
     @Test
@@ -140,11 +138,9 @@ class DefaultAudioRepositoryTest {
         repo.playPlacementSound()
         repo.playClearSound(2)
         repo.playVoiceFeedback(FeedbackType.GOOD)
-        repo.playVoiceCombo(3)
         assertEquals(false, player.placement)
         assertTrue(player.clears.isEmpty())
         assertTrue(player.voiceFeedback.isEmpty())
-        assertTrue(player.voiceCombo.isEmpty())
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -156,11 +152,9 @@ class DefaultAudioRepositoryTest {
         var placement = false
         val clears = mutableListOf<Int>()
         val voiceFeedback = mutableListOf<FeedbackType>()
-        val voiceCombo = mutableListOf<Int>()
         override fun playPlacement() { placement = true }
         override fun playClear(lines: Int) { clears += lines }
         override fun playVoiceFeedback(type: FeedbackType) { voiceFeedback += type }
-        override fun playVoiceCombo(combo: Int) { voiceCombo += combo }
         override fun startMusic() { calls += PlayerCall.Start }
         override fun stopMusic() { calls += PlayerCall.Stop }
         override fun release() {}

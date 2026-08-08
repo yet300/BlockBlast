@@ -101,9 +101,6 @@ internal class DefaultAudioRepository(
     override suspend fun playVoiceFeedback(type: FeedbackType) =
         ifSfxEnabled { player.playVoiceFeedback(type) }
 
-    override suspend fun playVoiceCombo(combo: Int) =
-        ifSfxEnabled { player.playVoiceCombo(combo) }
-
     override suspend fun startMusic() {
         musicRequested.value = true
     }

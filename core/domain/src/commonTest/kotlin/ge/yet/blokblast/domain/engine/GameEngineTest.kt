@@ -531,6 +531,31 @@ class GameEngineTest {
         }
     }
 
+    @Test
+    fun combo_three_emits_one_amazing_and_later_combo_does_not_repeat_it() = runTest {
+        var grid = Grid().withCell(7, 7, 1)
+        for (row in 0..3) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val pieces = (1L..4L).map { piece(it, ONE_CELL) }
+        engine.restore(GameState(grid = grid, currentPieces = pieces))
+
+        engine.events.test {
+            pieces.forEachIndexed { row, piece ->
+                assertTrue(engine.placePiece(piece.pieceId, 7, row))
+            }
+            val events = buildList {
+                repeat(12) { add(awaitItem()) }
+            }
+
+            assertEquals(
+                listOf(FeedbackType.AMAZING),
+                events.filterIsInstance<GameEvent.VoiceFeedback>().map { it.type },
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     // ── autoSave / debounce ─────────────────────────────────────────────
 
     @OptIn(ExperimentalCoroutinesApi::class)

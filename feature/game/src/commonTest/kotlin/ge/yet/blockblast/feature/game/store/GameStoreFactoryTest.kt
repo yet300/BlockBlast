@@ -6,12 +6,12 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.engine.ScoreCalculator
 import ge.yet.blokblast.domain.engine.ShapeGenerator
-import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
@@ -204,6 +204,27 @@ class GameStoreFactoryTest {
         deps.engine.placePiece(999L, 7, 0)
         assertEquals(listOf(1), deps.audio.clearedLines)
         assertTrue(deps.analytics.has("lines_cleared"))
+        deps.dispose()
+    }
+
+    @Test
+    fun combo_three_plays_amazing_once_and_combo_four_does_not_repeat_it() = runTest {
+        val deps = TestDeps()
+        deps.factory().create(isNewGame = true)
+        var grid = Grid().withCell(7, 7, 1)
+        for (row in 0..3) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val pieces = (1L..4L).map { id ->
+            Piece(id, Polyomino("1x1", listOf(Position(0, 0))), colorId = 1)
+        }
+        deps.engine.restore(GameState(grid = grid, currentPieces = pieces))
+
+        pieces.forEachIndexed { row, piece ->
+            assertTrue(deps.engine.placePiece(piece.pieceId, 7, row))
+        }
+
+        assertEquals(listOf(FeedbackType.AMAZING), deps.audio.voices)
         deps.dispose()
     }
 
@@ -925,14 +946,12 @@ private class FakeSettings(
 private class RecordingAudio : AudioRepository {
     var placementCount = 0
     val clearedLines = mutableListOf<Int>()
-    val feedback = mutableListOf<FeedbackType>()
-    val combos = mutableListOf<Int>()
+    val voices = mutableListOf<FeedbackType>()
     var startMusicCount = 0
     var stopMusicCount = 0
     override suspend fun playPlacementSound() { placementCount += 1 }
     override suspend fun playClearSound(lines: Int) { clearedLines += lines }
-    override suspend fun playVoiceFeedback(type: FeedbackType) { feedback += type }
-    override suspend fun playVoiceCombo(combo: Int) { combos += combo }
+    override suspend fun playVoiceFeedback(type: FeedbackType) { voices += type }
     override suspend fun startMusic() { startMusicCount += 1 }
     override suspend fun stopMusic() { stopMusicCount += 1 }
     override suspend fun onAppBackground() {}

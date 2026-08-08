@@ -54,6 +54,7 @@ internal class AndroidPlatformSoundPlayer(
     private var musicPlayer: MediaPlayer? = null
     private var musicState: MusicState = MusicState.IDLE
     private var lastTrackIndex: Int = -1
+    private var voiceStreamId: Int = 0
 
     init {
         pool.setOnLoadCompleteListener { _, sampleId, status ->
@@ -61,22 +62,17 @@ internal class AndroidPlatformSoundPlayer(
         }
     }
 
-    override fun playPlacement() = safePlay("block_place")
+    override fun playPlacement() {
+        safePlay("block_place")
+    }
 
-    override fun playClear(lines: Int) = safePlay("line_clear_${lines.coerceAtMost(4)}")
+    override fun playClear(lines: Int) {
+        safePlay("line_clear_${lines.coerceAtMost(4)}")
+    }
 
-    override fun playVoiceFeedback(type: FeedbackType) =
-        safePlay("voice_${type.name.lowercase()}")
-
-    override fun playVoiceCombo(combo: Int) {
-        val specific = "voice_combo_${combo.coerceAtMost(10)}"
-        val id = ids.getOrPut(specific) { resolve(specific) }
-        if (id != 0 && id in readyIds) {
-            pool.play(id, 1f, 1f, 1, 0, 1f)
-        } else if (id == 0 || id !in readyIds) {
-            // Specific combo file missing or still loading — fall back.
-            safePlay("voice_amazing")
-        }
+    override fun playVoiceFeedback(type: FeedbackType) {
+        if (voiceStreamId != 0) pool.stop(voiceStreamId)
+        voiceStreamId = safePlay("voice_${type.name.lowercase()}")
     }
 
     override fun startMusic() {
@@ -160,12 +156,13 @@ internal class AndroidPlatformSoundPlayer(
         pool.release()
     }
 
-    private fun safePlay(resName: String) {
+    private fun safePlay(resName: String): Int {
         val id = ids.getOrPut(resName) { resolve(resName) }
         if (id != 0 && id in readyIds) {
-            pool.play(id, 1f, 1f, 1, 0, 1f)
+            return pool.play(id, 1f, 1f, 1, 0, 1f)
         }
         // else: still loading — silently drop. The next call will succeed.
+        return 0
     }
 
     /**

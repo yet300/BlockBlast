@@ -48,6 +48,7 @@ internal class NativePlatformSoundPlayer(
     // don't keep paying the I/O + decode cost on every play call.
     private val sfxMisses: MutableSet<String> = mutableSetOf()
     private var musicPlayer: AVAudioPlayer? = null
+    private var voicePlayer: AVAudioPlayer? = null
     private var musicJob: Job? = null
     private var lastTrackIndex: Int = -1
     // Monotonically incremented each startMusic(); the loop captures its own
@@ -77,14 +78,8 @@ internal class NativePlatformSoundPlayer(
 
     override fun playPlacement() = safePlay("block_place")
     override fun playClear(lines: Int) = safePlay("line_clear_${lines.coerceAtMost(4)}")
-    override fun playVoiceFeedback(type: FeedbackType) = safePlay("voice_${type.name.lowercase()}")
-
-    override fun playVoiceCombo(combo: Int) {
-        val specific = "voice_combo_${combo.coerceAtMost(10)}"
-        if (!safePlayReturning(specific)) {
-            if (!safePlayReturning("voice_combo")) safePlay("voice_amazing")
-        }
-    }
+    override fun playVoiceFeedback(type: FeedbackType) =
+        playVoice("voice_${type.name.lowercase()}")
 
     override fun startMusic() {
         if (musicJob?.isActive == true || musicPlayer?.playing == true) return
@@ -123,6 +118,8 @@ internal class NativePlatformSoundPlayer(
 
     override fun release() {
         stopMusic()
+        voicePlayer?.stop()
+        voicePlayer = null
         sfxCache.values.forEach { it.stop() }
         sfxCache.clear()
     }
@@ -130,6 +127,23 @@ internal class NativePlatformSoundPlayer(
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private fun safePlay(key: String) { safePlayReturning(key) }
+
+    private fun playVoice(key: String) {
+        voicePlayer?.stop()
+        voicePlayer = null
+        val player = sfxCache[key]
+        if (player != null) {
+            player.currentTime = 0.0
+            if (player.play()) voicePlayer = player
+            return
+        }
+        if (key !in sfxMisses) {
+            scope.launch(Dispatchers.Main) {
+                val loaded = loadPlayer("$key.mp3")
+                if (loaded != null) sfxCache[key] = loaded else sfxMisses += key
+            }
+        }
+    }
 
     private fun safePlayReturning(key: String): Boolean {
         val player = sfxCache[key]

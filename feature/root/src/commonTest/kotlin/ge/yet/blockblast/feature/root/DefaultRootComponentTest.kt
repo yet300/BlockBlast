@@ -580,7 +580,6 @@ class DefaultRootComponentTest {
         override suspend fun playPlacementSound() {}
         override suspend fun playClearSound(lines: Int) {}
         override suspend fun playVoiceFeedback(type: FeedbackType) {}
-        override suspend fun playVoiceCombo(combo: Int) {}
         override suspend fun startMusic() {}
         override suspend fun stopMusic() {}
         override suspend fun onAppBackground() { backgroundCount += 1 }

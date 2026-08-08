@@ -252,6 +252,12 @@ class GameEngine(
         // Precompute once — used in both the state copy and the event emissions below.
         val clearedList = if (clearedCells.isNotEmpty()) clearedCells.toList() else null
         val feedback = feedbackFor(fullRows, fullCols, isBoardEmpty)
+        val voiceFeedback = selectVoiceFeedback(
+            linesCount = totalLines,
+            isCrossClear = isCrossClear,
+            isBoardEmpty = isBoardEmpty,
+            comboLevel = newCombo,
+        )
         val totalPoints = placementPts + clearPts
 
         val newState = current.copy(
@@ -288,6 +294,7 @@ class GameEngine(
             )
             feedback?.let { events.tryEmit(GameEvent.Feedback(it)) }
             if (newCombo >= 2) events.tryEmit(GameEvent.ComboActive(newCombo))
+            voiceFeedback?.let { events.tryEmit(GameEvent.VoiceFeedback(it)) }
         }
         if (gameOver) events.tryEmit(GameEvent.GameOver)
 

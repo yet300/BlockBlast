@@ -31,6 +31,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import blockblast.composeapp.generated.resources.Res
+import blockblast.composeapp.generated.resources.feedback_amazing
 import blockblast.composeapp.generated.resources.feedback_combo
 import blockblast.composeapp.generated.resources.feedback_excellent
 import blockblast.composeapp.generated.resources.feedback_good
@@ -170,6 +171,7 @@ private fun ComboText(level: Int) {
 @Composable
 private fun FeedbackText(type: FeedbackType) {
     val text = when (type) {
+        FeedbackType.AMAZING -> stringResource(Res.string.feedback_amazing)
         FeedbackType.GOOD -> stringResource(Res.string.feedback_good)
         FeedbackType.GREAT -> stringResource(Res.string.feedback_great)
         FeedbackType.EXCELLENT -> stringResource(Res.string.feedback_excellent)

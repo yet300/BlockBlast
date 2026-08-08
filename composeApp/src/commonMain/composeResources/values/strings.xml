@@ -58,6 +58,7 @@
     <string name="exit">Exit</string>
 
     <!-- Feedback Popups -->
+    <string name="feedback_amazing">Amazing!</string>
     <string name="feedback_good">Good</string>
     <string name="feedback_great">Great!</string>
     <string name="feedback_excellent">Excellent!</string>
