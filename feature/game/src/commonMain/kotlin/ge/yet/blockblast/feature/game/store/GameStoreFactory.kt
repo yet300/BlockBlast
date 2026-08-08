@@ -249,7 +249,10 @@ internal class GameStoreFactory(
                     onIntent<GameStore.Intent.Restart> {
                         logger.log("restart_clicked", engine.state.value)
                         launch {
-                            engine.startNewGame(bestScore = engine.state.value.bestScore)
+                            engine.startNewGame(
+                                bestScore = engine.state.value.bestScore,
+                                allowStarterLayout = settings.tutorialSeen.value,
+                            )
                             logger.log(
                                 eventName = "game_started",
                                 state = engine.state.value,

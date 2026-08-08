@@ -56,7 +56,9 @@ internal class DefaultPieceTrayComponent(
                 .associateBy { it.piece.pieceId }
 
         val nextSlots = currentPieces.mapIndexed { index, piece ->
-            existing[piece.pieceId] ?: newSlot(piece, spawnIndex = index)
+            existing[piece.pieceId]
+                ?.takeIf { it.piece == piece }
+                ?: newSlot(piece, spawnIndex = index)
         }
 
         // Refresh canFit on every survivor — the grid can have changed under
@@ -65,9 +67,8 @@ internal class DefaultPieceTrayComponent(
 
         // Drop a now-invalid selection (selected piece was placed, or a full
         // refill swapped it out from under the user).
-        val livePieceIds = currentPieces.mapTo(HashSet(currentPieces.size)) { it.pieceId }
-        val selectedPieceId = selectionState.value.piece?.pieceId
-        if (selectedPieceId != null && selectedPieceId !in livePieceIds) {
+        val selectedPiece = selectionState.value.piece
+        if (selectedPiece != null && selectedPiece !in currentPieces) {
             selectionState.value = TraySelection.NONE
         }
 

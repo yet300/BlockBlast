@@ -29,6 +29,7 @@ internal class GameInitializer(
     suspend fun initialize(
         isNewGame: Boolean,
         restoredResultState: GameState? = null,
+        newGameSeed: Long? = null,
     ): Source {
         if (restoredResultState != null) {
             return Source.ResultRestore
@@ -37,7 +38,11 @@ internal class GameInitializer(
         val current = engine.state.value
 
         if (isNewGame || current.isGameOver) {
-            engine.startNewGame(bestScore = current.bestScore)
+            engine.startNewGame(
+                seed = newGameSeed,
+                bestScore = current.bestScore,
+                allowStarterLayout = settings.tutorialSeen.value,
+            )
             return Source.New
         }
 
@@ -47,7 +52,11 @@ internal class GameInitializer(
                 engine.restore(saved)
                 Source.Continue
             } else {
-                engine.startNewGame(bestScore = current.bestScore)
+                engine.startNewGame(
+                    seed = newGameSeed,
+                    bestScore = current.bestScore,
+                    allowStarterLayout = settings.tutorialSeen.value,
+                )
                 Source.New
             }
         }

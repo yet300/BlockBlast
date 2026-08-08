@@ -89,6 +89,33 @@ class GameEngineTest {
         assertTrue(engine.state.value.grid.isBoardEmpty())
     }
 
+    @Test
+    fun startNewGame_can_use_a_validated_starter_round() {
+        fixedGen.nextTrayPieces = listOf(ONE_CELL, H2, V2)
+        val starterSeed = (0L until 1_000L).first { seed ->
+            !StarterLayoutGenerator(fixedGen).generate(seed, enabled = true).grid.isBoardEmpty()
+        }
+
+        engine.startNewGame(seed = starterSeed, allowStarterLayout = true)
+
+        assertFalse(engine.state.value.grid.isBoardEmpty())
+        assertEquals(
+            fixedGen.nextTrayPieces.map { it.id },
+            engine.state.value.currentPieces.map { it.shape.id },
+        )
+    }
+
+    @Test
+    fun startNewGame_does_not_reuse_piece_ids_from_the_previous_round() {
+        engine.startNewGame(seed = 1L)
+        val previousIds = engine.state.value.currentPieces.mapTo(mutableSetOf()) { it.pieceId }
+
+        engine.startNewGame(seed = 2L)
+        val nextIds = engine.state.value.currentPieces.mapTo(mutableSetOf()) { it.pieceId }
+
+        assertTrue(previousIds.intersect(nextIds).isEmpty())
+    }
+
     // ── markReviewPromptFired ───────────────────────────────────────────
 
     @Test

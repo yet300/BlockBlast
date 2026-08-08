@@ -57,17 +57,25 @@ class GameEngine(
     // ---------- Lifecycle ----------
 
     /** Start a fresh game. Pass [seed] for deterministic tests. */
-    fun startNewGame(seed: Long? = null, bestScore: Long = state.value.bestScore) {
+    fun startNewGame(
+        seed: Long? = null,
+        bestScore: Long = state.value.bestScore,
+        allowStarterLayout: Boolean = false,
+    ) {
         deterministicSeed = seed
-        pieceIdCounter = 0
-        val startingGrid = Grid()
+        val startingRound = StarterLayoutGenerator(shapeGenerator).generate(
+            seed = deterministicSeed,
+            enabled = allowStarterLayout,
+        )
+        val startingPieces = startingRound.shapes.map { wrapInPiece(it) }
+        deterministicSeed = deterministicSeed?.plus(1)
         state.value = GameState(
-            grid = startingGrid,
+            grid = startingRound.grid,
             score = 0,
             bestScore = bestScore,
             comboLevel = 0,
             movesWithoutClear = 0,
-            currentPieces = generateTray(startingGrid),
+            currentPieces = startingPieces,
             isGameOver = false,
             revivesUsed = 0,
             bestAtRoundStart = bestScore,

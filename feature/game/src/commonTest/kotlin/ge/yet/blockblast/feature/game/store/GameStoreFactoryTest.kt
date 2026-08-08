@@ -74,6 +74,34 @@ class GameStoreFactoryTest {
     }
 
     @Test
+    fun initializer_keeps_the_tutorial_round_empty() = runTest {
+        val deps = TestDeps(tutorialSeen = false)
+        val starterSeed = knownStarterSeed(deps.engine)
+
+        GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
+            isNewGame = true,
+            newGameSeed = starterSeed,
+        )
+
+        assertTrue(deps.engine.state.value.grid.isBoardEmpty())
+        deps.dispose()
+    }
+
+    @Test
+    fun initializer_allows_a_starter_after_the_tutorial() = runTest {
+        val deps = TestDeps(tutorialSeen = true)
+        val starterSeed = knownStarterSeed(deps.engine)
+
+        GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
+            isNewGame = true,
+            newGameSeed = starterSeed,
+        )
+
+        assertFalse(deps.engine.state.value.grid.isBoardEmpty())
+        deps.dispose()
+    }
+
+    @Test
     fun bootstrap_continue_with_no_save_starts_new_game() = runTest {
         val deps = TestDeps()
         deps.factory().create(isNewGame = false)
@@ -759,11 +787,18 @@ class GameStoreFactoryTest {
         isGameOver = false,
     )
 
+    private fun knownStarterSeed(engine: GameEngine): Long =
+        (0L until 1_000L).first { seed ->
+            engine.startNewGame(seed = seed, allowStarterLayout = true)
+            !engine.state.value.grid.isBoardEmpty()
+        }
+
     /** All collaborators wired together so each test gets a fresh engine + factory. */
     private inner class TestDeps(
         savedState: GameState? = null,
         settingsBest: Long = 0L,
         reviewCount: Int = 0,
+        tutorialSeen: Boolean = false,
         failReviewPromptCount: Boolean = false,
         saveDelayMillis: Long = 0L,
         saveRepositoryOverride: GameSaveRepository? = null,
@@ -780,6 +815,7 @@ class GameStoreFactoryTest {
         val settings = FakeSettings(
             bestScore = settingsBest,
             reviewPromptCount = reviewCount,
+            tutorialSeenInitially = tutorialSeen,
             failReviewPromptCount = failReviewPromptCount,
             onBestScoreSet = { operations += "best" },
         )
@@ -913,6 +949,7 @@ private class StubSaveRepo(
 private class FakeSettings(
     bestScore: Long = 0L,
     reviewPromptCount: Int = 0,
+    tutorialSeenInitially: Boolean = false,
     private val failReviewPromptCount: Boolean = false,
     private val onBestScoreSet: () -> Unit = {},
 ) : SettingsRepository {
@@ -925,7 +962,7 @@ private class FakeSettings(
     override val adsEnabled = MutableStateFlow(true).asStateFlow()
     override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
     override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
-    override val tutorialSeen = MutableStateFlow(false).asStateFlow()
+    override val tutorialSeen = MutableStateFlow(tutorialSeenInitially).asStateFlow()
     override suspend fun setMusicEnabled(enabled: Boolean) {}
     override suspend fun setSfxEnabled(enabled: Boolean) {}
     override suspend fun setVibrationEnabled(enabled: Boolean) {}
