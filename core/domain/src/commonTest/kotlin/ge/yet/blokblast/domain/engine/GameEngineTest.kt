@@ -74,6 +74,7 @@ class GameEngineTest {
         val s = engine.state.value
         assertEquals(0L, s.score)
         assertEquals(0, s.comboLevel)
+        assertEquals(0, s.movesWithoutClear)
         assertEquals(900L, s.bestScore)
         assertEquals(900L, s.bestAtRoundStart)
         assertFalse(s.reviewPromptFiredThisRound)
@@ -337,15 +338,48 @@ class GameEngineTest {
     }
 
     @Test
-    fun no_clear_resets_combo() {
-        val grid = fillRow(0, 0..6)
+    fun first_two_moves_without_clear_preserve_combo_and_third_resets_it() {
+        val grid = fillRow(0, 0..6).withCell(7, 7, 1)
         val first = piece(1, ONE_CELL)
         val second = piece(2, ONE_CELL)
-        engine.restore(GameState(grid = grid, currentPieces = listOf(first, second)))
+        val third = piece(3, ONE_CELL)
+        val fourth = piece(4, ONE_CELL)
+        engine.restore(GameState(grid = grid, currentPieces = listOf(first, second, third, fourth)))
+
         engine.placePiece(first.pieceId, 7, 0)
         assertEquals(1, engine.state.value.comboLevel)
-        engine.placePiece(second.pieceId, 4, 4)
+        assertEquals(0, engine.state.value.movesWithoutClear)
+
+        engine.placePiece(second.pieceId, 0, 2)
+        assertEquals(1, engine.state.value.comboLevel)
+        assertEquals(1, engine.state.value.movesWithoutClear)
+
+        engine.placePiece(third.pieceId, 2, 2)
+        assertEquals(1, engine.state.value.comboLevel)
+        assertEquals(2, engine.state.value.movesWithoutClear)
+
+        engine.placePiece(fourth.pieceId, 4, 2)
         assertEquals(0, engine.state.value.comboLevel)
+        assertEquals(0, engine.state.value.movesWithoutClear)
+    }
+
+    @Test
+    fun clear_resets_moves_without_clear() {
+        val grid = fillRow(0, 0..6)
+        val clearingPiece = piece(1, ONE_CELL)
+        engine.restore(
+            GameState(
+                grid = grid,
+                comboLevel = 2,
+                movesWithoutClear = 2,
+                currentPieces = listOf(clearingPiece, piece(2, ONE_CELL)),
+            ),
+        )
+
+        engine.placePiece(clearingPiece.pieceId, 7, 0)
+
+        assertEquals(3, engine.state.value.comboLevel)
+        assertEquals(0, engine.state.value.movesWithoutClear)
     }
 
     @Test
@@ -434,6 +468,7 @@ class GameEngineTest {
         assertEquals(1, engine.state.value.revivesUsed)
         assertFalse(engine.state.value.isGameOver)
         assertEquals(0, engine.state.value.comboLevel)
+        assertEquals(0, engine.state.value.movesWithoutClear)
         engine.restore(engine.state.value.copy(isGameOver = true))
         assertFalse(engine.continueWithSmallBlocks())
     }

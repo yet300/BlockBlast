@@ -34,6 +34,7 @@ class SettingsBackedGameSaveRepositoryTest {
         score = 1234L,
         bestScore = 5000L,
         comboLevel = 2,
+        movesWithoutClear = 2,
         currentPieces = listOf(
             Piece(
                 pieceId = 7L,
@@ -60,6 +61,19 @@ class SettingsBackedGameSaveRepositoryTest {
         val loaded = repo.load()
         assertNotNull(loaded)
         assertEquals(sampleState, loaded)
+    }
+
+    @Test
+    fun legacy_save_without_moves_without_clear_defaults_to_zero() = runTest {
+        val settings = MapSettings(
+            "blockblast.game_save" to
+                """{"version":1,"state":{"score":1234,"comboLevel":2}}""",
+        )
+
+        val loaded = assertNotNull(newRepo(settings).load())
+
+        assertEquals(2, loaded.comboLevel)
+        assertEquals(0, loaded.movesWithoutClear)
     }
 
     @Test

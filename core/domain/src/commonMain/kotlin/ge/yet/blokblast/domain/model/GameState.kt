@@ -17,6 +17,8 @@ data class GameState(
     val score: Long = 0L,
     val bestScore: Long = 0L,
     val comboLevel: Int = 0,
+    /** Consecutive non-clearing placements in the active combo grace window. */
+    val movesWithoutClear: Int = 0,
     val currentPieces: List<Piece> = emptyList(),
     val isGameOver: Boolean = false,
     val revivesUsed: Int = 0,
@@ -40,5 +42,6 @@ data class GameState(
 ) {
     companion object {
         const val MAX_REVIVES = 1
+        const val COMBO_RESET_MISS_COUNT = 3
     }
 }

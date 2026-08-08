@@ -65,6 +65,7 @@ class GameEngine(
             score = 0,
             bestScore = bestScore,
             comboLevel = 0,
+            movesWithoutClear = 0,
             currentPieces = generateTray(),
             isGameOver = false,
             revivesUsed = 0,
@@ -223,8 +224,18 @@ class GameEngine(
 
         val isBoardEmpty = clearedCells.isNotEmpty() && newGrid.isBoardEmpty()
 
-        // 4. Combo: +1 if cleared, reset to 0 if not.
-        val newCombo = if (totalLines > 0) current.comboLevel + 1 else 0
+        // 4. Combo: a clear advances the chain; two misses preserve it and
+        //    the third consecutive miss resets the grace window and combo.
+        val (newCombo, newMovesWithoutClear) = if (totalLines > 0) {
+            current.comboLevel + 1 to 0
+        } else {
+            val missedMoves = current.movesWithoutClear.coerceAtLeast(0) + 1
+            if (missedMoves >= GameState.COMBO_RESET_MISS_COUNT) {
+                0 to 0
+            } else {
+                current.comboLevel to missedMoves
+            }
+        }
 
         // 5. Clear points (with current combo level applied).
         val clearPts = scoreCalculator.clearPoints(totalLines, newCombo)
@@ -248,6 +259,7 @@ class GameEngine(
             score = newScore,
             bestScore = newBest,
             comboLevel = newCombo,
+            movesWithoutClear = newMovesWithoutClear,
             currentPieces = nextTray,
             isGameOver = gameOver,
             lastClearedCells = if (clearedList != null) {
@@ -299,6 +311,7 @@ class GameEngine(
             isGameOver = false,
             revivesUsed = current.revivesUsed + 1,
             comboLevel = 0,
+            movesWithoutClear = 0,
         )
         events.tryEmit(GameEvent.GameStarted)
         autoSave()
