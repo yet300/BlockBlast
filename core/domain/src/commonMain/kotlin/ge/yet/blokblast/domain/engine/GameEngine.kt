@@ -60,13 +60,14 @@ class GameEngine(
     fun startNewGame(seed: Long? = null, bestScore: Long = state.value.bestScore) {
         deterministicSeed = seed
         pieceIdCounter = 0
+        val startingGrid = Grid()
         state.value = GameState(
-            grid = Grid(),
+            grid = startingGrid,
             score = 0,
             bestScore = bestScore,
             comboLevel = 0,
             movesWithoutClear = 0,
-            currentPieces = generateTray(),
+            currentPieces = generateTray(startingGrid),
             isGameOver = false,
             revivesUsed = 0,
             bestAtRoundStart = bestScore,
@@ -246,7 +247,7 @@ class GameEngine(
 
         // 6. Remove placed piece from tray; refill if empty.
         val remaining = current.currentPieces.filter { it.pieceId != pieceId }
-        val nextTray = if (remaining.isEmpty()) generateTray() else remaining
+        val nextTray = if (remaining.isEmpty()) generateTray(newGrid) else remaining
 
         // 7. Game-over detection: no remaining piece can be placed anywhere.
         val gameOver = !anyPieceFits(nextTray, newGrid)
@@ -335,8 +336,8 @@ class GameEngine(
         pendingSave?.cancelAndJoin()
     }
 
-    private fun generateTray(): List<Piece> {
-        val pieces = shapeGenerator.nextTray(deterministicSeed).map { wrapInPiece(it) }
+    private fun generateTray(grid: Grid): List<Piece> {
+        val pieces = shapeGenerator.nextTray(grid, deterministicSeed).map { wrapInPiece(it) }
         // Advance the seed so the next tray is different but still deterministic.
         deterministicSeed = deterministicSeed?.plus(1)
         return pieces

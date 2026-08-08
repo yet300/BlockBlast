@@ -255,6 +255,20 @@ class GameEngineTest {
         assertEquals(3, engine.state.value.currentPieces.size)
     }
 
+    @Test
+    fun tray_refill_uses_grid_after_the_third_placement() {
+        fixedGen.nextTrayPieces = listOf(ONE_CELL, ONE_CELL, ONE_CELL)
+        engine.startNewGame()
+        fixedGen.lastRequestedGrid = null
+
+        repeat(3) {
+            val piece = engine.state.value.currentPieces.first()
+            assertTrue(engine.placePiece(piece.pieceId, it, 0))
+        }
+
+        assertEquals(engine.state.value.grid, fixedGen.lastRequestedGrid)
+    }
+
     // ── Clearing lines / combos / feedback ──────────────────────────────
 
     @Test
@@ -668,7 +682,12 @@ class GameEngineTest {
 
     private class ControllableShapeGenerator : ShapeGenerator {
         var nextTrayPieces: List<Polyomino> = listOf(ONE_CELL, ONE_CELL, ONE_CELL)
+        var lastRequestedGrid: Grid? = null
         override fun nextTray(seed: Long?): List<Polyomino> = nextTrayPieces
+        override fun nextTray(grid: Grid, seed: Long?): List<Polyomino> {
+            lastRequestedGrid = grid
+            return nextTrayPieces
+        }
         override fun smallReviveTray(): List<Polyomino> = listOf(ONE_CELL, H2, V2)
     }
 
