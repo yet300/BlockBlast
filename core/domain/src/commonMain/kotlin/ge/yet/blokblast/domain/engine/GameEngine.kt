@@ -237,9 +237,11 @@ class GameEngine(
             }
         }
 
-        // 5. Clear points (with current combo level applied).
+        // 5. Clear points (with current combo level applied) and all-clear bonus.
         val clearPts = scoreCalculator.clearPoints(totalLines, newCombo)
-        val newScore = current.score + placementPts + clearPts
+        val allClearPts = scoreCalculator.allClearBonus(totalLines, isBoardEmpty)
+        val totalPoints = placementPts + clearPts + allClearPts
+        val newScore = current.score + totalPoints
         val newBest = maxOf(current.bestScore, newScore)
 
         // 6. Remove placed piece from tray; refill if empty.
@@ -258,7 +260,6 @@ class GameEngine(
             isBoardEmpty = isBoardEmpty,
             comboLevel = newCombo,
         )
-        val totalPoints = placementPts + clearPts
 
         val newState = current.copy(
             grid = newGrid,

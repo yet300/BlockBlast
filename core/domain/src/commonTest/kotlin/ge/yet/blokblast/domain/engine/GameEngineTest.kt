@@ -259,7 +259,7 @@ class GameEngineTest {
 
     @Test
     fun clearing_one_row_awards_clear_points_and_combo_one() {
-        val grid = fillRow(row = 0, cols = 0..6)
+        val grid = fillRow(row = 0, cols = 0..6).withCell(4, 5, 1)
         val placePiece = piece(100, ONE_CELL)
         engine.restore(
             GameState(
@@ -273,6 +273,26 @@ class GameEngineTest {
         assertEquals(11L, s.score)
         assertEquals(1, s.comboLevel)
         for (x in 0 until Grid.SIZE) assertTrue(s.grid.isEmpty(x, 0))
+    }
+
+    @Test
+    fun clearing_last_blocks_adds_all_clear_bonus_to_score_and_points_event() {
+        val grid = fillRow(row = 0, cols = 0..6)
+        val placePiece = piece(100, ONE_CELL)
+        engine.restore(
+            GameState(
+                grid = grid,
+                currentPieces = listOf(placePiece, piece(101, ONE_CELL)),
+            ),
+        )
+
+        assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
+
+        val state = engine.state.value
+        assertTrue(state.grid.isBoardEmpty())
+        assertEquals(311L, state.score)
+        assertEquals(311L, state.bestScore)
+        assertEquals(311L, state.lastPointsAwarded.points)
     }
 
     @Test
