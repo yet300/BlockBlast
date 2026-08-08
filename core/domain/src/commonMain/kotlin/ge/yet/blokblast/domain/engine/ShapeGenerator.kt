@@ -33,9 +33,9 @@ internal class WeightedShapeGenerator : ShapeGenerator {
     }
 
     override fun smallReviveTray(): List<Polyomino> = listOf(
-        ShapeCatalog.SMALL[0], // 1x1
-        ShapeCatalog.SMALL[1], // 1x2
-        ShapeCatalog.SMALL[2], // 2x1
+        ShapeCatalog.SINGLE,
+        ShapeCatalog.HORIZONTAL_TWO,
+        ShapeCatalog.VERTICAL_TWO,
     )
 
     private fun pickWeighted(rnd: Random): Polyomino {

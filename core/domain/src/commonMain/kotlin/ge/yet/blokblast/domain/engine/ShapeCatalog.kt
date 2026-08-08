@@ -9,11 +9,14 @@ internal object ShapeCatalog {
     private fun shape(id: String, vararg xy: Pair<Int, Int>) =
         Polyomino(id, xy.map { (x, y) -> Position(x, y) })
 
+    val SINGLE: Polyomino = shape("single", 0 to 0)
+    val HORIZONTAL_TWO: Polyomino = shape("h2", 0 to 0, 1 to 0)
+    val VERTICAL_TWO: Polyomino = shape("v2", 0 to 0, 0 to 1)
+
     val SMALL: List<Polyomino> = listOf(
-        shape("h2", 0 to 0, 1 to 0),
-        shape("v2", 0 to 0, 0 to 1),
-        shape("diag2_tlbr", 0 to 0, 1 to 1),
-        shape("diag2_trbl", 1 to 0, 0 to 1),
+        SINGLE,
+        HORIZONTAL_TWO,
+        VERTICAL_TWO,
     )
 
     val MEDIUM: List<Polyomino> = listOf(
@@ -24,9 +27,6 @@ internal object ShapeCatalog {
         shape("L_tr", 0 to 0, 1 to 0, 1 to 1),
         shape("L_bl", 0 to 0, 0 to 1, 1 to 0),
         shape("L_br", 1 to 0, 0 to 1, 1 to 1),
-        // 3-cell diagonals (both orientations)
-        shape("diag3_tlbr", 0 to 0, 1 to 1, 2 to 2),
-        shape("diag3_trbl", 2 to 0, 1 to 1, 0 to 2),
     )
 
     val LARGE: List<Polyomino> = listOf(

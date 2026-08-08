@@ -43,11 +43,11 @@ class ShapeGeneratorTest {
     }
 
     @Test
-    fun smallReviveTray_is_three_size_two_shapes() {
+    fun smallReviveTray_is_single_horizontal_two_and_vertical_two() {
         val tray = gen.smallReviveTray()
-        assertEquals(3, tray.size)
-        // SMALL[0..2] = h2, v2, diag2_tlbr — all size 2
-        assertTrue(tray.all { it.size == 2 })
+
+        assertEquals(listOf("single", "h2", "v2"), tray.map { it.id })
+        assertEquals(listOf(1, 2, 2), tray.map { it.size })
     }
 
     @Test
