@@ -268,9 +268,8 @@ class GameEngineTest {
         )
         assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
         val s = engine.state.value
-        // newCombo=1 is passed to clearPoints (engine increments BEFORE scoring),
-        // so multiplier = 1.5. placement=1, clear = 10*1*1.5 = 15 -> total 16.
-        assertEquals(16L, s.score)
+        // One placed cell + one-line base 10 * combo level 1.
+        assertEquals(11L, s.score)
         assertEquals(1, s.comboLevel)
         for (x in 0 until Grid.SIZE) assertTrue(s.grid.isEmpty(x, 0))
     }
@@ -295,8 +294,8 @@ class GameEngineTest {
             assertEquals(FeedbackType.GOOD, saw)
             cancelAndIgnoreRemainingEvents()
         }
-        // newCombo=1 → multiplier 1.5; base 20 * sim 2 * 1.5 = 60; placement = 2 → 62
-        assertEquals(62L, engine.state.value.score)
+        // Two placed cells + two-line base 20 * combo level 1.
+        assertEquals(22L, engine.state.value.score)
     }
 
     @Test

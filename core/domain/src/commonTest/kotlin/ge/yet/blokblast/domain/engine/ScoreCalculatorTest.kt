@@ -28,49 +28,41 @@ class ScoreCalculatorTest {
     }
 
     @Test
-    fun clearPoints_one_line_no_combo() {
-        // base=10*1, simultaneous=1, combo=1.0 -> 10
-        assertEquals(10L, calc.clearPoints(1, 0))
+    fun clearPoints_first_clear_uses_approved_base_table() {
+        val expected = listOf(10L, 20L, 60L, 120L, 200L, 300L)
+
+        expected.forEachIndexed { index, points ->
+            assertEquals(points, calc.clearPoints(linesCount = index + 1, comboLevel = 1))
+        }
     }
 
     @Test
-    fun clearPoints_two_lines_no_combo() {
-        // base=20, simultaneous=2, combo=1.0 -> 40
-        assertEquals(40L, calc.clearPoints(2, 0))
+    fun clearPoints_multiplies_base_by_combo_level() {
+        assertEquals(20L, calc.clearPoints(linesCount = 1, comboLevel = 2))
+        assertEquals(60L, calc.clearPoints(linesCount = 2, comboLevel = 3))
+        assertEquals(480L, calc.clearPoints(linesCount = 4, comboLevel = 4))
     }
 
     @Test
-    fun clearPoints_three_lines_no_combo() {
-        // base=30, simultaneous=3, combo=1.0 -> 90
-        assertEquals(90L, calc.clearPoints(3, 0))
+    fun clearPoints_non_positive_combo_uses_first_clear_multiplier() {
+        assertEquals(10L, calc.clearPoints(linesCount = 1, comboLevel = 0))
+        assertEquals(20L, calc.clearPoints(linesCount = 2, comboLevel = -5))
     }
 
     @Test
-    fun clearPoints_one_line_combo_two() {
-        // base=10, simultaneous=1, combo=2.0 -> 20
-        assertEquals(20L, calc.clearPoints(1, 2))
-    }
-
-    @Test
-    fun clearPoints_two_lines_combo_three() {
-        // base=20, simultaneous=2, combo=2.5 -> 40*2.5 = 100
-        assertEquals(100L, calc.clearPoints(2, 3))
-    }
-
-    @Test
-    fun clearPoints_negative_combo_treated_as_no_combo() {
-        assertEquals(10L, calc.clearPoints(1, -1))
-        assertEquals(40L, calc.clearPoints(2, -5))
-    }
-
-    @Test
-    fun clearPoints_four_lines_combo_one_excellent_case() {
-        // base=40, simultaneous=4, combo=1.5 -> 160*1.5 = 240
-        assertEquals(240L, calc.clearPoints(4, 1))
+    fun allClearBonus_requires_a_clear_and_empty_resulting_board() {
+        assertEquals(0L, calc.allClearBonus(linesCount = 0, isBoardEmpty = true))
+        assertEquals(0L, calc.allClearBonus(linesCount = 1, isBoardEmpty = false))
+        assertEquals(300L, calc.allClearBonus(linesCount = 1, isBoardEmpty = true))
     }
 
     @Test
     fun base_line_reward_is_ten() {
         assertEquals(10, ScoreCalculator.BASE_LINE_REWARD)
+    }
+
+    @Test
+    fun all_clear_bonus_is_three_hundred() {
+        assertEquals(300, ScoreCalculator.ALL_CLEAR_BONUS)
     }
 }
