@@ -348,13 +348,8 @@ class GameEngineTest {
         engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
         engine.events.test {
             assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
-            var saw: FeedbackType? = null
-            while (true) {
-                val ev = awaitItem()
-                if (ev is GameEvent.Feedback) { saw = ev.type; break }
-                if (ev is GameEvent.GameOver) break
-            }
-            assertEquals(FeedbackType.GOOD, saw)
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(FeedbackType.GOOD, event.feedback)
             cancelAndIgnoreRemainingEvents()
         }
         // Two placed cells + two-line base 20 * combo level 1.
@@ -373,22 +368,15 @@ class GameEngineTest {
 
         engine.events.test {
             engine.placePiece(p.pieceId, 0, 0)
-            // Expected sequence: PiecePlaced, LinesCleared(cross), Feedback (combo=1, no ComboActive)
-            var crossSeen = false
-            var feedback: FeedbackType? = null
-            repeat(3) {
-                val ev = awaitItem()
-                if (ev is GameEvent.LinesCleared && ev.isCrossClear) crossSeen = true
-                if (ev is GameEvent.Feedback) feedback = ev.type
-            }
-            assertTrue(crossSeen)
-            assertEquals(FeedbackType.EXCELLENT, feedback)
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertTrue(event.isCrossClear)
+            assertEquals(FeedbackType.EXCELLENT, event.feedback)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun clearing_three_rows_emits_one_great_feedback_for_ui_and_voice() = runTest {
+    fun clearing_three_rows_emits_one_complete_move_result() = runTest {
         var grid = Grid().withCell(4, 5, 1)
         for (row in 0..2) {
             for (x in 0..6) grid = grid.withCell(x, row, 1)
@@ -404,12 +392,21 @@ class GameEngineTest {
 
         engine.events.test {
             assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
-            assertIs<GameEvent.PiecePlaced>(awaitItem())
-            assertIs<GameEvent.LinesCleared>(awaitItem())
-            assertEquals(
-                GameEvent.Feedback(FeedbackType.GREAT),
-                awaitItem(),
-            )
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(placePiece.pieceId, event.pieceId)
+            assertEquals(3, event.placedCellCount)
+            assertEquals(3, event.linesCount)
+            assertEquals(24, event.clearedCells.size)
+            assertFalse(event.isCrossClear)
+            assertFalse(event.isBoardEmpty)
+            assertEquals(3L, event.placementPoints)
+            assertEquals(60L, event.clearPoints)
+            assertEquals(0L, event.allClearPoints)
+            assertEquals(63L, event.totalPoints)
+            assertEquals(1, event.comboLevel)
+            assertEquals(0, event.movesWithoutClear)
+            assertEquals(FeedbackType.GREAT, event.feedback)
+            assertFalse(event.isGameOver)
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
@@ -593,31 +590,32 @@ class GameEngineTest {
         }
     }
 
-    // ── Events ordering ─────────────────────────────────────────────────
+    // ── Atomic move results ──────────────────────────────────────────────
 
     @Test
-    fun events_emitted_in_order_PiecePlaced_then_LinesCleared() = runTest {
+    fun successful_placement_emits_exactly_one_move_result() = runTest {
         val grid = fillRow(0, 0..6)
         val p = piece(1, ONE_CELL)
         engine.restore(GameState(grid = grid, currentPieces = listOf(p)))
         engine.events.test {
             engine.placePiece(p.pieceId, 7, 0)
-            assertTrue(awaitItem() is GameEvent.PiecePlaced)
-            assertTrue(awaitItem() is GameEvent.LinesCleared)
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(p.pieceId, event.pieceId)
+            assertEquals(1, event.linesCount)
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun ComboActive_not_emitted_below_level_two() = runTest {
+    fun first_clear_reports_combo_level_one() = runTest {
         val grid = fillRow(0, 0..6)
         val p = piece(1, ONE_CELL)
         engine.restore(GameState(grid = grid, currentPieces = listOf(p, piece(2, ONE_CELL))))
         engine.events.test {
             engine.placePiece(p.pieceId, 7, 0)
-            val events = mutableListOf<GameEvent>()
-            repeat(3) { events += awaitItem() }
-            assertTrue(events.none { it is GameEvent.ComboActive })
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(1, event.comboLevel)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -635,13 +633,15 @@ class GameEngineTest {
             pieces.forEachIndexed { row, piece ->
                 assertTrue(engine.placePiece(piece.pieceId, 7, row))
             }
-            val events = buildList {
-                repeat(12) { add(awaitItem()) }
+            val events = buildList<GameEvent.MoveResolved> {
+                repeat(4) {
+                    add(assertIs<GameEvent.MoveResolved>(awaitItem()))
+                }
             }
 
             assertEquals(
                 listOf(FeedbackType.AMAZING),
-                events.filterIsInstance<GameEvent.Feedback>().map { it.type },
+                events.mapNotNull { it.feedback },
             )
             cancelAndIgnoreRemainingEvents()
         }

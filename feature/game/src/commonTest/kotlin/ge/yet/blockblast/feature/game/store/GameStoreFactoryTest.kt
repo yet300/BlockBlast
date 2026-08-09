@@ -236,6 +236,47 @@ class GameStoreFactoryTest {
     }
 
     @Test
+    fun clearing_move_plays_placement_clear_and_voice_in_narrative_order() = runTest {
+        val deps = TestDeps()
+        deps.factory().create(isNewGame = true)
+        var grid = Grid().withCell(4, 5, 1)
+        for (row in 0..2) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val placePiece = Piece(
+            pieceId = 999L,
+            shape = Polyomino(
+                id = "v3",
+                cells = listOf(Position(0, 0), Position(0, 1), Position(0, 2)),
+            ),
+            colorId = 1,
+        )
+        deps.engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
+
+        assertTrue(deps.engine.placePiece(placePiece.pieceId, 7, 0))
+
+        assertEquals(
+            listOf("placement", "clear:3", "voice:GREAT"),
+            deps.audio.calls,
+        )
+        assertTrue(
+            deps.analytics.has(
+                "lines_cleared",
+                mapOf(
+                    "lines_count" to 3,
+                    "cleared_cells" to 24,
+                    "placement_points" to 3L,
+                    "clear_points" to 60L,
+                    "all_clear_points" to 0L,
+                    "total_points" to 63L,
+                    "feedback" to "great",
+                ),
+            ),
+        )
+        deps.dispose()
+    }
+
+    @Test
     fun combo_three_plays_amazing_once_and_combo_four_does_not_repeat_it() = runTest {
         val deps = TestDeps()
         deps.factory().create(isNewGame = true)
@@ -984,11 +1025,21 @@ private class RecordingAudio : AudioRepository {
     var placementCount = 0
     val clearedLines = mutableListOf<Int>()
     val voices = mutableListOf<FeedbackType>()
+    val calls = mutableListOf<String>()
     var startMusicCount = 0
     var stopMusicCount = 0
-    override suspend fun playPlacementSound() { placementCount += 1 }
-    override suspend fun playClearSound(lines: Int) { clearedLines += lines }
-    override suspend fun playVoiceFeedback(type: FeedbackType) { voices += type }
+    override suspend fun playPlacementSound() {
+        placementCount += 1
+        calls += "placement"
+    }
+    override suspend fun playClearSound(lines: Int) {
+        clearedLines += lines
+        calls += "clear:$lines"
+    }
+    override suspend fun playVoiceFeedback(type: FeedbackType) {
+        voices += type
+        calls += "voice:${type.name}"
+    }
     override suspend fun startMusic() { startMusicCount += 1 }
     override suspend fun stopMusic() { stopMusicCount += 1 }
     override suspend fun onAppBackground() {}

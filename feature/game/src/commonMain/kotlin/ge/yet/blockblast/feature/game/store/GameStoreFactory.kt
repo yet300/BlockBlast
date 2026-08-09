@@ -153,27 +153,45 @@ internal class GameStoreFactory(
                         launch {
                             engine.events.collect { event ->
                                 when (event) {
-                                    is GameEvent.PiecePlaced -> audio.playPlacementSound()
-                                    is GameEvent.LinesCleared -> {
-                                        audio.playClearSound(event.linesCount)
-                                        logger.log(
-                                            eventName = "lines_cleared",
-                                            state = engine.state.value,
-                                            extra = mapOf(
-                                                "lines_count" to event.linesCount,
-                                                "is_cross_clear" to event.isCrossClear,
-                                            ),
-                                        )
+                                    is GameEvent.MoveResolved -> {
+                                        audio.playPlacementSound()
+                                        if (event.linesCount > 0) {
+                                            audio.playClearSound(event.linesCount)
+                                        }
+                                        event.feedback?.let { audio.playVoiceFeedback(it) }
+
+                                        if (event.linesCount > 0) {
+                                            logger.log(
+                                                eventName = "lines_cleared",
+                                                state = engine.state.value,
+                                                extra = mapOf(
+                                                    "piece_id" to event.pieceId,
+                                                    "placed_cells" to event.placedCellCount,
+                                                    "lines_count" to event.linesCount,
+                                                    "cleared_cells" to event.clearedCells.size,
+                                                    "is_cross_clear" to event.isCrossClear,
+                                                    "is_all_clear" to event.isBoardEmpty,
+                                                    "placement_points" to event.placementPoints,
+                                                    "clear_points" to event.clearPoints,
+                                                    "all_clear_points" to event.allClearPoints,
+                                                    "total_points" to event.totalPoints,
+                                                    "combo_level" to event.comboLevel,
+                                                    "moves_without_clear" to event.movesWithoutClear,
+                                                    "feedback" to (
+                                                        event.feedback?.name?.lowercase() ?: "none"
+                                                    ),
+                                                    "is_game_over" to event.isGameOver,
+                                                ),
+                                            )
+                                        }
+                                        if (event.linesCount > 0 && event.comboLevel >= 2) {
+                                            logger.log(
+                                                eventName = "combo_reached",
+                                                state = engine.state.value,
+                                                extra = mapOf("combo_level" to event.comboLevel),
+                                            )
+                                        }
                                     }
-                                    is GameEvent.Feedback -> audio.playVoiceFeedback(event.type)
-                                    is GameEvent.ComboActive -> {
-                                        logger.log(
-                                            eventName = "combo_reached",
-                                            state = engine.state.value,
-                                            extra = mapOf("combo_level" to event.level),
-                                        )
-                                    }
-                                    is GameEvent.GameOver,
                                     is GameEvent.GameStarted -> Unit
                                 }
                             }

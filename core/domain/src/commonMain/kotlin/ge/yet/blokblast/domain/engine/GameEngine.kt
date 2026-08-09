@@ -288,22 +288,27 @@ class GameEngine(
         )
         state.value = newState
 
-        // 8. Emit events in narrative order via tryEmit (buffer = 16, always room).
-        // tryEmit is synchronous and preserves FIFO; launch{emit} could re-order
-        // events if the coroutine scheduler interleaves two placePiece calls.
-        events.tryEmit(GameEvent.PiecePlaced(totalPoints))
-        if (clearedList != null) {
-            events.tryEmit(
-                GameEvent.LinesCleared(
-                    clearedCells = clearedList,
-                    linesCount = totalLines,
-                    isCrossClear = isCrossClear,
-                )
-            )
-            feedback?.let { events.tryEmit(GameEvent.Feedback(it)) }
-            if (newCombo >= 2) events.tryEmit(GameEvent.ComboActive(newCombo))
-        }
-        if (gameOver) events.tryEmit(GameEvent.GameOver)
+        // 8. Publish one immutable result after the matching state snapshot.
+        // Consumers can process the whole move serially without joining several
+        // independently emitted events with a later state value.
+        events.tryEmit(
+            GameEvent.MoveResolved(
+                pieceId = piece.pieceId,
+                placedCellCount = piece.shape.size,
+                clearedCells = clearedList.orEmpty(),
+                linesCount = totalLines,
+                isCrossClear = isCrossClear,
+                isBoardEmpty = isBoardEmpty,
+                placementPoints = placementPts,
+                clearPoints = clearPts,
+                allClearPoints = allClearPts,
+                totalPoints = totalPoints,
+                comboLevel = newCombo,
+                movesWithoutClear = newMovesWithoutClear,
+                feedback = feedback,
+                isGameOver = gameOver,
+            ),
+        )
 
         autoSave()
         return true
