@@ -1,24 +1,32 @@
 package ge.yet.blockblast.feature.settings
 
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
+import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import dev.zacsweers.metro.Inject
+import ge.yet.blockblast.feature.settings.disableads.DefaultDisableAdsComponent
 import ge.yet.blockblast.feature.settings.libraries.DefaultLibrariesSettingsComponent
+import ge.yet.blockblast.feature.settings.libraries.LibrariesProvider
 import ge.yet.blockblast.feature.settings.main.DefaultMainSettingsComponent
 import ge.yet.blockblast.feature.settings.main.store.SettingsStoreFactory
 import ge.yet.blockblast.feature.settings.more.DefaultMoreSettingsComponent
 import ge.yet.blokblast.domain.repository.AnalyticRepository
+import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.serialization.Serializable
 
+@OptIn(DelicateDecomposeApi::class)
 internal class DefaultSettingsComponent(
     componentContext: ComponentContext,
     storeFactory: SettingsStoreFactory,
+    private val librariesProvider: LibrariesProvider,
+    private val settingsRepository: SettingsRepository,
     private val analytics: AnalyticRepository,
     private val onBackClickedCb: () -> Unit,
 ) : SettingsComponent, ComponentContext by componentContext {
@@ -59,14 +67,27 @@ internal class DefaultSettingsComponent(
         Config.More -> SettingsComponent.Child.More(
             DefaultMoreSettingsComponent(
                 componentContext = componentContext,
+                settings = settingsRepository,
+                analytics = analytics,
+                onDisableAdsRequestedCb = ::pushDisableAds,
                 onLibrariesClickedCb = ::pushLibraries,
                 onBackClickedCb = ::onBackClicked,
             )
         )
 
+        Config.DisableAds -> SettingsComponent.Child.DisableAds(
+            DefaultDisableAdsComponent(
+                componentContext = componentContext,
+                settings = settingsRepository,
+                analytics = analytics,
+                onBackClickedCb = ::onBackClicked,
+            ),
+        )
+
         Config.Libraries -> SettingsComponent.Child.Libraries(
             DefaultLibrariesSettingsComponent(
                 componentContext = componentContext,
+                librariesProvider = librariesProvider,
                 onBackClickedCb = ::onBackClicked,
             )
         )
@@ -82,6 +103,12 @@ internal class DefaultSettingsComponent(
         navigation.push(Config.Libraries)
     }
 
+    private fun pushDisableAds() {
+        if (stack.value.active.configuration == Config.DisableAds) return
+        analytics.logEvent(eventName = "settings_disable_ads_opened", params = null)
+        navigation.pushNew(Config.DisableAds)
+    }
+
     @Serializable
     private sealed interface Config {
         @Serializable
@@ -91,6 +118,9 @@ internal class DefaultSettingsComponent(
         data object More : Config
 
         @Serializable
+        data object DisableAds : Config
+
+        @Serializable
         data object Libraries : Config
     }
 }
@@ -98,6 +128,8 @@ internal class DefaultSettingsComponent(
 @Inject
 internal class DefaultSettingsComponentFactory(
     private val storeFactory: SettingsStoreFactory,
+    private val librariesProvider: LibrariesProvider,
+    private val settingsRepository: SettingsRepository,
     private val analytics: AnalyticRepository,
 ) : SettingsComponent.Factory {
     override fun create(
@@ -106,6 +138,8 @@ internal class DefaultSettingsComponentFactory(
     ): SettingsComponent = DefaultSettingsComponent(
         componentContext = componentContext,
         storeFactory = storeFactory,
+        librariesProvider = librariesProvider,
+        settingsRepository = settingsRepository,
         analytics = analytics,
         onBackClickedCb = onBackClicked,
     )

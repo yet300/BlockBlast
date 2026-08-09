@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Китобхонаҳои кушодаасос</string>
     <string name="open_source_libraries_subtitle">Эътирофҳо ва ташаккур</string>
 
+    <string name="advertising">Реклама</string>
+    <string name="advertising_enabled_subtitle">Таҳияи ройгонро дастгирӣ мекунад</string>
+    <string name="advertising_disabled_subtitle">Хомӯш аст — эҳё ройгон аст</string>
+    <string name="support_game">Дастгирии бозӣ</string>
+    <string name="support_game_subtitle">Ба лоиҳа дар GitHub ситора гузоред ё хайрия кунед</string>
+    <string name="disable_ads">Рекламаро хомӯш мекунед?</string>
+    <string name="disable_ads_title">Реклама Logica-ро ройгон нигоҳ медорад</string>
+    <string name="disable_ads_body">Реклама ба мо барои беҳтар кардани бозӣ ва ройгон нигоҳ доштани ҳамаи имкониятҳо кумак мекунад. Агар онро хомӯш кунед, эҳё ройгон мемонад — ва шумо метавонед Logica-ро бо ситора дар GitHub ё хайрия дастгирӣ кунед.</string>
+    <string name="keep_ads">Рекламаро нигоҳ доред</string>
+    <string name="disable_ads_anyway">Ба ҳар ҳол хомӯш кунед</string>
+
     <!-- Common -->
     <string name="exit">Баромад</string>
 

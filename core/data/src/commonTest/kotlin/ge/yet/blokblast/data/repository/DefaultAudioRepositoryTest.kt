@@ -122,29 +122,17 @@ class DefaultAudioRepositoryTest {
     // ── SFX gating ───────────────────────────────────────────────────────
 
     @Test
-    fun sfx_play_when_enabled() = runTest {
+    fun voice_feedback_plays_when_sfx_enabled() = runTest {
         val (repo, player) = setup()
-        repo.playPlacementSound()
-        repo.playClearSound(2)
         repo.playVoiceFeedback(FeedbackType.GOOD)
-        repo.playVoiceCombo(3)
-        assertTrue(player.placement)
-        assertEquals(listOf(2), player.clears)
         assertEquals(listOf(FeedbackType.GOOD), player.voiceFeedback)
-        assertEquals(listOf(3), player.voiceCombo)
     }
 
     @Test
-    fun sfx_silent_when_disabled() = runTest {
+    fun voice_feedback_is_silent_when_sfx_disabled() = runTest {
         val (repo, player) = setup(sfx = false)
-        repo.playPlacementSound()
-        repo.playClearSound(2)
         repo.playVoiceFeedback(FeedbackType.GOOD)
-        repo.playVoiceCombo(3)
-        assertEquals(false, player.placement)
-        assertTrue(player.clears.isEmpty())
         assertTrue(player.voiceFeedback.isEmpty())
-        assertTrue(player.voiceCombo.isEmpty())
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -153,14 +141,8 @@ class DefaultAudioRepositoryTest {
 
     private class RecordingPlayer : PlatformSoundPlayer {
         val calls = mutableListOf<PlayerCall>()
-        var placement = false
-        val clears = mutableListOf<Int>()
         val voiceFeedback = mutableListOf<FeedbackType>()
-        val voiceCombo = mutableListOf<Int>()
-        override fun playPlacement() { placement = true }
-        override fun playClear(lines: Int) { clears += lines }
         override fun playVoiceFeedback(type: FeedbackType) { voiceFeedback += type }
-        override fun playVoiceCombo(combo: Int) { voiceCombo += combo }
         override fun startMusic() { calls += PlayerCall.Start }
         override fun stopMusic() { calls += PlayerCall.Stop }
         override fun release() {}
@@ -176,6 +158,7 @@ class DefaultAudioRepositoryTest {
         override val sfxEnabled: StateFlow<Boolean> = sfxFlow.asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
+        override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -183,6 +166,7 @@ class DefaultAudioRepositoryTest {
         override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
         override suspend fun setDarkTheme(enabled: Boolean) {}
+        override suspend fun setAdsEnabled(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
         override suspend fun suppressReviewPrompts(max: Int) {}

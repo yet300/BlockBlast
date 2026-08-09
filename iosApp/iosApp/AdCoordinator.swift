@@ -25,12 +25,21 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
 
     private let interstitialUnitId = AppConfig.shared.GAME_OVER_INTERSTITIAL_UNIT_ID_IOS
 
+    private var adsEnabled = false
     private var interstitial: InterstitialAd?
     private var pendingDismissCallback: (() -> Void)?
+    private var pendingBanners: [BannerView] = []
 
     /// Installs the three bridge callbacks on the Kotlin singleton. Call once,
     /// after `MobileAds.shared.start(...)`, before any Compose screen is shown.
     func configureBridge() {
+        adsEnabled = AdsManager.shared.enabled
+        IosAdBridge.shared.adsEnabledChanged = { [weak self] enabled in
+            Task { @MainActor in
+                self?.setAdsEnabled(enabled.boolValue)
+            }
+        }
+
         // Bridging asymmetry to be aware of:
         //   - Assigning a Swift closure into a Kotlin `(() -> Unit)?` property
         //     setter: Swift side wants `() -> Void`, so don't return anything.
@@ -59,11 +68,26 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
 
     // MARK: - Interstitial
 
+    private func setAdsEnabled(_ enabled: Bool) {
+        guard adsEnabled != enabled else { return }
+        adsEnabled = enabled
+        if enabled {
+            loadPendingBannersIfAllowed()
+            Task { @MainActor in await loadInterstitial() }
+        } else {
+            interstitial = nil
+            pendingBanners.removeAll()
+            let callback = pendingDismissCallback
+            pendingDismissCallback = nil
+            callback?()
+        }
+    }
+
     func loadInterstitial() async {
         // UMP gate — Google requires no ad requests fire before consent
         // is gathered. `ConsentManager` flips this to true after the form
         // closes (or immediately if previously granted / not required).
-        guard ConsentManager.shared.canRequestAds else { return }
+        guard adsEnabled, ConsentManager.shared.canRequestAds else { return }
         do {
             interstitial = try await InterstitialAd.load(
                 with: interstitialUnitId,
@@ -77,6 +101,10 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
     }
 
     func showInterstitial(onDismiss: @escaping () -> Void) {
+        guard adsEnabled else {
+            onDismiss()
+            return
+        }
         guard let ad = interstitial, let rootVC = Self.rootViewController() else {
             // No ad ready — still run the post-ad callback so revive proceeds.
             onDismiss()
@@ -102,10 +130,19 @@ final class AdCoordinator: NSObject, FullScreenContentDelegate {
         bannerView.delegate = delegate
         objc_setAssociatedObject(bannerView, &bannerDelegateKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
-        if ConsentManager.shared.canRequestAds {
+        if adsEnabled && ConsentManager.shared.canRequestAds {
             bannerView.load(Request())
+        } else {
+            pendingBanners.append(bannerView)
         }
         return bannerView
+    }
+
+    func loadPendingBannersIfAllowed() {
+        guard adsEnabled, ConsentManager.shared.canRequestAds else { return }
+        let banners = pendingBanners
+        pendingBanners.removeAll()
+        banners.forEach { $0.load(Request()) }
     }
 
     // MARK: - FullScreenContentDelegate

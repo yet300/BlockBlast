@@ -11,6 +11,7 @@ interface SettingsRepository {
 
     val vibrationEnabled: StateFlow<Boolean>
     val darkTheme: StateFlow<Boolean>
+    val adsEnabled: StateFlow<Boolean>
 
     /** Persisted personal best, survives across launches. */
     val bestScore: StateFlow<Long>
@@ -25,6 +26,7 @@ interface SettingsRepository {
     suspend fun setSfxEnabled(enabled: Boolean)
     suspend fun setVibrationEnabled(enabled: Boolean)
     suspend fun setDarkTheme(enabled: Boolean)
+    suspend fun setAdsEnabled(enabled: Boolean)
 
     /** Monotonic write: implementations must ignore scores ≤ current best. */
     suspend fun setBestScore(score: Long)

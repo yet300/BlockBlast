@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Thư viện mã nguồn mở</string>
     <string name="open_source_libraries_subtitle">Lời cảm ơn</string>
 
+    <string name="advertising">Quảng cáo</string>
+    <string name="advertising_enabled_subtitle">Hỗ trợ phát triển miễn phí</string>
+    <string name="advertising_disabled_subtitle">Đã tắt — hồi sinh miễn phí</string>
+    <string name="support_game">Ủng hộ trò chơi</string>
+    <string name="support_game_subtitle">Tặng sao cho dự án trên GitHub hoặc quyên góp</string>
+    <string name="disable_ads">Tắt quảng cáo?</string>
+    <string name="disable_ads_title">Quảng cáo giúp Logica luôn miễn phí</string>
+    <string name="disable_ads_body">Quảng cáo giúp chúng tôi cải thiện trò chơi và giữ mọi tính năng miễn phí. Nếu tắt quảng cáo, lượt hồi sinh vẫn miễn phí — và bạn vẫn có thể ủng hộ Logica bằng một sao trên GitHub hoặc khoản quyên góp.</string>
+    <string name="keep_ads">Giữ quảng cáo</string>
+    <string name="disable_ads_anyway">Vẫn tắt</string>
+
     <!-- Common -->
     <string name="exit">Thoát</string>
 

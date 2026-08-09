@@ -8,7 +8,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.arkivanov.decompose.defaultComponentContext
 import com.google.firebase.Firebase
 import com.google.firebase.initialize
-import ge.yet3.blokblast.ads.consent.ConsentManager
+import ge.yet3.blokblast.ads.AdsManager
 import ge.yet3.blokblast.screen.App
 
 class MainActivity : ComponentActivity() {
@@ -18,12 +18,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         Firebase.initialize(this)
-
-        // Kick off UMP consent gathering. `ConsentManager` will initialise
-        // MobileAds internally once consent permits ad requests — all
-        // interstitial / banner loads gate on `ConsentManager.canRequestAds`,
-        // so this is the single source of truth for when ads may fire.
-        ConsentManager.gather(this) { /* ready — loads will succeed from here */ }
+        AdsManager.setActivity(this)
 
         val appGraph = (application as BlockBlastApp).appGraph
         val rootComponent = appGraph.rootFactory.create(
@@ -33,5 +28,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             App(rootComponent = rootComponent)
         }
+    }
+
+    override fun onDestroy() {
+        AdsManager.clearActivity(this)
+        super.onDestroy()
     }
 }

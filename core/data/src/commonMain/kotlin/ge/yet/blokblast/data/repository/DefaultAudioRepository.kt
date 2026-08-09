@@ -94,15 +94,8 @@ internal class DefaultAudioRepository(
         if (settings.sfxEnabled.value) block()
     }
 
-    override suspend fun playPlacementSound() = ifSfxEnabled { player.playPlacement() }
-
-    override suspend fun playClearSound(lines: Int) = ifSfxEnabled { player.playClear(lines) }
-
     override suspend fun playVoiceFeedback(type: FeedbackType) =
         ifSfxEnabled { player.playVoiceFeedback(type) }
-
-    override suspend fun playVoiceCombo(combo: Int) =
-        ifSfxEnabled { player.playVoiceCombo(combo) }
 
     override suspend fun startMusic() {
         musicRequested.value = true

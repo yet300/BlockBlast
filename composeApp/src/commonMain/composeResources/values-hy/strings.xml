@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Բաց կոդով գրադարաններ</string>
     <string name="open_source_libraries_subtitle">Շնորհակալություններ</string>
 
+    <string name="advertising">Գովազդ</string>
+    <string name="advertising_enabled_subtitle">Աջակցում է անվճար մշակմանը</string>
+    <string name="advertising_disabled_subtitle">Անջատված է — վերակենդանացումն անվճար է</string>
+    <string name="support_game">Աջակցել խաղին</string>
+    <string name="support_game_subtitle">Աստղ տվեք նախագծին GitHub-ում կամ նվիրատվություն կատարեք</string>
+    <string name="disable_ads">Անջատե՞լ գովազդը</string>
+    <string name="disable_ads_title">Գովազդը պահում է Logica-ն անվճար</string>
+    <string name="disable_ads_body">Գովազդն օգնում է մեզ բարելավել խաղը և բոլոր հնարավորությունները պահել անվճար։ Եթե անջատեք այն, վերակենդանացումները կմնան անվճար — իսկ Logica-ին կարող եք աջակցել GitHub-ի աստղով կամ նվիրատվությամբ։</string>
+    <string name="keep_ads">Պահել գովազդը</string>
+    <string name="disable_ads_anyway">Միևնույն է անջատել</string>
+
     <!-- Common -->
     <string name="exit">Ելք</string>
 

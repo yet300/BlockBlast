@@ -28,6 +28,9 @@ interface RootComponent : BackHandlerOwner {
     /** Whether SFX / voice feedback are enabled (mirrors Settings toggle). */
     val sfxEnabled: StateFlow<Boolean>
 
+    /** Whether advertising is enabled by the user. */
+    val adsEnabled: StateFlow<Boolean>
+
     /** Whether the first-launch tutorial has already been seen / dismissed. */
     val tutorialSeen: StateFlow<Boolean>
 

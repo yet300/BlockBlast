@@ -11,6 +11,7 @@ import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameEvent
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.Grid
+import ge.yet.blokblast.domain.model.RoundStartInfo
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
@@ -32,6 +33,7 @@ internal class GameStoreFactory(
     fun create(
         isNewGame: Boolean,
         restoredResultState: GameState? = null,
+        newGameSeed: Long? = null,
     ): GameStore {
         val logger = GameAnalyticsLogger(analytics)
         val initializer = GameInitializer(engine, saveRepository, settings)
@@ -53,15 +55,17 @@ internal class GameStoreFactory(
                             initializer.seedBestScore()
                         }
                         launch {
-                            val source = initializer.initialize(
+                            val initialization = initializer.initialize(
                                 isNewGame = isNewGame,
                                 restoredResultState = restoredResultState,
+                                newGameSeed = newGameSeed,
                             )
-                            if (source != GameInitializer.Source.ResultRestore) {
+                            if (initialization.source != GameInitializer.Source.ResultRestore) {
                                 logger.log(
                                     eventName = "game_started",
                                     state = engine.state.value,
-                                    extra = mapOf("source" to source.tag),
+                                    extra = mapOf("source" to initialization.source.tag) +
+                                        initialization.roundStart.orEmptyAnalytics(engine.state.value),
                                 )
                             }
                         }
@@ -153,28 +157,30 @@ internal class GameStoreFactory(
                         launch {
                             engine.events.collect { event ->
                                 when (event) {
-                                    is GameEvent.PiecePlaced -> audio.playPlacementSound()
-                                    is GameEvent.LinesCleared -> {
-                                        audio.playClearSound(event.linesCount)
+                                    is GameEvent.MoveResolved -> {
+                                        val moveParams = moveAnalyticsParams(event)
+                                        event.feedback?.let { audio.playVoiceFeedback(it) }
+
                                         logger.log(
-                                            eventName = "lines_cleared",
+                                            eventName = "piece_place_success",
                                             state = engine.state.value,
-                                            extra = mapOf(
-                                                "lines_count" to event.linesCount,
-                                                "is_cross_clear" to event.isCrossClear,
-                                            ),
+                                            extra = moveParams,
                                         )
+                                        if (event.linesCount > 0) {
+                                            logger.log(
+                                                eventName = "lines_cleared",
+                                                state = engine.state.value,
+                                                extra = moveParams,
+                                            )
+                                        }
+                                        if (event.linesCount > 0 && event.comboLevel >= 2) {
+                                            logger.log(
+                                                eventName = "combo_reached",
+                                                state = engine.state.value,
+                                                extra = moveParams,
+                                            )
+                                        }
                                     }
-                                    is GameEvent.Feedback -> audio.playVoiceFeedback(event.type)
-                                    is GameEvent.ComboActive -> {
-                                        audio.playVoiceCombo(event.level)
-                                        logger.log(
-                                            eventName = "combo_reached",
-                                            state = engine.state.value,
-                                            extra = mapOf("combo_level" to event.level),
-                                        )
-                                    }
-                                    is GameEvent.GameOver,
                                     is GameEvent.GameStarted -> Unit
                                 }
                             }
@@ -198,17 +204,17 @@ internal class GameStoreFactory(
                         val before = engine.state.value
                         val placementParams = mapOf(
                             "piece_id" to intent.pieceId,
-                            "x" to intent.x,
-                            "y" to intent.y,
                             "remaining_pieces" to before.currentPieces.size,
                         )
                         logger.log("piece_place_attempt", before, placementParams)
                         val placed = engine.placePiece(intent.pieceId, intent.x, intent.y)
-                        logger.log(
-                            eventName = if (placed) "piece_place_success" else "piece_place_failed",
-                            state = engine.state.value,
-                            extra = placementParams,
-                        )
+                        if (!placed) {
+                            logger.log(
+                                eventName = "piece_place_failed",
+                                state = engine.state.value,
+                                extra = placementParams,
+                            )
+                        }
                     }
                     onIntent<GameStore.Intent.Revive> {
                         rollbackStateToSuppress = null
@@ -249,11 +255,15 @@ internal class GameStoreFactory(
                     onIntent<GameStore.Intent.Restart> {
                         logger.log("restart_clicked", engine.state.value)
                         launch {
-                            engine.startNewGame(bestScore = engine.state.value.bestScore)
+                            val roundStart = engine.startNewGame(
+                                bestScore = engine.state.value.bestScore,
+                                allowStarterLayout = settings.tutorialSeen.value,
+                            )
                             logger.log(
                                 eventName = "game_started",
                                 state = engine.state.value,
-                                extra = mapOf("source" to "restart"),
+                                extra = mapOf("source" to "restart") +
+                                    roundStartAnalyticsParams(roundStart, engine.state.value),
                             )
                         }
                     }
@@ -291,6 +301,48 @@ internal class GameStoreFactory(
             )
             false
         }
+
+    private fun moveAnalyticsParams(event: GameEvent.MoveResolved): Map<String, Any> = mapOf(
+        "piece_id" to event.pieceId,
+        "placed_cells" to event.placedCellCount,
+        "lines_count" to event.linesCount,
+        "cleared_cells" to event.clearedCells.size,
+        "is_cross_clear" to event.isCrossClear,
+        "is_all_clear" to event.isBoardEmpty,
+        "placement_points" to event.placementPoints,
+        "clear_points" to event.clearPoints,
+        "all_clear_points" to event.allClearPoints,
+        "total_points" to event.totalPoints,
+        "combo_level" to event.comboLevel,
+        "moves_without_clear" to event.movesWithoutClear,
+        "feedback" to (event.feedback?.name?.lowercase() ?: "none"),
+        "is_game_over" to event.isGameOver,
+    )
+
+    private fun RoundStartInfo?.orEmptyAnalytics(state: GameState): Map<String, Any> =
+        this?.let { roundStartAnalyticsParams(it, state) }.orEmpty()
+
+    private fun roundStartAnalyticsParams(
+        info: RoundStartInfo,
+        state: GameState,
+    ): Map<String, Any> = buildMap {
+        put("layout_source", info.layoutSource.name.lowercase())
+        put("initial_occupied_cells", state.grid.cells.count { it != Grid.EMPTY })
+        put("initial_tray_shape_ids", state.currentPieces.joinToString(",") { it.shape.id })
+        put(
+            "initial_tray_size_categories",
+            state.currentPieces.joinToString(",") { piece ->
+                when (piece.shape.size) {
+                    in 1..2 -> "compact"
+                    in 3..4 -> "medium"
+                    else -> "large"
+                }
+            },
+        )
+        info.starterTemplateId?.let { put("starter_template_id", it) }
+        info.quarterTurns?.let { put("starter_quarter_turns", it) }
+        info.reflectedHorizontally?.let { put("starter_reflected_horizontally", it) }
+    }
 
     private fun qualifiesForReview(state: GameState): Boolean {
         val beatBy = state.score - state.bestAtRoundStart

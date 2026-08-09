@@ -42,7 +42,7 @@ internal fun ResultCard(
     continueLabel: String,
     newGameLabel: String,
     homeLabel: String,
-    advertisementLabel: String,
+    advertisementLabel: String?,
     layoutPolicy: ResultLayoutPolicy,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
@@ -116,7 +116,7 @@ internal fun ResultCard(
             } else {
                 newGameLabel
             },
-            showAdIcon = model.isContinuePhase,
+            showAdIcon = model.isContinuePhase && advertisementLabel != null,
             advertisementLabel = advertisementLabel,
             buttonHeight = layoutPolicy.buttonHeightDp.dp,
             onClick = onPrimaryClicked,
@@ -139,7 +139,7 @@ internal fun ResultCard(
 private fun ResultPrimaryButton(
     text: String,
     showAdIcon: Boolean,
-    advertisementLabel: String,
+    advertisementLabel: String?,
     buttonHeight: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -219,5 +219,10 @@ private fun AdPlayIcon(modifier: Modifier = Modifier) {
 internal fun resultPrimaryContentDescription(
     isContinuePhase: Boolean,
     primaryText: String,
-    advertisementLabel: String,
-): String? = "$primaryText, $advertisementLabel".takeIf { isContinuePhase }
+    advertisementLabel: String?,
+): String? =
+    if (isContinuePhase && advertisementLabel != null) {
+        "$primaryText, $advertisementLabel"
+    } else {
+        null
+    }

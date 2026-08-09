@@ -32,6 +32,7 @@ import ge.yet3.blokblast.component.sheet.ClaudeBottomSheet
 import ge.yet3.blokblast.screen.game.GameGrid
 import ge.yet3.blokblast.screen.game.ReviewPromptContent
 import ge.yet3.blokblast.screen.game.rememberReducedMotion
+import ge.yet3.blokblast.theme.LocalAdsEnabled
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best
 import blockblast.composeapp.generated.resources.cd_advertisement
@@ -53,6 +54,7 @@ fun GameResultContent(
     val reviewPrompt by component.reviewPrompt.subscribeAsState()
     val interstitial = rememberGameOverInterstitial()
     val reducedMotion = rememberReducedMotion()
+    val adsEnabled = LocalAdsEnabled.current
 
     GameResultContent(
         model = model,
@@ -61,6 +63,7 @@ fun GameResultContent(
         },
         onHomeClicked = component::onHomeClicked,
         reducedMotion = reducedMotion,
+        adsEnabled = adsEnabled,
         modifier = modifier,
     )
 
@@ -79,6 +82,7 @@ fun GameResultContent(
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     reducedMotion: Boolean = false,
+    adsEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -107,6 +111,7 @@ fun GameResultContent(
                             model = model,
                             layoutPolicy = layoutPolicy,
                             reducedMotion = reducedMotion,
+                            adsEnabled = adsEnabled,
                             onPrimaryClicked = onPrimaryClicked,
                             onHomeClicked = onHomeClicked,
                             modifier = Modifier.fillMaxSize(),
@@ -116,6 +121,7 @@ fun GameResultContent(
                             model = model,
                             layoutPolicy = layoutPolicy,
                             reducedMotion = reducedMotion,
+                            adsEnabled = adsEnabled,
                             onPrimaryClicked = onPrimaryClicked,
                             onHomeClicked = onHomeClicked,
                             modifier = Modifier.fillMaxSize(),
@@ -132,6 +138,7 @@ private fun PortraitResultLayout(
     model: GameResultComponent.Model,
     layoutPolicy: ResultLayoutPolicy,
     reducedMotion: Boolean,
+    adsEnabled: Boolean,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
@@ -159,6 +166,7 @@ private fun PortraitResultLayout(
         ResultActions(
             model = model,
             layoutPolicy = layoutPolicy,
+            adsEnabled = adsEnabled,
             onPrimaryClicked = onPrimaryClicked,
             onHomeClicked = onHomeClicked,
             modifier = Modifier
@@ -173,6 +181,7 @@ private fun LandscapeResultLayout(
     model: GameResultComponent.Model,
     layoutPolicy: ResultLayoutPolicy,
     reducedMotion: Boolean,
+    adsEnabled: Boolean,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
@@ -206,6 +215,7 @@ private fun LandscapeResultLayout(
             ResultActions(
                 model = model,
                 layoutPolicy = layoutPolicy,
+                adsEnabled = adsEnabled,
                 onPrimaryClicked = onPrimaryClicked,
                 onHomeClicked = onHomeClicked,
                 modifier = Modifier
@@ -275,6 +285,7 @@ private fun ResultBoard(
 private fun ResultActions(
     model: GameResultComponent.Model,
     layoutPolicy: ResultLayoutPolicy,
+    adsEnabled: Boolean,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
@@ -287,7 +298,11 @@ private fun ResultActions(
         continueLabel = stringResource(Res.string.revive),
         newGameLabel = stringResource(Res.string.new_game),
         homeLabel = stringResource(Res.string.exit_to_home),
-        advertisementLabel = stringResource(Res.string.cd_advertisement),
+        advertisementLabel = if (adsEnabled) {
+            stringResource(Res.string.cd_advertisement)
+        } else {
+            null
+        },
         layoutPolicy = layoutPolicy,
         onPrimaryClicked = onPrimaryClicked,
         onHomeClicked = onHomeClicked,

@@ -289,6 +289,7 @@ class DefaultGameComponentTest {
         override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
+        override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
         override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
         override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -296,6 +297,7 @@ class DefaultGameComponentTest {
         override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
         override suspend fun setDarkTheme(enabled: Boolean) {}
+        override suspend fun setAdsEnabled(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {
             if (score > bestScoreFlow.value) bestScoreFlow.value = score
         }
@@ -306,10 +308,7 @@ class DefaultGameComponentTest {
 
     private class RecordingAudio : AudioRepository {
         var stopMusicCount = 0
-        override suspend fun playPlacementSound() {}
-        override suspend fun playClearSound(lines: Int) {}
         override suspend fun playVoiceFeedback(type: FeedbackType) {}
-        override suspend fun playVoiceCombo(combo: Int) {}
         override suspend fun startMusic() {}
         override suspend fun stopMusic() { stopMusicCount += 1 }
         override suspend fun onAppBackground() {}

@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Avoimen lähdekoodin kirjastot</string>
     <string name="open_source_libraries_subtitle">Kiitokset</string>
 
+    <string name="advertising">Mainokset</string>
+    <string name="advertising_enabled_subtitle">Tukevat ilmaista kehitystä</string>
+    <string name="advertising_disabled_subtitle">Pois käytöstä — elvytykset ovat ilmaisia</string>
+    <string name="support_game">Tue peliä</string>
+    <string name="support_game_subtitle">Anna projektille tähti GitHubissa tai lahjoita</string>
+    <string name="disable_ads">Poistetaanko mainokset käytöstä?</string>
+    <string name="disable_ads_title">Mainokset pitävät Logican ilmaisena</string>
+    <string name="disable_ads_body">Mainokset auttavat meitä parantamaan peliä ja pitämään kaikki ominaisuudet ilmaisina. Jos poistat ne käytöstä, elvytykset pysyvät ilmaisina — ja voit edelleen tukea Logicaa GitHub-tähdellä tai lahjoituksella.</string>
+    <string name="keep_ads">Pidä mainokset</string>
+    <string name="disable_ads_anyway">Poista silti käytöstä</string>
+
     <!-- Common -->
     <string name="exit">Poistu</string>
 

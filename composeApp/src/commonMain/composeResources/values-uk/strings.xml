@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Open-source бібліотеки</string>
     <string name="open_source_libraries_subtitle">Подяки</string>
 
+    <string name="advertising">Реклама</string>
+    <string name="advertising_enabled_subtitle">Підтримує безплатну розробку</string>
+    <string name="advertising_disabled_subtitle">Вимкнена — відродження безплатні</string>
+    <string name="support_game">Підтримати гру</string>
+    <string name="support_game_subtitle">Поставте зірку на GitHub або зробіть пожертву</string>
+    <string name="disable_ads">Вимкнути рекламу?</string>
+    <string name="disable_ads_title">Реклама допомагає Logica залишатися безплатною</string>
+    <string name="disable_ads_body">Реклама допомагає нам покращувати гру й залишати всі можливості безплатними. Якщо її вимкнути, відродження залишаться безплатними — а підтримати Logica можна зіркою на GitHub або пожертвою.</string>
+    <string name="keep_ads">Залишити рекламу</string>
+    <string name="disable_ads_anyway">Усе одно вимкнути</string>
+
     <!-- Common -->
     <string name="exit">Вийти</string>
 

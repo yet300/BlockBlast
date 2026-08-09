@@ -15,6 +15,9 @@ import platform.UIKit.UIView
  * sensible no-ops.
  */
 object IosAdBridge {
+    /** Notifies Swift immediately when the user enables or disables ads. */
+    var adsEnabledChanged: ((enabled: Boolean) -> Unit)? = null
+
     /** Starts the iOS consent / ATT flow after Swift has a visible presenter. */
     var requestConsentAndAds: (() -> Unit)? = null
 

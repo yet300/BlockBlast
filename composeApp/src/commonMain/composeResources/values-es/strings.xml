@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Bibliotecas de código abierto</string>
     <string name="open_source_libraries_subtitle">Créditos y agradecimientos</string>
 
+    <string name="advertising">Publicidad</string>
+    <string name="advertising_enabled_subtitle">Apoya el desarrollo gratuito</string>
+    <string name="advertising_disabled_subtitle">Desactivada — las reanimaciones son gratis</string>
+    <string name="support_game">Apoya el juego</string>
+    <string name="support_game_subtitle">Dale una estrella al proyecto en GitHub o haz una donación</string>
+    <string name="disable_ads">¿Desactivar la publicidad?</string>
+    <string name="disable_ads_title">La publicidad mantiene Logica gratis</string>
+    <string name="disable_ads_body">La publicidad nos ayuda a mejorar el juego y a mantener todas las funciones gratis. Si la desactivas, las reanimaciones seguirán siendo gratuitas, y aún podrás apoyar Logica con una estrella en GitHub o una donación.</string>
+    <string name="keep_ads">Mantener la publicidad</string>
+    <string name="disable_ads_anyway">Desactivar de todos modos</string>
+
     <!-- Common -->
     <string name="exit">Salir</string>
 

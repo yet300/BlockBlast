@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Açyk çeşme kitaphanalary</string>
     <string name="open_source_libraries_subtitle">Minnetdarlyklar</string>
 
+    <string name="advertising">Mahabat</string>
+    <string name="advertising_enabled_subtitle">Mugt ösüşi goldaýar</string>
+    <string name="advertising_disabled_subtitle">Öçürilen — gaýtadan janlanmak mugt</string>
+    <string name="support_game">Oýny golda</string>
+    <string name="support_game_subtitle">Taslama GitHub-da ýyldyz beriň ýa-da sadaka ediň</string>
+    <string name="disable_ads">Mahabaty öçürmelimi?</string>
+    <string name="disable_ads_title">Mahabat Logica-ny mugt saklaýar</string>
+    <string name="disable_ads_body">Mahabat oýny ösdürmäge we ähli mümkinçilikleri mugt saklamaga kömek edýär. Ony öçürseňiz hem, gaýtadan janlanmak mugt galar — Logica-ny GitHub ýyldyzy ýa-da sadaka bilen goldap bilersiňiz.</string>
+    <string name="keep_ads">Mahabaty sakla</string>
+    <string name="disable_ads_anyway">Şonda-da öçür</string>
+
     <!-- Common -->
     <string name="exit">Çykyş</string>
 

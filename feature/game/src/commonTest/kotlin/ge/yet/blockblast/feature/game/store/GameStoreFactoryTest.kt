@@ -6,12 +6,13 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.engine.ScoreCalculator
 import ge.yet.blokblast.domain.engine.ShapeGenerator
-import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.RoundLayoutSource
+import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
@@ -69,7 +70,83 @@ class GameStoreFactoryTest {
         // engine should be in a fresh round
         assertEquals(0L, deps.engine.state.value.score)
         assertTrue(deps.engine.state.value.currentPieces.isNotEmpty())
-        assertTrue(deps.analytics.has("game_started", mapOf("source" to "new")))
+        assertTrue(
+            deps.analytics.has(
+                "game_started",
+                mapOf(
+                    "source" to "new",
+                    "layout_source" to "empty",
+                    "initial_occupied_cells" to 0,
+                ),
+            ),
+        )
+        deps.dispose()
+    }
+
+    @Test
+    fun bootstrap_populated_start_logs_layout_and_initial_tray_metadata() = runTest {
+        val deps = TestDeps(tutorialSeen = true)
+        val starterSeed = knownStarterSeed(deps.engine)
+
+        deps.factory().create(isNewGame = true, newGameSeed = starterSeed)
+
+        val state = deps.engine.state.value
+        val params = deps.analytics.events.single { it.first == "game_started" }.second
+        assertEquals("new", params["source"])
+        assertEquals("starter", params["layout_source"])
+        assertEquals(
+            state.grid.cells.count { it != Grid.EMPTY },
+            params["initial_occupied_cells"],
+        )
+        assertEquals(
+            state.currentPieces.joinToString(",") { it.shape.id },
+            params["initial_tray_shape_ids"],
+        )
+        assertEquals(
+            state.currentPieces.joinToString(",") { piece ->
+                when (piece.shape.size) {
+                    in 1..2 -> "compact"
+                    in 3..4 -> "medium"
+                    else -> "large"
+                }
+            },
+            params["initial_tray_size_categories"],
+        )
+        assertTrue("starter_template_id" in params)
+        assertTrue("starter_quarter_turns" in params)
+        assertTrue("starter_reflected_horizontally" in params)
+        deps.dispose()
+    }
+
+    @Test
+    fun initializer_keeps_the_tutorial_round_empty() = runTest {
+        val deps = TestDeps(tutorialSeen = false)
+        val starterSeed = knownStarterSeed(deps.engine)
+
+        val result = GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
+            isNewGame = true,
+            newGameSeed = starterSeed,
+        )
+
+        assertTrue(deps.engine.state.value.grid.isBoardEmpty())
+        assertEquals(GameInitializer.Source.New, result.source)
+        assertEquals(RoundLayoutSource.EMPTY, result.roundStart?.layoutSource)
+        deps.dispose()
+    }
+
+    @Test
+    fun initializer_allows_a_starter_after_the_tutorial() = runTest {
+        val deps = TestDeps(tutorialSeen = true)
+        val starterSeed = knownStarterSeed(deps.engine)
+
+        val result = GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
+            isNewGame = true,
+            newGameSeed = starterSeed,
+        )
+
+        assertFalse(deps.engine.state.value.grid.isBoardEmpty())
+        assertEquals(GameInitializer.Source.New, result.source)
+        assertEquals(RoundLayoutSource.STARTER, result.roundStart?.layoutSource)
         deps.dispose()
     }
 
@@ -177,17 +254,7 @@ class GameStoreFactoryTest {
     // ── SFX wiring ───────────────────────────────────────────────────────
 
     @Test
-    fun piece_placement_triggers_placement_sound() = runTest {
-        val deps = TestDeps()
-        deps.factory().create(isNewGame = true)
-        val piece = deps.engine.state.value.currentPieces.first()
-        deps.engine.placePiece(piece.pieceId, 0, 0)
-        assertTrue(deps.audio.placementCount >= 1)
-        deps.dispose()
-    }
-
-    @Test
-    fun line_clear_triggers_clear_sound_and_analytics() = runTest {
+    fun line_clear_triggers_analytics() = runTest {
         val deps = TestDeps()
         deps.factory().create(isNewGame = true)
         // Build a clear: fill row 0 cols 0..6 then place 1x1 at (7,0).
@@ -202,8 +269,66 @@ class GameStoreFactoryTest {
         )
         deps.engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
         deps.engine.placePiece(999L, 7, 0)
-        assertEquals(listOf(1), deps.audio.clearedLines)
         assertTrue(deps.analytics.has("lines_cleared"))
+        deps.dispose()
+    }
+
+    @Test
+    fun clearing_move_plays_voice_feedback() = runTest {
+        val deps = TestDeps()
+        deps.factory().create(isNewGame = true)
+        var grid = Grid().withCell(4, 5, 1)
+        for (row in 0..2) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val placePiece = Piece(
+            pieceId = 999L,
+            shape = Polyomino(
+                id = "v3",
+                cells = listOf(Position(0, 0), Position(0, 1), Position(0, 2)),
+            ),
+            colorId = 1,
+        )
+        deps.engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
+
+        assertTrue(deps.engine.placePiece(placePiece.pieceId, 7, 0))
+
+        assertEquals(listOf(FeedbackType.GREAT), deps.audio.voices)
+        assertTrue(
+            deps.analytics.has(
+                "lines_cleared",
+                mapOf(
+                    "lines_count" to 3,
+                    "cleared_cells" to 24,
+                    "placement_points" to 3L,
+                    "clear_points" to 60L,
+                    "all_clear_points" to 0L,
+                    "total_points" to 63L,
+                    "feedback" to "great",
+                ),
+            ),
+        )
+        deps.dispose()
+    }
+
+    @Test
+    fun combo_three_plays_amazing_once_and_combo_four_does_not_repeat_it() = runTest {
+        val deps = TestDeps()
+        deps.factory().create(isNewGame = true)
+        var grid = Grid().withCell(7, 7, 1)
+        for (row in 0..3) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val pieces = (1L..4L).map { id ->
+            Piece(id, Polyomino("1x1", listOf(Position(0, 0))), colorId = 1)
+        }
+        deps.engine.restore(GameState(grid = grid, currentPieces = pieces))
+
+        pieces.forEachIndexed { row, piece ->
+            assertTrue(deps.engine.placePiece(piece.pieceId, 7, row))
+        }
+
+        assertEquals(listOf(FeedbackType.AMAZING), deps.audio.voices)
         deps.dispose()
     }
 
@@ -616,8 +741,17 @@ class GameStoreFactoryTest {
         val store = deps.factory().create(isNewGame = true)
         val piece = deps.engine.state.value.currentPieces.first()
         store.accept(GameStore.Intent.Place(piece.pieceId, 0, 0))
+
         assertTrue(deps.analytics.has("piece_place_attempt"))
-        assertTrue(deps.analytics.has("piece_place_success"))
+        val success = deps.analytics.events.single { it.first == "piece_place_success" }.second
+        assertEquals(piece.pieceId, success["piece_id"])
+        assertEquals(piece.shape.size, success["placed_cells"])
+        assertEquals(0, success["lines_count"])
+        assertEquals(piece.shape.size.toLong(), success["placement_points"])
+        assertEquals(piece.shape.size.toLong(), success["total_points"])
+        assertEquals("none", success["feedback"])
+        assertFalse("x" in success)
+        assertFalse("y" in success)
         deps.dispose()
     }
 
@@ -646,6 +780,13 @@ class GameStoreFactoryTest {
         runCurrent()
         assertEquals(0L, deps.engine.state.value.score)
         assertTrue(deps.analytics.has("restart_clicked"))
+        val restart = deps.analytics.events.last {
+            it.first == "game_started" && it.second["source"] == "restart"
+        }.second
+        assertTrue("layout_source" in restart)
+        assertTrue("initial_occupied_cells" in restart)
+        assertTrue("initial_tray_shape_ids" in restart)
+        assertTrue("initial_tray_size_categories" in restart)
         deps.dispose()
     }
 
@@ -738,11 +879,18 @@ class GameStoreFactoryTest {
         isGameOver = false,
     )
 
+    private fun knownStarterSeed(engine: GameEngine): Long =
+        (0L until 1_000L).first { seed ->
+            engine.startNewGame(seed = seed, allowStarterLayout = true)
+            !engine.state.value.grid.isBoardEmpty()
+        }
+
     /** All collaborators wired together so each test gets a fresh engine + factory. */
     private inner class TestDeps(
         savedState: GameState? = null,
         settingsBest: Long = 0L,
         reviewCount: Int = 0,
+        tutorialSeen: Boolean = false,
         failReviewPromptCount: Boolean = false,
         saveDelayMillis: Long = 0L,
         saveRepositoryOverride: GameSaveRepository? = null,
@@ -759,6 +907,7 @@ class GameStoreFactoryTest {
         val settings = FakeSettings(
             bestScore = settingsBest,
             reviewPromptCount = reviewCount,
+            tutorialSeenInitially = tutorialSeen,
             failReviewPromptCount = failReviewPromptCount,
             onBestScoreSet = { operations += "best" },
         )
@@ -845,6 +994,7 @@ private class ThrowingBestSettingsRepository : SettingsRepository {
     override val sfxEnabled = MutableStateFlow(true).asStateFlow()
     override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
     override val darkTheme = MutableStateFlow(false).asStateFlow()
+    override val adsEnabled = MutableStateFlow(true).asStateFlow()
     override val bestScore = MutableStateFlow(0L).asStateFlow()
     override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
     override val tutorialSeen = MutableStateFlow(false).asStateFlow()
@@ -852,6 +1002,7 @@ private class ThrowingBestSettingsRepository : SettingsRepository {
     override suspend fun setSfxEnabled(enabled: Boolean) = Unit
     override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
     override suspend fun setDarkTheme(enabled: Boolean) = Unit
+    override suspend fun setAdsEnabled(enabled: Boolean) = Unit
     override suspend fun setBestScore(score: Long) {
         if (score > 0L) error("best score failed")
     }
@@ -890,6 +1041,7 @@ private class StubSaveRepo(
 private class FakeSettings(
     bestScore: Long = 0L,
     reviewPromptCount: Int = 0,
+    tutorialSeenInitially: Boolean = false,
     private val failReviewPromptCount: Boolean = false,
     private val onBestScoreSet: () -> Unit = {},
 ) : SettingsRepository {
@@ -899,13 +1051,15 @@ private class FakeSettings(
     override val sfxEnabled = MutableStateFlow(true).asStateFlow()
     override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
     override val darkTheme = MutableStateFlow(false).asStateFlow()
+    override val adsEnabled = MutableStateFlow(true).asStateFlow()
     override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
     override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
-    override val tutorialSeen = MutableStateFlow(false).asStateFlow()
+    override val tutorialSeen = MutableStateFlow(tutorialSeenInitially).asStateFlow()
     override suspend fun setMusicEnabled(enabled: Boolean) {}
     override suspend fun setSfxEnabled(enabled: Boolean) {}
     override suspend fun setVibrationEnabled(enabled: Boolean) {}
     override suspend fun setDarkTheme(enabled: Boolean) {}
+    override suspend fun setAdsEnabled(enabled: Boolean) {}
     override suspend fun setBestScore(score: Long) {
         onBestScoreSet()
         if (score > bestScoreFlow.value) bestScoreFlow.value = score
@@ -919,16 +1073,12 @@ private class FakeSettings(
 }
 
 private class RecordingAudio : AudioRepository {
-    var placementCount = 0
-    val clearedLines = mutableListOf<Int>()
-    val feedback = mutableListOf<FeedbackType>()
-    val combos = mutableListOf<Int>()
+    val voices = mutableListOf<FeedbackType>()
     var startMusicCount = 0
     var stopMusicCount = 0
-    override suspend fun playPlacementSound() { placementCount += 1 }
-    override suspend fun playClearSound(lines: Int) { clearedLines += lines }
-    override suspend fun playVoiceFeedback(type: FeedbackType) { feedback += type }
-    override suspend fun playVoiceCombo(combo: Int) { combos += combo }
+    override suspend fun playVoiceFeedback(type: FeedbackType) {
+        voices += type
+    }
     override suspend fun startMusic() { startMusicCount += 1 }
     override suspend fun stopMusic() { stopMusicCount += 1 }
     override suspend fun onAppBackground() {}

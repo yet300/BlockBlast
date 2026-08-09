@@ -48,12 +48,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func startConsentFlow(from presenter: UIViewController) {
         IosAdBridge.shared.requestConsentAndAds = { [weak self, weak presenter] in
             guard let self, let presenter else { return }
-            self.startConsentFlow(from: presenter)
+            self.gatherConsentAndAds(from: presenter)
         }
 
+        AdsManager.shared.requestConsentAndAds()
+    }
+
+    @MainActor
+    private func gatherConsentAndAds(from presenter: UIViewController) {
         ConsentManager.shared.gather(from: presenter) {
+            guard AdsManager.shared.enabled else { return }
             // Ads may now be requested — preload the game-over interstitial.
             Task { @MainActor in
+                AdCoordinator.shared.loadPendingBannersIfAllowed()
                 await AdCoordinator.shared.loadInterstitial()
             }
         }

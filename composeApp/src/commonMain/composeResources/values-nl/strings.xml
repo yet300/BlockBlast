@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Open-source-bibliotheken</string>
     <string name="open_source_libraries_subtitle">Dankbetuigingen</string>
 
+    <string name="advertising">Advertenties</string>
+    <string name="advertising_enabled_subtitle">Ondersteunen gratis ontwikkeling</string>
+    <string name="advertising_disabled_subtitle">Uitgeschakeld — herlevingen zijn gratis</string>
+    <string name="support_game">Steun het spel</string>
+    <string name="support_game_subtitle">Geef het project een ster op GitHub of doneer</string>
+    <string name="disable_ads">Advertenties uitschakelen?</string>
+    <string name="disable_ads_title">Advertenties houden Logica gratis</string>
+    <string name="disable_ads_body">Advertenties helpen ons het spel te verbeteren en alle functies gratis te houden. Als je ze uitschakelt, blijven herlevingen gratis — en je kunt Logica nog steeds steunen met een GitHub-ster of een donatie.</string>
+    <string name="keep_ads">Advertenties behouden</string>
+    <string name="disable_ads_anyway">Toch uitschakelen</string>
+
     <!-- Common -->
     <string name="exit">Afsluiten</string>
 

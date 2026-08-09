@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.open_source_libraries
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.settings.libraries.LibrariesSettingsComponent
 import ge.yet3.blokblast.component.icon.OpenInNew
 import ge.yet3.blokblast.screen.settings.SettingsDivider
@@ -29,7 +31,23 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun LibrariesSettingsContent(component: LibrariesSettingsComponent) {
     val uriHandler = LocalUriHandler.current
+    val model by component.model.subscribeAsState()
 
+    LibrariesSettingsContent(
+        libraries = model.libraries,
+        onBackClicked = component::onBackClicked,
+        onLibraryClicked = { library ->
+            library.url?.let(uriHandler::openUri)
+        },
+    )
+}
+
+@Composable
+private fun LibrariesSettingsContent(
+    libraries: List<LibrariesSettingsComponent.Library>,
+    onBackClicked: () -> Unit,
+    onLibraryClicked: (LibrariesSettingsComponent.Library) -> Unit,
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -38,18 +56,22 @@ fun LibrariesSettingsContent(component: LibrariesSettingsComponent) {
         item {
             SettingsHeader(
                 title = stringResource(Res.string.open_source_libraries),
-                onBackClicked = component::onBackClicked,
+                onBackClicked = onBackClicked,
                 modifier = Modifier.padding(bottom = 12.dp),
             )
         }
 
         items(
-            items = component.libraries,
-            key = { it.url },
+            items = libraries,
+            key = { it.id },
         ) { lib ->
             LibraryRow(
                 library = lib,
-                onClick = { uriHandler.openUri(lib.url) },
+                onClick = if (lib.url != null) {
+                    { onLibraryClicked(lib) }
+                } else {
+                    null
+                },
             )
             SettingsDivider()
         }
@@ -59,12 +81,18 @@ fun LibrariesSettingsContent(component: LibrariesSettingsComponent) {
 @Composable
 private fun LibraryRow(
     library: LibrariesSettingsComponent.Library,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -83,11 +111,13 @@ private fun LibraryRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(
-            imageVector = OpenInNew,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp),
-        )
+        if (library.url != null) {
+            Icon(
+                imageVector = OpenInNew,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+        }
     }
 }

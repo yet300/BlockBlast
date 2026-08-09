@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Pustaka open-source</string>
     <string name="open_source_libraries_subtitle">Kredit dan pengakuan</string>
 
+    <string name="advertising">Iklan</string>
+    <string name="advertising_enabled_subtitle">Mendukung pengembangan gratis</string>
+    <string name="advertising_disabled_subtitle">Dinonaktifkan — hidup kembali gratis</string>
+    <string name="support_game">Dukung game</string>
+    <string name="support_game_subtitle">Beri bintang pada proyek di GitHub atau berdonasi</string>
+    <string name="disable_ads">Nonaktifkan iklan?</string>
+    <string name="disable_ads_title">Iklan membuat Logica tetap gratis</string>
+    <string name="disable_ads_body">Iklan membantu kami meningkatkan game dan menjaga semua fitur tetap gratis. Jika dinonaktifkan, hidup kembali akan tetap gratis — dan Anda masih dapat mendukung Logica dengan bintang GitHub atau donasi.</string>
+    <string name="keep_ads">Pertahankan iklan</string>
+    <string name="disable_ads_anyway">Tetap nonaktifkan</string>
+
     <!-- Common -->
     <string name="exit">Keluar</string>
 

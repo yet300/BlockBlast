@@ -7,6 +7,7 @@ import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.RoundLayoutSource
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,8 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -74,6 +77,7 @@ class GameEngineTest {
         val s = engine.state.value
         assertEquals(0L, s.score)
         assertEquals(0, s.comboLevel)
+        assertEquals(0, s.movesWithoutClear)
         assertEquals(900L, s.bestScore)
         assertEquals(900L, s.bestAtRoundStart)
         assertFalse(s.reviewPromptFiredThisRound)
@@ -86,6 +90,37 @@ class GameEngineTest {
     fun startNewGame_initial_grid_is_empty() {
         engine.startNewGame()
         assertTrue(engine.state.value.grid.isBoardEmpty())
+    }
+
+    @Test
+    fun startNewGame_can_use_a_validated_starter_round() {
+        fixedGen.nextTrayPieces = listOf(ONE_CELL, H2, V2)
+        val starterSeed = (0L until 1_000L).first { seed ->
+            !StarterLayoutGenerator(fixedGen).generate(seed, enabled = true).grid.isBoardEmpty()
+        }
+
+        val info = engine.startNewGame(seed = starterSeed, allowStarterLayout = true)
+
+        assertFalse(engine.state.value.grid.isBoardEmpty())
+        assertEquals(RoundLayoutSource.STARTER, info.layoutSource)
+        assertNotNull(info.starterTemplateId)
+        assertNotNull(info.quarterTurns)
+        assertNotNull(info.reflectedHorizontally)
+        assertEquals(
+            fixedGen.nextTrayPieces.map { it.id },
+            engine.state.value.currentPieces.map { it.shape.id },
+        )
+    }
+
+    @Test
+    fun startNewGame_does_not_reuse_piece_ids_from_the_previous_round() {
+        engine.startNewGame(seed = 1L)
+        val previousIds = engine.state.value.currentPieces.mapTo(mutableSetOf()) { it.pieceId }
+
+        engine.startNewGame(seed = 2L)
+        val nextIds = engine.state.value.currentPieces.mapTo(mutableSetOf()) { it.pieceId }
+
+        assertTrue(previousIds.intersect(nextIds).isEmpty())
     }
 
     // ── markReviewPromptFired ───────────────────────────────────────────
@@ -254,11 +289,25 @@ class GameEngineTest {
         assertEquals(3, engine.state.value.currentPieces.size)
     }
 
+    @Test
+    fun tray_refill_uses_grid_after_the_third_placement() {
+        fixedGen.nextTrayPieces = listOf(ONE_CELL, ONE_CELL, ONE_CELL)
+        engine.startNewGame()
+        fixedGen.lastRequestedGrid = null
+
+        repeat(3) {
+            val piece = engine.state.value.currentPieces.first()
+            assertTrue(engine.placePiece(piece.pieceId, it, 0))
+        }
+
+        assertEquals(engine.state.value.grid, fixedGen.lastRequestedGrid)
+    }
+
     // ── Clearing lines / combos / feedback ──────────────────────────────
 
     @Test
     fun clearing_one_row_awards_clear_points_and_combo_one() {
-        val grid = fillRow(row = 0, cols = 0..6)
+        val grid = fillRow(row = 0, cols = 0..6).withCell(4, 5, 1)
         val placePiece = piece(100, ONE_CELL)
         engine.restore(
             GameState(
@@ -268,11 +317,30 @@ class GameEngineTest {
         )
         assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
         val s = engine.state.value
-        // newCombo=1 is passed to clearPoints (engine increments BEFORE scoring),
-        // so multiplier = 1.5. placement=1, clear = 10*1*1.5 = 15 -> total 16.
-        assertEquals(16L, s.score)
+        // One placed cell + one-line base 10 * combo level 1.
+        assertEquals(11L, s.score)
         assertEquals(1, s.comboLevel)
         for (x in 0 until Grid.SIZE) assertTrue(s.grid.isEmpty(x, 0))
+    }
+
+    @Test
+    fun clearing_last_blocks_adds_all_clear_bonus_to_score_and_points_event() {
+        val grid = fillRow(row = 0, cols = 0..6)
+        val placePiece = piece(100, ONE_CELL)
+        engine.restore(
+            GameState(
+                grid = grid,
+                currentPieces = listOf(placePiece, piece(101, ONE_CELL)),
+            ),
+        )
+
+        assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
+
+        val state = engine.state.value
+        assertTrue(state.grid.isBoardEmpty())
+        assertEquals(311L, state.score)
+        assertEquals(311L, state.bestScore)
+        assertEquals(311L, state.lastPointsAwarded.points)
     }
 
     @Test
@@ -286,17 +354,12 @@ class GameEngineTest {
         engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
         engine.events.test {
             assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
-            var saw: FeedbackType? = null
-            while (true) {
-                val ev = awaitItem()
-                if (ev is GameEvent.Feedback) { saw = ev.type; break }
-                if (ev is GameEvent.GameOver) break
-            }
-            assertEquals(FeedbackType.GOOD, saw)
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(FeedbackType.GOOD, event.feedback)
             cancelAndIgnoreRemainingEvents()
         }
-        // newCombo=1 → multiplier 1.5; base 20 * sim 2 * 1.5 = 60; placement = 2 → 62
-        assertEquals(62L, engine.state.value.score)
+        // Two placed cells + two-line base 20 * combo level 1.
+        assertEquals(22L, engine.state.value.score)
     }
 
     @Test
@@ -311,18 +374,49 @@ class GameEngineTest {
 
         engine.events.test {
             engine.placePiece(p.pieceId, 0, 0)
-            // Expected sequence: PiecePlaced, LinesCleared(cross), Feedback (combo=1, no ComboActive)
-            var crossSeen = false
-            var feedback: FeedbackType? = null
-            repeat(3) {
-                val ev = awaitItem()
-                if (ev is GameEvent.LinesCleared && ev.isCrossClear) crossSeen = true
-                if (ev is GameEvent.Feedback) feedback = ev.type
-            }
-            assertTrue(crossSeen)
-            assertEquals(FeedbackType.EXCELLENT, feedback)
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertTrue(event.isCrossClear)
+            assertEquals(FeedbackType.EXCELLENT, event.feedback)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun clearing_three_rows_emits_one_complete_move_result() = runTest {
+        var grid = Grid().withCell(4, 5, 1)
+        for (row in 0..2) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val placePiece = piece(
+            id = 1,
+            shape = Polyomino(
+                id = "v3",
+                cells = listOf(Position(0, 0), Position(0, 1), Position(0, 2)),
+            ),
+        )
+        engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
+
+        engine.events.test {
+            assertTrue(engine.placePiece(placePiece.pieceId, 7, 0))
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(placePiece.pieceId, event.pieceId)
+            assertEquals(3, event.placedCellCount)
+            assertEquals(3, event.linesCount)
+            assertEquals(24, event.clearedCells.size)
+            assertFalse(event.isCrossClear)
+            assertFalse(event.isBoardEmpty)
+            assertEquals(3L, event.placementPoints)
+            assertEquals(60L, event.clearPoints)
+            assertEquals(0L, event.allClearPoints)
+            assertEquals(63L, event.totalPoints)
+            assertEquals(1, event.comboLevel)
+            assertEquals(0, event.movesWithoutClear)
+            assertEquals(FeedbackType.GREAT, event.feedback)
+            assertFalse(event.isGameOver)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(FeedbackType.GREAT, engine.state.value.lastFeedback.type)
     }
 
     @Test
@@ -338,15 +432,48 @@ class GameEngineTest {
     }
 
     @Test
-    fun no_clear_resets_combo() {
-        val grid = fillRow(0, 0..6)
+    fun first_two_moves_without_clear_preserve_combo_and_third_resets_it() {
+        val grid = fillRow(0, 0..6).withCell(7, 7, 1)
         val first = piece(1, ONE_CELL)
         val second = piece(2, ONE_CELL)
-        engine.restore(GameState(grid = grid, currentPieces = listOf(first, second)))
+        val third = piece(3, ONE_CELL)
+        val fourth = piece(4, ONE_CELL)
+        engine.restore(GameState(grid = grid, currentPieces = listOf(first, second, third, fourth)))
+
         engine.placePiece(first.pieceId, 7, 0)
         assertEquals(1, engine.state.value.comboLevel)
-        engine.placePiece(second.pieceId, 4, 4)
+        assertEquals(0, engine.state.value.movesWithoutClear)
+
+        engine.placePiece(second.pieceId, 0, 2)
+        assertEquals(1, engine.state.value.comboLevel)
+        assertEquals(1, engine.state.value.movesWithoutClear)
+
+        engine.placePiece(third.pieceId, 2, 2)
+        assertEquals(1, engine.state.value.comboLevel)
+        assertEquals(2, engine.state.value.movesWithoutClear)
+
+        engine.placePiece(fourth.pieceId, 4, 2)
         assertEquals(0, engine.state.value.comboLevel)
+        assertEquals(0, engine.state.value.movesWithoutClear)
+    }
+
+    @Test
+    fun clear_resets_moves_without_clear() {
+        val grid = fillRow(0, 0..6)
+        val clearingPiece = piece(1, ONE_CELL)
+        engine.restore(
+            GameState(
+                grid = grid,
+                comboLevel = 2,
+                movesWithoutClear = 2,
+                currentPieces = listOf(clearingPiece, piece(2, ONE_CELL)),
+            ),
+        )
+
+        engine.placePiece(clearingPiece.pieceId, 7, 0)
+
+        assertEquals(3, engine.state.value.comboLevel)
+        assertEquals(0, engine.state.value.movesWithoutClear)
     }
 
     @Test
@@ -435,6 +562,7 @@ class GameEngineTest {
         assertEquals(1, engine.state.value.revivesUsed)
         assertFalse(engine.state.value.isGameOver)
         assertEquals(0, engine.state.value.comboLevel)
+        assertEquals(0, engine.state.value.movesWithoutClear)
         engine.restore(engine.state.value.copy(isGameOver = true))
         assertFalse(engine.continueWithSmallBlocks())
     }
@@ -468,31 +596,59 @@ class GameEngineTest {
         }
     }
 
-    // ── Events ordering ─────────────────────────────────────────────────
+    // ── Atomic move results ──────────────────────────────────────────────
 
     @Test
-    fun events_emitted_in_order_PiecePlaced_then_LinesCleared() = runTest {
+    fun successful_placement_emits_exactly_one_move_result() = runTest {
         val grid = fillRow(0, 0..6)
         val p = piece(1, ONE_CELL)
         engine.restore(GameState(grid = grid, currentPieces = listOf(p)))
         engine.events.test {
             engine.placePiece(p.pieceId, 7, 0)
-            assertTrue(awaitItem() is GameEvent.PiecePlaced)
-            assertTrue(awaitItem() is GameEvent.LinesCleared)
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(p.pieceId, event.pieceId)
+            assertEquals(1, event.linesCount)
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun ComboActive_not_emitted_below_level_two() = runTest {
+    fun first_clear_reports_combo_level_one() = runTest {
         val grid = fillRow(0, 0..6)
         val p = piece(1, ONE_CELL)
         engine.restore(GameState(grid = grid, currentPieces = listOf(p, piece(2, ONE_CELL))))
         engine.events.test {
             engine.placePiece(p.pieceId, 7, 0)
-            val events = mutableListOf<GameEvent>()
-            repeat(3) { events += awaitItem() }
-            assertTrue(events.none { it is GameEvent.ComboActive })
+            val event = assertIs<GameEvent.MoveResolved>(awaitItem())
+            assertEquals(1, event.comboLevel)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun combo_three_emits_one_amazing_and_later_combo_does_not_repeat_it() = runTest {
+        var grid = Grid().withCell(7, 7, 1)
+        for (row in 0..3) {
+            for (x in 0..6) grid = grid.withCell(x, row, 1)
+        }
+        val pieces = (1L..4L).map { piece(it, ONE_CELL) }
+        engine.restore(GameState(grid = grid, currentPieces = pieces))
+
+        engine.events.test {
+            pieces.forEachIndexed { row, piece ->
+                assertTrue(engine.placePiece(piece.pieceId, 7, row))
+            }
+            val events = buildList<GameEvent.MoveResolved> {
+                repeat(4) {
+                    add(assertIs<GameEvent.MoveResolved>(awaitItem()))
+                }
+            }
+
+            assertEquals(
+                listOf(FeedbackType.AMAZING),
+                events.mapNotNull { it.feedback },
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -589,7 +745,12 @@ class GameEngineTest {
 
     private class ControllableShapeGenerator : ShapeGenerator {
         var nextTrayPieces: List<Polyomino> = listOf(ONE_CELL, ONE_CELL, ONE_CELL)
+        var lastRequestedGrid: Grid? = null
         override fun nextTray(seed: Long?): List<Polyomino> = nextTrayPieces
+        override fun nextTray(grid: Grid, seed: Long?): List<Polyomino> {
+            lastRequestedGrid = grid
+            return nextTrayPieces
+        }
         override fun smallReviveTray(): List<Polyomino> = listOf(ONE_CELL, H2, V2)
     }
 

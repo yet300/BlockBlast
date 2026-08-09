@@ -6,13 +6,14 @@ import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.RoundLayoutSource
+import ge.yet.blokblast.domain.model.RoundStartInfo
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.ClearEvent
 import ge.yet.blokblast.domain.model.FeedbackEvent
-import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.model.PointsEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -57,15 +58,25 @@ class GameEngine(
     // ---------- Lifecycle ----------
 
     /** Start a fresh game. Pass [seed] for deterministic tests. */
-    fun startNewGame(seed: Long? = null, bestScore: Long = state.value.bestScore) {
+    fun startNewGame(
+        seed: Long? = null,
+        bestScore: Long = state.value.bestScore,
+        allowStarterLayout: Boolean = false,
+    ): RoundStartInfo {
         deterministicSeed = seed
-        pieceIdCounter = 0
+        val startingRound = StarterLayoutGenerator(shapeGenerator).generate(
+            seed = deterministicSeed,
+            enabled = allowStarterLayout,
+        )
+        val startingPieces = startingRound.shapes.map { wrapInPiece(it) }
+        deterministicSeed = deterministicSeed?.plus(1)
         state.value = GameState(
-            grid = Grid(),
+            grid = startingRound.grid,
             score = 0,
             bestScore = bestScore,
             comboLevel = 0,
-            currentPieces = generateTray(),
+            movesWithoutClear = 0,
+            currentPieces = startingPieces,
             isGameOver = false,
             revivesUsed = 0,
             bestAtRoundStart = bestScore,
@@ -73,6 +84,17 @@ class GameEngine(
         )
         events.tryEmit(GameEvent.GameStarted)
         autoSave()
+        val starterLayout = startingRound.starterLayout
+        return RoundStartInfo(
+            layoutSource = if (starterLayout == null) {
+                RoundLayoutSource.EMPTY
+            } else {
+                RoundLayoutSource.STARTER
+            },
+            starterTemplateId = starterLayout?.templateId,
+            quarterTurns = starterLayout?.quarterTurns,
+            reflectedHorizontally = starterLayout?.reflectedHorizontally,
+        )
     }
 
     /**
@@ -223,31 +245,48 @@ class GameEngine(
 
         val isBoardEmpty = clearedCells.isNotEmpty() && newGrid.isBoardEmpty()
 
-        // 4. Combo: +1 if cleared, reset to 0 if not.
-        val newCombo = if (totalLines > 0) current.comboLevel + 1 else 0
+        // 4. Combo: a clear advances the chain; two misses preserve it and
+        //    the third consecutive miss resets the grace window and combo.
+        val (newCombo, newMovesWithoutClear) = if (totalLines > 0) {
+            current.comboLevel + 1 to 0
+        } else {
+            val missedMoves = current.movesWithoutClear.coerceAtLeast(0) + 1
+            if (missedMoves >= GameState.COMBO_RESET_MISS_COUNT) {
+                0 to 0
+            } else {
+                current.comboLevel to missedMoves
+            }
+        }
 
-        // 5. Clear points (with current combo level applied).
+        // 5. Clear points (with current combo level applied) and all-clear bonus.
         val clearPts = scoreCalculator.clearPoints(totalLines, newCombo)
-        val newScore = current.score + placementPts + clearPts
+        val allClearPts = scoreCalculator.allClearBonus(totalLines, isBoardEmpty)
+        val totalPoints = placementPts + clearPts + allClearPts
+        val newScore = current.score + totalPoints
         val newBest = maxOf(current.bestScore, newScore)
 
         // 6. Remove placed piece from tray; refill if empty.
         val remaining = current.currentPieces.filter { it.pieceId != pieceId }
-        val nextTray = if (remaining.isEmpty()) generateTray() else remaining
+        val nextTray = if (remaining.isEmpty()) generateTray(newGrid) else remaining
 
         // 7. Game-over detection: no remaining piece can be placed anywhere.
         val gameOver = !anyPieceFits(nextTray, newGrid)
 
         // Precompute once — used in both the state copy and the event emissions below.
         val clearedList = if (clearedCells.isNotEmpty()) clearedCells.toList() else null
-        val feedback = feedbackFor(fullRows, fullCols, isBoardEmpty)
-        val totalPoints = placementPts + clearPts
+        val feedback = selectVoiceFeedback(
+            linesCount = totalLines,
+            isCrossClear = isCrossClear,
+            isBoardEmpty = isBoardEmpty,
+            comboLevel = newCombo,
+        )
 
         val newState = current.copy(
             grid = newGrid,
             score = newScore,
             bestScore = newBest,
             comboLevel = newCombo,
+            movesWithoutClear = newMovesWithoutClear,
             currentPieces = nextTray,
             isGameOver = gameOver,
             lastClearedCells = if (clearedList != null) {
@@ -262,22 +301,27 @@ class GameEngine(
         )
         state.value = newState
 
-        // 8. Emit events in narrative order via tryEmit (buffer = 16, always room).
-        // tryEmit is synchronous and preserves FIFO; launch{emit} could re-order
-        // events if the coroutine scheduler interleaves two placePiece calls.
-        events.tryEmit(GameEvent.PiecePlaced(totalPoints))
-        if (clearedList != null) {
-            events.tryEmit(
-                GameEvent.LinesCleared(
-                    clearedCells = clearedList,
-                    linesCount = totalLines,
-                    isCrossClear = isCrossClear,
-                )
-            )
-            feedback?.let { events.tryEmit(GameEvent.Feedback(it)) }
-            if (newCombo >= 2) events.tryEmit(GameEvent.ComboActive(newCombo))
-        }
-        if (gameOver) events.tryEmit(GameEvent.GameOver)
+        // 8. Publish one immutable result after the matching state snapshot.
+        // Consumers can process the whole move serially without joining several
+        // independently emitted events with a later state value.
+        events.tryEmit(
+            GameEvent.MoveResolved(
+                pieceId = piece.pieceId,
+                placedCellCount = piece.shape.size,
+                clearedCells = clearedList.orEmpty(),
+                linesCount = totalLines,
+                isCrossClear = isCrossClear,
+                isBoardEmpty = isBoardEmpty,
+                placementPoints = placementPts,
+                clearPoints = clearPts,
+                allClearPoints = allClearPts,
+                totalPoints = totalPoints,
+                comboLevel = newCombo,
+                movesWithoutClear = newMovesWithoutClear,
+                feedback = feedback,
+                isGameOver = gameOver,
+            ),
+        )
 
         autoSave()
         return true
@@ -299,6 +343,7 @@ class GameEngine(
             isGameOver = false,
             revivesUsed = current.revivesUsed + 1,
             comboLevel = 0,
+            movesWithoutClear = 0,
         )
         events.tryEmit(GameEvent.GameStarted)
         autoSave()
@@ -314,8 +359,8 @@ class GameEngine(
         pendingSave?.cancelAndJoin()
     }
 
-    private fun generateTray(): List<Piece> {
-        val pieces = shapeGenerator.nextTray(deterministicSeed).map { wrapInPiece(it) }
+    private fun generateTray(grid: Grid): List<Piece> {
+        val pieces = shapeGenerator.nextTray(grid, deterministicSeed).map { wrapInPiece(it) }
         // Advance the seed so the next tray is different but still deterministic.
         deterministicSeed = deterministicSeed?.plus(1)
         return pieces
@@ -334,31 +379,6 @@ class GameEngine(
             }
         }
         return false
-    }
-
-    /**
-     * Rules (checked in priority order):
-     *   UNBELIEVABLE — entire board wiped clean in one move
-     *   EXCELLENT    — cross-clear (both rows AND cols) or 4+ lines at once
-     *   GREAT        — exactly 3 columns cleared (no rows involved)
-     *   GOOD         — any 2+ lines cleared
-     *   null         — 0-1 lines: no voice
-     */
-    private fun feedbackFor(
-        fullRows: List<Int>,
-        fullCols: List<Int>,
-        isBoardEmpty: Boolean,
-    ): FeedbackType? {
-        val totalLines = fullRows.size + fullCols.size
-        val isCross = fullRows.isNotEmpty() && fullCols.isNotEmpty()
-        return when {
-            totalLines == 0 -> null
-            isBoardEmpty -> FeedbackType.UNBELIEVABLE
-            isCross || totalLines >= 4 -> FeedbackType.EXCELLENT
-            fullCols.size == 3 && fullRows.isEmpty() -> FeedbackType.GREAT
-            totalLines >= 2 -> FeedbackType.GOOD
-            else -> null
-        }
     }
 
     private fun autoSave() {

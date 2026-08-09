@@ -13,6 +13,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 // of compositionLocalOf is worth the full-subtree recomposition on flip.
 val LocalVibrationEnabled = staticCompositionLocalOf { true }
 val LocalSoundEnabled = staticCompositionLocalOf { true }
+val LocalAdsEnabled = staticCompositionLocalOf { true }
 
 /** True once the user has finished or skipped the first-launch tutorial. */
 val LocalTutorialSeen = staticCompositionLocalOf { true }

@@ -44,6 +44,17 @@
     <string name="open_source_libraries">Åpen kildekode-biblioteker</string>
     <string name="open_source_libraries_subtitle">Anerkjennelser</string>
 
+    <string name="advertising">Annonser</string>
+    <string name="advertising_enabled_subtitle">Støtter gratis utvikling</string>
+    <string name="advertising_disabled_subtitle">Deaktivert — gjenopplivinger er gratis</string>
+    <string name="support_game">Støtt spillet</string>
+    <string name="support_game_subtitle">Gi prosjektet en stjerne på GitHub eller doner</string>
+    <string name="disable_ads">Deaktivere annonser?</string>
+    <string name="disable_ads_title">Annonser holder Logica gratis</string>
+    <string name="disable_ads_body">Annonser hjelper oss med å forbedre spillet og holde alle funksjoner gratis. Hvis du slår dem av, forblir gjenopplivinger gratis — og du kan fortsatt støtte Logica med en GitHub-stjerne eller en donasjon.</string>
+    <string name="keep_ads">Behold annonser</string>
+    <string name="disable_ads_anyway">Deaktiver likevel</string>
+
     <!-- Common -->
     <string name="exit">Avslutt</string>
 

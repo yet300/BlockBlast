@@ -66,6 +66,40 @@ class DefaultPieceTrayComponentTest {
     }
 
     @Test
+    fun restart_replaces_slot_when_same_id_now_has_a_different_shape() {
+        val initial = piece(1)
+        val horizontal = Polyomino(
+            id = "horizontal",
+            cells = listOf(Position(0, 0), Position(1, 0)),
+        )
+        val replacement = Piece(pieceId = 1, shape = horizontal, colorId = 2)
+        val (component, state) = build(listOf(initial))
+        val oldSlot = component.slots.value.single()
+
+        state.value = state.value.copy(currentPieces = listOf(replacement))
+
+        val newSlot = component.slots.value.single()
+        assertNotSame(oldSlot, newSlot)
+        assertEquals(replacement, newSlot.piece)
+    }
+
+    @Test
+    fun restart_clears_selection_when_same_id_now_references_a_different_piece() {
+        val initial = piece(1)
+        val replacement = Piece(
+            pieceId = 1,
+            shape = Polyomino("horizontal", listOf(Position(0, 0), Position(1, 0))),
+            colorId = 2,
+        )
+        val (component, state) = build(listOf(initial))
+        component.slots.value.single().onTap()
+
+        state.value = state.value.copy(currentPieces = listOf(replacement))
+
+        assertNull(component.selection.value.piece)
+    }
+
+    @Test
     fun tap_toggles_selection_and_clearSelection_resets() {
         val (component, _) = build(listOf(piece(1), piece(2), piece(3)))
         val slot1 = component.slots.value[1]

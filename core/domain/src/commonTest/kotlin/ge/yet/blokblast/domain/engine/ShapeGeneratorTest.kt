@@ -1,5 +1,7 @@
 package ge.yet.blokblast.domain.engine
 
+import ge.yet.blokblast.domain.model.Grid
+import ge.yet.blokblast.domain.model.Polyomino
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -7,6 +9,97 @@ import kotlin.test.assertTrue
 class ShapeGeneratorTest {
 
     private val gen = WeightedShapeGenerator()
+
+    @Test
+    fun open_board_trays_favor_large_shapes_over_compact_shapes() {
+        repeat(50) { seed ->
+            val tray = gen.nextTray(grid = Grid(), seed = seed.toLong())
+
+            assertTrue(tray.any { it.size >= 5 }, "tray has no large shape: $tray")
+            assertTrue(
+                tray.count { it.size <= 2 } <= 1,
+                "tray has too many compact shapes: $tray",
+            )
+        }
+    }
+
+    @Test
+    fun nearly_full_board_tray_keeps_at_least_one_placeable_shape() {
+        val cells = IntArray(Grid.SIZE * Grid.SIZE) { 1 }
+        cells[0] = Grid.EMPTY
+        val nearlyFullGrid = Grid(cells)
+
+        repeat(30) { seed ->
+            val tray = gen.nextTray(grid = nearlyFullGrid, seed = seed.toLong())
+
+            assertTrue(
+                tray.any { it.id == ShapeCatalog.SINGLE.id },
+                "tray must contain the only shape that fits: $tray",
+            )
+        }
+    }
+
+    @Test
+    fun generated_tray_has_three_distinct_shapes() {
+        repeat(100) { seed ->
+            val tray = gen.nextTray(grid = Grid(), seed = seed.toLong())
+
+            assertEquals(3, tray.map { it.id }.distinct().size, "duplicate tray: $tray")
+        }
+    }
+
+    @Test
+    fun open_board_trays_vary_their_size_mix() {
+        val sizeMixes = (0L until 100L).mapTo(mutableSetOf()) { seed ->
+            gen.nextTray(grid = Grid(), seed = seed)
+                .map { shape ->
+                    when (shape.size) {
+                        in 1..2 -> "compact"
+                        in 3..4 -> "medium"
+                        else -> "large"
+                    }
+                }
+                .sorted()
+        }
+
+        assertTrue(sizeMixes.size >= 2, "size mix never changes: $sizeMixes")
+    }
+
+    @Test
+    fun moderately_open_board_still_favors_large_shapes() {
+        val cells = IntArray(Grid.SIZE * Grid.SIZE) { Grid.EMPTY }
+        listOf(
+            0, 2, 4, 6,
+            9, 11, 13, 15,
+            16, 18, 20, 22,
+            25, 27, 29, 31,
+        ).forEach { cells[it] = 1 }
+        val grid = Grid(cells)
+
+        repeat(50) { seed ->
+            val tray = gen.nextTray(grid = grid, seed = seed.toLong())
+
+            assertTrue(tray.any { it.size >= 5 }, "tray has no large shape: $tray")
+            assertTrue(tray.count { it.size <= 2 } <= 1, "tray is too compact: $tray")
+        }
+    }
+
+    @Test
+    fun fragmented_open_board_tray_keeps_a_placeable_shape() {
+        val cells = IntArray(Grid.SIZE * Grid.SIZE) { Grid.EMPTY }
+        for (y in 0 until Grid.SIZE) {
+            for (x in 0 until Grid.SIZE) {
+                if ((x + y) % 3 == 2) cells[y * Grid.SIZE + x] = 1
+            }
+        }
+        val grid = Grid(cells)
+
+        repeat(100) { seed ->
+            val tray = gen.nextTray(grid = grid, seed = seed.toLong())
+
+            assertTrue(tray.any { it.canFit(grid) }, "no shape fits: $tray")
+        }
+    }
 
     @Test
     fun nextTray_has_size_three() {
@@ -23,31 +116,11 @@ class ShapeGeneratorTest {
     }
 
     @Test
-    fun nextTray_contains_one_small_and_one_medium_at_minimum() {
-        // First two slots before shuffle are always SMALL and MEDIUM; after
-        // shuffle they're still in the tray. So the tray's id-set always
-        // intersects SMALL and MEDIUM.
-        repeat(50) { seed ->
-            val ids = gen.nextTray(seed.toLong()).map { it.id }.toSet()
-            val smallIds = ShapeCatalog.SMALL.map { it.id }.toSet()
-            val mediumIds = ShapeCatalog.MEDIUM.map { it.id }.toSet()
-            assertTrue(
-                ids.any { it in smallIds },
-                "tray $ids has no SMALL piece (seed=$seed)",
-            )
-            assertTrue(
-                ids.any { it in mediumIds },
-                "tray $ids has no MEDIUM piece (seed=$seed)",
-            )
-        }
-    }
-
-    @Test
-    fun smallReviveTray_is_three_size_two_shapes() {
+    fun smallReviveTray_is_single_horizontal_two_and_vertical_two() {
         val tray = gen.smallReviveTray()
-        assertEquals(3, tray.size)
-        // SMALL[0..2] = h2, v2, diag2_tlbr — all size 2
-        assertTrue(tray.all { it.size == 2 })
+
+        assertEquals(listOf("single", "h2", "v2"), tray.map { it.id })
+        assertEquals(listOf(1, 2, 2), tray.map { it.size })
     }
 
     @Test
@@ -66,5 +139,21 @@ class ShapeGeneratorTest {
                 assertTrue(piece.id in allIds, "unknown id ${piece.id}")
             }
         }
+    }
+
+    private fun Polyomino.canFit(grid: Grid): Boolean {
+        for (y in 0 until Grid.SIZE) {
+            for (x in 0 until Grid.SIZE) {
+                if (cells.all { cell ->
+                        val gridX = x + cell.x
+                        val gridY = y + cell.y
+                        grid.inBounds(gridX, gridY) && grid.isEmpty(gridX, gridY)
+                    }
+                ) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }

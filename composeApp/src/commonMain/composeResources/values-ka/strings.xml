@@ -44,6 +44,17 @@
     <string name="open_source_libraries">ღია წყაროს ბიბლიოთეკები</string>
     <string name="open_source_libraries_subtitle">კრედიტები და მადლობები</string>
 
+    <string name="advertising">რეკლამა</string>
+    <string name="advertising_enabled_subtitle">მხარს უჭერს უფასო განვითარებას</string>
+    <string name="advertising_disabled_subtitle">გამორთულია — გაცოცხლება უფასოა</string>
+    <string name="support_game">თამაშის მხარდაჭერა</string>
+    <string name="support_game_subtitle">მიეცით პროექტს ვარსკვლავი GitHub-ზე ან გაიღეთ დონაცია</string>
+    <string name="disable_ads">გამოირთოს რეკლამა?</string>
+    <string name="disable_ads_title">რეკლამა Logica-ს უფასოდ ტოვებს</string>
+    <string name="disable_ads_body">რეკლამა გვეხმარება თამაშის გაუმჯობესებასა და ყველა ფუნქციის უფასოდ დატოვებაში. თუ მას გამორთავთ, გაცოცხლება კვლავ უფასო იქნება — Logica-ს კი GitHub-ის ვარსკვლავით ან დონაციით დაუჭერთ მხარს.</string>
+    <string name="keep_ads">რეკლამის დატოვება</string>
+    <string name="disable_ads_anyway">მაინც გამორთვა</string>
+
     <!-- Common -->
     <string name="exit">გასვლა</string>
 
