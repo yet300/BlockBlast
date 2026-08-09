@@ -5,6 +5,8 @@ import ge.yet.blokblast.domain.model.Polyomino
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class StarterLayoutGeneratorTest {
@@ -18,6 +20,7 @@ class StarterLayoutGeneratorTest {
 
             assertTrue(round.grid.isBoardEmpty())
             assertEquals(3, round.shapes.size)
+            assertNull(round.starterLayout)
         }
     }
 
@@ -51,6 +54,9 @@ class StarterLayoutGeneratorTest {
             assertTrue(occupied in 14..22, "occupied=$occupied")
             assertEquals(3, round.shapes.size)
             assertFalse(round.grid.hasCompleteLine(), "starter contains a complete line")
+            val metadata = assertNotNull(round.starterLayout)
+            assertTrue(metadata.templateId in 1..12)
+            assertTrue(metadata.quarterTurns in 0..3)
         }
     }
 

@@ -8,6 +8,13 @@ import kotlin.random.Random
 internal data class StartingRound(
     val grid: Grid,
     val shapes: List<Polyomino>,
+    val starterLayout: StarterLayoutMetadata? = null,
+)
+
+internal data class StarterLayoutMetadata(
+    val templateId: Int,
+    val quarterTurns: Int,
+    val reflectedHorizontally: Boolean,
 )
 
 /** Builds optional, seeded opening boards and rejects layouts that trap the initial tray. */
@@ -24,18 +31,31 @@ internal class StarterLayoutGenerator(
         }
 
         repeat(MAX_LAYOUT_ATTEMPTS) {
-            val template = TEMPLATES[random.nextInt(TEMPLATES.size)]
+            val templateIndex = random.nextInt(TEMPLATES.size)
+            val quarterTurns = random.nextInt(4)
+            val reflectedHorizontally = random.nextBoolean()
+            val template = TEMPLATES[templateIndex]
             val transformed = transform(
                 positions = template,
-                rotations = random.nextInt(4),
-                reflectHorizontally = random.nextBoolean(),
+                rotations = quarterTurns,
+                reflectHorizontally = reflectedHorizontally,
             )
             val grid = transformed.toGrid(random)
             if (grid.hasCompleteLine()) return@repeat
 
             val shapes = shapeGenerator.nextTray(grid, seed)
             if (shapes.any { !it.canFit(grid) }) return@repeat
-            if (canPlaceAll(grid, shapes)) return StartingRound(grid, shapes)
+            if (canPlaceAll(grid, shapes)) {
+                return StartingRound(
+                    grid = grid,
+                    shapes = shapes,
+                    starterLayout = StarterLayoutMetadata(
+                        templateId = templateIndex + 1,
+                        quarterTurns = quarterTurns,
+                        reflectedHorizontally = reflectedHorizontally,
+                    ),
+                )
+            }
         }
 
         return StartingRound(emptyGrid, shapeGenerator.nextTray(emptyGrid, seed))

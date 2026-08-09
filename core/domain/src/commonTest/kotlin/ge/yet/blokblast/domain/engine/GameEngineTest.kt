@@ -7,6 +7,7 @@ import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.RoundLayoutSource
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -97,9 +99,13 @@ class GameEngineTest {
             !StarterLayoutGenerator(fixedGen).generate(seed, enabled = true).grid.isBoardEmpty()
         }
 
-        engine.startNewGame(seed = starterSeed, allowStarterLayout = true)
+        val info = engine.startNewGame(seed = starterSeed, allowStarterLayout = true)
 
         assertFalse(engine.state.value.grid.isBoardEmpty())
+        assertEquals(RoundLayoutSource.STARTER, info.layoutSource)
+        assertNotNull(info.starterTemplateId)
+        assertNotNull(info.quarterTurns)
+        assertNotNull(info.reflectedHorizontally)
         assertEquals(
             fixedGen.nextTrayPieces.map { it.id },
             engine.state.value.currentPieces.map { it.shape.id },

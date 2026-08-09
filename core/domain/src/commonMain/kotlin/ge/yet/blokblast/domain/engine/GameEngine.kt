@@ -6,6 +6,8 @@ import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.RoundLayoutSource
+import ge.yet.blokblast.domain.model.RoundStartInfo
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -60,7 +62,7 @@ class GameEngine(
         seed: Long? = null,
         bestScore: Long = state.value.bestScore,
         allowStarterLayout: Boolean = false,
-    ) {
+    ): RoundStartInfo {
         deterministicSeed = seed
         val startingRound = StarterLayoutGenerator(shapeGenerator).generate(
             seed = deterministicSeed,
@@ -82,6 +84,17 @@ class GameEngine(
         )
         events.tryEmit(GameEvent.GameStarted)
         autoSave()
+        val starterLayout = startingRound.starterLayout
+        return RoundStartInfo(
+            layoutSource = if (starterLayout == null) {
+                RoundLayoutSource.EMPTY
+            } else {
+                RoundLayoutSource.STARTER
+            },
+            starterTemplateId = starterLayout?.templateId,
+            quarterTurns = starterLayout?.quarterTurns,
+            reflectedHorizontally = starterLayout?.reflectedHorizontally,
+        )
     }
 
     /**

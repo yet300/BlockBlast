@@ -2,6 +2,7 @@ package ge.yet.blockblast.feature.game.store
 
 import ge.yet.blokblast.domain.engine.GameEngine
 import ge.yet.blokblast.domain.model.GameState
+import ge.yet.blokblast.domain.model.RoundStartInfo
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 
@@ -22,6 +23,11 @@ internal class GameInitializer(
         ResultRestore("result_restore"),
     }
 
+    data class Result(
+        val source: Source,
+        val roundStart: RoundStartInfo? = null,
+    )
+
     fun seedBestScore() {
         engine.seedBestScore(settings.bestScore.value)
     }
@@ -30,38 +36,38 @@ internal class GameInitializer(
         isNewGame: Boolean,
         restoredResultState: GameState? = null,
         newGameSeed: Long? = null,
-    ): Source {
+    ): Result {
         if (restoredResultState != null) {
-            return Source.ResultRestore
+            return Result(Source.ResultRestore)
         }
 
         val current = engine.state.value
 
         if (isNewGame || current.isGameOver) {
-            engine.startNewGame(
+            val roundStart = engine.startNewGame(
                 seed = newGameSeed,
                 bestScore = current.bestScore,
                 allowStarterLayout = settings.tutorialSeen.value,
             )
-            return Source.New
+            return Result(Source.New, roundStart)
         }
 
         if (current.currentPieces.isEmpty()) {
             val saved = saveRepository.load()
             return if (saved != null && !saved.isGameOver && saved.currentPieces.isNotEmpty()) {
                 engine.restore(saved)
-                Source.Continue
+                Result(Source.Continue)
             } else {
-                engine.startNewGame(
+                val roundStart = engine.startNewGame(
                     seed = newGameSeed,
                     bestScore = current.bestScore,
                     allowStarterLayout = settings.tutorialSeen.value,
                 )
-                Source.New
+                Result(Source.New, roundStart)
             }
         }
 
         // Warm continue: engine already holds an in-flight round; leave it.
-        return Source.Continue
+        return Result(Source.Continue)
     }
 }

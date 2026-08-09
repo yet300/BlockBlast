@@ -11,6 +11,7 @@ import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
+import ge.yet.blokblast.domain.model.RoundLayoutSource
 import ge.yet.blokblast.domain.model.FeedbackType
 import ge.yet.blokblast.domain.repository.AnalyticRepository
 import ge.yet.blokblast.domain.repository.AudioRepository
@@ -69,7 +70,51 @@ class GameStoreFactoryTest {
         // engine should be in a fresh round
         assertEquals(0L, deps.engine.state.value.score)
         assertTrue(deps.engine.state.value.currentPieces.isNotEmpty())
-        assertTrue(deps.analytics.has("game_started", mapOf("source" to "new")))
+        assertTrue(
+            deps.analytics.has(
+                "game_started",
+                mapOf(
+                    "source" to "new",
+                    "layout_source" to "empty",
+                    "initial_occupied_cells" to 0,
+                ),
+            ),
+        )
+        deps.dispose()
+    }
+
+    @Test
+    fun bootstrap_populated_start_logs_layout_and_initial_tray_metadata() = runTest {
+        val deps = TestDeps(tutorialSeen = true)
+        val starterSeed = knownStarterSeed(deps.engine)
+
+        deps.factory().create(isNewGame = true, newGameSeed = starterSeed)
+
+        val state = deps.engine.state.value
+        val params = deps.analytics.events.single { it.first == "game_started" }.second
+        assertEquals("new", params["source"])
+        assertEquals("starter", params["layout_source"])
+        assertEquals(
+            state.grid.cells.count { it != Grid.EMPTY },
+            params["initial_occupied_cells"],
+        )
+        assertEquals(
+            state.currentPieces.joinToString(",") { it.shape.id },
+            params["initial_tray_shape_ids"],
+        )
+        assertEquals(
+            state.currentPieces.joinToString(",") { piece ->
+                when (piece.shape.size) {
+                    in 1..2 -> "compact"
+                    in 3..4 -> "medium"
+                    else -> "large"
+                }
+            },
+            params["initial_tray_size_categories"],
+        )
+        assertTrue("starter_template_id" in params)
+        assertTrue("starter_quarter_turns" in params)
+        assertTrue("starter_reflected_horizontally" in params)
         deps.dispose()
     }
 
@@ -78,12 +123,14 @@ class GameStoreFactoryTest {
         val deps = TestDeps(tutorialSeen = false)
         val starterSeed = knownStarterSeed(deps.engine)
 
-        GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
+        val result = GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
             isNewGame = true,
             newGameSeed = starterSeed,
         )
 
         assertTrue(deps.engine.state.value.grid.isBoardEmpty())
+        assertEquals(GameInitializer.Source.New, result.source)
+        assertEquals(RoundLayoutSource.EMPTY, result.roundStart?.layoutSource)
         deps.dispose()
     }
 
@@ -92,12 +139,14 @@ class GameStoreFactoryTest {
         val deps = TestDeps(tutorialSeen = true)
         val starterSeed = knownStarterSeed(deps.engine)
 
-        GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
+        val result = GameInitializer(deps.engine, deps.saveRepo, deps.settings).initialize(
             isNewGame = true,
             newGameSeed = starterSeed,
         )
 
         assertFalse(deps.engine.state.value.grid.isBoardEmpty())
+        assertEquals(GameInitializer.Source.New, result.source)
+        assertEquals(RoundLayoutSource.STARTER, result.roundStart?.layoutSource)
         deps.dispose()
     }
 
@@ -745,6 +794,13 @@ class GameStoreFactoryTest {
         runCurrent()
         assertEquals(0L, deps.engine.state.value.score)
         assertTrue(deps.analytics.has("restart_clicked"))
+        val restart = deps.analytics.events.last {
+            it.first == "game_started" && it.second["source"] == "restart"
+        }.second
+        assertTrue("layout_source" in restart)
+        assertTrue("initial_occupied_cells" in restart)
+        assertTrue("initial_tray_shape_ids" in restart)
+        assertTrue("initial_tray_size_categories" in restart)
         deps.dispose()
     }
 
