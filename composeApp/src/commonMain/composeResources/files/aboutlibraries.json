@@ -2699,7 +2699,7 @@
         },
         {
             "uniqueId": "com.google.firebase:firebase-bom",
-            "artifactVersion": "34.16.0",
+            "artifactVersion": "34.17.0",
             "name": "com.google.firebase:firebase-bom",
             "description": "",
             "developers": [
@@ -2714,7 +2714,7 @@
         },
         {
             "uniqueId": "com.google.firebase:firebase-common",
-            "artifactVersion": "22.1.0",
+            "artifactVersion": "22.2.0",
             "name": "com.google.firebase:firebase-common",
             "description": "",
             "developers": [
@@ -3113,7 +3113,7 @@
         },
         {
             "uniqueId": "dev.zacsweers.metro:runtime-jvm",
-            "artifactVersion": "1.3.2",
+            "artifactVersion": "1.4.1",
             "name": "Metro Runtime",
             "description": "A multiplatform, compile-time injection framework for Kotlin.",
             "website": "https://github.com/ZacSweers/metro/",
