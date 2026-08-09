@@ -159,10 +159,6 @@ internal class GameStoreFactory(
                                 when (event) {
                                     is GameEvent.MoveResolved -> {
                                         val moveParams = moveAnalyticsParams(event)
-                                        audio.playPlacementSound()
-                                        if (event.linesCount > 0) {
-                                            audio.playClearSound(event.linesCount)
-                                        }
                                         event.feedback?.let { audio.playVoiceFeedback(it) }
 
                                         logger.log(

@@ -62,14 +62,6 @@ internal class AndroidPlatformSoundPlayer(
         }
     }
 
-    override fun playPlacement() {
-        safePlay("block_place")
-    }
-
-    override fun playClear(lines: Int) {
-        safePlay("line_clear_${lines.coerceAtMost(4)}")
-    }
-
     override fun playVoiceFeedback(type: FeedbackType) {
         if (voiceStreamId != 0) pool.stop(voiceStreamId)
         voiceStreamId = safePlay("voice_${type.name.lowercase()}")
