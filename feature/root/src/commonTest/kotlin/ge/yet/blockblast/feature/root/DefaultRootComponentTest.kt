@@ -577,8 +577,6 @@ class DefaultRootComponentTest {
     private class RecordingAudio : AudioRepository {
         var foregroundCount = 0
         var backgroundCount = 0
-        override suspend fun playPlacementSound() {}
-        override suspend fun playClearSound(lines: Int) {}
         override suspend fun playVoiceFeedback(type: FeedbackType) {}
         override suspend fun startMusic() {}
         override suspend fun stopMusic() {}

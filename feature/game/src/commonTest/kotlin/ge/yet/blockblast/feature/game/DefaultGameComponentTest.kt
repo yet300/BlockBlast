@@ -308,8 +308,6 @@ class DefaultGameComponentTest {
 
     private class RecordingAudio : AudioRepository {
         var stopMusicCount = 0
-        override suspend fun playPlacementSound() {}
-        override suspend fun playClearSound(lines: Int) {}
         override suspend fun playVoiceFeedback(type: FeedbackType) {}
         override suspend fun startMusic() {}
         override suspend fun stopMusic() { stopMusicCount += 1 }

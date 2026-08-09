@@ -254,17 +254,7 @@ class GameStoreFactoryTest {
     // ── SFX wiring ───────────────────────────────────────────────────────
 
     @Test
-    fun piece_placement_triggers_placement_sound() = runTest {
-        val deps = TestDeps()
-        deps.factory().create(isNewGame = true)
-        val piece = deps.engine.state.value.currentPieces.first()
-        deps.engine.placePiece(piece.pieceId, 0, 0)
-        assertTrue(deps.audio.placementCount >= 1)
-        deps.dispose()
-    }
-
-    @Test
-    fun line_clear_triggers_clear_sound_and_analytics() = runTest {
+    fun line_clear_triggers_analytics() = runTest {
         val deps = TestDeps()
         deps.factory().create(isNewGame = true)
         // Build a clear: fill row 0 cols 0..6 then place 1x1 at (7,0).
@@ -279,13 +269,12 @@ class GameStoreFactoryTest {
         )
         deps.engine.restore(GameState(grid = grid, currentPieces = listOf(placePiece)))
         deps.engine.placePiece(999L, 7, 0)
-        assertEquals(listOf(1), deps.audio.clearedLines)
         assertTrue(deps.analytics.has("lines_cleared"))
         deps.dispose()
     }
 
     @Test
-    fun clearing_move_plays_placement_clear_and_voice_in_narrative_order() = runTest {
+    fun clearing_move_plays_voice_feedback() = runTest {
         val deps = TestDeps()
         deps.factory().create(isNewGame = true)
         var grid = Grid().withCell(4, 5, 1)
@@ -304,10 +293,7 @@ class GameStoreFactoryTest {
 
         assertTrue(deps.engine.placePiece(placePiece.pieceId, 7, 0))
 
-        assertEquals(
-            listOf("placement", "clear:3", "voice:GREAT"),
-            deps.audio.calls,
-        )
+        assertEquals(listOf(FeedbackType.GREAT), deps.audio.voices)
         assertTrue(
             deps.analytics.has(
                 "lines_cleared",
@@ -1087,23 +1073,11 @@ private class FakeSettings(
 }
 
 private class RecordingAudio : AudioRepository {
-    var placementCount = 0
-    val clearedLines = mutableListOf<Int>()
     val voices = mutableListOf<FeedbackType>()
-    val calls = mutableListOf<String>()
     var startMusicCount = 0
     var stopMusicCount = 0
-    override suspend fun playPlacementSound() {
-        placementCount += 1
-        calls += "placement"
-    }
-    override suspend fun playClearSound(lines: Int) {
-        clearedLines += lines
-        calls += "clear:$lines"
-    }
     override suspend fun playVoiceFeedback(type: FeedbackType) {
         voices += type
-        calls += "voice:${type.name}"
     }
     override suspend fun startMusic() { startMusicCount += 1 }
     override suspend fun stopMusic() { stopMusicCount += 1 }
