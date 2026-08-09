@@ -706,8 +706,17 @@ class GameStoreFactoryTest {
         val store = deps.factory().create(isNewGame = true)
         val piece = deps.engine.state.value.currentPieces.first()
         store.accept(GameStore.Intent.Place(piece.pieceId, 0, 0))
+
         assertTrue(deps.analytics.has("piece_place_attempt"))
-        assertTrue(deps.analytics.has("piece_place_success"))
+        val success = deps.analytics.events.single { it.first == "piece_place_success" }.second
+        assertEquals(piece.pieceId, success["piece_id"])
+        assertEquals(piece.shape.size, success["placed_cells"])
+        assertEquals(0, success["lines_count"])
+        assertEquals(piece.shape.size.toLong(), success["placement_points"])
+        assertEquals(piece.shape.size.toLong(), success["total_points"])
+        assertEquals("none", success["feedback"])
+        assertFalse("x" in success)
+        assertFalse("y" in success)
         deps.dispose()
     }
 
