@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.unit.dp
 import com.app.common.config.AppConfig
-import ge.yet3.blokblast.theme.LocalAdsEnabled
+import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIView
 

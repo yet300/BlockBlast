@@ -28,8 +28,8 @@ import blockblast.composeapp.generated.resources.review_prompt_dont_show
 import blockblast.composeapp.generated.resources.review_prompt_leave_feedback
 import blockblast.composeapp.generated.resources.review_prompt_title
 import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
-import ge.yet3.blokblast.component.button.PrimaryTerracottaButton
-import ge.yet3.blokblast.component.button.SecondaryWarmSandButton
+import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
+import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import org.jetbrains.compose.resources.stringResource
 
 @Composable

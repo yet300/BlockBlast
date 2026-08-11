@@ -46,7 +46,7 @@ import ge.yet.blokblast.domain.model.Piece
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet3.blokblast.screen.game.BlockPiece
 import ge.yet3.blokblast.screen.game.effects.ConfettiEffect
-import ge.yet3.blokblast.theme.pieceColor
+import ge.yet.game.uikit.theme.pieceColor
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt

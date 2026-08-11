@@ -9,14 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import ge.yet.blockblast.feature.root.RootComponent
+import ge.yet.game.uikit.theme.BlockBlastTheme
 import ge.yet3.blokblast.ads.AdsManager
+import ge.yet3.blokblast.component.utils.LocalAdsEnabled
+import ge.yet3.blokblast.component.utils.LocalOnTutorialSeen
+import ge.yet3.blokblast.component.utils.LocalSoundEnabled
+import ge.yet3.blokblast.component.utils.LocalTutorialSeen
+import ge.yet3.blokblast.component.utils.LocalVibrationEnabled
 import ge.yet3.blokblast.screen.root.RootContent
-import ge.yet3.blokblast.theme.BlockBlastTheme
-import ge.yet3.blokblast.theme.LocalAdsEnabled
-import ge.yet3.blokblast.theme.LocalOnTutorialSeen
-import ge.yet3.blokblast.theme.LocalSoundEnabled
-import ge.yet3.blokblast.theme.LocalTutorialSeen
-import ge.yet3.blokblast.theme.LocalVibrationEnabled
 
 @Composable
 fun App(rootComponent: RootComponent) {

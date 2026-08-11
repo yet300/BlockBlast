@@ -26,10 +26,10 @@ import blockblast.composeapp.generated.resources.support_game_subtitle
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.app.common.config.AppConfig
 import ge.yet.blockblast.feature.settings.more.MoreSettingsComponent
-import ge.yet3.blokblast.component.icon.Github
-import ge.yet3.blokblast.component.icon.OpenInNew
-import ge.yet3.blokblast.component.icon.PrivacyTip
-import ge.yet3.blokblast.component.icon.Settings
+import ge.yet.game.uikit.components.icon.Github
+import ge.yet.game.uikit.components.icon.OpenInNew
+import ge.yet.game.uikit.components.icon.PrivacyTip
+import ge.yet.game.uikit.components.icon.Settings
 import ge.yet3.blokblast.screen.settings.SettingsDivider
 import ge.yet3.blokblast.screen.settings.SettingsHeader
 import ge.yet3.blokblast.screen.settings.SettingsLinkRow

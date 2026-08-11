@@ -45,8 +45,8 @@ import ge.yet3.blokblast.screen.game.effects.comboStripes
 import ge.yet3.blokblast.screen.game.effects.dangerVignette
 import ge.yet3.blokblast.screen.game.effects.gridBorderGlow
 import ge.yet3.blokblast.screen.game.effects.particleBurst
-import ge.yet3.blokblast.theme.pieceColor
-import ge.yet3.blokblast.theme.pieceColorPreview
+import ge.yet.game.uikit.theme.pieceColor
+import ge.yet.game.uikit.theme.pieceColorPreview
 
 private const val COLS = Grid.SIZE // 8
 private val GAP_DP = 2.dp

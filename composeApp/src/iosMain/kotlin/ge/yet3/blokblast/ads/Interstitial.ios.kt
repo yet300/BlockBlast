@@ -3,7 +3,7 @@ package ge.yet3.blokblast.ads
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import ge.yet3.blokblast.theme.LocalAdsEnabled
+import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 
 @Composable
 actual fun rememberGameOverInterstitial(): GameOverInterstitial {

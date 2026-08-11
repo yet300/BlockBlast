@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.app.common.config.AppConfig
 import ge.yet3.blokblast.ads.consent.ConsentManager
-import ge.yet3.blokblast.theme.LocalAdsEnabled
+import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 
 @Composable
 actual fun rememberGameOverInterstitial(): GameOverInterstitial {

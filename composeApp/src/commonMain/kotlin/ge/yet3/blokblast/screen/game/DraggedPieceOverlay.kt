@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.times
 import ge.yet.blokblast.domain.model.Piece
-import ge.yet3.blokblast.component.modifier.CellOffset
-import ge.yet3.blokblast.component.modifier.liftedPieceShadow
+import ge.yet.game.uikit.components.modifier.CellOffset
+import ge.yet.game.uikit.components.modifier.liftedPieceShadow
 
 /**
  * Floating polyomino that follows the finger while the user is dragging from

@@ -23,10 +23,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.cd_back
-import ge.yet3.blokblast.component.button.IconCircleButton
-import ge.yet3.blokblast.component.icon.ArrowBack
-import ge.yet3.blokblast.component.icon.OpenInNew
-import ge.yet3.blokblast.component.modifier.ringShadow
+import ge.yet.game.uikit.components.button.IconCircleButton
+import ge.yet.game.uikit.components.icon.ArrowBack
+import ge.yet.game.uikit.components.icon.OpenInNew
+import ge.yet.game.uikit.components.modifier.ringShadow
 import org.jetbrains.compose.resources.stringResource
 
 @Composable

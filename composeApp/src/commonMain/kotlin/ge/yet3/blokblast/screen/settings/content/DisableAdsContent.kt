@@ -18,8 +18,8 @@ import blockblast.composeapp.generated.resources.disable_ads_body
 import blockblast.composeapp.generated.resources.disable_ads_title
 import blockblast.composeapp.generated.resources.keep_ads
 import ge.yet.blockblast.feature.settings.disableads.DisableAdsComponent
-import ge.yet3.blokblast.component.button.PrimaryTerracottaButton
-import ge.yet3.blokblast.component.button.SecondaryWarmSandButton
+import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
+import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import ge.yet3.blokblast.screen.settings.SettingsHeader
 import org.jetbrains.compose.resources.stringResource
 

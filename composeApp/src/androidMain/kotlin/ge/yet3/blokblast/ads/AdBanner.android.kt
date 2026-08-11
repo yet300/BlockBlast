@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.app.common.config.AppConfig
 import ge.yet3.blokblast.ads.consent.ConsentManager
-import ge.yet3.blokblast.theme.LocalAdsEnabled
+import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 
 @Composable
 actual fun AdBanner(modifier: Modifier) {

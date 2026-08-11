@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ge.yet3.blokblast.component.modifier.ringShadow
-import ge.yet3.blokblast.component.modifier.whisperShadow
+import ge.yet.game.uikit.components.modifier.ringShadow
+import ge.yet.game.uikit.components.modifier.whisperShadow
 
 /**
  * Hero best-score card used on the Home screen.  Larger and more elevated

@@ -29,9 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.common.utils.formatScore
 import ge.yet.blockblast.feature.game.result.GameResultComponent
-import ge.yet3.blokblast.component.button.SecondaryWarmSandButton
-import ge.yet3.blokblast.component.modifier.ringShadow
-import ge.yet3.blokblast.component.modifier.whisperShadow
+import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
+import ge.yet.game.uikit.components.modifier.ringShadow
+import ge.yet.game.uikit.components.modifier.whisperShadow
 
 @Composable
 internal fun ResultCard(

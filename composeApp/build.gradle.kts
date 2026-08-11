@@ -17,7 +17,7 @@ kotlin {
         apiVersion.set(KotlinVersion.KOTLIN_2_4)
     }
 
-    androidLibrary {
+    android {
         namespace = "ge.yet.blokblast.composeApp"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -55,6 +55,7 @@ kotlin {
             implementation(projects.core.domain)
             implementation(projects.core.data)
             implementation(projects.core.telemetry)
+            implementation(projects.core.uikit)
 
             api(projects.feature.root)
             implementation(projects.feature.home)

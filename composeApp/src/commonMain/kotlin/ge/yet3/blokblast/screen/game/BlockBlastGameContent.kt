@@ -40,9 +40,6 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Rect
 import ge.yet3.blokblast.component.overlay.GestureTutorial
-import ge.yet3.blokblast.theme.LocalOnTutorialSeen
-import ge.yet3.blokblast.theme.LocalTutorialSeen
-import ge.yet3.blokblast.theme.LocalVibrationEnabled
 import ge.yet.blokblast.domain.model.Grid
 import androidx.compose.ui.unit.dp
 import blockblast.composeapp.generated.resources.Res
@@ -52,11 +49,11 @@ import blockblast.composeapp.generated.resources.cd_settings
 import blockblast.composeapp.generated.resources.score
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.GameComponent
+import ge.yet.game.uikit.components.button.IconCircleButton
 import ge.yet3.blokblast.ads.AdBanner
-import ge.yet3.blokblast.component.background.AmbientMeshBackground
-import ge.yet3.blokblast.component.button.IconCircleButton
-import ge.yet3.blokblast.component.icon.ArrowBack
-import ge.yet3.blokblast.component.icon.Settings
+import ge.yet.game.uikit.components.background.AmbientMeshBackground
+import ge.yet.game.uikit.components.icon.ArrowBack
+import ge.yet.game.uikit.components.icon.Settings
 import ge.yet3.blokblast.component.score.ScoreChip
 import ge.yet3.blokblast.screen.game.effects.FeedbackPopupOverlay
 import ge.yet3.blokblast.screen.game.effects.FeedbackPopupState
@@ -69,7 +66,10 @@ import ge.yet3.blokblast.screen.game.effects.rememberComboPunchState
 import ge.yet3.blokblast.screen.game.effects.rememberComboStripesState
 import ge.yet3.blokblast.screen.game.effects.rememberParticleBurstState
 import ge.yet3.blokblast.screen.game.effects.rememberGlitchState
-import ge.yet3.blokblast.theme.pieceColor
+import ge.yet.game.uikit.theme.pieceColor
+import ge.yet3.blokblast.component.utils.LocalOnTutorialSeen
+import ge.yet3.blokblast.component.utils.LocalTutorialSeen
+import ge.yet3.blokblast.component.utils.LocalVibrationEnabled
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -235,7 +235,7 @@ fun BlockBlastGameContent(component: GameComponent) {
 
                 cells.forEach { pos ->
                     val slot = cellLineSlot[pos.x to pos.y] ?: 0
-                    val c = ge.yet3.blokblast.theme.pieceColor(
+                    val c = pieceColor(
                         ((pos.x * 7 + pos.y * 13) and 0x7FFFFFFF) % 6,
                     )
                     launch {

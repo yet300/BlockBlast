@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ge.yet3.blokblast.component.modifier.ringShadow
-import ge.yet3.blokblast.component.modifier.whisperShadow
+import ge.yet.game.uikit.components.modifier.ringShadow
+import ge.yet.game.uikit.components.modifier.whisperShadow
 
 /**
  * Compact pill that pairs a small caption label with an animated number.
