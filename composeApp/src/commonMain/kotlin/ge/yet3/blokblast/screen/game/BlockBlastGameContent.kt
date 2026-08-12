@@ -388,12 +388,7 @@ fun BlockBlastGameContent(component: GameComponent) {
                 )
             }
 
-            // Bottom banner ad — pinned to the actual bottom of the screen
-            // (above system bars thanks to innerPadding). Hidden while the
-            // user is dragging, the Settings sheet is open, or the Game Over
-            // overlay is visible.
-            val sheetSlot by component.sheetSlot.subscribeAsState()
-            val hideBanner = sheetSlot.child != null || model.isGameOver
+            val hideBanner =  model.isGameOver
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -456,8 +451,6 @@ fun BlockBlastGameContent(component: GameComponent) {
                     .fillMaxWidth()
                     .offset(y = 200.dp)
             )
-
-            GameSheet(component = component)
         }
     }
 }

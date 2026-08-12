@@ -1,12 +1,14 @@
 package ge.yet.game.feature.root
 
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.game.feature.home.HomeComponent
+import ge.yet.game.feature.settings.SettingsComponent
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.StateFlow
 interface RootComponent : BackHandlerOwner {
 
     val stack: Value<ChildStack<*, Child>>
+
+    val sheetSlot: Value<ChildSlot<*, SheetChild>>
 
     /** Reflects the user's dark-theme preference so [App] can pass it to BlockBlastTheme. */
     val darkTheme: StateFlow<Boolean>
@@ -37,12 +41,18 @@ interface RootComponent : BackHandlerOwner {
     /** Persist that the user has finished the first-launch tutorial. */
     fun onTutorialSeen()
 
+    fun onDismissSheet()
+
     fun onBackClicked()
 
     sealed interface Child {
         class Home(val component: HomeComponent) : Child
         class Game(val component: GameComponent) : Child
         class Result(val component: GameResultComponent) : Child
+    }
+
+    sealed interface SheetChild {
+        class Settings(val component: SettingsComponent) : SheetChild
     }
 
     /** DI-friendly factory; the concrete impl is created with the Metro graph. */

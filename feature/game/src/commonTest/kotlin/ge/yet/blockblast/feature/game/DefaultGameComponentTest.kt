@@ -1,14 +1,12 @@
 package ge.yet.blockblast.feature.game
 
 import com.app.common.config.AppConfig
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
-import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.domain.engine.GameSessionReducer
 import ge.yet.game.domain.engine.ScoreCalculator
 import ge.yet.game.domain.engine.ShapeGenerator
@@ -39,7 +37,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -77,17 +74,18 @@ class DefaultGameComponentTest {
             settings = settings,
             analytics = analytics,
         )
+        val settingsCalls = mutableListOf<Unit>()
         val exitCalls = mutableListOf<Unit>()
         val completions = mutableListOf<Triple<GameState, Boolean, Boolean>>()
         val reviveCompletions = mutableListOf<GameState>()
         val component = DefaultGameComponent(
             componentContext = DefaultComponentContext(lifecycle),
             gameStoreFactory = storeFactory,
-            settingsComponent = StubSettingsFactory(),
             audio = audio,
             analytics = analytics,
             isNewGame = isNewGame,
             restoredResultState = restoredResultState,
+            onSettingsClick = { settingsCalls += Unit },
             onExitClickedCb = { exitCalls += Unit },
             onGameCompletedCb = { finalState, canContinue, shouldRequestReview ->
                 completions += Triple(finalState, canContinue, shouldRequestReview)
@@ -102,6 +100,7 @@ class DefaultGameComponentTest {
             audio,
             analytics,
             settings,
+            settingsCalls,
             exitCalls,
             completions,
             reviveCompletions,
@@ -109,24 +108,14 @@ class DefaultGameComponentTest {
         )
     }
 
-    // ── Navigation: settings sheet ───────────────────────────────────────
+    // ── Navigation ──────────────────────────────────────────────────
 
     @Test
-    fun onSettingsClicked_opens_settings_sheet_and_logs() {
+    fun onSettingsClicked_invokes_parent_callback_and_logs() {
         val s = build()
         s.component.onSettingsClicked()
-        assertIs<GameComponent.SheetChild.Settings>(s.component.sheetSlot.value.child?.instance)
+        assertEquals(1, s.settingsCalls.size)
         assertNotNull(s.analytics.events.find { it.first == "settings_opened" })
-        s.dispose()
-    }
-
-    @Test
-    fun onDismissSheet_closes_settings_and_logs() {
-        val s = build()
-        s.component.onSettingsClicked()
-        s.component.onDismissSheet()
-        assertNull(s.component.sheetSlot.value.child)
-        assertNotNull(s.analytics.events.find { it.first == "settings_closed" })
         s.dispose()
     }
 
@@ -222,7 +211,6 @@ class DefaultGameComponentTest {
         )
         s.component.onCellClicked(pieceId = 1, x = 1, y = 0)
         runCurrent()
-        assertNull(s.component.sheetSlot.value.child)
         assertEquals(1, s.completions.size)
         assertTrue(s.completions.single().third)
         assertEquals(1, s.settings.reviewPromptCount.value)
@@ -253,6 +241,7 @@ class DefaultGameComponentTest {
         val audio: RecordingAudio,
         val analytics: RecordingAnalytics,
         val settings: FakeSettings,
+        val settingsCalls: MutableList<Unit>,
         val exitCalls: MutableList<Unit>,
         val completions: MutableList<Triple<GameState, Boolean, Boolean>>,
         val reviveCompletions: MutableList<GameState>,
@@ -335,20 +324,4 @@ class DefaultGameComponentTest {
         override fun deleteData() {}
     }
 
-    private class StubSettingsFactory : SettingsComponent.Factory {
-        override fun create(
-            componentContext: ComponentContext,
-            onBackClicked: () -> Unit,
-        ): SettingsComponent = StubSettingsComponent(componentContext, onBackClicked)
-    }
-
-    private class StubSettingsComponent(
-        componentContext: ComponentContext,
-        val onBack: () -> Unit,
-    ) : SettingsComponent, ComponentContext by componentContext {
-        // Tests inspect only the sheet wrapper type, never this stack.
-        override val stack
-            get() = error("StubSettingsComponent.stack must not be read in tests")
-        override fun onBackClicked() = onBack()
-    }
 }

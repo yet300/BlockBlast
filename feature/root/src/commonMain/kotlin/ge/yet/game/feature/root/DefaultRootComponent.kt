@@ -9,6 +9,11 @@ import com.arkivanov.decompose.router.stack.navigate
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.app.common.decompose.coroutineScope
+import com.arkivanov.decompose.router.slot.ChildSlot
+import com.arkivanov.decompose.router.slot.SlotNavigation
+import com.arkivanov.decompose.router.slot.activate
+import com.arkivanov.decompose.router.slot.childSlot
+import com.arkivanov.decompose.router.slot.dismiss
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackCallback
 import com.arkivanov.essenty.lifecycle.doOnDestroy
@@ -22,6 +27,7 @@ import ge.yet.game.feature.home.HomeComponent
 import ge.yet.game.domain.model.GameState
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.feature.settings.SettingsComponent
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -37,6 +43,7 @@ import kotlinx.serialization.Serializable
 internal class DefaultRootComponent(
     componentContext: ComponentContext,
     private val homeFactory: HomeComponent.Factory,
+    private val settingsFactory: SettingsComponent.Factory,
     private val gameFactory: GameComponent.Factory,
     private val resultFactory: GameResultComponent.Factory,
     private val audio: AudioRepository,
@@ -52,6 +59,8 @@ internal class DefaultRootComponent(
         onBack = ::onBackClicked,
     )
 
+    private val sheetNavigation = SlotNavigation<SheetConfig>()
+
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
     override val vibrationEnabled: StateFlow<Boolean> = settingsRepository.vibrationEnabled
     override val sfxEnabled: StateFlow<Boolean> = settingsRepository.sfxEnabled
@@ -62,12 +71,23 @@ internal class DefaultRootComponent(
         scope.launch { settingsRepository.setTutorialSeen() }
     }
 
+    override fun onDismissSheet() {
+        sheetNavigation.dismiss()
+    }
+
     override val stack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
         serializer = Config.serializer(),
         initialConfiguration = Config.Home,
         handleBackButton = true,
         childFactory = ::createChild,
+    )
+    override val sheetSlot: Value<ChildSlot<*, RootComponent.SheetChild>> = childSlot(
+        source = sheetNavigation,
+        serializer = SheetConfig.serializer(),
+        key = "RootSheet",
+        handleBackButton = true,
+        childFactory = ::createSheetChild,
     )
 
     init {
@@ -129,6 +149,7 @@ internal class DefaultRootComponent(
                             shouldRequestReview = shouldRequestReview,
                         )
                     },
+                    onSettingsClicked = { sheetNavigation.activate(SheetConfig.Settings) },
                     onReviveCompleted = { playableState ->
                         finishContinue(
                             gameInstanceId = config.instanceId,
@@ -154,6 +175,20 @@ internal class DefaultRootComponent(
             ),
         )
     }
+
+    private fun createSheetChild(
+        config: SheetConfig,
+        componentContext: ComponentContext,
+    ): RootComponent.SheetChild =
+        when (config) {
+            is SheetConfig.Settings -> RootComponent.SheetChild.Settings(
+                component = settingsFactory.create(
+                    componentContext = componentContext,
+                    onBackClicked = ::onDismissSheet
+                )
+            )
+        }
+
 
     private fun continueGame() {
         val game = stack.value.items
@@ -264,11 +299,18 @@ internal class DefaultRootComponent(
             val shouldRequestReview: Boolean = false,
         ) : Config
     }
+
+    @Serializable
+    sealed interface SheetConfig {
+        @Serializable
+        data object Settings : SheetConfig
+    }
 }
 
 @Inject
 internal class DefaultRootComponentFactory(
     private val homeFactory: HomeComponent.Factory,
+    private val settingsFactory: SettingsComponent.Factory,
     private val gameFactory: GameComponent.Factory,
     private val resultFactory: GameResultComponent.Factory,
     private val audio: AudioRepository,
@@ -278,6 +320,7 @@ internal class DefaultRootComponentFactory(
         DefaultRootComponent(
             componentContext = componentContext,
             homeFactory = homeFactory,
+            settingsFactory = settingsFactory,
             gameFactory = gameFactory,
             resultFactory = resultFactory,
             audio = audio,

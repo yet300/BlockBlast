@@ -2,7 +2,6 @@ package ge.yet.game.feature.root
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
-import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
@@ -18,6 +17,7 @@ import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.game.tray.TraySelection
 import ge.yet.blockblast.feature.game.tray.TraySlotComponent
 import ge.yet.game.feature.home.HomeComponent
+import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.domain.engine.GameSessionReducer
 import ge.yet.game.domain.engine.GameTransition
 import ge.yet.game.domain.engine.ScoreCalculator
@@ -44,6 +44,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DefaultRootComponentTest {
@@ -52,6 +53,7 @@ class DefaultRootComponentTest {
         stateKeeper: StateKeeper? = null,
         gameFactory: RecordingGameFactory = RecordingGameFactory(),
         resultFactory: RecordingResultFactory = RecordingResultFactory(),
+        settingsFactory: RecordingSettingsFactory = RecordingSettingsFactory(),
     ): Setup {
         val lifecycle = LifecycleRegistry()
         val audio = RecordingAudio()
@@ -63,12 +65,22 @@ class DefaultRootComponentTest {
                 stateKeeper = stateKeeper,
             ),
             homeFactory = homeFactory,
+            settingsFactory = settingsFactory,
             gameFactory = gameFactory,
             resultFactory = resultFactory,
             audio = audio,
             settingsRepository = settings,
         )
-        return Setup(component, lifecycle, audio, settings, homeFactory, gameFactory, resultFactory)
+        return Setup(
+            component,
+            lifecycle,
+            audio,
+            settings,
+            homeFactory,
+            gameFactory,
+            resultFactory,
+            settingsFactory,
+        )
     }
 
     @Test
@@ -131,6 +143,41 @@ class DefaultRootComponentTest {
         val child = component.stack.value.active.instance
         assertIs<RootComponent.Child.Game>(child)
         assertEquals(listOf(true), gameFactory.requestedIsNewGame)
+    }
+
+    @Test
+    fun game_settings_click_opens_root_settings_sheet() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+
+        setup.gameFactory.created.single().onSettingsClicked()
+
+        assertIs<RootComponent.SheetChild.Settings>(
+            setup.component.sheetSlot.value.child?.instance,
+        )
+        assertIs<RootComponent.Child.Game>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun root_dismiss_closes_settings_sheet() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().onSettingsClicked()
+
+        setup.component.onDismissSheet()
+
+        assertNull(setup.component.sheetSlot.value.child)
+    }
+
+    @Test
+    fun settings_back_callback_closes_root_sheet() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().onSettingsClicked()
+
+        setup.settingsFactory.created.single().onBackClicked()
+
+        assertNull(setup.component.sheetSlot.value.child)
     }
 
     @Test
@@ -360,6 +407,7 @@ class DefaultRootComponentTest {
         val homeFactory: RecordingHomeFactory,
         val gameFactory: RecordingGameFactory,
         val resultFactory: RecordingResultFactory,
+        val settingsFactory: RecordingSettingsFactory,
     )
 
     // ── Fakes ────────────────────────────────────────────────────────────
@@ -371,6 +419,26 @@ class DefaultRootComponentTest {
             onContinueClicked: (Boolean) -> Unit,
             onNewGameClicked: (Boolean) -> Unit,
         ): HomeComponent = FakeHome(onContinueClicked, onNewGameClicked).also { created += it }
+    }
+
+    private class RecordingSettingsFactory : SettingsComponent.Factory {
+        val created = mutableListOf<FakeSettingsComponent>()
+
+        override fun create(
+            componentContext: ComponentContext,
+            onBackClicked: () -> Unit,
+        ): SettingsComponent =
+            FakeSettingsComponent(componentContext, onBackClicked).also { created += it }
+    }
+
+    private class FakeSettingsComponent(
+        componentContext: ComponentContext,
+        private val onBackClicked: () -> Unit,
+    ) : SettingsComponent, ComponentContext by componentContext {
+        override val stack
+            get() = error("FakeSettingsComponent.stack must not be read in tests")
+
+        override fun onBackClicked() = onBackClicked.invoke()
     }
 
     private class FakeHome(
@@ -396,6 +464,7 @@ class DefaultRootComponentTest {
             componentContext: ComponentContext,
             isNewGame: Boolean,
             restoredResultState: GameState?,
+            onSettingsClicked: () -> Unit,
             onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
@@ -408,6 +477,7 @@ class DefaultRootComponentTest {
                 failRevive = failRevive,
                 saveRepository = saveRepository,
                 externalScope = externalScope,
+                onSettingsClicked = onSettingsClicked,
                 onGameCompleted = onGameCompleted,
                 onReviveCompleted = onReviveCompleted,
                 onReviveFailed = onReviveFailed,
@@ -421,6 +491,7 @@ class DefaultRootComponentTest {
         private val failRevive: Boolean,
         private val saveRepository: RecordingGameSaveRepository,
         private val externalScope: CoroutineScope,
+        private val onSettingsClicked: () -> Unit,
         private val onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
         private val onReviveCompleted: (GameState) -> Unit,
         private val onReviveFailed: () -> Unit,
@@ -444,9 +515,6 @@ class DefaultRootComponentTest {
 
         override val model = MutableValue(
             GameComponent.Model(game = gameState),
-        )
-        override val sheetSlot = MutableValue(
-            ChildSlot<Any, GameComponent.SheetChild>(child = null),
         )
         override val pieceTray: PieceTrayComponent =
             object : PieceTrayComponent {
@@ -481,9 +549,8 @@ class DefaultRootComponentTest {
             }
         }
         override fun onRestartClicked() {}
-        override fun onSettingsClicked() {}
+        override fun onSettingsClicked() = onSettingsClicked.invoke()
         override fun onExitClicked() {}
-        override fun onDismissSheet() {}
         fun complete(
             finalState: GameState,
             canContinue: Boolean,

@@ -4,11 +4,6 @@ import com.app.common.decompose.asValue
 import com.app.common.decompose.coroutineScope
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.childContext
-import com.arkivanov.decompose.router.slot.ChildSlot
-import com.arkivanov.decompose.router.slot.SlotNavigation
-import com.arkivanov.decompose.router.slot.activate
-import com.arkivanov.decompose.router.slot.childSlot
-import com.arkivanov.decompose.router.slot.dismiss
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.essenty.lifecycle.doOnDestroy
@@ -17,25 +12,23 @@ import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.integration.stateToModel
 import ge.yet.blockblast.feature.game.store.GameAnalyticsLogger
-import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
-import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
-import ge.yet.game.feature.settings.SettingsComponent
+import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
+import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.game.domain.model.GameState
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 
 internal class DefaultGameComponent(
     componentContext: ComponentContext,
     analytics: AnalyticRepository,
     private val gameStoreFactory: GameStoreFactory,
-    private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val isNewGame: Boolean,
     private val restoredResultState: GameState?,
+    private val onSettingsClick: () -> Unit,
     private val onExitClickedCb: () -> Unit,
     private val onGameCompletedCb: (GameState, Boolean, Boolean) -> Unit,
     private val onReviveCompletedCb: (GameState) -> Unit,
@@ -48,7 +41,6 @@ internal class DefaultGameComponent(
             restoredResultState = restoredResultState,
         )
     }
-    private val sheetNavigation = SlotNavigation<SheetConfig>()
     private val lifecycleScope = coroutineScope()
     private val logger = GameAnalyticsLogger(analytics)
 
@@ -58,15 +50,6 @@ internal class DefaultGameComponent(
         componentContext = childContext(key = "PieceTray"),
         state = store.asValue(),
     )
-
-    override val sheetSlot: Value<ChildSlot<*, GameComponent.SheetChild>> =
-        childSlot(
-            source = sheetNavigation,
-            serializer = SheetConfig.serializer(),
-            key = "GameSheet",
-            handleBackButton = true,
-            childFactory = ::createSheetChild,
-        )
 
     init {
         // Stop music when the user navigates away (back button or exit)
@@ -98,7 +81,7 @@ internal class DefaultGameComponent(
     override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
     override fun onSettingsClicked() {
         log("settings_opened")
-        sheetNavigation.activate(SheetConfig.Settings)
+        onSettingsClick()
     }
 
     override fun onExitClicked() {
@@ -106,42 +89,13 @@ internal class DefaultGameComponent(
         onExitClickedCb()
     }
 
-    override fun onDismissSheet() {
-        val dismissedChild = sheetSlot.value.child?.instance
-        when (dismissedChild) {
-            is GameComponent.SheetChild.Settings -> log("settings_closed")
-            null -> Unit
-        }
-        sheetNavigation.dismiss()
-    }
-
     private fun log(eventName: String) = logger.log(eventName, store.state)
 
-    private fun createSheetChild(
-        config: SheetConfig,
-        componentContext: ComponentContext,
-    ): GameComponent.SheetChild =
-        when (config) {
-            is SheetConfig.Settings ->
-                GameComponent.SheetChild.Settings(
-                    settingsComponent.create(
-                        componentContext = componentContext,
-                        onBackClicked = ::onDismissSheet
-                    ),
-                )
-        }
-
-    @Serializable
-    sealed interface SheetConfig {
-        @Serializable
-        data object Settings : SheetConfig
-    }
 }
 
 @Inject
 internal class DefaultGameComponentFactory(
     private val gameStoreFactory: GameStoreFactory,
-    private val settingsComponent: SettingsComponent.Factory,
     private val audio: AudioRepository,
     private val analytics: AnalyticRepository,
 ) : GameComponent.Factory {
@@ -149,6 +103,7 @@ internal class DefaultGameComponentFactory(
         componentContext: ComponentContext,
         isNewGame: Boolean,
         restoredResultState: GameState?,
+        onSettingsClicked: () -> Unit,
         onExitClicked: () -> Unit,
         onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
         onReviveCompleted: (GameState) -> Unit,
@@ -156,11 +111,11 @@ internal class DefaultGameComponentFactory(
     ): GameComponent = DefaultGameComponent(
         componentContext = componentContext,
         gameStoreFactory = gameStoreFactory,
-        settingsComponent = settingsComponent,
         audio = audio,
         analytics = analytics,
         isNewGame = isNewGame,
         restoredResultState = restoredResultState,
+        onSettingsClick = onSettingsClicked,
         onExitClickedCb = onExitClicked,
         onGameCompletedCb = onGameCompleted,
         onReviveCompletedCb = onReviveCompleted,

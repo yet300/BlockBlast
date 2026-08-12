@@ -35,4 +35,5 @@ fun RootContent(
             is RootComponent.Child.Result -> GameResultContent(component = instance.component)
         }
     }
+    RootSheet(component = component)
 }

@@ -13,6 +13,7 @@ kotlin {
 
             implementation(projects.feature.game)
             implementation(projects.feature.home)
+            implementation(projects.feature.settings)
 
             implementation(libs.bundles.decompose)
             implementation(libs.bundles.mvi)
