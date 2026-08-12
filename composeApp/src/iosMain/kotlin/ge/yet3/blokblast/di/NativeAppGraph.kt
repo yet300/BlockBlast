@@ -11,7 +11,6 @@ import ge.yet.blockblast.feature.root.di.RootBindings
 import ge.yet.blockblast.feature.settings.di.SettingsBindings
 import ge.yet.blokblast.data.di.DataBindings
 import ge.yet.blokblast.data.di.NativeDataBindings
-import ge.yet.blokblast.domain.di.DomainBindings
 import ge.yet.blokblast.telemetry.di.TelemetryBindings
 
 
@@ -19,7 +18,6 @@ import ge.yet.blokblast.telemetry.di.TelemetryBindings
     scope = AppScope::class,
     bindingContainers = [
         CommonBindings::class,
-        DomainBindings::class,
         DataBindings::class,
         NativeDataBindings::class,
         TelemetryBindings::class,

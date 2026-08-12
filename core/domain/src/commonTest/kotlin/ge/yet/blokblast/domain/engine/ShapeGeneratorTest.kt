@@ -11,6 +11,15 @@ class ShapeGeneratorTest {
     private val gen = WeightedShapeGenerator()
 
     @Test
+    fun default_factory_creates_the_standard_generator() {
+        val expected = WeightedShapeGenerator().nextTray(seed = 42L).map { it.id }
+
+        val actual = ShapeGenerator.default().nextTray(seed = 42L).map { it.id }
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun open_board_trays_favor_large_shapes_over_compact_shapes() {
         repeat(50) { seed ->
             val tray = gen.nextTray(grid = Grid(), seed = seed.toLong())

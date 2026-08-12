@@ -11,7 +11,6 @@ import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
 import ge.yet.blokblast.domain.model.RoundLayoutSource
 import ge.yet.blokblast.domain.model.RoundStartInfo
-import dev.zacsweers.metro.Inject
 
 sealed interface GameTransition {
     data class Applied(
@@ -37,7 +36,6 @@ data class RoundStartTransition(
 )
 
 /** Stateless gameplay rules. Every mutation is represented by a returned snapshot. */
-@Inject
 class GameSessionReducer(
     private val shapeGenerator: ShapeGenerator,
     private val scoreCalculator: ScoreCalculator,

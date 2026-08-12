@@ -1,8 +1,5 @@
 package ge.yet.blokblast.domain.engine
 
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.SingleIn
 import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Polyomino
 import kotlin.random.Random
@@ -12,6 +9,10 @@ interface ShapeGenerator {
     fun nextTray(seed: Long? = null): List<Polyomino>
     fun nextTray(grid: Grid, seed: Long? = null): List<Polyomino> = nextTray(seed)
     fun smallReviveTray(): List<Polyomino>
+
+    companion object {
+        fun default(): ShapeGenerator = WeightedShapeGenerator()
+    }
 }
 
 /**
@@ -19,8 +20,6 @@ interface ShapeGenerator {
  * constrained boards retain compact-piece weighting and always receive a
  * placeable shape when the catalog contains one.
  */
-@SingleIn(AppScope::class)
-@Inject
 internal class WeightedShapeGenerator : ShapeGenerator {
 
     private val defaultRandom = Random.Default
