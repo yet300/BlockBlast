@@ -168,7 +168,7 @@ class DragDropState {
 fun rememberDragDropState(): DragDropState = remember { DragDropState() }
 
 /**
- * UI-side placement validity check — mirrors [GameEngine.canPlace].
+ * UI-side placement validity check — mirrors the domain placement rule.
  */
 fun canPlacePiece(shape: Polyomino, x: Int, y: Int, grid: Grid): Boolean {
     for (cell in shape.cells) {

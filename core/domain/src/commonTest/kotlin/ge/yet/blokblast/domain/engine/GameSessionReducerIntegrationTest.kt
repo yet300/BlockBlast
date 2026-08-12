@@ -8,16 +8,12 @@ import ge.yet.blokblast.domain.model.Grid
 import ge.yet.blokblast.domain.model.Polyomino
 import ge.yet.blokblast.domain.model.Position
 import ge.yet.blokblast.domain.model.RoundLayoutSource
-import ge.yet.blokblast.domain.repository.GameSaveRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.runCurrent
+import ge.yet.blokblast.domain.model.Piece
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.runTest
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,24 +22,17 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for [GameEngine] — full behaviour coverage.
+ * Integration coverage for pure [GameSessionReducer] transitions.
  */
-class GameEngineTest {
+class GameSessionReducerIntegrationTest {
 
-    private val saveRepo = InMemorySaveRepo()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val fixedGen = ControllableShapeGenerator()
-    private val engine = GameEngine(
-        shapeGenerator = fixedGen,
-        scoreCalculator = ScoreCalculator(),
-        saveRepository = saveRepo,
-        externalScope = scope,
+    private val engine = GameSessionHarness(
+        GameSessionReducer(
+            shapeGenerator = fixedGen,
+            scoreCalculator = ScoreCalculator(),
+        ),
     )
-
-    @AfterTest
-    fun tearDown() {
-        scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
-    }
 
     // ── seedBestScore ────────────────────────────────────────────────────
 
@@ -653,71 +642,6 @@ class GameEngineTest {
         }
     }
 
-    // ── autoSave / debounce ─────────────────────────────────────────────
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun autoSave_debounces_to_single_write() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        val testScope = CoroutineScope(SupervisorJob() + testDispatcher)
-        val repo = CountingSaveRepo()
-        val gen = ControllableShapeGenerator().apply {
-            nextTrayPieces = listOf(ONE_CELL, ONE_CELL, ONE_CELL)
-        }
-        val engineLocal = GameEngine(
-            shapeGenerator = gen,
-            scoreCalculator = ScoreCalculator(),
-            saveRepository = repo,
-            externalScope = testScope,
-        )
-        engineLocal.startNewGame()
-        repeat(3) {
-            val p = engineLocal.state.value.currentPieces.first()
-            engineLocal.placePiece(p.pieceId, it, 0)
-        }
-        advanceTimeBy(100)
-        runCurrent()
-        val midCount = repo.count
-        advanceTimeBy(400)
-        runCurrent()
-        assertTrue(repo.count > midCount)
-        testScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun result_restore_cancels_pending_save_and_revive_reenables_autosave() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        val testScope = CoroutineScope(SupervisorJob() + testDispatcher)
-        val repo = CountingSaveRepo()
-        val engineLocal = GameEngine(
-            shapeGenerator = ControllableShapeGenerator(),
-            scoreCalculator = ScoreCalculator(),
-            saveRepository = repo,
-            externalScope = testScope,
-        )
-        engineLocal.startNewGame()
-        advanceTimeBy(300)
-        runCurrent()
-        repo.count = 0
-
-        val piece = engineLocal.state.value.currentPieces.first()
-        engineLocal.placePiece(piece.pieceId, 0, 0)
-        val finalState = engineLocal.state.value.copy(isGameOver = true)
-        repo.save(finalState)
-        engineLocal.restoreResult(finalState)
-
-        advanceTimeBy(300)
-        runCurrent()
-        assertEquals(1, repo.count, "only explicit final persistence may remain")
-
-        assertTrue(engineLocal.continueWithSmallBlocks())
-        advanceTimeBy(300)
-        runCurrent()
-        assertEquals(2, repo.count, "revive must schedule future autosaves normally")
-        testScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
-    }
-
     // ── Helpers ─────────────────────────────────────────────────────────
 
     private fun fillRow(row: Int, cols: IntRange): Grid {
@@ -728,20 +652,6 @@ class GameEngineTest {
 
     private fun piece(id: Long, shape: Polyomino) =
         ge.yet.blokblast.domain.model.Piece(pieceId = id, shape = shape, colorId = 1)
-
-    private class InMemorySaveRepo : GameSaveRepository {
-        var saved: GameState? = null
-        override suspend fun save(state: GameState) { saved = state }
-        override suspend fun load(): GameState? = saved
-        override suspend fun clear() { saved = null }
-    }
-
-    private class CountingSaveRepo : GameSaveRepository {
-        var count = 0
-        override suspend fun save(state: GameState) { count += 1 }
-        override suspend fun load(): GameState? = null
-        override suspend fun clear() {}
-    }
 
     private class ControllableShapeGenerator : ShapeGenerator {
         var nextTrayPieces: List<Polyomino> = listOf(ONE_CELL, ONE_CELL, ONE_CELL)
@@ -759,4 +669,68 @@ class GameEngineTest {
         private val H2 = Polyomino(id = "h2", cells = listOf(Position(0, 0), Position(1, 0)))
         private val V2 = Polyomino(id = "v2", cells = listOf(Position(0, 0), Position(0, 1)))
     }
+}
+
+private class GameSessionHarness(
+    private val reducer: GameSessionReducer,
+) {
+    private val mutableState = MutableStateFlow(GameState())
+    val state: StateFlow<GameState> = mutableState
+
+    private val mutableEvents = MutableSharedFlow<GameEvent>(extraBufferCapacity = 16)
+    val events: SharedFlow<GameEvent> = mutableEvents
+
+    fun seedBestScore(persistedBestScore: Long) {
+        mutableState.value = reducer.seedBestScore(mutableState.value, persistedBestScore)
+    }
+
+    fun startNewGame(
+        seed: Long? = null,
+        bestScore: Long = mutableState.value.bestScore,
+        allowStarterLayout: Boolean = false,
+    ): ge.yet.blokblast.domain.model.RoundStartInfo {
+        val transition = reducer.startNewGame(
+            previousState = mutableState.value,
+            seed = seed,
+            bestScore = bestScore,
+            allowStarterLayout = allowStarterLayout,
+        )
+        mutableState.value = transition.state
+        mutableEvents.tryEmit(GameEvent.GameStarted)
+        return transition.info
+    }
+
+    fun markReviewPromptFired() {
+        mutableState.value = reducer.markReviewPromptFired(mutableState.value)
+    }
+
+    fun restore(state: GameState) {
+        mutableState.value = reducer.restore(state, mutableState.value.bestScore)
+        if (!mutableState.value.isGameOver && mutableState.value.currentPieces.isNotEmpty()) {
+            mutableEvents.tryEmit(GameEvent.GameStarted)
+        }
+    }
+
+    fun canPlace(piece: Piece, x: Int, y: Int): Boolean =
+        reducer.canPlace(piece.shape, x, y, mutableState.value.grid)
+
+    fun placePiece(pieceId: Long, x: Int, y: Int): Boolean =
+        when (val transition = reducer.place(mutableState.value, pieceId, x, y)) {
+            is GameTransition.Rejected -> false
+            is GameTransition.Applied -> {
+                mutableState.value = transition.state
+                mutableEvents.tryEmit(transition.fact)
+                true
+            }
+        }
+
+    fun continueWithSmallBlocks(): Boolean =
+        when (val transition = reducer.revive(mutableState.value)) {
+            is GameTransition.Rejected -> false
+            is GameTransition.Applied -> {
+                mutableState.value = transition.state
+                mutableEvents.tryEmit(transition.fact)
+                true
+            }
+        }
 }

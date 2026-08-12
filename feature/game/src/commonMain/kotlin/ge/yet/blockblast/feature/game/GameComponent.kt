@@ -8,7 +8,7 @@ import ge.yet.blockblast.feature.settings.SettingsComponent
 import ge.yet.blokblast.domain.model.GameState
 
 /**
- * In-game screen. Delegates all logic to the shared `GameEngine`; the component
+ * In-game screen. Delegates gameplay transitions to its retained `GameStore`; the component
  * is just a thin adapter that turns UI intents into engine calls and mirrors
  * engine state to the UI.
  *

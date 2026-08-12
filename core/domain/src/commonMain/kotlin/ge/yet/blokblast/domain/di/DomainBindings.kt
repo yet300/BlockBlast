@@ -11,7 +11,7 @@ import ge.yet.blokblast.domain.engine.WeightedShapeGenerator
  * Domain-layer bindings contributed to the app-wide [AppScope] graph.
  *
  * Only public interface ↔ internal implementation bindings live here; the rest
- * of the domain classes ([ge.yet.blokblast.domain.engine.GameEngine], [ge.yet.blokblast.domain.engine.ScoreCalculator]) use `@Inject` and are
+ * of the domain classes ([ge.yet.blokblast.domain.engine.GameSessionReducer], [ge.yet.blokblast.domain.engine.ScoreCalculator]) use `@Inject` and are
  */
 @ContributesTo(AppScope::class)
 @BindingContainer

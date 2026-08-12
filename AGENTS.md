@@ -131,7 +131,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :feature:game:allTests
 
 # Verify shared Android compilation and package the Android app
-./gradlew :composeApp:compileDebugKotlinAndroid
+./gradlew :composeApp:compileAndroidMain
 ./gradlew :androidApp:assembleDebug
 
 # Verify the Compose framework for the iOS simulator

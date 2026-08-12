@@ -39,6 +39,10 @@ data class GameState(
      * the game-over screen, returns, and re-enters the same round.
      */
     val reviewPromptFiredThisRound: Boolean = false,
+    /** Last allocated piece identifier. Persisted so restored sessions never reuse IDs. */
+    val nextPieceId: Long = 0L,
+    /** Seed for the next deterministic tray, or null for normal random play. */
+    val nextRandomSeed: Long? = null,
 ) {
     companion object {
         const val MAX_REVIVES = 1
