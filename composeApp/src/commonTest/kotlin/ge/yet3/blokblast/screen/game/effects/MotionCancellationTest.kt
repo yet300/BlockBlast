@@ -1,10 +1,15 @@
 package ge.yet3.blokblast.screen.game.effects
 
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -16,7 +21,7 @@ import kotlin.test.assertTrue
 class MotionCancellationTest {
 
     @Test
-    fun cancelling_stripe_sweep_clears_active_coordinates() = runTest {
+    fun cancelling_stripe_sweep_clears_active_coordinates() = runMotionTest {
         val state = ComboStripesState()
         val sweep = launch(start = CoroutineStart.UNDISPATCHED) {
             state.sweep(rows = listOf(2), cols = listOf(5), durationMillis = 10_000)
@@ -32,7 +37,7 @@ class MotionCancellationTest {
     }
 
     @Test
-    fun newer_stripe_sweep_keeps_ownership_after_previous_sweep_unwinds() = runTest {
+    fun newer_stripe_sweep_keeps_ownership_after_previous_sweep_unwinds() = runMotionTest {
         val state = ComboStripesState()
         val first = launch {
             state.sweep(rows = listOf(1), cols = listOf(2), durationMillis = 10_000)
@@ -66,7 +71,7 @@ class MotionCancellationTest {
     }
 
     @Test
-    fun cancelling_glitch_resets_intensity() = runTest {
+    fun cancelling_glitch_resets_intensity() = runMotionTest {
         val state = GlitchState()
         val glitch = launch(start = CoroutineStart.UNDISPATCHED) {
             state.trigger(durationMillis = 10_000)
@@ -80,7 +85,7 @@ class MotionCancellationTest {
     }
 
     @Test
-    fun newer_glitch_trigger_keeps_ownership_after_previous_trigger_unwinds() = runTest {
+    fun newer_glitch_trigger_keeps_ownership_after_previous_trigger_unwinds() = runMotionTest {
         val state = GlitchState()
         val first = launch {
             state.trigger(durationMillis = 10_000)
@@ -112,7 +117,7 @@ class MotionCancellationTest {
     }
 
     @Test
-    fun cancelling_particle_burst_removes_all_particles() = runTest {
+    fun cancelling_particle_burst_removes_all_particles() = runMotionTest {
         val state = ParticleBurstState()
         val burst = launch {
             state.burst(cellGridX = 3, cellGridY = 4, color = Color.Red, count = 4)
@@ -127,7 +132,7 @@ class MotionCancellationTest {
     }
 
     @Test
-    fun cancelling_shockwave_removes_the_draw_entry() = runTest {
+    fun cancelling_shockwave_removes_the_draw_entry() = runMotionTest {
         val state = ParticleBurstState()
         val shockwave = launch(start = CoroutineStart.UNDISPATCHED) {
             state.shockwave(cellGridX = 3, cellGridY = 4, color = Color.White)
@@ -140,3 +145,24 @@ class MotionCancellationTest {
         assertTrue(state.shockwaves.isEmpty())
     }
 }
+
+private fun runMotionTest(testBody: suspend TestScope.() -> Unit) =
+    TestCoroutineScheduler().let { scheduler ->
+        runTest(
+            context = StandardTestDispatcher(scheduler) + TestMonotonicFrameClock(scheduler),
+            testBody = testBody,
+        )
+    }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private class TestMonotonicFrameClock(
+    private val scheduler: TestCoroutineScheduler,
+) : MonotonicFrameClock {
+    override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+        delay(TEST_FRAME_DURATION_MILLIS)
+        return onFrame(scheduler.currentTime * NANOSECONDS_PER_MILLISECOND)
+    }
+}
+
+private const val TEST_FRAME_DURATION_MILLIS = 16L
+private const val NANOSECONDS_PER_MILLISECOND = 1_000_000L
