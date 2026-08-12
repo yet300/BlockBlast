@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.result.GameResultComponent
-import ge.yet3.blokblast.ads.rememberGameOverInterstitial
+import ge.yet.blockblast.monetization.ads.LocalMonetizationState
+import ge.yet.blockblast.monetization.ads.rememberGameOverInterstitial
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.sheet.ClaudeBottomSheet
 import ge.yet3.blokblast.screen.game.GameGrid
@@ -42,7 +43,6 @@ import blockblast.composeapp.generated.resources.new_best
 import blockblast.composeapp.generated.resources.new_game
 import blockblast.composeapp.generated.resources.revive
 import blockblast.composeapp.generated.resources.score
-import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -54,7 +54,7 @@ fun GameResultContent(
     val reviewPrompt by component.reviewPrompt.subscribeAsState()
     val showInterstitial = rememberGameOverInterstitial()
     val reducedMotion = rememberReducedMotion()
-    val adsEnabled = LocalAdsEnabled.current
+    val adsEnabled = LocalMonetizationState.current.canShowAds
 
     GameResultContent(
         model = model,

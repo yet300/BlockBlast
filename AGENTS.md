@@ -33,7 +33,7 @@ Before changing code:
 BlockBlast/
 ├── androidApp/                 Android application, manifest, Firebase and ads
 ├── iosApp/                     SwiftUI host, iOS ATT and native SDK packaging
-├── composeApp/                 Shared Compose app, resources, UI and cross-platform ads
+├── composeApp/                 Shared Compose app, resources, UI and app composition
 ├── core/
 │   ├── common/                 Reusable shared app utilities and infrastructure
 │   ├── domain/                 Game rules, models and domain contracts
@@ -44,6 +44,9 @@ BlockBlast/
 │   ├── home/                   Home screen feature
 │   ├── game/                   Gameplay, result flow and review prompt
 │   └── settings/               Settings feature
+├── monetization/
+│   ├── core/                   SDK-free entitlement and advertising policy
+│   └── basic-ads/              AdMob, UMP, ATT bridge and Compose ad adapter
 ├── build-logic/convention/     Local Kotlin Multiplatform Gradle convention plugin
 ├── gradle/libs.versions.toml   Central versions, libraries, bundles and plugins
 ├── fastlane/                   Store metadata and release automation
@@ -56,7 +59,7 @@ BlockBlast/
 |---|---|---|
 | `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
-| `:composeApp` | Shared Compose UI, resources, cross-platform ads and app composition | core modules and all feature modules |
+| `:composeApp` | Shared Compose UI, resources and app composition | core, feature and monetization modules |
 | `:core:domain` | Platform-neutral game engine, models and contracts | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | Settings-backed persistence and repository implementations | `:core:domain`, `:core:common` |
@@ -65,12 +68,19 @@ BlockBlast/
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common`, `:feature:settings` |
 | `:feature:game` | Game components, stores, result and review flow | `:core:domain`, `:core:common`, `:feature:settings` |
 | `:feature:root` | Top-level navigation and feature composition | core modules, `:feature:home`, `:feature:game` |
+| `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
+| `:monetization:basic-ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core`, `basic-ads` |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 
 Keep dependencies flowing inward. In particular, core modules must not depend on
 features or UI, and feature modules must not depend on `:composeApp` or either
 native application shell. Treat a new cross-feature dependency as an
 architecture decision, not a convenience import.
+
+Keep monetization policy in `:monetization:core`; it must not depend on Compose,
+Firebase, advertising SDKs, or either application shell. Native AdMob and UMP
+dependencies belong in `:monetization:basic-ads`. Product configuration, such
+as ad unit IDs and the current entitlement, enters through `:composeApp`.
 
 ## Source Placement and Architecture
 
@@ -130,6 +140,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :core:domain:allTests
 ./gradlew :core:data:allTests
 ./gradlew :feature:game:allTests
+./gradlew :monetization:core:allTests
 
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain
@@ -137,6 +148,15 @@ the narrowest relevant task first, then broaden verification as appropriate.
 
 # Verify the Compose framework for the iOS simulator
 ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
+```
+
+For changes to the advertising adapter, also compile its iOS target and verify
+the generated SwiftPM linkage package:
+
+```bash
+./gradlew :monetization:basic-ads:compileKotlinIosSimulatorArm64
+XCODEPROJ_PATH="$PWD/iosApp/iosApp.xcodeproj" \
+  ./gradlew :composeApp:integrateLinkagePackage -i
 ```
 
 For changes to the SwiftUI host, Xcode project, signing, iOS Firebase or iOS

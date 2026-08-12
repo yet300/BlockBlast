@@ -42,6 +42,10 @@ include(":core:domain")
 include(":core:data")
 include(":core:telemetry")
 
+include(":monetization")
+include(":monetization:core")
+include(":monetization:basic-ads")
+
 include(":feature")
 include(":feature:root")
 include(":feature:settings")
