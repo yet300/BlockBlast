@@ -15,8 +15,7 @@ let package = Package(
   dependencies: [
     .package(path: "subpackages/_composeApp"),
     .package(path: "subpackages/_core_telemetry"),
-    .package(path: "subpackages/_monetization_basic-ads"),
-    .package(path: "subpackages/_monetization_basic_ads"),
+    .package(path: "subpackages/_monetization_ads"),
     .package(path: "subpackages/dev_gitlive_firebase_analytics_3_0_0_alpha01"),
     .package(path: "subpackages/dev_gitlive_firebase_app_3_0_0_alpha01"),
     .package(path: "subpackages/dev_gitlive_firebase_crashlytics_3_0_0_alpha01")
@@ -27,8 +26,7 @@ let package = Package(
       dependencies: [
         .product(name: "_composeApp", package: "_composeApp"),
         .product(name: "_core_telemetry", package: "_core_telemetry"),
-        .product(name: "_monetization_basic-ads", package: "_monetization_basic-ads"),
-        .product(name: "_monetization_basic_ads", package: "_monetization_basic_ads"),
+        .product(name: "_monetization_ads", package: "_monetization_ads"),
         .product(name: "dev_gitlive_firebase_analytics_3_0_0_alpha01", package: "dev_gitlive_firebase_analytics_3_0_0_alpha01"),
         .product(name: "dev_gitlive_firebase_app_3_0_0_alpha01", package: "dev_gitlive_firebase_app_3_0_0_alpha01"),
         .product(name: "dev_gitlive_firebase_crashlytics_3_0_0_alpha01", package: "dev_gitlive_firebase_crashlytics_3_0_0_alpha01")

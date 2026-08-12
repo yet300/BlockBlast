@@ -44,7 +44,7 @@ include(":core:telemetry")
 
 include(":monetization")
 include(":monetization:core")
-include(":monetization:basic-ads")
+include(":monetization:ads")
 
 include(":feature")
 include(":feature:root")

@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.result.GameResultComponent
-import ge.yet.blockblast.monetization.ads.LocalMonetizationState
-import ge.yet.blockblast.monetization.ads.rememberGameOverInterstitial
+import ge.yet.game.monetization.ads.LocalMonetizationState
+import ge.yet.game.monetization.ads.rememberGameOverInterstitial
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.sheet.ClaudeBottomSheet
 import ge.yet3.blokblast.screen.game.GameGrid

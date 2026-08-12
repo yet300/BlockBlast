@@ -1,6 +1,6 @@
 package ge.yet3.blokblast.ads
 
-import ge.yet.blockblast.monetization.ads.AdMobTrackingAuthorizationBridge
+import ge.yet.game.monetization.ads.AdMobTrackingAuthorizationBridge
 
 object IosTrackingAuthorizationBridge {
     var requestAuthorization: (() -> Unit)?

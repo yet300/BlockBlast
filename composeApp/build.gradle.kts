@@ -54,7 +54,7 @@ kotlin {
             implementation(projects.core.data)
             implementation(projects.core.telemetry)
             implementation(projects.core.uikit)
-            implementation(projects.monetization.basicAds)
+            implementation(projects.monetization.ads)
 
             api(projects.feature.root)
             implementation(projects.feature.home)

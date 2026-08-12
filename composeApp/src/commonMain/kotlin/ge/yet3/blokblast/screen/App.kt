@@ -7,10 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.app.common.config.AppConfig
 import ge.yet.blockblast.feature.root.RootComponent
-import ge.yet.blockblast.monetization.ads.AdMobConfiguration
-import ge.yet.blockblast.monetization.ads.AdMobProvider
-import ge.yet.blockblast.monetization.ads.rememberAdMobState
-import ge.yet.blockblast.monetization.core.MonetizationEntitlement
+import ge.yet.game.monetization.ads.AdMobConfiguration
+import ge.yet.game.monetization.ads.AdMobProvider
+import ge.yet.game.monetization.ads.rememberAdMobState
+import ge.yet.game.monetization.core.MonetizationEntitlement
 import ge.yet.game.uikit.theme.BlockBlastTheme
 import ge.yet3.blokblast.component.utils.LocalOnTutorialSeen
 import ge.yet3.blokblast.component.utils.LocalSoundEnabled
