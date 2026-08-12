@@ -1,4 +1,4 @@
-package ge.yet3.blokblast.ads
+package ge.yet.blockblast.monetization.ads
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

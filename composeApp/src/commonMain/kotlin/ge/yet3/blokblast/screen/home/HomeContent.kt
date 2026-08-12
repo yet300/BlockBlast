@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.home.HomeComponent
-import ge.yet3.blokblast.ads.AdBanner
+import ge.yet.blockblast.monetization.ads.AdBanner
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton

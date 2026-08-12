@@ -1,4 +1,4 @@
-package ge.yet3.blokblast.ads
+package ge.yet.blockblast.monetization.ads
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,17 +13,9 @@ import app.lexilabs.basic.ads.DependsOnGoogleUserMessagingPlatform
 @Composable
 internal expect fun rememberPlatformConsent(): Consent
 
-/**
- * Android has no ATT prerequisite. iOS changes this to true only after the
- * native App Tracking Transparency flow has completed.
- */
 @Composable
 internal expect fun rememberTrackingAuthorizationCompleted(adsRequested: Boolean): Boolean
 
-/**
- * Runs UMP once per platform consent instance and publishes only its
- * authoritative `canRequestAds` result. On iOS, UMP starts after ATT.
- */
 @OptIn(DependsOnGoogleUserMessagingPlatform::class)
 @Composable
 internal fun rememberAdsConsentAllowsRequests(adsRequested: Boolean): Boolean {
@@ -50,8 +42,6 @@ internal fun rememberAdsConsentAllowsRequests(adsRequested: Boolean): Boolean {
             },
             onError = { publishCurrentConsent() },
         )
-
-        // UMP can already have a valid cached decision from an earlier launch.
         publishCurrentConsent()
     }
 

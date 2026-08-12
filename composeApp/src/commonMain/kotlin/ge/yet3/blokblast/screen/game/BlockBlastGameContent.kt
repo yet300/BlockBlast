@@ -50,7 +50,7 @@ import blockblast.composeapp.generated.resources.score
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.game.uikit.components.button.IconCircleButton
-import ge.yet3.blokblast.ads.AdBanner
+import ge.yet.blockblast.monetization.ads.AdBanner
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.icon.ArrowBack
 import ge.yet.game.uikit.components.icon.Settings

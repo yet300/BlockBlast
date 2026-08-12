@@ -47,8 +47,6 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.play.services.ads)
-            implementation(libs.user.messaging.platform)
         }
         commonMain.dependencies {
             api(projects.core.common)
@@ -56,6 +54,7 @@ kotlin {
             implementation(projects.core.data)
             implementation(projects.core.telemetry)
             implementation(projects.core.uikit)
+            implementation(projects.monetization.basicAds)
 
             api(projects.feature.root)
             implementation(projects.feature.home)
@@ -74,8 +73,6 @@ kotlin {
             implementation(libs.aboutlibraries.core)
 
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.basic.ads)
-
             implementation(libs.kotlinx.datetime)
 
             implementation(libs.bundles.decompose)

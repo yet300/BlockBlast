@@ -1,9 +1,9 @@
-package ge.yet3.blokblast.ads
+package ge.yet.blockblast.monetization.ads
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.lexilabs.basic.ads.AdSize
@@ -11,22 +11,17 @@ import app.lexilabs.basic.ads.AdUnitId
 import app.lexilabs.basic.ads.DependsOnGoogleMobileAds
 import app.lexilabs.basic.ads.composable.BannerAd
 import app.lexilabs.basic.ads.composable.rememberBannerAd
-import com.app.common.config.AppConfig
-import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 
-/**
- * Bottom banner ad slot.
- *
- * Uses basic-ads for cross-platform AdMob support.
- */
 @OptIn(DependsOnGoogleMobileAds::class)
 @Composable
 fun AdBanner(modifier: Modifier = Modifier) {
-    if (!LocalAdsEnabled.current) return
-
+    if (!LocalMonetizationState.current.canShowAds) return
+    val configuration = checkNotNull(LocalAdMobConfiguration.current) {
+        "AdBanner must be used inside AdMobProvider"
+    }
     val adUnitId = AdUnitId.autoSelect(
-        androidAdUnitId = AppConfig.BANNER_UNIT_ID_ANDROID,
-        iosAdUnitId = AppConfig.BANNER_UNIT_ID_IOS,
+        androidAdUnitId = configuration.bannerAndroidUnitId,
+        iosAdUnitId = configuration.bannerIosUnitId,
     )
     val bannerAd by rememberBannerAd(
         adUnitId = adUnitId,

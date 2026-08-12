@@ -1,4 +1,4 @@
-package ge.yet3.blokblast.ads
+package ge.yet.blockblast.monetization.ads
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,8 +9,7 @@ import app.lexilabs.basic.ads.Consent
 import app.lexilabs.basic.ads.DependsOnGoogleUserMessagingPlatform
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** Native Swift marks this gate complete after ATT returns (for any status). */
-object IosTrackingAuthorizationBridge {
+object AdMobTrackingAuthorizationBridge {
     internal val completed = MutableStateFlow(false)
     private var requestPending = false
 
@@ -38,9 +37,9 @@ internal actual fun rememberPlatformConsent(): Consent = remember { Consent(null
 
 @Composable
 internal actual fun rememberTrackingAuthorizationCompleted(adsRequested: Boolean): Boolean {
-    val completed by IosTrackingAuthorizationBridge.completed.collectAsState()
+    val completed by AdMobTrackingAuthorizationBridge.completed.collectAsState()
     LaunchedEffect(adsRequested) {
-        if (adsRequested) IosTrackingAuthorizationBridge.requestIfNeeded()
+        if (adsRequested) AdMobTrackingAuthorizationBridge.requestIfNeeded()
     }
     return adsRequested && completed
 }

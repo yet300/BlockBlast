@@ -1,36 +1,39 @@
-package ge.yet3.blokblast.ads
+package ge.yet.blockblast.monetization.ads
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import app.lexilabs.basic.ads.AdState
 import app.lexilabs.basic.ads.AdUnitId
 import app.lexilabs.basic.ads.DependsOnGoogleMobileAds
 import app.lexilabs.basic.ads.composable.rememberInterstitialAd
-import com.app.common.config.AppConfig
-import ge.yet3.blokblast.component.utils.LocalAdsEnabled
+import ge.yet.blockblast.monetization.core.once
+import ge.yet.blockblast.monetization.core.shouldShowInterstitial
 
-/**
- * Uses basic-ads for cross-platform AdMob interstitial support.
- *
- * Returns a function that shows the interstitial and calls [onDismiss] when done.
- */
 @OptIn(DependsOnGoogleMobileAds::class)
 @Composable
 fun rememberGameOverInterstitial(): (onDismiss: () -> Unit) -> Unit {
-    val adsEnabled = LocalAdsEnabled.current
-    if (!adsEnabled) {
+    val state = LocalMonetizationState.current
+    if (!state.canShowAds) {
         return remember { { onDismiss -> onDismiss() } }
     }
-
+    val configuration = checkNotNull(LocalAdMobConfiguration.current) {
+        "rememberGameOverInterstitial must be used inside AdMobProvider"
+    }
     val adUnitId = AdUnitId.autoSelect(
-        androidAdUnitId = AppConfig.GAME_OVER_INTERSTITIAL_UNIT_ID_ANDROID,
-        iosAdUnitId = AppConfig.GAME_OVER_INTERSTITIAL_UNIT_ID_IOS,
+        androidAdUnitId = configuration.gameOverInterstitialAndroidUnitId,
+        iosAdUnitId = configuration.gameOverInterstitialIosUnitId,
     )
     val interstitialAd by rememberInterstitialAd(adUnitId = adUnitId)
 
-    return remember(interstitialAd, adUnitId) {
+    return remember(interstitialAd, adUnitId, state.canShowAds) {
         { onDismiss ->
-            if (!shouldShowInterstitial(adsEnabled = true, adState = interstitialAd.state)) {
+            if (
+                !shouldShowInterstitial(
+                    adsAllowed = state.canShowAds,
+                    isReady = interstitialAd.state == AdState.READY,
+                )
+            ) {
                 onDismiss()
             } else {
                 val complete = once(onDismiss)
