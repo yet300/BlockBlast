@@ -1,10 +1,8 @@
 package ge.yet.blokblast.domain.engine
 
-import dev.zacsweers.metro.Inject
 import ge.yet.blokblast.domain.model.Polyomino
 
 /** Pure scoring logic — fully unit-testable, no state. */
-@Inject
 class ScoreCalculator {
 
     /** 1 point per block inside the polyomino. */

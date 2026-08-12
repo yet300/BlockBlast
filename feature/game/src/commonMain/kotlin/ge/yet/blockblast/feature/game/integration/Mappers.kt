@@ -1,10 +1,10 @@
 package ge.yet.blockblast.feature.game.integration
 
 import ge.yet.blockblast.feature.game.GameComponent
-import ge.yet.blockblast.feature.game.store.GameStoreState
+import ge.yet.blokblast.domain.model.GameState
 
-internal val stateToModel: (GameStoreState) -> GameComponent.Model = {
+internal val stateToModel: (GameState) -> GameComponent.Model = {
     GameComponent.Model(
-        game = it.game,
+        game = it,
     )
 }

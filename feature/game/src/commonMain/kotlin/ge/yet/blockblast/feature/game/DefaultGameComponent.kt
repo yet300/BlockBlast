@@ -56,7 +56,7 @@ internal class DefaultGameComponent(
 
     override val pieceTray: PieceTrayComponent = DefaultPieceTrayComponent(
         componentContext = childContext(key = "PieceTray"),
-        state = store.asValue().map { it.game },
+        state = store.asValue(),
     )
 
     override val sheetSlot: Value<ChildSlot<*, GameComponent.SheetChild>> =
@@ -115,7 +115,7 @@ internal class DefaultGameComponent(
         sheetNavigation.dismiss()
     }
 
-    private fun log(eventName: String) = logger.log(eventName, store.state.game)
+    private fun log(eventName: String) = logger.log(eventName, store.state)
 
     private fun createSheetChild(
         config: SheetConfig,

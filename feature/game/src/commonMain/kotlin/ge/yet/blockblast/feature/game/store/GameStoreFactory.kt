@@ -5,9 +5,10 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
-import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
+import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import dev.zacsweers.metro.Inject
-import ge.yet.blokblast.domain.engine.GameEngine
+import ge.yet.blokblast.domain.engine.GameSessionReducer
+import ge.yet.blokblast.domain.engine.GameTransition
 import ge.yet.blokblast.domain.model.GameEvent
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.Grid
@@ -17,14 +18,12 @@ import ge.yet.blokblast.domain.repository.AudioRepository
 import ge.yet.blokblast.domain.repository.GameSaveRepository
 import ge.yet.blokblast.domain.repository.SettingsRepository
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Inject
 internal class GameStoreFactory(
     private val storeFactory: StoreFactory,
-    private val engine: GameEngine,
+    private val gameReducer: GameSessionReducer,
     private val audio: AudioRepository,
     private val saveRepository: GameSaveRepository,
     private val settings: SettingsRepository,
@@ -36,246 +35,221 @@ internal class GameStoreFactory(
         newGameSeed: Long? = null,
     ): GameStore {
         val logger = GameAnalyticsLogger(analytics)
-        val initializer = GameInitializer(engine, saveRepository, settings)
-        restoredResultState?.let(engine::restoreResult)
-
-        return object :
-            GameStore,
-            Store<GameStore.Intent, GameStoreState, GameStore.Label> by storeFactory.create(
+        val initializer = GameInitializer(gameReducer, saveRepository, settings)
+        val initialState = restoredResultState?.let(gameReducer::restoreResult) ?: GameState(
+            bestScore = settings.bestScore.value,
+            bestAtRoundStart = settings.bestScore.value,
+        )
+        return object : GameStore,
+            Store<GameStore.Intent, GameState, GameStore.Label> by storeFactory.create(
                 name = "GameStore",
-                initialState = GameStoreState(game = engine.state.value),
-                executorFactory = coroutineExecutorFactory<GameStore.Intent, GameStore.Action, GameStoreState, GameStore.Msg, GameStore.Label> {
-                    var rollbackStateToSuppress: GameState? = null
-
-                    onAction<GameStore.Action> {
-                        // ── 0. Bootstrap ──────────────────────────────────────────────────
-                        // seedBestScore must run before the state collector below, otherwise
-                        // the engine's initial bestScore=0 emission could clobber initialState.
-                        if (restoredResultState == null) {
-                            initializer.seedBestScore()
-                        }
-                        launch {
-                            val initialization = initializer.initialize(
-                                isNewGame = isNewGame,
-                                restoredResultState = restoredResultState,
-                                newGameSeed = newGameSeed,
-                            )
-                            if (initialization.source != GameInitializer.Source.ResultRestore) {
-                                logger.log(
-                                    eventName = "game_started",
-                                    state = engine.state.value,
-                                    extra = mapOf("source" to initialization.source.tag) +
-                                        initialization.roundStart.orEmptyAnalytics(engine.state.value),
-                                )
-                            }
-                        }
-
-                        // ── 1. State snapshots ────────────────────────────────────────────
-                        launch {
-                            engine.state.collect { dispatch(GameStore.Msg.Snapshot(it)) }
-                        }
-
-                        // ── 2. Best-score persistence ─────────────────────────────────────
-                        // setBestScore is monotonic at the repo level — no caller-side guard.
-                        launch {
-                            engine.state
-                                .map { it.bestScore }
-                                .distinctUntilChanged()
-                                .collect { best ->
-                                    attemptPersistence(
-                                        logger = logger,
-                                        operation = "best_score",
-                                        state = engine.state.value,
-                                    ) {
-                                        settings.setBestScore(best)
-                                    }
-                                }
-                        }
-
-                        // ── 3. Game-over edge → persisted Result ──────────────────────────
-                        launch {
-                            var previousIsGameOver = engine.state.value.isGameOver
-                            engine.state.collect { gameState ->
-                                val isGameOver = gameState.isGameOver
-                                val rollbackState = rollbackStateToSuppress
-                                if (rollbackState != null &&
-                                    isGameOver &&
-                                    gameState == rollbackState
-                                ) {
-                                    rollbackStateToSuppress = null
-                                    previousIsGameOver = true
-                                    return@collect
-                                }
-                                if (isGameOver == previousIsGameOver) return@collect
-                                previousIsGameOver = isGameOver
-                                if (isGameOver) {
-                                    logger.log("game_over", gameState)
-                                    val shouldRequestReview =
-                                        qualifiesForReview(gameState) &&
-                                            attemptPersistence(
-                                                logger = logger,
-                                                operation = "review_prompt_count",
-                                                state = gameState,
-                                            ) {
-                                                settings.incrementReviewPromptCount()
-                                            }
-                                    if (shouldRequestReview) {
-                                        engine.markReviewPromptFired()
-                                    }
-                                    val markedState =
-                                        if (shouldRequestReview) engine.state.value else gameState
-                                    val finalState = markedState.copy(
-                                        grid = Grid(markedState.grid.cells.copyOf()),
-                                    )
-                                    // Result navigation must never race the final save.
-                                    attemptPersistence(
-                                        logger = logger,
-                                        operation = "terminal_save",
-                                        state = finalState,
-                                    ) {
-                                        engine.saveNow(finalState)
-                                    }
-                                    attemptPersistence(
-                                        logger = logger,
-                                        operation = "terminal_best_score",
-                                        state = finalState,
-                                    ) {
-                                        settings.setBestScore(finalState.bestScore)
-                                    }
-                                    publish(
-                                        GameStore.Label.GameCompleted(
-                                            finalState = finalState,
-                                            canContinue = finalState.revivesUsed < GameState.MAX_REVIVES,
-                                            shouldRequestReview = shouldRequestReview,
-                                        ),
-                                    )
-                                }
-                            }
-                        }
-
-                        // ── 4a. SFX/voice: edge-triggered from engine events ──────────────
-                        launch {
-                            engine.events.collect { event ->
-                                when (event) {
-                                    is GameEvent.MoveResolved -> {
-                                        val moveParams = moveAnalyticsParams(event)
-                                        event.feedback?.let { audio.playVoiceFeedback(it) }
-
-                                        logger.log(
-                                            eventName = "piece_place_success",
-                                            state = engine.state.value,
-                                            extra = moveParams,
-                                        )
-                                        if (event.linesCount > 0) {
-                                            logger.log(
-                                                eventName = "lines_cleared",
-                                                state = engine.state.value,
-                                                extra = moveParams,
-                                            )
-                                        }
-                                        if (event.linesCount > 0 && event.comboLevel >= 2) {
-                                            logger.log(
-                                                eventName = "combo_reached",
-                                                state = engine.state.value,
-                                                extra = moveParams,
-                                            )
-                                        }
-                                    }
-                                    is GameEvent.GameStarted -> Unit
-                                }
-                            }
-                        }
-
-                        // ── 4b. Music: derived from continuous state, not events ──────────
-                        // Driving music from events would miss the first GameStarted on cold
-                        // launch (SharedFlow replay=0, bootstrap may emit before this
-                        // collector subscribes). State-derived is idempotent through
-                        // distinctUntilChanged.
-                        launch {
-                            engine.state
-                                .map { !it.isGameOver && it.currentPieces.isNotEmpty() }
-                                .distinctUntilChanged()
-                                .collect { shouldPlay ->
-                                    if (shouldPlay) audio.startMusic() else audio.stopMusic()
-                                }
-                        }
-                    }
-                    onIntent<GameStore.Intent.Place> { intent ->
-                        val before = engine.state.value
-                        val placementParams = mapOf(
-                            "piece_id" to intent.pieceId,
-                            "remaining_pieces" to before.currentPieces.size,
-                        )
-                        logger.log("piece_place_attempt", before, placementParams)
-                        val placed = engine.placePiece(intent.pieceId, intent.x, intent.y)
-                        if (!placed) {
-                            logger.log(
-                                eventName = "piece_place_failed",
-                                state = engine.state.value,
-                                extra = placementParams,
-                            )
-                        }
-                    }
-                    onIntent<GameStore.Intent.Revive> {
-                        rollbackStateToSuppress = null
-                        val terminalState = engine.state.value.copy(
-                            grid = Grid(engine.state.value.grid.cells.copyOf()),
-                        )
-                        logger.log("revive_clicked", terminalState)
-                        val revived = engine.continueWithSmallBlocks()
-                        val state = engine.state.value
-                        dispatch(GameStore.Msg.Snapshot(state))
-                        if (revived) {
-                            logger.log("revive_completed", state, mapOf("source" to "revive"))
-                            logger.log("game_started", state, mapOf("source" to "revive"))
-                            val playableState = state.copy(
-                                grid = Grid(state.grid.cells.copyOf()),
-                            )
-                            launch {
-                                val saved = attemptPersistence(
-                                    logger = logger,
-                                    operation = "revive_save",
-                                    state = playableState,
-                                ) {
-                                    engine.saveNow(playableState)
-                                }
-                                if (saved) {
-                                    publish(GameStore.Label.ReviveCompleted(playableState))
-                                } else {
-                                    engine.restoreResult(terminalState)
-                                    rollbackStateToSuppress = engine.state.value
-                                    dispatch(GameStore.Msg.Snapshot(engine.state.value))
-                                    publish(GameStore.Label.ReviveFailed)
-                                }
-                            }
-                        } else {
-                            publish(GameStore.Label.ReviveFailed)
-                        }
-                    }
-                    onIntent<GameStore.Intent.Restart> {
-                        logger.log("restart_clicked", engine.state.value)
-                        launch {
-                            val roundStart = engine.startNewGame(
-                                bestScore = engine.state.value.bestScore,
-                                allowStarterLayout = settings.tutorialSeen.value,
-                            )
-                            logger.log(
-                                eventName = "game_started",
-                                state = engine.state.value,
-                                extra = mapOf("source" to "restart") +
-                                    roundStartAnalyticsParams(roundStart, engine.state.value),
-                            )
-                        }
-                    }
+                initialState = initialState,
+                executorFactory = {
+                    ExecutorImpl(
+                        isNewGame = isNewGame,
+                        restoredResultState = restoredResultState,
+                        newGameSeed = newGameSeed,
+                        initializer = initializer,
+                        logger = logger,
+                    )
                 },
                 reducer = GameReducer,
                 bootstrapper = SimpleBootstrapper(GameStore.Action.Init),
             ) {}
     }
 
-    internal object GameReducer : Reducer<GameStoreState, GameStore.Msg> {
-        override fun GameStoreState.reduce(msg: GameStore.Msg): GameStoreState = when (msg) {
-            is GameStore.Msg.Snapshot -> copy(game = msg.state)
+    private inner class ExecutorImpl(
+        private val isNewGame: Boolean,
+        private val restoredResultState: GameState?,
+        private val newGameSeed: Long?,
+        private val initializer: GameInitializer,
+        private val logger: GameAnalyticsLogger,
+    ) : CoroutineExecutor<GameStore.Intent, GameStore.Action, GameState, GameStore.Msg, GameStore.Label>() {
+        private val saveCoordinator = GameSaveCoordinator(saveRepository)
+
+        override fun executeAction(action: GameStore.Action) {
+            when (action) {
+                GameStore.Action.Init -> initialize()
+            }
+        }
+
+        override fun executeIntent(intent: GameStore.Intent) {
+            when (intent) {
+                is GameStore.Intent.Place -> place(intent)
+                GameStore.Intent.Revive -> revive()
+                GameStore.Intent.Restart -> restart()
+            }
+        }
+
+        private fun initialize() {
+            scope.launch {
+                val initialization = initializer.initialize(
+                    isNewGame = isNewGame,
+                    restoredResultState = restoredResultState,
+                    newGameSeed = newGameSeed,
+                )
+                dispatch(GameStore.Msg.Snapshot(initialization.state))
+                updateMusic(initialization.state)
+                if (initialization.source != GameInitializer.Source.ResultRestore) {
+                    logger.log(
+                        eventName = "game_started",
+                        state = initialization.state,
+                        extra = mapOf("source" to initialization.source.tag) +
+                            initialization.roundStart.orEmptyAnalytics(initialization.state),
+                    )
+                }
+                if (initialization.source == GameInitializer.Source.New) {
+                    scheduleSave(initialization.state)
+                }
+            }
+        }
+
+        private fun place(intent: GameStore.Intent.Place) {
+            val before = state()
+            val placementParams = mapOf(
+                "piece_id" to intent.pieceId,
+                "remaining_pieces" to before.currentPieces.size,
+            )
+            logger.log("piece_place_attempt", before, placementParams)
+            when (val transition = gameReducer.place(before, intent.pieceId, intent.x, intent.y)) {
+                is GameTransition.Rejected -> logger.log(
+                    eventName = "piece_place_failed",
+                    state = before,
+                    extra = placementParams + ("reason" to transition.reason.name),
+                )
+
+                is GameTransition.Applied -> {
+                    dispatch(GameStore.Msg.Snapshot(transition.state))
+                    scheduleSave(transition.state)
+                    val event = transition.fact as? GameEvent.MoveResolved ?: return
+                    scope.launch { processMove(before, transition.state, event) }
+                }
+            }
+        }
+
+        private suspend fun processMove(
+            before: GameState,
+            state: GameState,
+            event: GameEvent.MoveResolved,
+        ) {
+            val moveParams = moveAnalyticsParams(event)
+            event.feedback?.let { audio.playVoiceFeedback(it) }
+            logger.log("piece_place_success", state, moveParams)
+            if (event.linesCount > 0) logger.log("lines_cleared", state, moveParams)
+            if (event.linesCount > 0 && event.comboLevel >= 2) {
+                logger.log("combo_reached", state, moveParams)
+            }
+            if (state.bestScore != before.bestScore) {
+                attemptPersistence(logger, "best_score", state) {
+                    settings.setBestScore(state.bestScore)
+                }
+            }
+            if (event.isGameOver) {
+                audio.stopMusic()
+                completeGame(state)
+            }
+        }
+
+        private suspend fun completeGame(gameState: GameState) {
+            logger.log("game_over", gameState)
+            val shouldRequestReview = qualifiesForReview(gameState) &&
+                attemptPersistence(logger, "review_prompt_count", gameState) {
+                    settings.incrementReviewPromptCount()
+                }
+            val markedState = if (shouldRequestReview) {
+                gameReducer.markReviewPromptFired(gameState).also {
+                    dispatch(GameStore.Msg.Snapshot(it))
+                }
+            } else {
+                gameState
+            }
+            val finalState = markedState.copy(grid = Grid(markedState.grid.cells.copyOf()))
+            attemptPersistence(logger, "terminal_save", finalState) {
+                saveCoordinator.flush(finalState)
+            }
+            attemptPersistence(logger, "terminal_best_score", finalState) {
+                settings.setBestScore(finalState.bestScore)
+            }
+            publish(
+                GameStore.Label.GameCompleted(
+                    finalState = finalState,
+                    canContinue = finalState.revivesUsed < GameState.MAX_REVIVES,
+                    shouldRequestReview = shouldRequestReview,
+                ),
+            )
+        }
+
+        private fun revive() {
+            val current = state()
+            val terminalState = current.copy(grid = Grid(current.grid.cells.copyOf()))
+            logger.log("revive_clicked", terminalState)
+            when (val transition = gameReducer.revive(terminalState)) {
+                is GameTransition.Rejected -> publish(GameStore.Label.ReviveFailed)
+                is GameTransition.Applied -> {
+                    val playableState = transition.state
+                    dispatch(GameStore.Msg.Snapshot(playableState))
+                    scope.launch {
+                        updateMusic(playableState)
+                        logger.log("revive_completed", playableState, mapOf("source" to "revive"))
+                        logger.log("game_started", playableState, mapOf("source" to "revive"))
+                        val saved = attemptPersistence(logger, "revive_save", playableState) {
+                            saveCoordinator.flush(playableState)
+                        }
+                        if (saved) {
+                            publish(GameStore.Label.ReviveCompleted(playableState))
+                        } else {
+                            dispatch(GameStore.Msg.Snapshot(terminalState))
+                            updateMusic(terminalState)
+                            publish(GameStore.Label.ReviveFailed)
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun restart() {
+            val before = state()
+            logger.log("restart_clicked", before)
+            val roundStart = gameReducer.startNewGame(
+                previousState = before,
+                bestScore = before.bestScore,
+                allowStarterLayout = settings.tutorialSeen.value,
+            )
+            dispatch(GameStore.Msg.Snapshot(roundStart.state))
+            scheduleSave(roundStart.state)
+            scope.launch {
+                updateMusic(roundStart.state)
+                logger.log(
+                    eventName = "game_started",
+                    state = roundStart.state,
+                    extra = mapOf("source" to "restart") +
+                        roundStartAnalyticsParams(roundStart.info, roundStart.state),
+                )
+            }
+        }
+
+        private fun scheduleSave(snapshot: GameState) {
+            saveCoordinator.schedule(
+                scope = scope,
+                state = snapshot,
+                onFailure = { error ->
+                    logPersistenceFailure(logger, "autosave", snapshot, error)
+                },
+            )
+        }
+
+        private suspend fun updateMusic(snapshot: GameState) {
+            if (!snapshot.isGameOver && snapshot.currentPieces.isNotEmpty()) {
+                audio.startMusic()
+            } else {
+                audio.stopMusic()
+            }
+        }
+    }
+
+    internal object GameReducer : Reducer<GameState, GameStore.Msg> {
+        override fun GameState.reduce(msg: GameStore.Msg): GameState = when (msg) {
+            is GameStore.Msg.Snapshot -> msg.state
         }
     }
 
@@ -284,23 +258,31 @@ internal class GameStoreFactory(
         operation: String,
         state: GameState,
         block: suspend () -> Unit,
-    ): Boolean =
-        try {
-            block()
-            true
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            logger.log(
-                eventName = "game_persistence_failed",
-                state = state,
-                extra = mapOf(
-                    "operation" to operation,
-                    "error_type" to (error::class.simpleName ?: "Exception"),
-                ),
-            )
-            false
-        }
+    ): Boolean = try {
+        block()
+        true
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        logPersistenceFailure(logger, operation, state, error)
+        false
+    }
+
+    private fun logPersistenceFailure(
+        logger: GameAnalyticsLogger,
+        operation: String,
+        state: GameState,
+        error: Exception,
+    ) {
+        logger.log(
+            eventName = "game_persistence_failed",
+            state = state,
+            extra = mapOf(
+                "operation" to operation,
+                "error_type" to (error::class.simpleName ?: "Exception"),
+            ),
+        )
+    }
 
     private fun moveAnalyticsParams(event: GameEvent.MoveResolved): Map<String, Any> = mapOf(
         "piece_id" to event.pieceId,
@@ -322,27 +304,25 @@ internal class GameStoreFactory(
     private fun RoundStartInfo?.orEmptyAnalytics(state: GameState): Map<String, Any> =
         this?.let { roundStartAnalyticsParams(it, state) }.orEmpty()
 
-    private fun roundStartAnalyticsParams(
-        info: RoundStartInfo,
-        state: GameState,
-    ): Map<String, Any> = buildMap {
-        put("layout_source", info.layoutSource.name.lowercase())
-        put("initial_occupied_cells", state.grid.cells.count { it != Grid.EMPTY })
-        put("initial_tray_shape_ids", state.currentPieces.joinToString(",") { it.shape.id })
-        put(
-            "initial_tray_size_categories",
-            state.currentPieces.joinToString(",") { piece ->
-                when (piece.shape.size) {
-                    in 1..2 -> "compact"
-                    in 3..4 -> "medium"
-                    else -> "large"
-                }
-            },
-        )
-        info.starterTemplateId?.let { put("starter_template_id", it) }
-        info.quarterTurns?.let { put("starter_quarter_turns", it) }
-        info.reflectedHorizontally?.let { put("starter_reflected_horizontally", it) }
-    }
+    private fun roundStartAnalyticsParams(info: RoundStartInfo, state: GameState): Map<String, Any> =
+        buildMap {
+            put("layout_source", info.layoutSource.name.lowercase())
+            put("initial_occupied_cells", state.grid.cells.count { it != Grid.EMPTY })
+            put("initial_tray_shape_ids", state.currentPieces.joinToString(",") { it.shape.id })
+            put(
+                "initial_tray_size_categories",
+                state.currentPieces.joinToString(",") { piece ->
+                    when (piece.shape.size) {
+                        in 1..2 -> "compact"
+                        in 3..4 -> "medium"
+                        else -> "large"
+                    }
+                },
+            )
+            info.starterTemplateId?.let { put("starter_template_id", it) }
+            info.quarterTurns?.let { put("starter_quarter_turns", it) }
+            info.reflectedHorizontally?.let { put("starter_reflected_horizontally", it) }
+        }
 
     private fun qualifiesForReview(state: GameState): Boolean {
         val beatBy = state.score - state.bestAtRoundStart

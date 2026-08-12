@@ -13,7 +13,8 @@ import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
 import ge.yet.blockblast.feature.game.result.GameResultComponent
 import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
 import ge.yet.blockblast.feature.home.HomeComponent
-import ge.yet.blokblast.domain.engine.GameEngine
+import ge.yet.blokblast.domain.engine.GameSessionReducer
+import ge.yet.blokblast.domain.engine.GameTransition
 import ge.yet.blokblast.domain.engine.ScoreCalculator
 import ge.yet.blokblast.domain.engine.ShapeGenerator
 import ge.yet.blokblast.domain.model.FeedbackType
@@ -291,9 +292,9 @@ class DefaultRootComponentTest {
 
         assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
         val restoredGame = restoredGameFactory.created.single()
-        assertEquals(finalState.score, restoredGame.engine.state.value.score)
-        assertEquals(finalState.grid, restoredGame.engine.state.value.grid)
-        assertTrue(restoredGame.engine.state.value.isGameOver)
+        assertEquals(finalState.score, restoredGame.model.value.game.score)
+        assertEquals(finalState.grid, restoredGame.model.value.game.grid)
+        assertTrue(restoredGame.model.value.game.isGameOver)
 
         restored.resultFactory.created.single().continueRequested()
         runCurrent()
@@ -322,13 +323,13 @@ class DefaultRootComponentTest {
         )
         assertIs<RootComponent.Child.Game>(fresh.component.stack.value.active.instance)
         val freshGame = freshFactory.created.single()
-        assertEquals(playableState.score, freshGame.engine.state.value.score)
-        assertEquals(playableState.grid, freshGame.engine.state.value.grid)
-        assertEquals(playableState.revivesUsed, freshGame.engine.state.value.revivesUsed)
-        assertFalse(freshGame.engine.state.value.isGameOver)
+        assertEquals(playableState.score, freshGame.model.value.game.score)
+        assertEquals(playableState.grid, freshGame.model.value.game.grid)
+        assertEquals(playableState.revivesUsed, freshGame.model.value.game.revivesUsed)
+        assertFalse(freshGame.model.value.game.isGameOver)
 
         val saveCountBeforePlacement = freshRepository.saveCount
-        val piece = freshGame.engine.state.value.currentPieces.first()
+        val piece = freshGame.model.value.game.currentPieces.first()
         freshGame.onCellClicked(piece.pieceId, 0, 0)
         advanceTimeBy(300)
         runCurrent()
@@ -420,25 +421,24 @@ class DefaultRootComponentTest {
         private val onReviveFailed: () -> Unit,
     ) : GameComponent {
         var reviveCalls = 0
-        val engine = GameEngine(
+        private val reducer = GameSessionReducer(
             shapeGenerator = OneByOneGenerator(),
             scoreCalculator = ScoreCalculator(),
-            saveRepository = saveRepository,
-            externalScope = externalScope,
         )
+        private var gameState: GameState
 
         init {
-            if (restoredResultState != null) {
-                engine.restoreResult(restoredResultState)
+            gameState = if (restoredResultState != null) {
+                reducer.restoreResult(restoredResultState)
             } else if (!isNewGame && saveRepository.saved != null) {
-                engine.restore(checkNotNull(saveRepository.saved))
+                reducer.restore(checkNotNull(saveRepository.saved), persistedBestScore = 0)
             } else {
-                engine.startNewGame(bestScore = 0L)
+                reducer.startNewGame(bestScore = 0L).state
             }
         }
 
         override val model = com.arkivanov.decompose.value.MutableValue(
-            GameComponent.Model(game = engine.state.value),
+            GameComponent.Model(game = gameState),
         )
         override val sheetSlot = com.arkivanov.decompose.value.MutableValue(
             com.arkivanov.decompose.router.slot.ChildSlot<Any, GameComponent.SheetChild>(child = null),
@@ -453,19 +453,25 @@ class DefaultRootComponentTest {
                 override fun clearSelection() {}
             }
         override fun onCellClicked(pieceId: Long, x: Int, y: Int) {
-            engine.placePiece(pieceId, x, y)
-            model.value = GameComponent.Model(game = engine.state.value)
+            val transition = reducer.place(gameState, pieceId, x, y)
+            if (transition is GameTransition.Applied) {
+                gameState = transition.state
+                externalScope.launch { saveRepository.save(gameState) }
+            }
+            model.value = GameComponent.Model(game = gameState)
         }
         override fun onReviveClicked() {
             reviveCalls += 1
-            if (failRevive || !engine.continueWithSmallBlocks()) {
+            val transition = reducer.revive(gameState)
+            if (failRevive || transition !is GameTransition.Applied) {
                 onReviveFailed()
                 return
             }
-            model.value = GameComponent.Model(game = engine.state.value)
+            gameState = transition.state
+            model.value = GameComponent.Model(game = gameState)
             externalScope.launch {
-                val playableState = engine.state.value
-                engine.saveNow(playableState)
+                val playableState = gameState
+                saveRepository.save(playableState)
                 onReviveCompleted(playableState)
             }
         }

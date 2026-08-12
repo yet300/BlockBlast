@@ -1,6 +1,6 @@
 package ge.yet.blockblast.feature.game.store
 
-import ge.yet.blokblast.domain.engine.GameEngine
+import ge.yet.blokblast.domain.engine.GameSessionReducer
 import ge.yet.blokblast.domain.model.GameState
 import ge.yet.blokblast.domain.model.RoundStartInfo
 import ge.yet.blokblast.domain.repository.GameSaveRepository
@@ -8,12 +8,11 @@ import ge.yet.blokblast.domain.repository.SettingsRepository
 
 /**
  * Decides what to do at game bootstrap: start a fresh round, restore a saved
- * one, or leave a warm engine alone. Pulled out of GameStoreFactory so the
- * factory only wires concerns together; the branching logic lives here and is
- * unit-testable in isolation.
+ * one, or restore the terminal snapshot beneath Result. Returns a complete
+ * state; it never mutates a long-lived session object.
  */
 internal class GameInitializer(
-    private val engine: GameEngine,
+    private val gameReducer: GameSessionReducer,
     private val saveRepository: GameSaveRepository,
     private val settings: SettingsRepository,
 ) {
@@ -24,13 +23,10 @@ internal class GameInitializer(
     }
 
     data class Result(
+        val state: GameState,
         val source: Source,
         val roundStart: RoundStartInfo? = null,
     )
-
-    fun seedBestScore() {
-        engine.seedBestScore(settings.bestScore.value)
-    }
 
     suspend fun initialize(
         isNewGame: Boolean,
@@ -38,36 +34,34 @@ internal class GameInitializer(
         newGameSeed: Long? = null,
     ): Result {
         if (restoredResultState != null) {
-            return Result(Source.ResultRestore)
-        }
-
-        val current = engine.state.value
-
-        if (isNewGame || current.isGameOver) {
-            val roundStart = engine.startNewGame(
-                seed = newGameSeed,
-                bestScore = current.bestScore,
-                allowStarterLayout = settings.tutorialSeen.value,
+            return Result(
+                state = gameReducer.restoreResult(restoredResultState),
+                source = Source.ResultRestore,
             )
-            return Result(Source.New, roundStart)
         }
 
-        if (current.currentPieces.isEmpty()) {
-            val saved = saveRepository.load()
-            return if (saved != null && !saved.isGameOver && saved.currentPieces.isNotEmpty()) {
-                engine.restore(saved)
-                Result(Source.Continue)
-            } else {
-                val roundStart = engine.startNewGame(
-                    seed = newGameSeed,
-                    bestScore = current.bestScore,
-                    allowStarterLayout = settings.tutorialSeen.value,
-                )
-                Result(Source.New, roundStart)
-            }
+        val saved = if (isNewGame) null else saveRepository.load()
+        if (saved != null && !saved.isGameOver && saved.currentPieces.isNotEmpty()) {
+            return Result(
+                state = gameReducer.restore(saved, settings.bestScore.value),
+                source = Source.Continue,
+            )
         }
 
-        // Warm continue: engine already holds an in-flight round; leave it.
-        return Result(Source.Continue)
+        val previousState = saved ?: GameState(
+            bestScore = settings.bestScore.value,
+            bestAtRoundStart = settings.bestScore.value,
+        )
+        val roundStart = gameReducer.startNewGame(
+            previousState = previousState,
+            seed = newGameSeed,
+            bestScore = maxOf(previousState.bestScore, settings.bestScore.value),
+            allowStarterLayout = settings.tutorialSeen.value,
+        )
+        return Result(
+            state = roundStart.state,
+            source = Source.New,
+            roundStart = roundStart.info,
+        )
     }
 }
