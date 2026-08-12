@@ -11,7 +11,7 @@ firebase-android-bom = "34.17.0"
 gradlePlugins-crashlytics = "3.0.7"
 gradlePlugins-google-services = "4.5.0"
 #Gitlive
-firebase-gitlive-sdk = "2.5.0"
+firebase-gitlive-sdk = "3.0.0-alpha01"
 
 android-review = "2.0.2"
 
