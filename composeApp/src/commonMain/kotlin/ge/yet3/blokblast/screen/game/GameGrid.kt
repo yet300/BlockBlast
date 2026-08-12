@@ -35,9 +35,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import ge.yet.blokblast.domain.model.ClearEvent
-import ge.yet.blokblast.domain.model.Grid
-import ge.yet.blokblast.domain.model.Piece
+import ge.yet.game.domain.model.ClearEvent
+import ge.yet.game.domain.model.Grid
+import ge.yet.game.domain.model.Piece
 import ge.yet3.blokblast.screen.game.effects.CellAnimState
 import ge.yet3.blokblast.screen.game.effects.ComboStripesState
 import ge.yet3.blokblast.screen.game.effects.ParticleBurstState

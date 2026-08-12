@@ -1,6 +1,6 @@
 package ge.yet3.blokblast.di
 
-import ge.yet.blockblast.feature.root.RootComponent
+import ge.yet.game.feature.root.RootComponent
 
 /**
  * Common entry point for the dependency graph.

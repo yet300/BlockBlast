@@ -37,7 +37,7 @@ import blockblast.composeapp.generated.resources.feedback_excellent
 import blockblast.composeapp.generated.resources.feedback_good
 import blockblast.composeapp.generated.resources.feedback_great
 import blockblast.composeapp.generated.resources.feedback_unbelievable
-import ge.yet.blokblast.domain.model.FeedbackType
+import ge.yet.game.domain.model.FeedbackType
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
 import org.jetbrains.compose.resources.stringResource

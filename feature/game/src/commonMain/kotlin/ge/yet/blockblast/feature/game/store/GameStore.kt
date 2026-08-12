@@ -1,7 +1,7 @@
 package ge.yet.blockblast.feature.game.store
 
 import com.arkivanov.mvikotlin.core.store.Store
-import ge.yet.blokblast.domain.model.GameState
+import ge.yet.game.domain.model.GameState
 
 internal interface GameStore : Store<GameStore.Intent, GameState, GameStore.Label> {
 

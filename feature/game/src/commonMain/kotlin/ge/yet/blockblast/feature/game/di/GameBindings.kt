@@ -10,9 +10,9 @@ import ge.yet.blockblast.feature.game.DefaultGameComponentFactory
 import ge.yet.blockblast.feature.game.GameComponent
 import ge.yet.blockblast.feature.game.result.DefaultGameResultComponentFactory
 import ge.yet.blockblast.feature.game.result.GameResultComponent
-import ge.yet.blokblast.domain.engine.GameSessionReducer
-import ge.yet.blokblast.domain.engine.ScoreCalculator
-import ge.yet.blokblast.domain.engine.ShapeGenerator
+import ge.yet.game.domain.engine.GameSessionReducer
+import ge.yet.game.domain.engine.ScoreCalculator
+import ge.yet.game.domain.engine.ShapeGenerator
 
 @ContributesTo(AppScope::class)
 @BindingContainer

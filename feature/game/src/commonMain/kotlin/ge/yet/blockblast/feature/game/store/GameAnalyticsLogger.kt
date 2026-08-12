@@ -1,7 +1,7 @@
 package ge.yet.blockblast.feature.game.store
 
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.repository.AnalyticRepository
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.repository.AnalyticRepository
 
 internal class GameAnalyticsLogger(private val analytics: AnalyticRepository) {
 

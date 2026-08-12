@@ -1,7 +1,7 @@
 package ge.yet.blockblast.feature.game.tray
 
 import com.arkivanov.decompose.value.Value
-import ge.yet.blokblast.domain.model.Piece
+import ge.yet.game.domain.model.Piece
 
 /**
  * One piece in the tray. Identity (`==`) is stable across engine emissions as

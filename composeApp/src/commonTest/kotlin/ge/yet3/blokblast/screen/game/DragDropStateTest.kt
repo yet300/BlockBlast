@@ -1,9 +1,9 @@
 package ge.yet3.blokblast.screen.game
 
 import androidx.compose.ui.geometry.Offset
-import ge.yet.blokblast.domain.model.Piece
-import ge.yet.blokblast.domain.model.Polyomino
-import ge.yet.blokblast.domain.model.Position
+import ge.yet.game.domain.model.Piece
+import ge.yet.game.domain.model.Polyomino
+import ge.yet.game.domain.model.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -24,7 +24,7 @@ import blockblast.composeapp.generated.resources.sfx_subtitle
 import blockblast.composeapp.generated.resources.vibration
 import blockblast.composeapp.generated.resources.vibration_subtitle
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import ge.yet.blockblast.feature.settings.main.MainSettingsComponent
+import ge.yet.game.feature.settings.main.MainSettingsComponent
 import ge.yet.game.uikit.components.icon.DarkMode
 import ge.yet.game.uikit.components.icon.NotificationsActive
 import ge.yet.game.uikit.components.icon.Settings

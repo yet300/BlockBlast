@@ -8,11 +8,11 @@ import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
-import ge.yet.blokblast.domain.model.Grid
-import ge.yet.blokblast.domain.repository.AnalyticRepository
-import ge.yet.blokblast.domain.repository.ReviewCode
-import ge.yet.blokblast.domain.repository.SettingsRepository
-import ge.yet.blokblast.domain.repository.StoreReviewRepository
+import ge.yet.game.domain.model.Grid
+import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.ReviewCode
+import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

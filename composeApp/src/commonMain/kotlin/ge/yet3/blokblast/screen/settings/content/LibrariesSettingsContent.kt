@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.open_source_libraries
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import ge.yet.blockblast.feature.settings.libraries.LibrariesSettingsComponent
+import ge.yet.game.feature.settings.libraries.LibrariesSettingsComponent
 import ge.yet.game.uikit.components.icon.OpenInNew
 import ge.yet3.blokblast.screen.settings.SettingsDivider
 import ge.yet3.blokblast.screen.settings.SettingsHeader

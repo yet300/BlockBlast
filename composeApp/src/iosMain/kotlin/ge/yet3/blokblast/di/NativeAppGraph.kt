@@ -5,13 +5,13 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.createGraphFactory
 import ge.yet.blockblast.feature.game.di.GameBindings
-import ge.yet.blockblast.feature.home.di.HomeBindings
-import ge.yet.blockblast.feature.root.RootComponent
-import ge.yet.blockblast.feature.root.di.RootBindings
-import ge.yet.blockblast.feature.settings.di.SettingsBindings
-import ge.yet.blokblast.data.di.DataBindings
-import ge.yet.blokblast.data.di.NativeDataBindings
-import ge.yet.blokblast.telemetry.di.TelemetryBindings
+import ge.yet.game.feature.home.di.HomeBindings
+import ge.yet.game.feature.root.RootComponent
+import ge.yet.game.feature.root.di.RootBindings
+import ge.yet.game.feature.settings.di.SettingsBindings
+import ge.yet.game.data.di.DataBindings
+import ge.yet.game.data.di.NativeDataBindings
+import ge.yet.game.telemetry.di.TelemetryBindings
 
 
 @DependencyGraph(

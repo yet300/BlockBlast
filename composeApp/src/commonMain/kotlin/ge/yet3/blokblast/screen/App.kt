@@ -6,7 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.app.common.config.AppConfig
-import ge.yet.blockblast.feature.root.RootComponent
+import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.monetization.ads.AdMobConfiguration
 import ge.yet.game.monetization.ads.AdMobProvider
 import ge.yet.game.monetization.ads.rememberAdMobState

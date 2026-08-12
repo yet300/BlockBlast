@@ -4,7 +4,7 @@ import blockblast.composeapp.generated.resources.Res
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import ge.yet.blokblast.domain.repository.AudioFileProvider
+import ge.yet.game.domain.repository.AudioFileProvider
 
 /**
  * Reads audio files from `composeResources/files/audio/` via CMP's [Res.readBytes].

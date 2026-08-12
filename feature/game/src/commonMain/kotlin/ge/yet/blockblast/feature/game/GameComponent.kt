@@ -4,8 +4,8 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
-import ge.yet.blockblast.feature.settings.SettingsComponent
-import ge.yet.blokblast.domain.model.GameState
+import ge.yet.game.feature.settings.SettingsComponent
+import ge.yet.game.domain.model.GameState
 
 /**
  * In-game screen. Delegates gameplay transitions to its retained `GameStore`; the component

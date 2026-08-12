@@ -1,7 +1,7 @@
 package ge.yet.blockblast.feature.game.tray
 
 import com.arkivanov.decompose.value.Value
-import ge.yet.blokblast.domain.model.Piece
+import ge.yet.game.domain.model.Piece
 
 /**
  * Bottom-of-screen tray that holds up to three pieces. Mirrors the engine's

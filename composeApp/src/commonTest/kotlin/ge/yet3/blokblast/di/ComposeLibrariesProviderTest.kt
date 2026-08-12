@@ -1,6 +1,6 @@
 package ge.yet3.blokblast.di
 
-import ge.yet.blockblast.feature.settings.libraries.LibrariesSettingsComponent
+import ge.yet.game.feature.settings.libraries.LibrariesSettingsComponent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

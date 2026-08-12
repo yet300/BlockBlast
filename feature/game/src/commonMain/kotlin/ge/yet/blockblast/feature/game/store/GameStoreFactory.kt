@@ -7,16 +7,16 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import dev.zacsweers.metro.Inject
-import ge.yet.blokblast.domain.engine.GameSessionReducer
-import ge.yet.blokblast.domain.engine.GameTransition
-import ge.yet.blokblast.domain.model.GameEvent
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.model.Grid
-import ge.yet.blokblast.domain.model.RoundStartInfo
-import ge.yet.blokblast.domain.repository.AnalyticRepository
-import ge.yet.blokblast.domain.repository.AudioRepository
-import ge.yet.blokblast.domain.repository.GameSaveRepository
-import ge.yet.blokblast.domain.repository.SettingsRepository
+import ge.yet.game.domain.engine.GameSessionReducer
+import ge.yet.game.domain.engine.GameTransition
+import ge.yet.game.domain.model.GameEvent
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.model.Grid
+import ge.yet.game.domain.model.RoundStartInfo
+import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.AudioRepository
+import ge.yet.game.domain.repository.GameSaveRepository
+import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 

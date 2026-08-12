@@ -17,7 +17,7 @@ import blockblast.composeapp.generated.resources.disable_ads_anyway
 import blockblast.composeapp.generated.resources.disable_ads_body
 import blockblast.composeapp.generated.resources.disable_ads_title
 import blockblast.composeapp.generated.resources.keep_ads
-import ge.yet.blockblast.feature.settings.disableads.DisableAdsComponent
+import ge.yet.game.feature.settings.disableads.DisableAdsComponent
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import ge.yet3.blokblast.screen.settings.SettingsHeader

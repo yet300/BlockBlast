@@ -3,7 +3,7 @@ package ge.yet.blockblast.feature.game.tray
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.operator.map
-import ge.yet.blokblast.domain.model.Piece
+import ge.yet.game.domain.model.Piece
 
 internal class DefaultTraySlotComponent(
     override val piece: Piece,

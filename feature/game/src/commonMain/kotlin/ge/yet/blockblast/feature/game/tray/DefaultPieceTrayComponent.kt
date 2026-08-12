@@ -4,10 +4,10 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.doOnDestroy
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.model.Grid
-import ge.yet.blokblast.domain.model.Piece
-import ge.yet.blokblast.domain.model.Polyomino
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.model.Grid
+import ge.yet.game.domain.model.Piece
+import ge.yet.game.domain.model.Polyomino
 
 /**
  * Reconciles engine emissions of `currentPieces` (already compacted) onto a

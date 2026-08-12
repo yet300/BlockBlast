@@ -1,7 +1,7 @@
 package ge.yet.blockblast.feature.game.store
 
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.repository.GameSaveRepository
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.repository.GameSaveRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent

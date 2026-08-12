@@ -25,7 +25,7 @@ import blockblast.composeapp.generated.resources.support_game
 import blockblast.composeapp.generated.resources.support_game_subtitle
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.app.common.config.AppConfig
-import ge.yet.blockblast.feature.settings.more.MoreSettingsComponent
+import ge.yet.game.feature.settings.more.MoreSettingsComponent
 import ge.yet.game.uikit.components.icon.Github
 import ge.yet.game.uikit.components.icon.OpenInNew
 import ge.yet.game.uikit.components.icon.PrivacyTip

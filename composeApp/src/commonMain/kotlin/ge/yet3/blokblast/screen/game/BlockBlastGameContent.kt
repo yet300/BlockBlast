@@ -40,7 +40,7 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Rect
 import ge.yet3.blokblast.component.overlay.GestureTutorial
-import ge.yet.blokblast.domain.model.Grid
+import ge.yet.game.domain.model.Grid
 import androidx.compose.ui.unit.dp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.best

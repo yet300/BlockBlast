@@ -4,11 +4,11 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.resume
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.model.Grid
-import ge.yet.blokblast.domain.model.Piece
-import ge.yet.blokblast.domain.model.Polyomino
-import ge.yet.blokblast.domain.model.Position
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.model.Grid
+import ge.yet.game.domain.model.Piece
+import ge.yet.game.domain.model.Polyomino
+import ge.yet.game.domain.model.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame

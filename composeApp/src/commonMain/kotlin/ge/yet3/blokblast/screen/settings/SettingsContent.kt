@@ -9,7 +9,7 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import ge.yet.blockblast.feature.settings.SettingsComponent
+import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet3.blokblast.screen.settings.content.LibrariesSettingsContent
 import ge.yet3.blokblast.screen.settings.content.MainSettingsContent
 import ge.yet3.blokblast.screen.settings.content.MoreSettingsContent

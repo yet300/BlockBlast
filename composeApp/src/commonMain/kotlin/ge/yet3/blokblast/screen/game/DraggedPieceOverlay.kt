@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.times
-import ge.yet.blokblast.domain.model.Piece
+import ge.yet.game.domain.model.Piece
 import ge.yet.game.uikit.components.modifier.CellOffset
 import ge.yet.game.uikit.components.modifier.liftedPieceShadow
 

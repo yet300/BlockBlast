@@ -21,10 +21,10 @@ import ge.yet.blockblast.feature.game.tray.DefaultPieceTrayComponent
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.game.store.GameStore
 import ge.yet.blockblast.feature.game.store.GameStoreFactory
-import ge.yet.blockblast.feature.settings.SettingsComponent
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.repository.AnalyticRepository
-import ge.yet.blokblast.domain.repository.AudioRepository
+import ge.yet.game.feature.settings.SettingsComponent
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.AudioRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 

@@ -4,8 +4,8 @@ import blockblast.composeapp.generated.resources.Res
 import com.app.common.AppDispatchers
 import com.mikepenz.aboutlibraries.Libs
 import dev.zacsweers.metro.Inject
-import ge.yet.blockblast.feature.settings.libraries.LibrariesProvider
-import ge.yet.blockblast.feature.settings.libraries.LibrariesSettingsComponent
+import ge.yet.game.feature.settings.libraries.LibrariesProvider
+import ge.yet.game.feature.settings.libraries.LibrariesSettingsComponent
 import kotlinx.coroutines.withContext
 
 private const val ABOUT_LIBRARIES_RESOURCE = "files/aboutlibraries.json"

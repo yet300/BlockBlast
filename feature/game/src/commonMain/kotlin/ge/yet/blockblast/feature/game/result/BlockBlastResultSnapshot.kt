@@ -1,7 +1,7 @@
 package ge.yet.blockblast.feature.game.result
 
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.model.Grid
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.model.Grid
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -1,10 +1,10 @@
 package ge.yet.blockblast.feature.game.store
 
-import ge.yet.blokblast.domain.engine.GameSessionReducer
-import ge.yet.blokblast.domain.model.GameState
-import ge.yet.blokblast.domain.model.RoundStartInfo
-import ge.yet.blokblast.domain.repository.GameSaveRepository
-import ge.yet.blokblast.domain.repository.SettingsRepository
+import ge.yet.game.domain.engine.GameSessionReducer
+import ge.yet.game.domain.model.GameState
+import ge.yet.game.domain.model.RoundStartInfo
+import ge.yet.game.domain.repository.GameSaveRepository
+import ge.yet.game.domain.repository.SettingsRepository
 
 /**
  * Decides what to do at game bootstrap: start a fresh round, restore a saved

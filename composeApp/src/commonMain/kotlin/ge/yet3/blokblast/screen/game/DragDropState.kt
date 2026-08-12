@@ -7,9 +7,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import com.app.common.config.AppConfig
-import ge.yet.blokblast.domain.model.Grid
-import ge.yet.blokblast.domain.model.Piece
-import ge.yet.blokblast.domain.model.Polyomino
+import ge.yet.game.domain.model.Grid
+import ge.yet.game.domain.model.Piece
+import ge.yet.game.domain.model.Polyomino
 
 enum class DragPresentation {
     Idle,

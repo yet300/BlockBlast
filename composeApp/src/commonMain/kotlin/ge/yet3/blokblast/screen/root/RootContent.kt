@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import ge.yet.blockblast.feature.root.RootComponent
+import ge.yet.game.feature.root.RootComponent
 import ge.yet3.blokblast.component.utils.cupertinoPredictiveBackAnimation
 import ge.yet3.blokblast.screen.game.BlockBlastGameContent
 import ge.yet3.blokblast.screen.home.HomeContent

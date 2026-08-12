@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.lerp
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.tutorial_grid_title
-import ge.yet.blokblast.domain.model.Piece
-import ge.yet.blokblast.domain.model.Polyomino
+import ge.yet.game.domain.model.Piece
+import ge.yet.game.domain.model.Polyomino
 import ge.yet3.blokblast.screen.game.BlockPiece
 import ge.yet3.blokblast.screen.game.effects.ConfettiEffect
 import ge.yet.game.uikit.theme.pieceColor

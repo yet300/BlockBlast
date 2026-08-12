@@ -55,8 +55,8 @@ import androidx.compose.ui.unit.times
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
 import ge.yet.blockblast.feature.game.tray.TraySlotComponent
-import ge.yet.blokblast.domain.model.Piece
-import ge.yet.blokblast.domain.model.Polyomino
+import ge.yet.game.domain.model.Piece
+import ge.yet.game.domain.model.Polyomino
 import ge.yet.game.uikit.theme.pieceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

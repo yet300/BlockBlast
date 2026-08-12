@@ -4,8 +4,8 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
-import ge.yet.blockblast.feature.settings.libraries.LibrariesProvider
-import ge.yet.blokblast.domain.repository.AudioFileProvider
+import ge.yet.game.feature.settings.libraries.LibrariesProvider
+import ge.yet.game.domain.repository.AudioFileProvider
 
 @ContributesTo(AppScope::class)
 @BindingContainer

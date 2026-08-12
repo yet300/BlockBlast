@@ -9,9 +9,9 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import dev.zacsweers.metro.Inject
 import ge.yet.blockblast.feature.game.reviewprompt.DefaultReviewPromptComponent
-import ge.yet.blokblast.domain.repository.AnalyticRepository
-import ge.yet.blokblast.domain.repository.SettingsRepository
-import ge.yet.blokblast.domain.repository.StoreReviewRepository
+import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.domain.repository.StoreReviewRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
