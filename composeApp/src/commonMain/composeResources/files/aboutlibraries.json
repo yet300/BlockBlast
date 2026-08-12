@@ -3134,7 +3134,7 @@
         },
         {
             "uniqueId": "dev.gitlive:firebase-analytics-android",
-            "artifactVersion": "2.5.0",
+            "artifactVersion": "3.0.0-alpha01",
             "name": "firebase-kotlin-sdk",
             "description": "The Firebase Kotlin SDK is a Kotlin-first SDK for Firebase. It's API is similar to the Firebase Android SDK Kotlin Extensions but also supports multiplatform projects, enabling you to use Firebase directly from your common source targeting iOS, Android or JS.",
             "website": "https://github.com/GitLiveApp/firebase-kotlin-sdk",

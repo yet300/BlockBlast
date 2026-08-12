@@ -5,6 +5,7 @@
 xcuserdata
 !src/**/build/
 local.properties
+.swiftpm-locks/**/swiftPMCheckout/
 .idea
 .DS_Store
 captures
