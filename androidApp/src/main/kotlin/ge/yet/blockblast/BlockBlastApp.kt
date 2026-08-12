@@ -10,9 +10,4 @@ class BlockBlastApp : Application() {
     val appGraph: AppGraph by lazy {
         createGraphFactory<AndroidAppGraph.Factory>().create(this)
     }
-
-    // MobileAds.initialize is intentionally NOT called here. Google's UMP
-    // requirements mandate that AdMob be initialised only AFTER consent is
-    // gathered. Initialisation now happens inside
-    // `ConsentManager.fireReady(...)` from MainActivity.
 }

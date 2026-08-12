@@ -403,7 +403,7 @@ fun BlockBlastGameContent(component: GameComponent) {
                 contentAlignment = Alignment.Center,
             ) {
                 if (!hideBanner) {
-                    AdBanner(modifier = Modifier.fillMaxWidth())
+                    AdBanner()
                 }
             }
 

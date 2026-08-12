@@ -112,7 +112,7 @@ fun HomeContent(component: HomeComponent) {
                     .align(Alignment.BottomCenter)
                     .padding(innerPadding),
             ) {
-                AdBanner(modifier = Modifier.fillMaxWidth())
+                AdBanner()
             }
         }
     }

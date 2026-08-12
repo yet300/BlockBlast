@@ -74,6 +74,7 @@ kotlin {
             implementation(libs.aboutlibraries.core)
 
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.basic.ads)
 
             implementation(libs.kotlinx.datetime)
 

@@ -67,8 +67,6 @@ dependencies {
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
-    implementation(libs.play.services.ads)
-
     implementation(project.dependencies.platform(libs.firebase.android.bom))
     implementation(libs.gitlive.firebase.kotlin.crashlytics)
     implementation(libs.firebase.android.crashlytics.ktx)

@@ -1,5 +1,4 @@
 import ComposeApp
-import GoogleMobileAds
 import FirebaseCore
 import SwiftUI
 
@@ -14,7 +13,7 @@ struct iOSApp: App {
                 root: appDelegate.root,
                 backDispatcher: appDelegate.backDispatcher,
                 onFirstVisible: { presenter in
-                    appDelegate.startConsentFlow(from: presenter)
+                    appDelegate.configureAdsPrivacyFlow(from: presenter)
                 }
             )
                 .ignoresSafeArea(.all)
@@ -33,35 +32,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // Wire the Kotlin ad bridge up-front; banner creation works even
-        // before an ad request fires. Google Mobile Ads is started *inside*
-        // `ConsentManager.gather` once UMP confirms requests are permitted —
-        // initialising earlier would violate UMP's GDPR requirements.
         FirebaseApp.configure()
-        Task { @MainActor in
-            AdCoordinator.shared.configureBridge()
-        }
         return true
     }
 
     @MainActor
-    func startConsentFlow(from presenter: UIViewController) {
-        IosAdBridge.shared.requestConsentAndAds = { [weak self, weak presenter] in
-            guard let self, let presenter else { return }
-            self.gatherConsentAndAds(from: presenter)
-        }
-
-        AdsManager.shared.requestConsentAndAds()
-    }
-
-    @MainActor
-    private func gatherConsentAndAds(from presenter: UIViewController) {
-        ConsentManager.shared.gather(from: presenter) {
-            guard AdsManager.shared.enabled else { return }
-            // Ads may now be requested — preload the game-over interstitial.
-            Task { @MainActor in
-                AdCoordinator.shared.loadPendingBannersIfAllowed()
-                await AdCoordinator.shared.loadInterstitial()
+    func configureAdsPrivacyFlow(from presenter: UIViewController) {
+        IosTrackingAuthorizationBridge.shared.requestAuthorization = { [weak presenter] in
+            guard let presenter else { return }
+            TrackingAuthorizationManager.shared.requestIfNeeded(from: presenter) {
+                IosTrackingAuthorizationBridge.shared.markCompleted()
             }
         }
     }

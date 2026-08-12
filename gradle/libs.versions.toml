@@ -5,6 +5,7 @@ android-minSdk = "24"
 android-targetSdk = "37"
 
 playServicesAds = "25.4.0"
+basic = "1.2.0"
 userMessagingPlatform = "4.0.0"
 firebase-android-bom = "34.17.0"
 gradlePlugins-crashlytics = "3.0.7"
@@ -105,6 +106,7 @@ androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", vers
 
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
+basic-ads = { module = "app.lexilabs.basic:basic-ads", version.ref = "basic" }
 #Firebase
 firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-android-bom" }
 firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics" }

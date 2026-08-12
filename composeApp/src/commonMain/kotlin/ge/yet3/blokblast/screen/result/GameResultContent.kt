@@ -52,14 +52,14 @@ fun GameResultContent(
 ) {
     val model by component.model.subscribeAsState()
     val reviewPrompt by component.reviewPrompt.subscribeAsState()
-    val interstitial = rememberGameOverInterstitial()
+    val showInterstitial = rememberGameOverInterstitial()
     val reducedMotion = rememberReducedMotion()
     val adsEnabled = LocalAdsEnabled.current
 
     GameResultContent(
         model = model,
         onPrimaryClicked = {
-            component.onPrimaryClicked(interstitial.show)
+            component.onPrimaryClicked(showInterstitial)
         },
         onHomeClicked = component::onHomeClicked,
         reducedMotion = reducedMotion,

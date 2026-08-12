@@ -1,24 +1,64 @@
 package ge.yet3.blokblast.ads
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import app.lexilabs.basic.ads.AdUnitId
+import app.lexilabs.basic.ads.DependsOnGoogleMobileAds
+import app.lexilabs.basic.ads.composable.rememberInterstitialAd
+import com.app.common.config.AppConfig
+import ge.yet3.blokblast.component.utils.LocalAdsEnabled
 
 /**
- * Controller returned by [rememberGameOverInterstitial].
+ * Uses basic-ads for cross-platform AdMob interstitial support.
  *
- * @property show Invokes a full-screen interstitial (if one is cached) and
- * runs [onDismiss] after the user dismisses it. If no ad is available or the
- * platform does not support ads, [onDismiss] is invoked immediately so the
- * caller's post-ad flow (e.g. revive) still proceeds.
+ * Returns a function that shows the interstitial and calls [onDismiss] when done.
  */
-class GameOverInterstitial(
-    val show: (onDismiss: () -> Unit) -> Unit,
-)
-
-/**
- * - Android: real AdMob interstitial. Preloads on first composition, reloads
- *   after each successful show.
- * - iOS: routed via `IosAdBridge` to a Swift `Coordinator`. No-op if the
- *   Swift side hasn't wired the bridge yet.
- */
+@OptIn(DependsOnGoogleMobileAds::class)
 @Composable
-expect fun rememberGameOverInterstitial(): GameOverInterstitial
+fun rememberGameOverInterstitial(): (onDismiss: () -> Unit) -> Unit {
+    val adsEnabled = LocalAdsEnabled.current
+    if (!adsEnabled) {
+        return remember { { onDismiss -> onDismiss() } }
+    }
+
+    val adUnitId = AdUnitId.autoSelect(
+        androidAdUnitId = AppConfig.GAME_OVER_INTERSTITIAL_UNIT_ID_ANDROID,
+        iosAdUnitId = AppConfig.GAME_OVER_INTERSTITIAL_UNIT_ID_IOS,
+    )
+    val interstitialAd by rememberInterstitialAd(adUnitId = adUnitId)
+
+    return remember(interstitialAd, adUnitId) {
+        { onDismiss ->
+            if (!shouldShowInterstitial(adsEnabled = true, adState = interstitialAd.state)) {
+                onDismiss()
+            } else {
+                val complete = once(onDismiss)
+                val reload = {
+                    interstitialAd.load(
+                        adUnitId = adUnitId,
+                        onLoad = {},
+                        onFailure = {},
+                    )
+                }
+
+                try {
+                    interstitialAd.setListeners(
+                        onFailure = {
+                            complete()
+                            reload()
+                        },
+                        onDismissed = complete,
+                    )
+                    interstitialAd.show()
+                } catch (_: IllegalArgumentException) {
+                    complete()
+                    reload()
+                } catch (_: IllegalStateException) {
+                    complete()
+                    reload()
+                }
+            }
+        }
+    }
+}

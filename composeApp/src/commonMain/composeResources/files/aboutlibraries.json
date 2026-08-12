@@ -2205,6 +2205,50 @@
             ]
         },
         {
+            "uniqueId": "app.lexilabs.basic:basic-ads-android",
+            "artifactVersion": "1.2.0",
+            "name": "Basic",
+            "description": "Easily integrate Google Ads (AdMob) into your Kotlin Multiplatform Mobile (KMP / KMM) project",
+            "website": "https://github.com/LexiLabs-App/basic-ads",
+            "developers": [
+                {
+                    "name": "Robert Jamison"
+                }
+            ],
+            "scm": {
+                "connection": "https://github.com/LexiLabs-App/basic-ads.git",
+                "url": "https://github.com/LexiLabs-App/basic-ads"
+            },
+            "licenses": [
+                "MIT"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "app.lexilabs.basic:basic-logging-android",
+            "artifactVersion": "0.2.6",
+            "name": "Basic",
+            "description": "Easily integrate logging into your Kotlin Multiplatform Mobile (KMP / KMM) project",
+            "website": "https://github.com/LexiLabs-App/basic-logging",
+            "developers": [
+                {
+                    "name": "Robert Jamison"
+                }
+            ],
+            "scm": {
+                "connection": "https://github.com/LexiLabs-App/basic-logging.git",
+                "url": "https://github.com/LexiLabs-App/basic-logging"
+            },
+            "licenses": [
+                "MIT"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "com.arkivanov.decompose:decompose-android",
             "artifactVersion": "3.5.0",
             "name": "Decompose",

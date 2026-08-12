@@ -32,8 +32,8 @@ Before changing code:
 ```text
 BlockBlast/
 ├── androidApp/                 Android application, manifest, Firebase and ads
-├── iosApp/                     SwiftUI host, iOS ads and consent integration
-├── composeApp/                 Shared Compose app, resources and UI platform code
+├── iosApp/                     SwiftUI host, iOS ATT and native SDK packaging
+├── composeApp/                 Shared Compose app, resources, UI and cross-platform ads
 ├── core/
 │   ├── common/                 Reusable shared app utilities and infrastructure
 │   ├── domain/                 Game rules, models and domain contracts
@@ -55,8 +55,8 @@ BlockBlast/
 | Module | Responsibility | Important dependencies |
 |---|---|---|
 | `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
-| `iosApp` | Native SwiftUI application host and iOS SDK bridges | Imports the `ComposeApp` framework |
-| `:composeApp` | Shared Compose UI, resources, Android/iOS UI adapters and app composition | core modules and all feature modules |
+| `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
+| `:composeApp` | Shared Compose UI, resources, cross-platform ads and app composition | core modules and all feature modules |
 | `:core:domain` | Platform-neutral game engine, models and contracts | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | Settings-backed persistence and repository implementations | `:core:domain`, `:core:common` |
@@ -85,8 +85,9 @@ architecture decision, not a convenience import.
   in the catalog is not authorization to introduce unrelated infrastructure.
 - Keep `expect`/`actual` contracts small and platform-neutral. Prefer a common
   implementation when no platform API is required.
-- Do not bypass the consent gate when changing advertising. Android and iOS ad
-  requests must occur only after the relevant consent flow permits them.
+- Do not bypass the consent gate when changing advertising. Android requests
+  require UMP permission; iOS runs ATT first and then UMP. Mobile Ads
+  initialization and ad loading must remain behind the combined gate.
 
 ## Code Discovery
 
@@ -131,7 +132,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :feature:game:allTests
 
 # Verify shared Android compilation and package the Android app
-./gradlew :composeApp:compileDebugKotlinAndroid
+./gradlew :composeApp:compileAndroidMain
 ./gradlew :androidApp:assembleDebug
 
 # Verify the Compose framework for the iOS simulator
