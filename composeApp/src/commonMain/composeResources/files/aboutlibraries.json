@@ -855,28 +855,6 @@
             ]
         },
         {
-            "uniqueId": "androidx.datastore:datastore",
-            "artifactVersion": "1.0.0",
-            "name": "Android DataStore",
-            "description": "Android DataStore - contains the underlying store used by each serialization method along with components that require an Android dependency",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.0.0",
-            "developers": [
-                {
-                    "name": "The Android Open Source Project"
-                }
-            ],
-            "scm": {
-                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
-                "url": "https://cs.android.com/androidx/platform/frameworks/support"
-            },
-            "licenses": [
-                "Apache-2.0"
-            ],
-            "funding": [
-                
-            ]
-        },
-        {
             "uniqueId": "androidx.datastore:datastore-android",
             "artifactVersion": "1.1.7",
             "name": "DataStore",
@@ -890,28 +868,6 @@
             "organization": {
                 "name": "The Android Open Source Project"
             },
-            "scm": {
-                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
-                "url": "https://cs.android.com/androidx/platform/frameworks/support"
-            },
-            "licenses": [
-                "Apache-2.0"
-            ],
-            "funding": [
-                
-            ]
-        },
-        {
-            "uniqueId": "androidx.datastore:datastore-core",
-            "artifactVersion": "1.0.0",
-            "name": "Android DataStore Core",
-            "description": "Android DataStore Core - contains the underlying store used by each serialization method",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.0.0",
-            "developers": [
-                {
-                    "name": "The Android Open Source Project"
-                }
-            ],
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -1141,10 +1097,10 @@
         },
         {
             "uniqueId": "androidx.fragment:fragment",
-            "artifactVersion": "1.1.0",
+            "artifactVersion": "1.6.2",
             "name": "Support fragment",
             "description": "The Support Library is a static library that you can add to your Android application in order to use APIs that are either not available for older platform versions or utility APIs that aren't a part of the framework APIs. Compatible on devices running API 14 or later.",
-            "website": "https://developer.android.com/jetpack/androidx",
+            "website": "https://developer.android.com/jetpack/androidx/releases/fragment#1.6.2",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1152,7 +1108,7 @@
             ],
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
-                "url": "http://source.android.com"
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
             },
             "licenses": [
                 "Apache-2.0"
@@ -1720,15 +1676,18 @@
         },
         {
             "uniqueId": "androidx.privacysandbox.ads:ads-adservices",
-            "artifactVersion": "1.0.0-beta05",
+            "artifactVersion": "1.1.0-beta11",
             "name": "Privacy Sandbox for Ad Services",
             "description": "This library enables integration with Privacy Preserving APIs, which are part of Privacy Sandbox on Android.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/privacysandbox-ads#1.0.0-beta05",
+            "website": "https://developer.android.com/jetpack/androidx/releases/privacysandbox-ads#1.1.0-beta11",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -1742,15 +1701,18 @@
         },
         {
             "uniqueId": "androidx.privacysandbox.ads:ads-adservices-java",
-            "artifactVersion": "1.0.0-beta05",
+            "artifactVersion": "1.1.0-beta11",
             "name": "androidx.privacysandbox.ads:ads-adservices-java",
             "description": "write Java code to call PP APIs.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/privacysandbox-ads#1.0.0-beta05",
+            "website": "https://developer.android.com/jetpack/androidx/releases/privacysandbox-ads#1.1.0-beta11",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -1952,15 +1914,18 @@
         },
         {
             "uniqueId": "androidx.startup:startup-runtime",
-            "artifactVersion": "1.0.0",
-            "name": "Android App Startup Runtime",
+            "artifactVersion": "1.2.0",
+            "name": "Startup Runtime",
             "description": "Android App Startup Runtime",
-            "website": "https://developer.android.com/jetpack/androidx/releases/startup#1.0.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/startup#1.2.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -2436,7 +2401,7 @@
         },
         {
             "uniqueId": "com.google.android.gms:play-services-base",
-            "artifactVersion": "18.0.0",
+            "artifactVersion": "18.5.0",
             "name": "play-services-base",
             "description": "",
             "developers": [
@@ -2496,7 +2461,7 @@
         },
         {
             "uniqueId": "com.google.android.gms:play-services-measurement-base",
-            "artifactVersion": "20.1.2",
+            "artifactVersion": "23.2.0",
             "name": "play-services-measurement-base",
             "description": "",
             "developers": [
@@ -2541,7 +2506,7 @@
         },
         {
             "uniqueId": "com.google.android.gms:play-services-measurement-sdk-api",
-            "artifactVersion": "20.1.2",
+            "artifactVersion": "23.2.0",
             "name": "play-services-measurement-sdk-api",
             "description": "",
             "developers": [
@@ -2571,7 +2536,7 @@
         },
         {
             "uniqueId": "com.google.android.gms:play-services-tasks",
-            "artifactVersion": "18.2.0",
+            "artifactVersion": "18.4.0",
             "name": "play-services-tasks",
             "description": "",
             "developers": [
