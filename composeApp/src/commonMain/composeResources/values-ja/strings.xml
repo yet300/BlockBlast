@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">プレイ</string>
     <string name="continue_game">つづける</string>
     <string name="new_game">はじめから</string>
     <string name="best_score_label">ベストスコア</string>
     <string name="home_tagline">静かなパズルゲーム</string>
-
-    <!-- Game Screen -->
-    <string name="score">スコア</string>
-    <string name="best">ベスト</string>
-    <string name="game_over">ゲームオーバー</string>
-    <string name="game_over_subtitle">ボードに空きがありません</string>
-    <string name="new_best">新記録</string>
-    <string name="revive">つづける</string>
-    <string name="restart">はじめから</string>
-    <string name="exit_to_home">終了</string>
-    <string name="cd_settings">設定</string>
-    <string name="cd_back">戻る</string>
-    <string name="cd_close">閉じる</string>
-    <string name="cd_advertisement">広告</string>
-
-    <!-- Settings -->
     <string name="settings">設定</string>
     <string name="sound">サウンド</string>
     <string name="sound_subtitle">ゲームの音響効果</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">ソースコードを表示</string>
     <string name="open_source_libraries">オープンソース ライブラリ</string>
     <string name="open_source_libraries_subtitle">クレジットと謝辞</string>
-
     <string name="advertising">広告</string>
     <string name="advertising_enabled_subtitle">無料開発を支えています</string>
     <string name="advertising_disabled_subtitle">無効 — 復活は無料です</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">広告はゲームの改善と、すべての機能の無料提供に役立っています。無効にしても復活は無料のままです。GitHubのスターや寄付でLogicaを応援することもできます。</string>
     <string name="keep_ads">広告を残す</string>
     <string name="disable_ads_anyway">無効にする</string>
-
-    <!-- Common -->
+    <string name="cd_back">戻る</string>
     <string name="exit">終了</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Good</string>
-    <string name="feedback_great">Great!</string>
-    <string name="feedback_excellent">Excellent!</string>
-    <string name="feedback_unbelievable">Unbelievable!</string>
-    <string name="feedback_combo">コンボ</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">ボードに置こう</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Logicaを楽しんでいますか？</string>
-    <string name="review_prompt_body">あなたのレビューは、より多くのパズルプレイヤーがこのゲームを見つけるのに役立ちます。</string>
-    <string name="review_prompt_leave_feedback">フィードバックを残す</string>
-    <string name="review_prompt_dont_show">今後表示しない</string>
 </resources>

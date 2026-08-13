@@ -20,11 +20,11 @@ import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnStart
 import com.arkivanov.essenty.lifecycle.doOnStop
 import dev.zacsweers.metro.Inject
-import ge.yet.blockblast.feature.game.GameComponent
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
-import ge.yet.blockblast.feature.game.result.GameResultComponent
+import ge.yet.game.blockblast.component.game.GameComponent
+import ge.yet.game.blockblast.component.result.BlockBlastResultSnapshot
+import ge.yet.game.blockblast.component.result.GameResultComponent
 import ge.yet.game.feature.home.HomeComponent
-import ge.yet.game.domain.model.GameState
+import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.feature.settings.SettingsComponent
@@ -65,12 +65,6 @@ internal class DefaultRootComponent(
     override val vibrationEnabled: StateFlow<Boolean> = settingsRepository.vibrationEnabled
     override val sfxEnabled: StateFlow<Boolean> = settingsRepository.sfxEnabled
     override val adsEnabled: StateFlow<Boolean> = settingsRepository.adsEnabled
-    override val tutorialSeen: StateFlow<Boolean> = settingsRepository.tutorialSeen
-
-    override fun onTutorialSeen() {
-        scope.launch { settingsRepository.setTutorialSeen() }
-    }
-
     override fun onDismissSheet() {
         sheetNavigation.dismiss()
     }

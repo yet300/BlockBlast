@@ -70,9 +70,6 @@ internal class SettingsBackedSettingsRepository(
     override val reviewPromptCount: StateFlow<Int> =
         settings.getIntStateFlow(scope, KEY_REVIEW_PROMPT_COUNT, defaultValue = 0)
 
-    override val tutorialSeen: StateFlow<Boolean> =
-        settings.getBooleanStateFlow(scope, KEY_TUTORIAL_SEEN, defaultValue = false)
-
     override suspend fun setMusicEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_MUSIC, enabled)
     }
@@ -117,10 +114,6 @@ internal class SettingsBackedSettingsRepository(
         }
     }
 
-    override suspend fun setTutorialSeen() = withContext(dispatchers.io) {
-        settings.putBoolean(KEY_TUTORIAL_SEEN, true)
-    }
-
     /**
      * If a legacy single-flag value is present and neither new key has been
      * written, copy the legacy value into both. Idempotent: the legacy key is
@@ -143,6 +136,5 @@ internal class SettingsBackedSettingsRepository(
         const val KEY_ADS_ENABLED = "blockblast.ads_enabled"
         const val KEY_BEST_SCORE = "blockblast.best_score"
         const val KEY_REVIEW_PROMPT_COUNT = "blockblast.review_prompt_count"
-        const val KEY_TUTORIAL_SEEN = "blockblast.tutorial_seen"
     }
 }

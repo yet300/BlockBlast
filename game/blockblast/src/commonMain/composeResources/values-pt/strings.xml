@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Pontuação</string>
+    <string name="best">Melhor</string>
+    <string name="game_over">Fim de jogo</string>
+    <string name="game_over_subtitle">Não há mais movimentos no tabuleiro</string>
+    <string name="new_best">Novo recorde</string>
+    <string name="revive">Continuar</string>
+    <string name="restart">Novo jogo</string>
+    <string name="new_game">Novo jogo</string>
+    <string name="exit_to_home">Sair</string>
+    <string name="cd_settings">Configurações</string>
+    <string name="cd_back">Voltar</string>
+    <string name="cd_close">Fechar</string>
+    <string name="cd_advertisement">Anúncio</string>
+    <string name="feedback_good">Bom</string>
+    <string name="feedback_great">Ótimo!</string>
+    <string name="feedback_excellent">Excelente!</string>
+    <string name="feedback_unbelievable">Inacreditável!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Coloque no tabuleiro</string>
+    <string name="review_prompt_title">Gostando de Logica?</string>
+    <string name="review_prompt_body">Sua avaliação ajuda mais jogadores de quebra-cabeças a encontrar o jogo.</string>
+    <string name="review_prompt_leave_feedback">Deixar feedback</string>
+    <string name="review_prompt_dont_show">Não mostrar novamente</string>
+</resources>

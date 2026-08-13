@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Scor</string>
+    <string name="best">Record</string>
+    <string name="game_over">Joc terminat</string>
+    <string name="game_over_subtitle">Nu mai există mutări pe tablă</string>
+    <string name="new_best">Nou record</string>
+    <string name="revive">Continuă</string>
+    <string name="restart">Joc nou</string>
+    <string name="new_game">Joc nou</string>
+    <string name="exit_to_home">Ieșire</string>
+    <string name="cd_settings">Setări</string>
+    <string name="cd_back">Înapoi</string>
+    <string name="cd_close">Închide</string>
+    <string name="cd_advertisement">Reclamă</string>
+    <string name="feedback_good">Bine</string>
+    <string name="feedback_great">Grozav!</string>
+    <string name="feedback_excellent">Excelent!</string>
+    <string name="feedback_unbelievable">Incredibil!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Pune-o pe tablă</string>
+    <string name="review_prompt_title">Îți place Logica?</string>
+    <string name="review_prompt_body">Recenzia ta îi ajută pe mai mulți jucători de puzzle să găsească jocul.</string>
+    <string name="review_prompt_leave_feedback">Lasă un feedback</string>
+    <string name="review_prompt_dont_show">Nu mai afișa</string>
+</resources>

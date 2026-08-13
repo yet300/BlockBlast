@@ -9,9 +9,9 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.feature.root.RootComponent
 import ge.yet3.blokblast.component.utils.cupertinoPredictiveBackAnimation
-import ge.yet3.blokblast.screen.game.BlockBlastGameContent
+import ge.yet.game.blockblast.ui.game.BlockBlastGameContent
 import ge.yet3.blokblast.screen.home.HomeContent
-import ge.yet3.blokblast.screen.result.GameResultContent
+import ge.yet.game.blockblast.ui.result.GameResultContent
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable

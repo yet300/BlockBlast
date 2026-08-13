@@ -7,9 +7,7 @@ import android.media.SoundPool
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import ge.yet.game.data.platform.MusicPlaylist
-import ge.yet.game.data.platform.PlatformSoundPlayer
-import ge.yet.game.domain.model.FeedbackType
+import ge.yet.game.domain.repository.AudioFileProvider
 
 /**
  * Android actual — uses [SoundPool] for low-latency SFX and [MediaPlayer] for
@@ -33,6 +31,7 @@ import ge.yet.game.domain.model.FeedbackType
 @Inject
 internal class AndroidPlatformSoundPlayer(
     private val ctx: Context,
+    private val provider: AudioFileProvider,
 ) : PlatformSoundPlayer {
 
     private val audioAttrs = AudioAttributes.Builder()
@@ -56,6 +55,7 @@ internal class AndroidPlatformSoundPlayer(
     private var musicPlayer: MediaPlayer? = null
     private var musicState: MusicState = MusicState.IDLE
     private var lastTrackIndex: Int = -1
+    private var musicTracks: List<String> = emptyList()
     private var voiceStreamId: Int = 0
 
     init {
@@ -64,23 +64,25 @@ internal class AndroidPlatformSoundPlayer(
         }
     }
 
-    override fun playVoiceFeedback(type: FeedbackType) {
+    override fun playSound(filename: String) {
         if (voiceStreamId != 0) pool.stop(voiceStreamId)
-        voiceStreamId = safePlay("voice_${type.name.lowercase()}")
+        voiceStreamId = safePlay(filename)
     }
 
-    override fun startMusic() {
+    override fun startMusic(tracks: List<String>) {
+        if (tracks.isEmpty()) return
         // Re-entrancy guard. PREPARING means a previous startMusic is in flight;
         // do not release it from under its OnPreparedListener.
         if (musicState != MusicState.IDLE) return
-        playTrack(MusicPlaylist.nextIndex(lastTrackIndex))
+        musicTracks = tracks.toList()
+        playTrack(nextTrackIndex(musicTracks.size, lastTrackIndex))
     }
 
     private fun playTrack(index: Int) {
         lastTrackIndex = index
-        val filename = MusicPlaylist.TRACKS[index]
+        val filename = musicTracks[index]
         runCatching {
-            val afd = ctx.assets.openFd("${AUDIO_DIR}$filename")
+            val afd = ctx.assets.openFd(provider.path(filename))
             val player = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
@@ -104,7 +106,7 @@ internal class AndroidPlatformSoundPlayer(
                     if (musicPlayer === mp && musicState == MusicState.PLAYING) {
                         musicPlayer = null
                         musicState = MusicState.IDLE
-                        playTrack(MusicPlaylist.nextIndex(lastTrackIndex))
+                        playTrack(nextTrackIndex(musicTracks.size, lastTrackIndex))
                     }
                 }
                 setOnErrorListener { mp, _, _ ->
@@ -150,8 +152,8 @@ internal class AndroidPlatformSoundPlayer(
         pool.release()
     }
 
-    private fun safePlay(resName: String): Int {
-        val id = ids.getOrPut(resName) { resolve(resName) }
+    private fun safePlay(filename: String): Int {
+        val id = ids.getOrPut(filename) { resolve(filename) }
         if (id != 0 && id in readyIds) {
             return pool.play(id, 1f, 1f, 1, 0, 1f)
         }
@@ -161,29 +163,19 @@ internal class AndroidPlatformSoundPlayer(
 
     /**
      * Opens the asset as an [android.content.res.AssetFileDescriptor] and
-     * registers it with [SoundPool]. Tries `.wav` then `.mp3`; returns 0 if
-     * not found. The returned ID is *not* immediately playable — the
+     * registers it with [SoundPool]. Returns 0 if it is not found. The
+     * returned ID is *not* immediately playable — the
      * [SoundPool.OnLoadCompleteListener] decides that.
      */
-    private fun resolve(resName: String): Int {
-        for (ext in AUDIO_EXTENSIONS) {
-            val path = "$AUDIO_DIR$resName.$ext"
-            runCatching {
-                val afd = ctx.assets.openFd(path)
-                val id = pool.load(afd, 1)
-                afd.close()
-                if (id != 0) return id
-            }
-        }
-        return 0
-    }
+    private fun resolve(filename: String): Int = runCatching {
+        val afd = ctx.assets.openFd(provider.path(filename))
+        val id = pool.load(afd, 1)
+        afd.close()
+        id
+    }.getOrDefault(0)
 
     private companion object {
         const val MAX_STREAMS = 6
         const val MUSIC_VOLUME = 0.4f
-        private val AUDIO_EXTENSIONS = arrayOf("wav", "mp3")
-
-        const val AUDIO_DIR =
-            "composeResources/blockblast.composeapp.generated.resources/files/audio/"
     }
 }

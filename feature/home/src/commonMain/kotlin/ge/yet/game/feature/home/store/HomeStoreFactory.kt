@@ -7,7 +7,7 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.GameSaveRepository
+import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.launch
 

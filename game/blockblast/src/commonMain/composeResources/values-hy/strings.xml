@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Միավոր</string>
+    <string name="best">Ռեկորդ</string>
+    <string name="game_over">Խաղն ավարտվեց</string>
+    <string name="game_over_subtitle">Տախտակի վրա քայլեր չեն մնացել</string>
+    <string name="new_best">Նոր ռեկորդ</string>
+    <string name="revive">Շարունակել</string>
+    <string name="restart">Նոր խաղ</string>
+    <string name="new_game">Նոր խաղ</string>
+    <string name="exit_to_home">Ելք</string>
+    <string name="cd_settings">Կարգավորումներ</string>
+    <string name="cd_back">Հետ</string>
+    <string name="cd_close">Փակել</string>
+    <string name="cd_advertisement">Գովազդ</string>
+    <string name="feedback_good">Լավ</string>
+    <string name="feedback_great">Հիանալի՛</string>
+    <string name="feedback_excellent">Գերազանց՛</string>
+    <string name="feedback_unbelievable">Անհավանական՛</string>
+    <string name="feedback_combo">Կոմբո</string>
+    <string name="tutorial_grid_title">Տեղադրիր տախտակին</string>
+    <string name="review_prompt_title">Հավանու՞մ եք Logica-ն</string>
+    <string name="review_prompt_body">Ձեր գնահատականը կօգնի ավելի շատ գլուխկոտրուկների սիրահարների գտնել խաղը:</string>
+    <string name="review_prompt_leave_feedback">Թողնել կարծիք</string>
+    <string name="review_prompt_dont_show">Այլևս չցուցադրել</string>
+</resources>

@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Skor</string>
+    <string name="best">En İyi</string>
+    <string name="game_over">Oyun Bitti</string>
+    <string name="game_over_subtitle">Tahtada hamle kalmadı</string>
+    <string name="new_best">Yeni Rekor</string>
+    <string name="revive">Devam Et</string>
+    <string name="restart">Yeni Oyun</string>
+    <string name="new_game">Yeni Oyun</string>
+    <string name="exit_to_home">Çıkış</string>
+    <string name="cd_settings">Ayarlar</string>
+    <string name="cd_back">Geri</string>
+    <string name="cd_close">Kapat</string>
+    <string name="cd_advertisement">Reklam</string>
+    <string name="feedback_good">Güzel</string>
+    <string name="feedback_great">Harika!</string>
+    <string name="feedback_excellent">Mükemmel!</string>
+    <string name="feedback_unbelievable">İnanılmaz!</string>
+    <string name="feedback_combo">Kombo</string>
+    <string name="tutorial_grid_title">Tahtaya yerleştir</string>
+    <string name="review_prompt_title">Logica'yı beğeniyor musunuz?</string>
+    <string name="review_prompt_body">Yorumunuz daha fazla bulmaca oyuncusunun oyunu bulmasına yardımcı olur.</string>
+    <string name="review_prompt_leave_feedback">Geri bildirim bırak</string>
+    <string name="review_prompt_dont_show">Tekrar gösterme</string>
+</resources>

@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Рахунок</string>
+    <string name="best">Рекорд</string>
+    <string name="game_over">Гру закінчено</string>
+    <string name="game_over_subtitle">На дошці не залишилося ходів</string>
+    <string name="new_best">Новий рекорд</string>
+    <string name="revive">Продовжити</string>
+    <string name="restart">Нова гра</string>
+    <string name="new_game">Нова гра</string>
+    <string name="exit_to_home">Вийти</string>
+    <string name="cd_settings">Налаштування</string>
+    <string name="cd_back">Назад</string>
+    <string name="cd_close">Закрити</string>
+    <string name="cd_advertisement">Реклама</string>
+    <string name="feedback_good">Добре</string>
+    <string name="feedback_great">Чудово!</string>
+    <string name="feedback_excellent">Відмінно!</string>
+    <string name="feedback_unbelievable">Неймовірно!</string>
+    <string name="feedback_combo">Комбо</string>
+    <string name="tutorial_grid_title">Перетягніть на дошку</string>
+    <string name="review_prompt_title">Подобається Logica?</string>
+    <string name="review_prompt_body">Ваш відгук допоможе іншим любителям головоломок знайти гру.</string>
+    <string name="review_prompt_leave_feedback">Залишити відгук</string>
+    <string name="review_prompt_dont_show">Більше не показувати</string>
+</resources>

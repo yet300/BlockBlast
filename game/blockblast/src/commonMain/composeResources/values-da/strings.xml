@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Point</string>
+    <string name="best">Bedste</string>
+    <string name="game_over">Spillet er slut</string>
+    <string name="game_over_subtitle">Ingen træk tilbage på brættet</string>
+    <string name="new_best">Ny rekord</string>
+    <string name="revive">Fortsæt</string>
+    <string name="restart">Nyt spil</string>
+    <string name="new_game">Nyt spil</string>
+    <string name="exit_to_home">Afslut</string>
+    <string name="cd_settings">Indstillinger</string>
+    <string name="cd_back">Tilbage</string>
+    <string name="cd_close">Luk</string>
+    <string name="cd_advertisement">Annonce</string>
+    <string name="feedback_good">Godt</string>
+    <string name="feedback_great">Fantastisk!</string>
+    <string name="feedback_excellent">Fremragende!</string>
+    <string name="feedback_unbelievable">Utroligt!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Placer på brættet</string>
+    <string name="review_prompt_title">Nyder du Logica?</string>
+    <string name="review_prompt_body">Din anmeldelse hjælper flere puslespilsspillere med at finde spillet.</string>
+    <string name="review_prompt_leave_feedback">Giv feedback</string>
+    <string name="review_prompt_dont_show">Vis ikke igen</string>
+</resources>

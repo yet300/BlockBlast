@@ -9,9 +9,8 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.domain)
             implementation(projects.core.common)
-            implementation(projects.core.data)
 
-            implementation(projects.feature.game)
+            implementation(projects.game.blockblast)
             implementation(projects.feature.home)
             implementation(projects.feature.settings)
 

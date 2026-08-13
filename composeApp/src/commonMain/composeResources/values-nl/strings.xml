@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Spelen</string>
     <string name="continue_game">Doorgaan</string>
     <string name="new_game">Nieuw spel</string>
     <string name="best_score_label">Beste score</string>
     <string name="home_tagline">Een rustige kleine puzzel</string>
-
-    <!-- Game Screen -->
-    <string name="score">Score</string>
-    <string name="best">Beste</string>
-    <string name="game_over">Game over</string>
-    <string name="game_over_subtitle">Geen zetten meer mogelijk op het bord</string>
-    <string name="new_best">Nieuwe beste score</string>
-    <string name="revive">Doorgaan</string>
-    <string name="restart">Nieuw spel</string>
-    <string name="exit_to_home">Afsluiten</string>
-    <string name="cd_settings">Instellingen</string>
-    <string name="cd_back">Terug</string>
-    <string name="cd_close">Sluiten</string>
-    <string name="cd_advertisement">Advertentie</string>
-
-    <!-- Settings -->
     <string name="settings">Instellingen</string>
     <string name="sound">Geluid</string>
     <string name="sound_subtitle">Geluidseffecten van het spel</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Bekijk de broncode</string>
     <string name="open_source_libraries">Open-source-bibliotheken</string>
     <string name="open_source_libraries_subtitle">Dankbetuigingen</string>
-
     <string name="advertising">Advertenties</string>
     <string name="advertising_enabled_subtitle">Ondersteunen gratis ontwikkeling</string>
     <string name="advertising_disabled_subtitle">Uitgeschakeld — herlevingen zijn gratis</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Advertenties helpen ons het spel te verbeteren en alle functies gratis te houden. Als je ze uitschakelt, blijven herlevingen gratis — en je kunt Logica nog steeds steunen met een GitHub-ster of een donatie.</string>
     <string name="keep_ads">Advertenties behouden</string>
     <string name="disable_ads_anyway">Toch uitschakelen</string>
-
-    <!-- Common -->
+    <string name="cd_back">Terug</string>
     <string name="exit">Afsluiten</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Goed</string>
-    <string name="feedback_great">Geweldig!</string>
-    <string name="feedback_excellent">Uitstekend!</string>
-    <string name="feedback_unbelievable">Ongelooflijk!</string>
-    <string name="feedback_combo">Combo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Leg het op het bord</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Geniet je van Logica?</string>
-    <string name="review_prompt_body">Jouw beoordeling helpt meer puzzelspelers het spel te vinden.</string>
-    <string name="review_prompt_leave_feedback">Feedback achterlaten</string>
-    <string name="review_prompt_dont_show">Niet meer tonen</string>
 </resources>

@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">分数</string>
+    <string name="best">最高</string>
+    <string name="game_over">游戏结束</string>
+    <string name="game_over_subtitle">棋盘上没有可移动的方块了</string>
+    <string name="new_best">新纪录</string>
+    <string name="revive">继续</string>
+    <string name="restart">新游戏</string>
+    <string name="new_game">新游戏</string>
+    <string name="exit_to_home">退出</string>
+    <string name="cd_settings">设置</string>
+    <string name="cd_back">返回</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_advertisement">广告</string>
+    <string name="feedback_good">好</string>
+    <string name="feedback_great">太棒了！</string>
+    <string name="feedback_excellent">卓越！</string>
+    <string name="feedback_unbelievable">难以置信！</string>
+    <string name="feedback_combo">连击</string>
+    <string name="tutorial_grid_title">放置在棋盘上</string>
+    <string name="review_prompt_title">喜欢Logica吗？</string>
+    <string name="review_prompt_body">您的评价可以帮助更多拼图玩家找到这款游戏。</string>
+    <string name="review_prompt_leave_feedback">留下反馈</string>
+    <string name="review_prompt_dont_show">不再显示</string>
+</resources>

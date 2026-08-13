@@ -46,7 +46,6 @@ class SettingsBackedSettingsRepositoryTest {
         assertTrue(repo.adsEnabled.value)
         assertEquals(0L, repo.bestScore.value)
         assertEquals(0, repo.reviewPromptCount.value)
-        assertFalse(repo.tutorialSeen.value)
     }
 
     @Test
@@ -153,12 +152,6 @@ class SettingsBackedSettingsRepositoryTest {
         }
         jobs.awaitAll()
         assertEquals(50, repo.reviewPromptCount.value)
-    }
-
-    @Test
-    fun setTutorialSeen() = runTest {
-        repo.setTutorialSeen()
-        assertTrue(repo.tutorialSeen.value)
     }
 
     // ── Race-condition / mutex coverage ──────────────────────────────────

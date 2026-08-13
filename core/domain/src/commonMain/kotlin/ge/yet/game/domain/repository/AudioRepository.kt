@@ -1,14 +1,11 @@
 package ge.yet.game.domain.repository
 
-import ge.yet.game.domain.model.FeedbackType
-
-
-/** Implementations MUST consult [SettingsRepository.soundEnabled] before playing. */
+/** Implementations MUST consult [SettingsRepository.sfxEnabled] before playing sounds. */
 interface AudioRepository {
-    suspend fun playVoiceFeedback(type: FeedbackType)
+    suspend fun playSound(filename: String)
 
     /** Starts looping background music. Safe to call multiple times. */
-    suspend fun startMusic()
+    suspend fun startMusic(tracks: List<String>)
 
     /** Stops background music immediately and clears the session flag. */
     suspend fun stopMusic()

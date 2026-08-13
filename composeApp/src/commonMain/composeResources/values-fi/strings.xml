@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Pelaa</string>
     <string name="continue_game">Jatka</string>
     <string name="new_game">Uusi peli</string>
     <string name="best_score_label">Paras tulos</string>
     <string name="home_tagline">Rauhallinen pieni palapeli</string>
-
-    <!-- Game Screen -->
-    <string name="score">Pisteet</string>
-    <string name="best">Paras</string>
-    <string name="game_over">Peli ohi</string>
-    <string name="game_over_subtitle">Ei siirtoja jäljellä laudalla</string>
-    <string name="new_best">Uusi ennätys</string>
-    <string name="revive">Jatka</string>
-    <string name="restart">Uusi peli</string>
-    <string name="exit_to_home">Poistu</string>
-    <string name="cd_settings">Asetukset</string>
-    <string name="cd_back">Takaisin</string>
-    <string name="cd_close">Sulje</string>
-    <string name="cd_advertisement">Mainos</string>
-
-    <!-- Settings -->
     <string name="settings">Asetukset</string>
     <string name="sound">Ääni</string>
     <string name="sound_subtitle">Pelin äänitehosteet</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Näytä lähdekoodi</string>
     <string name="open_source_libraries">Avoimen lähdekoodin kirjastot</string>
     <string name="open_source_libraries_subtitle">Kiitokset</string>
-
     <string name="advertising">Mainokset</string>
     <string name="advertising_enabled_subtitle">Tukevat ilmaista kehitystä</string>
     <string name="advertising_disabled_subtitle">Pois käytöstä — elvytykset ovat ilmaisia</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Mainokset auttavat meitä parantamaan peliä ja pitämään kaikki ominaisuudet ilmaisina. Jos poistat ne käytöstä, elvytykset pysyvät ilmaisina — ja voit edelleen tukea Logicaa GitHub-tähdellä tai lahjoituksella.</string>
     <string name="keep_ads">Pidä mainokset</string>
     <string name="disable_ads_anyway">Poista silti käytöstä</string>
-
-    <!-- Common -->
+    <string name="cd_back">Takaisin</string>
     <string name="exit">Poistu</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Hyvä</string>
-    <string name="feedback_great">Hienoa!</string>
-    <string name="feedback_excellent">Erinomaista!</string>
-    <string name="feedback_unbelievable">Uskomatonta!</string>
-    <string name="feedback_combo">Kombo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Aseta laudalle</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Pidätkö Logicasta?</string>
-    <string name="review_prompt_body">Arviosi auttaa muita palapelipelaajia löytämään pelin.</string>
-    <string name="review_prompt_leave_feedback">Jätä palaute</string>
-    <string name="review_prompt_dont_show">Älä näytä uudelleen</string>
 </resources>

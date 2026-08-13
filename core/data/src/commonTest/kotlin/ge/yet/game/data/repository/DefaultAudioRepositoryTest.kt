@@ -2,7 +2,6 @@ package ge.yet.game.data.repository
 
 import ge.yet.game.data.platform.PlatformSoundPlayer
 import ge.yet.game.data.repository.DefaultAudioRepository
-import ge.yet.game.domain.model.FeedbackType
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,28 +39,28 @@ class DefaultAudioRepositoryTest {
     @Test
     fun startMusic_starts_when_fg_and_sound_on() = runTest {
         val (repo, player) = setup()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         assertEquals(listOf(PlayerCall.Start), player.calls)
     }
 
     @Test
     fun startMusic_does_not_start_when_music_off() = runTest {
         val (repo, player) = setup(music = false)
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         assertTrue(player.calls.isEmpty())
     }
 
     @Test
     fun startMusic_starts_when_music_on_even_if_sfx_off() = runTest {
         val (repo, player) = setup(music = true, sfx = false)
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         assertEquals(listOf(PlayerCall.Start), player.calls)
     }
 
     @Test
     fun stopMusic_stops_active_music() = runTest {
         val (repo, player) = setup()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         repo.stopMusic()
         assertEquals(listOf(PlayerCall.Start, PlayerCall.Stop), player.calls)
     }
@@ -69,16 +68,16 @@ class DefaultAudioRepositoryTest {
     @Test
     fun repeat_startMusic_does_not_double_start() = runTest {
         val (repo, player) = setup()
-        repo.startMusic()
-        repo.startMusic()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
+        repo.startMusic(TEST_TRACKS)
+        repo.startMusic(TEST_TRACKS)
         assertEquals(listOf(PlayerCall.Start), player.calls)
     }
 
     @Test
     fun background_then_foreground_pauses_and_resumes() = runTest {
         val (repo, player) = setup()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         repo.onAppBackground()
         repo.onAppForeground()
         assertEquals(
@@ -90,7 +89,7 @@ class DefaultAudioRepositoryTest {
     @Test
     fun toggling_music_off_then_on_during_music_stops_then_starts() = runTest {
         val (repo, player, settings) = setup()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         settings.musicFlow.value = false
         settings.musicFlow.value = true
         assertEquals(
@@ -102,7 +101,7 @@ class DefaultAudioRepositoryTest {
     @Test
     fun toggling_sfx_does_not_affect_music_playback() = runTest {
         val (repo, player, settings) = setup()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         val baseline = player.calls.toList()
         settings.sfxFlow.value = false
         settings.sfxFlow.value = true
@@ -112,7 +111,7 @@ class DefaultAudioRepositoryTest {
     @Test
     fun stopMusic_while_backgrounded_does_not_emit_extra_stop() = runTest {
         val (repo, player) = setup()
-        repo.startMusic()
+        repo.startMusic(TEST_TRACKS)
         repo.onAppBackground()
         val mid = player.calls.size
         repo.stopMusic()
@@ -123,17 +122,17 @@ class DefaultAudioRepositoryTest {
     // ── SFX gating ───────────────────────────────────────────────────────
 
     @Test
-    fun voice_feedback_plays_when_sfx_enabled() = runTest {
+    fun sound_plays_when_sfx_enabled() = runTest {
         val (repo, player) = setup()
-        repo.playVoiceFeedback(FeedbackType.GOOD)
-        assertEquals(listOf(FeedbackType.GOOD), player.voiceFeedback)
+        repo.playSound("success.mp3")
+        assertEquals(listOf("success.mp3"), player.sounds)
     }
 
     @Test
-    fun voice_feedback_is_silent_when_sfx_disabled() = runTest {
+    fun sound_is_silent_when_sfx_disabled() = runTest {
         val (repo, player) = setup(sfx = false)
-        repo.playVoiceFeedback(FeedbackType.GOOD)
-        assertTrue(player.voiceFeedback.isEmpty())
+        repo.playSound("success.mp3")
+        assertTrue(player.sounds.isEmpty())
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -142,11 +141,19 @@ class DefaultAudioRepositoryTest {
 
     private class RecordingPlayer : PlatformSoundPlayer {
         val calls = mutableListOf<PlayerCall>()
-        val voiceFeedback = mutableListOf<FeedbackType>()
-        override fun playVoiceFeedback(type: FeedbackType) { voiceFeedback += type }
-        override fun startMusic() { calls += PlayerCall.Start }
+        val sounds = mutableListOf<String>()
+        val playlists = mutableListOf<List<String>>()
+        override fun playSound(filename: String) { sounds += filename }
+        override fun startMusic(tracks: List<String>) {
+            playlists += tracks
+            calls += PlayerCall.Start
+        }
         override fun stopMusic() { calls += PlayerCall.Stop }
         override fun release() {}
+    }
+
+    private companion object {
+        val TEST_TRACKS = listOf("calm.mp3", "focus.mp3")
     }
 
     private class FakeSettings(
@@ -162,7 +169,6 @@ class DefaultAudioRepositoryTest {
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override val tutorialSeen = MutableStateFlow(false).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
         override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
@@ -171,6 +177,5 @@ class DefaultAudioRepositoryTest {
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
         override suspend fun suppressReviewPrompts(max: Int) {}
-        override suspend fun setTutorialSeen() {}
     }
 }

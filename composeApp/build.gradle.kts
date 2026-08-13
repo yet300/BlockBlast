@@ -55,11 +55,10 @@ kotlin {
             implementation(projects.core.telemetry)
             implementation(projects.core.uikit)
             implementation(projects.monetization.ads)
+            implementation(projects.game.blockblast)
 
             api(projects.feature.root)
             implementation(projects.feature.home)
-            implementation(projects.feature.home)
-            implementation(projects.feature.game)
             implementation(projects.feature.settings)
 
 
@@ -69,7 +68,6 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
-            implementation(libs.confettikit)
             implementation(libs.aboutlibraries.core)
 
             implementation(libs.androidx.lifecycle.runtimeCompose)

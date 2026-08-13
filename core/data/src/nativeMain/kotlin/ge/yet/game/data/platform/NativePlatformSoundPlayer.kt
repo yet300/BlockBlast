@@ -3,7 +3,6 @@ package ge.yet.game.data.platform
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import ge.yet.game.domain.model.FeedbackType
 import ge.yet.game.domain.repository.AudioFileProvider
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -27,13 +26,12 @@ import platform.posix.fwrite
 /**
  * iOS actual — plays SFX via [AVAudioPlayer] loaded from temp files.
  *
- * Audio bytes come from [AudioFileProvider] (= `Res.readBytes()` in composeApp),
- * which is the only reliable cross-platform way to read `composeResources/files/`.
+ * Audio bytes come from the active game's [AudioFileProvider], which can use
+ * Compose Resources to read `composeResources/files/` portably.
  * The bytes are written once to the temp directory via POSIX I/O and reused
  * for the lifetime of the app session.
  *
- * SFX are preloaded eagerly on startup so the first `play()` is instant.
- * Background music is loaded on demand when [startMusic] is called.
+ * Sounds and background music are loaded on demand.
  */
 @OptIn(ExperimentalForeignApi::class)
 @SingleIn(AppScope::class)
@@ -56,37 +54,25 @@ internal class NativePlatformSoundPlayer(
     // (e.g., stopMusic ran while loadPlayer was on a background dispatcher).
     private var musicGeneration: Long = 0L
 
-    /** Known SFX filenames to preload eagerly at startup. */
-    private val knownSfx = listOf(
-        "voice_good.mp3", "voice_great.mp3",
-        "voice_excellent.mp3", "voice_unbelievable.mp3",
-        "voice_amazing.mp3",
-    )
-
     init {
         runCatching {
             AVAudioSession.sharedInstance()
                 .setCategory(AVAudioSessionCategoryPlayback, error = null)
         }
-        scope.launch(Dispatchers.Main) {
-            for (filename in knownSfx) {
-                val key = filename.substringBeforeLast(".")
-                loadPlayer(filename)?.let { sfxCache[key] = it }
-            }
-        }
     }
 
-    override fun playVoiceFeedback(type: FeedbackType) =
-        playVoice("voice_${type.name.lowercase()}")
+    override fun playSound(filename: String) = playVoice(filename)
 
-    override fun startMusic() {
+    override fun startMusic(tracks: List<String>) {
+        if (tracks.isEmpty()) return
         if (musicJob?.isActive == true || musicPlayer?.playing == true) return
+        val playlist = tracks.toList()
         val generation = ++musicGeneration
         musicJob = scope.launch(Dispatchers.Main) {
             while (true) {
-                val index = MusicPlaylist.nextIndex(lastTrackIndex)
+                val index = nextTrackIndex(playlist.size, lastTrackIndex)
                 lastTrackIndex = index
-                val filename = MusicPlaylist.TRACKS[index]
+                val filename = playlist[index]
                 val player = loadPlayer(filename) ?: return@launch
                 // After loadPlayer (which hops dispatchers), the loop may have
                 // been cancelled and/or superseded by another startMusic. In
@@ -124,41 +110,27 @@ internal class NativePlatformSoundPlayer(
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private fun safePlay(key: String) { safePlayReturning(key) }
-
-    private fun playVoice(key: String) {
+    private fun playVoice(filename: String) {
         voicePlayer?.stop()
         voicePlayer = null
-        val player = sfxCache[key]
+        val player = sfxCache[filename]
         if (player != null) {
             player.currentTime = 0.0
             if (player.play()) voicePlayer = player
             return
         }
-        if (key !in sfxMisses) {
+        if (filename !in sfxMisses) {
             scope.launch(Dispatchers.Main) {
-                val loaded = loadPlayer("$key.mp3")
-                if (loaded != null) sfxCache[key] = loaded else sfxMisses += key
+                val loaded = loadPlayer(filename)
+                if (loaded != null) {
+                    sfxCache[filename] = loaded
+                    loaded.currentTime = 0.0
+                    if (loaded.play()) voicePlayer = loaded
+                } else {
+                    sfxMisses += filename
+                }
             }
         }
-    }
-
-    private fun safePlayReturning(key: String): Boolean {
-        val player = sfxCache[key]
-        if (player != null) {
-            player.currentTime = 0.0
-            return player.play()
-        }
-        // Lazy-load on miss: matches Android behaviour and avoids the
-        // requirement to enumerate every SFX in [knownSfx]. The current call
-        // can't play (load is async), but subsequent calls will hit the cache.
-        if (key !in sfxMisses) {
-            scope.launch(Dispatchers.Main) {
-                val loaded = loadPlayer("$key.mp3")
-                if (loaded != null) sfxCache[key] = loaded else sfxMisses += key
-            }
-        }
-        return false
     }
 
     /**

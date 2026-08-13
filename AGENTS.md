@@ -33,20 +33,21 @@ Before changing code:
 BlockBlast/
 ├── androidApp/                 Android application, manifest, Firebase and ads
 ├── iosApp/                     SwiftUI host, iOS ATT and native SDK packaging
-├── composeApp/                 Shared Compose app, resources, UI and app composition
+├── composeApp/                 Shared app UI, app-owned resources and composition
 ├── core/
 │   ├── common/                 Reusable shared app utilities and infrastructure
-│   ├── domain/                 Game rules, models and domain contracts
+│   ├── domain/                 Reusable domain contracts and app-level models
 │   ├── data/                   Repository implementations and settings persistence
 │   └── telemetry/              Firebase analytics and Crashlytics abstraction
 ├── feature/
 │   ├── root/                   Top-level navigation component
 │   ├── home/                   Home screen feature
-│   ├── game/                   Gameplay, result flow and review prompt
 │   └── settings/               Settings feature
+├── game/
+│   └── blockblast/             Block Blast rules, persistence, resources, components and UI
 ├── monetization/
 │   ├── core/                   SDK-free entitlement and advertising policy
-│   └── basic-ads/              AdMob, UMP, ATT bridge and Compose ad adapter
+│   └── ads/                    AdMob, UMP, ATT bridge and Compose ad adapter
 ├── build-logic/convention/     Local Kotlin Multiplatform Gradle convention plugin
 ├── gradle/libs.versions.toml   Central versions, libraries, bundles and plugins
 ├── fastlane/                   Store metadata and release automation
@@ -59,17 +60,17 @@ BlockBlast/
 |---|---|---|
 | `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
-| `:composeApp` | Shared Compose UI, resources and app composition | core, feature and monetization modules |
-| `:core:domain` | Platform-neutral game engine, models and contracts | no project dependency declared |
+| `:composeApp` | Shared application UI, app-owned resources and app composition | core, feature, game and monetization modules |
+| `:core:domain` | Reusable platform-neutral domain contracts and app-level models | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
-| `:core:data` | Settings-backed persistence and repository implementations | `:core:domain`, `:core:common` |
+| `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
-| `:feature:home` | Home components and stores | `:core:domain`, `:core:common`, `:feature:settings` |
-| `:feature:game` | Game components, stores, result and review flow | `:core:domain`, `:core:common`, `:feature:settings` |
-| `:feature:root` | Top-level navigation and feature composition | core modules, `:feature:home`, `:feature:game` |
+| `:feature:home` | Home components and stores | `:core:domain`, `:core:common`, `:feature:settings`, `:game:blockblast` |
+| `:feature:root` | Top-level navigation and feature composition | core modules, `:feature:home`, `:feature:settings`, `:game:blockblast` |
+| `:game:blockblast` | Block Blast rules, models, state/tutorial persistence, resources, audio catalog, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
-| `:monetization:basic-ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core`, `basic-ads` |
+| `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 
 Keep dependencies flowing inward. In particular, core modules must not depend on
@@ -77,9 +78,16 @@ features or UI, and feature modules must not depend on `:composeApp` or either
 native application shell. Treat a new cross-feature dependency as an
 architecture decision, not a convenience import.
 
+Game modules own all rules, game-specific models, persistence, components and
+UI for their respective games. `:feature:root` composes the current game, while
+the game module must not depend on `:composeApp`, `:feature:root` or a native
+application module. Block Blast's internal engine and implementation types stay
+`internal`; only the component and model contracts required by Root, Home and
+the application composition are public.
+
 Keep monetization policy in `:monetization:core`; it must not depend on Compose,
 Firebase, advertising SDKs, or either application shell. Native AdMob and UMP
-dependencies belong in `:monetization:basic-ads`. Product configuration, such
+dependencies belong in `:monetization:ads`. Product configuration, such
 as ad unit IDs and the current entitlement, enters through `:composeApp`.
 
 ## Source Placement and Architecture
@@ -139,7 +147,8 @@ the narrowest relevant task first, then broaden verification as appropriate.
 # Run a module's multiplatform tests
 ./gradlew :core:domain:allTests
 ./gradlew :core:data:allTests
-./gradlew :feature:game:allTests
+./gradlew :game:blockblast:allTests
+./gradlew :feature:root:allTests
 ./gradlew :monetization:core:allTests
 
 # Verify shared Android compilation and package the Android app
@@ -154,7 +163,7 @@ For changes to the advertising adapter, also compile its iOS target and verify
 the generated SwiftPM linkage package:
 
 ```bash
-./gradlew :monetization:basic-ads:compileKotlinIosSimulatorArm64
+./gradlew :monetization:ads:compileKotlinIosSimulatorArm64
 XCODEPROJ_PATH="$PWD/iosApp/iosApp.xcodeproj" \
   ./gradlew :composeApp:integrateLinkagePackage -i
 ```

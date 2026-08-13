@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">ניקוד</string>
+    <string name="best">שיא</string>
+    <string name="game_over">המשחק נגמר</string>
+    <string name="game_over_subtitle">לא נשארו מהלכים על הלוח</string>
+    <string name="new_best">שיא חדש</string>
+    <string name="revive">המשך</string>
+    <string name="restart">משחק חדש</string>
+    <string name="new_game">משחק חדש</string>
+    <string name="exit_to_home">יציאה</string>
+    <string name="cd_settings">הגדרות</string>
+    <string name="cd_back">חזור</string>
+    <string name="cd_close">סגור</string>
+    <string name="cd_advertisement">פרסומת</string>
+    <string name="feedback_good">טוב</string>
+    <string name="feedback_great">נהדר!</string>
+    <string name="feedback_excellent">מצוין!</string>
+    <string name="feedback_unbelievable">לא ייאמן!</string>
+    <string name="feedback_combo">קומבו</string>
+    <string name="tutorial_grid_title">הנח אותו על הלוח</string>
+    <string name="review_prompt_title">נהנה מ-Logica?</string>
+    <string name="review_prompt_body">הביקורת שלך עוזרת לשחקני פאזלים נוספים למצוא את המשחק.</string>
+    <string name="review_prompt_leave_feedback">השאר משוב</string>
+    <string name="review_prompt_dont_show">אל תציג שוב</string>
+</resources>

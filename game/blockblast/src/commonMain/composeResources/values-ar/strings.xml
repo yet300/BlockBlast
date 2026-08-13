@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">النتيجة</string>
+    <string name="best">الأفضل</string>
+    <string name="game_over">انتهت اللعبة</string>
+    <string name="game_over_subtitle">لا توجد حركات متبقية على اللوحة</string>
+    <string name="new_best">نتيجة قياسية جديدة</string>
+    <string name="revive">استمرار</string>
+    <string name="restart">لعبة جديدة</string>
+    <string name="new_game">لعبة جديدة</string>
+    <string name="exit_to_home">خروج</string>
+    <string name="cd_settings">الإعدادات</string>
+    <string name="cd_back">رجوع</string>
+    <string name="cd_close">إغلاق</string>
+    <string name="cd_advertisement">إعلان</string>
+    <string name="feedback_good">جيد</string>
+    <string name="feedback_great">رائع!</string>
+    <string name="feedback_excellent">ممتاز!</string>
+    <string name="feedback_unbelievable">لا يصدق!</string>
+    <string name="feedback_combo">كومبو</string>
+    <string name="tutorial_grid_title">ضعها على اللوحة</string>
+    <string name="review_prompt_title">هل تستمتع بـ Logica؟</string>
+    <string name="review_prompt_body">تقييمك يساعد المزيد من لاعبي الألغاز في العثور على اللعبة.</string>
+    <string name="review_prompt_leave_feedback">ترك تعليق</string>
+    <string name="review_prompt_dont_show">عدم الإظهار مرة أخرى</string>
+</resources>

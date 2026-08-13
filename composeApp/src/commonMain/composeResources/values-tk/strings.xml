@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Oýnamak</string>
     <string name="continue_game">Dowam et</string>
     <string name="new_game">Täze oýun</string>
     <string name="best_score_label">Iň ýokary bal</string>
     <string name="home_tagline">Asuda kiçijik tapmaça</string>
-
-    <!-- Game Screen -->
-    <string name="score">Bal</string>
-    <string name="best">Rekord</string>
-    <string name="game_over">Oýun gutardy</string>
-    <string name="game_over_subtitle">Tagtada göçüm galmady</string>
-    <string name="new_best">Täze rekord</string>
-    <string name="revive">Dowam et</string>
-    <string name="restart">Täze oýun</string>
-    <string name="exit_to_home">Çykyş</string>
-    <string name="cd_settings">Sazlamalar</string>
-    <string name="cd_back">Yza</string>
-    <string name="cd_close">Ýap</string>
-    <string name="cd_advertisement">Mahabat</string>
-
-    <!-- Settings -->
     <string name="settings">Sazlamalar</string>
     <string name="sound">Ses</string>
     <string name="sound_subtitle">Oýnuň ses effektleri</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Çeşme kody görkez</string>
     <string name="open_source_libraries">Açyk çeşme kitaphanalary</string>
     <string name="open_source_libraries_subtitle">Minnetdarlyklar</string>
-
     <string name="advertising">Mahabat</string>
     <string name="advertising_enabled_subtitle">Mugt ösüşi goldaýar</string>
     <string name="advertising_disabled_subtitle">Öçürilen — gaýtadan janlanmak mugt</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Mahabat oýny ösdürmäge we ähli mümkinçilikleri mugt saklamaga kömek edýär. Ony öçürseňiz hem, gaýtadan janlanmak mugt galar — Logica-ny GitHub ýyldyzy ýa-da sadaka bilen goldap bilersiňiz.</string>
     <string name="keep_ads">Mahabaty sakla</string>
     <string name="disable_ads_anyway">Şonda-da öçür</string>
-
-    <!-- Common -->
+    <string name="cd_back">Yza</string>
     <string name="exit">Çykyş</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Ýagşy</string>
-    <string name="feedback_great">Berekella!</string>
-    <string name="feedback_excellent">Ajaýyp!</string>
-    <string name="feedback_unbelievable">Ynanawsyz!</string>
-    <string name="feedback_combo">Kombo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Tagta ýerleşdiriň</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Logica halaýarmy?</string>
-    <string name="review_prompt_body">Siziň synlaryňyz has köp tapmaça oýunçylaryna oýny tapmaga kömek eder.</string>
-    <string name="review_prompt_leave_feedback">Pikir galdyrmak</string>
-    <string name="review_prompt_dont_show">Ýene görkezme</string>
 </resources>

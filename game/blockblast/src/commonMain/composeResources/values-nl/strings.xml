@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Score</string>
+    <string name="best">Beste</string>
+    <string name="game_over">Game over</string>
+    <string name="game_over_subtitle">Geen zetten meer mogelijk op het bord</string>
+    <string name="new_best">Nieuwe beste score</string>
+    <string name="revive">Doorgaan</string>
+    <string name="restart">Nieuw spel</string>
+    <string name="new_game">Nieuw spel</string>
+    <string name="exit_to_home">Afsluiten</string>
+    <string name="cd_settings">Instellingen</string>
+    <string name="cd_back">Terug</string>
+    <string name="cd_close">Sluiten</string>
+    <string name="cd_advertisement">Advertentie</string>
+    <string name="feedback_good">Goed</string>
+    <string name="feedback_great">Geweldig!</string>
+    <string name="feedback_excellent">Uitstekend!</string>
+    <string name="feedback_unbelievable">Ongelooflijk!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Leg het op het bord</string>
+    <string name="review_prompt_title">Geniet je van Logica?</string>
+    <string name="review_prompt_body">Jouw beoordeling helpt meer puzzelspelers het spel te vinden.</string>
+    <string name="review_prompt_leave_feedback">Feedback achterlaten</string>
+    <string name="review_prompt_dont_show">Niet meer tonen</string>
+</resources>

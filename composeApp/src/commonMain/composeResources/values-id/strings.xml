@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Main</string>
     <string name="continue_game">Lanjutkan</string>
     <string name="new_game">Permainan Baru</string>
     <string name="best_score_label">Skor Terbaik</string>
     <string name="home_tagline">Tekan-teki kecil yang menenangkan</string>
-
-    <!-- Game Screen -->
-    <string name="score">Skor</string>
-    <string name="best">Terbaik</string>
-    <string name="game_over">Permainan Berakhir</string>
-    <string name="game_over_subtitle">Tidak ada langkah tersisa di papan</string>
-    <string name="new_best">Rekor Baru</string>
-    <string name="revive">Lanjutkan</string>
-    <string name="restart">Permainan Baru</string>
-    <string name="exit_to_home">Keluar</string>
-    <string name="cd_settings">Pengaturan</string>
-    <string name="cd_back">Kembali</string>
-    <string name="cd_close">Tutup</string>
-    <string name="cd_advertisement">Iklan</string>
-
-    <!-- Settings -->
     <string name="settings">Pengaturan</string>
     <string name="sound">Suara</string>
     <string name="sound_subtitle">Efek suara permainan</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Lihat kode sumber</string>
     <string name="open_source_libraries">Pustaka open-source</string>
     <string name="open_source_libraries_subtitle">Kredit dan pengakuan</string>
-
     <string name="advertising">Iklan</string>
     <string name="advertising_enabled_subtitle">Mendukung pengembangan gratis</string>
     <string name="advertising_disabled_subtitle">Dinonaktifkan — hidup kembali gratis</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Iklan membantu kami meningkatkan game dan menjaga semua fitur tetap gratis. Jika dinonaktifkan, hidup kembali akan tetap gratis — dan Anda masih dapat mendukung Logica dengan bintang GitHub atau donasi.</string>
     <string name="keep_ads">Pertahankan iklan</string>
     <string name="disable_ads_anyway">Tetap nonaktifkan</string>
-
-    <!-- Common -->
+    <string name="cd_back">Kembali</string>
     <string name="exit">Keluar</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Bagus</string>
-    <string name="feedback_great">Luar Biasa!</string>
-    <string name="feedback_excellent">Sempurna!</string>
-    <string name="feedback_unbelievable">Luar Biasa!</string>
-    <string name="feedback_combo">Kombo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Letakkan di papan</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Menikmati Logica?</string>
-    <string name="review_prompt_body">Ulasan Anda membantu lebih banyak pemain teka-teki menemukan permainan ini.</string>
-    <string name="review_prompt_leave_feedback">Berikan masukan</string>
-    <string name="review_prompt_dont_show">Jangan tampilkan lagi</string>
 </resources>

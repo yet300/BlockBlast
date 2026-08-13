@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Gioca</string>
     <string name="continue_game">Continua</string>
     <string name="new_game">Nuovo gioco</string>
     <string name="best_score_label">Miglior punteggio</string>
     <string name="home_tagline">Un piccolo puzzle tranquillo</string>
-
-    <!-- Game Screen -->
-    <string name="score">Punteggio</string>
-    <string name="best">Migliore</string>
-    <string name="game_over">Game over</string>
-    <string name="game_over_subtitle">Nessuna mossa rimasta sulla tavola</string>
-    <string name="new_best">Nuovo record</string>
-    <string name="revive">Continua</string>
-    <string name="restart">Nuovo gioco</string>
-    <string name="exit_to_home">Esci</string>
-    <string name="cd_settings">Impostazioni</string>
-    <string name="cd_back">Indietro</string>
-    <string name="cd_close">Chiudi</string>
-    <string name="cd_advertisement">Pubblicità</string>
-
-    <!-- Settings -->
     <string name="settings">Impostazioni</string>
     <string name="sound">Suono</string>
     <string name="sound_subtitle">Effetti sonori del gioco</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Visualizza il codice sorgente</string>
     <string name="open_source_libraries">Librerie open-source</string>
     <string name="open_source_libraries_subtitle">Crediti e ringraziamenti</string>
-
     <string name="advertising">Pubblicità</string>
     <string name="advertising_enabled_subtitle">Sostiene lo sviluppo gratuito</string>
     <string name="advertising_disabled_subtitle">Disattivata — le resurrezioni sono gratuite</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">La pubblicità ci aiuta a migliorare il gioco e a mantenere gratuite tutte le funzionalità. Se la disattivi, le resurrezioni resteranno gratuite — e potrai comunque sostenere Logica con una stella su GitHub o una donazione.</string>
     <string name="keep_ads">Mantieni la pubblicità</string>
     <string name="disable_ads_anyway">Disattiva comunque</string>
-
-    <!-- Common -->
+    <string name="cd_back">Indietro</string>
     <string name="exit">Esci</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Bene</string>
-    <string name="feedback_great">Grande!</string>
-    <string name="feedback_excellent">Eccellente!</string>
-    <string name="feedback_unbelievable">Incredibile!</string>
-    <string name="feedback_combo">Combo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Trascinalo sulla griglia</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Ti piace Logica?</string>
-    <string name="review_prompt_body">La tua recensione aiuta altri appassionati di puzzle a trovare il gioco.</string>
-    <string name="review_prompt_leave_feedback">Lascia un feedback</string>
-    <string name="review_prompt_dont_show">Non mostrare più</string>
 </resources>

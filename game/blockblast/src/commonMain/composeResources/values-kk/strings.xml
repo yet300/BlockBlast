@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Ұпай</string>
+    <string name="best">Рекорд</string>
+    <string name="game_over">Ойын аяқталды</string>
+    <string name="game_over_subtitle">Тақтада қозғалыс қалмады</string>
+    <string name="new_best">Жаңа рекорд</string>
+    <string name="revive">Жалғастыру</string>
+    <string name="restart">Жаңа ойын</string>
+    <string name="new_game">Жаңа ойын</string>
+    <string name="exit_to_home">Шығу</string>
+    <string name="cd_settings">Параметрлер</string>
+    <string name="cd_back">Артқа</string>
+    <string name="cd_close">Жабу</string>
+    <string name="cd_advertisement">Жарнама</string>
+    <string name="feedback_good">Жақсы</string>
+    <string name="feedback_great">Тамаша!</string>
+    <string name="feedback_excellent">Керемет!</string>
+    <string name="feedback_unbelievable">Сенгісіз!</string>
+    <string name="feedback_combo">Комбо</string>
+    <string name="tutorial_grid_title">Тақтаға орналастырыңыз</string>
+    <string name="review_prompt_title">Logica ұнады ма?</string>
+    <string name="review_prompt_body">Сіздің пікіріңіз көбірек жұмбақ ойыншыларына ойынды табуға көмектеседі.</string>
+    <string name="review_prompt_leave_feedback">Пікір қалдыру</string>
+    <string name="review_prompt_dont_show">Қайта көрсетпеу</string>
+</resources>

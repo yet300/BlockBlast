@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Бозӣ кардан</string>
     <string name="continue_game">Давом додан</string>
     <string name="new_game">Бозии нав</string>
     <string name="best_score_label">Беҳтарин хол</string>
     <string name="home_tagline">Муаммои ороми хурд</string>
-
-    <!-- Game Screen -->
-    <string name="score">Хол</string>
-    <string name="best">Рекорд</string>
-    <string name="game_over">Бозӣ анҷом ёфт</string>
-    <string name="game_over_subtitle">Дар тахта қадам намондааст</string>
-    <string name="new_best">Рекорди нав</string>
-    <string name="revive">Давом додан</string>
-    <string name="restart">Бозии нав</string>
-    <string name="exit_to_home">Баромад</string>
-    <string name="cd_settings">Танзимот</string>
-    <string name="cd_back">Қафо</string>
-    <string name="cd_close">Пӯшидан</string>
-    <string name="cd_advertisement">Таблиғ</string>
-
-    <!-- Settings -->
     <string name="settings">Танзимот</string>
     <string name="sound">Овоз</string>
     <string name="sound_subtitle">Эффектҳои овозии бозӣ</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Дидани коди манбаъ</string>
     <string name="open_source_libraries">Китобхонаҳои кушодаасос</string>
     <string name="open_source_libraries_subtitle">Эътирофҳо ва ташаккур</string>
-
     <string name="advertising">Реклама</string>
     <string name="advertising_enabled_subtitle">Таҳияи ройгонро дастгирӣ мекунад</string>
     <string name="advertising_disabled_subtitle">Хомӯш аст — эҳё ройгон аст</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Реклама ба мо барои беҳтар кардани бозӣ ва ройгон нигоҳ доштани ҳамаи имкониятҳо кумак мекунад. Агар онро хомӯш кунед, эҳё ройгон мемонад — ва шумо метавонед Logica-ро бо ситора дар GitHub ё хайрия дастгирӣ кунед.</string>
     <string name="keep_ads">Рекламаро нигоҳ доред</string>
     <string name="disable_ads_anyway">Ба ҳар ҳол хомӯш кунед</string>
-
-    <!-- Common -->
+    <string name="cd_back">Қафо</string>
     <string name="exit">Баромад</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Хуб</string>
-    <string name="feedback_great">Офарин!</string>
-    <string name="feedback_excellent">Беҳтарин!</string>
-    <string name="feedback_unbelievable">Боваринашаванда!</string>
-    <string name="feedback_combo">Комбо</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Дар тахта ҷойгир кунед</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Logica-ро дӯст медоред?</string>
-    <string name="review_prompt_body">Баҳои шумо ба бозигарони дигари муаммо кӯмак мекунад, ки бозиро пайдо кунанд.</string>
-    <string name="review_prompt_leave_feedback">Фикр гузоштан</string>
-    <string name="review_prompt_dont_show">Дигар нишон надиҳед</string>
 </resources>

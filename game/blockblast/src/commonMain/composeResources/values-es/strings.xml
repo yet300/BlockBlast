@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Puntuación</string>
+    <string name="best">Mejor</string>
+    <string name="game_over">Fin del juego</string>
+    <string name="game_over_subtitle">No hay más movimientos en el tablero</string>
+    <string name="new_best">Nueva mejor puntuación</string>
+    <string name="revive">Continuar</string>
+    <string name="restart">Nuevo juego</string>
+    <string name="new_game">Nuevo juego</string>
+    <string name="exit_to_home">Salir</string>
+    <string name="cd_settings">Ajustes</string>
+    <string name="cd_back">Atrás</string>
+    <string name="cd_close">Cerrar</string>
+    <string name="cd_advertisement">Anuncio</string>
+    <string name="feedback_good">¡Bien!</string>
+    <string name="feedback_great">¡Genial!</string>
+    <string name="feedback_excellent">¡Excelente!</string>
+    <string name="feedback_unbelievable">¡Increíble!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Colócala en el tablero</string>
+    <string name="review_prompt_title">¿Disfrutando Logica?</string>
+    <string name="review_prompt_body">Tu reseña ayuda a más jugadores de puzzles a encontrar el juego.</string>
+    <string name="review_prompt_leave_feedback">Dejar comentario</string>
+    <string name="review_prompt_dont_show">No mostrar de nuevo</string>
+</resources>

@@ -69,7 +69,6 @@ class DefaultSettingsComponentTest {
         override val adsEnabled = adsFlow.asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override val tutorialSeen = MutableStateFlow(false).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) = Unit
         override suspend fun setSfxEnabled(enabled: Boolean) = Unit
         override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
@@ -80,7 +79,6 @@ class DefaultSettingsComponentTest {
         override suspend fun setBestScore(score: Long) = Unit
         override suspend fun incrementReviewPromptCount() = Unit
         override suspend fun suppressReviewPrompts(max: Int) = Unit
-        override suspend fun setTutorialSeen() = Unit
     }
 
     private class RecordingAnalytics : AnalyticRepository {

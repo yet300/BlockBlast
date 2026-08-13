@@ -9,26 +9,22 @@ import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
 import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
-import ge.yet.blockblast.feature.game.GameComponent
-import ge.yet.blockblast.feature.game.result.BlockBlastResultSnapshot
-import ge.yet.blockblast.feature.game.result.GameResultComponent
-import ge.yet.blockblast.feature.game.reviewprompt.ReviewPromptComponent
-import ge.yet.blockblast.feature.game.tray.PieceTrayComponent
-import ge.yet.blockblast.feature.game.tray.TraySelection
-import ge.yet.blockblast.feature.game.tray.TraySlotComponent
+import ge.yet.game.blockblast.component.game.GameComponent
+import ge.yet.game.blockblast.component.result.BlockBlastResultSnapshot
+import ge.yet.game.blockblast.component.result.GameResultComponent
+import ge.yet.game.blockblast.component.review.AppReviewComponent
+import ge.yet.game.blockblast.component.tray.PieceTrayComponent
+import ge.yet.game.blockblast.component.tray.TraySelection
+import ge.yet.game.blockblast.component.tray.TraySlotComponent
 import ge.yet.game.feature.home.HomeComponent
 import ge.yet.game.feature.settings.SettingsComponent
-import ge.yet.game.domain.engine.GameSessionReducer
-import ge.yet.game.domain.engine.GameTransition
-import ge.yet.game.domain.engine.ScoreCalculator
-import ge.yet.game.domain.engine.ShapeGenerator
-import ge.yet.game.domain.model.FeedbackType
-import ge.yet.game.domain.model.GameState
-import ge.yet.game.domain.model.Grid
-import ge.yet.game.domain.model.Polyomino
-import ge.yet.game.domain.model.Position
+import ge.yet.game.blockblast.domain.model.GameState
+import ge.yet.game.blockblast.domain.model.Grid
+import ge.yet.game.blockblast.domain.model.Piece
+import ge.yet.game.blockblast.domain.model.Polyomino
+import ge.yet.game.blockblast.domain.model.Position
 import ge.yet.game.domain.repository.AudioRepository
-import ge.yet.game.domain.repository.GameSaveRepository
+import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,17 +95,8 @@ class DefaultRootComponentTest {
         assertFalse(component.sfxEnabled.value)
         settings.vibrationFlow.value = false
         assertFalse(component.vibrationEnabled.value)
-        settings.tutorialFlow.value = true
-        assertTrue(component.tutorialSeen.value)
         settings.adsFlow.value = false
         assertFalse(component.adsEnabled.value)
-    }
-
-    @Test
-    fun onTutorialSeen_persists_via_repository() = runTest {
-        val (component, _, _, settings, _, _) = build()
-        component.onTutorialSeen()
-        assertTrue(settings.tutorialFlow.value)
     }
 
     @Test
@@ -497,25 +484,21 @@ class DefaultRootComponentTest {
         private val onReviveFailed: () -> Unit,
     ) : GameComponent {
         var reviveCalls = 0
-        private val reducer = GameSessionReducer(
-            shapeGenerator = OneByOneGenerator(),
-            scoreCalculator = ScoreCalculator(),
+        private val playablePiece = Piece(
+            pieceId = 1L,
+            shape = Polyomino("1x1", listOf(Position(0, 0))),
+            colorId = 0,
         )
-        private var gameState: GameState
-
-        init {
-            gameState = if (restoredResultState != null) {
-                reducer.restoreResult(restoredResultState)
-            } else if (!isNewGame && saveRepository.saved != null) {
-                reducer.restore(checkNotNull(saveRepository.saved), persistedBestScore = 0)
-            } else {
-                reducer.startNewGame(bestScore = 0L).state
-            }
+        private var gameState: GameState = when {
+            restoredResultState != null -> restoredResultState
+            !isNewGame && saveRepository.saved != null -> checkNotNull(saveRepository.saved)
+            else -> GameState(currentPieces = listOf(playablePiece))
         }
 
         override val model = MutableValue(
             GameComponent.Model(game = gameState),
         )
+        override val tutorialSeen = MutableStateFlow(true).asStateFlow()
         override val pieceTray: PieceTrayComponent =
             object : PieceTrayComponent {
                 override val slots = MutableValue(
@@ -524,23 +507,23 @@ class DefaultRootComponentTest {
                 override val selection =
                     MutableValue(TraySelection.NONE)
                 override fun clearSelection() {}
-            }
+        }
         override fun onCellClicked(pieceId: Long, x: Int, y: Int) {
-            val transition = reducer.place(gameState, pieceId, x, y)
-            if (transition is GameTransition.Applied) {
-                gameState = transition.state
-                externalScope.launch { saveRepository.save(gameState) }
-            }
+            gameState = gameState.copy(currentPieces = gameState.currentPieces.filter { it.pieceId != pieceId })
+            externalScope.launch { saveRepository.save(gameState) }
             model.value = GameComponent.Model(game = gameState)
         }
         override fun onReviveClicked() {
             reviveCalls += 1
-            val transition = reducer.revive(gameState)
-            if (failRevive || transition !is GameTransition.Applied) {
+            if (failRevive || gameState.revivesUsed >= GameState.MAX_REVIVES) {
                 onReviveFailed()
                 return
             }
-            gameState = transition.state
+            gameState = gameState.copy(
+                currentPieces = gameState.currentPieces.ifEmpty { listOf(playablePiece) },
+                isGameOver = false,
+                revivesUsed = gameState.revivesUsed + 1,
+            )
             model.value = GameComponent.Model(game = gameState)
             externalScope.launch {
                 val playableState = gameState
@@ -551,6 +534,7 @@ class DefaultRootComponentTest {
         override fun onRestartClicked() {}
         override fun onSettingsClicked() = onSettingsClicked.invoke()
         override fun onExitClicked() {}
+        override fun onTutorialSeen() {}
         fun complete(
             finalState: GameState,
             canContinue: Boolean,
@@ -559,12 +543,6 @@ class DefaultRootComponentTest {
             onGameCompleted(finalState, canContinue, shouldRequestReview)
         }
         fun failRevive() = onReviveFailed()
-    }
-
-    private class OneByOneGenerator : ShapeGenerator {
-        private val one = Polyomino("1x1", listOf(Position(0, 0)))
-        override fun nextTray(seed: Long?): List<Polyomino> = listOf(one, one, one)
-        override fun smallReviveTray(): List<Polyomino> = listOf(one, one, one)
     }
 
     private class RecordingGameSaveRepository(
@@ -647,7 +625,7 @@ class DefaultRootComponentTest {
         }
     }
 
-    private class FakeReviewPrompt : ReviewPromptComponent {
+    private class FakeReviewPrompt : AppReviewComponent {
         override fun onDontShowAgainClicked() = Unit
         override fun onLeaveFeedbackClicked() = Unit
     }
@@ -655,8 +633,8 @@ class DefaultRootComponentTest {
     private class RecordingAudio : AudioRepository {
         var foregroundCount = 0
         var backgroundCount = 0
-        override suspend fun playVoiceFeedback(type: FeedbackType) {}
-        override suspend fun startMusic() {}
+        override suspend fun playSound(filename: String) {}
+        override suspend fun startMusic(tracks: List<String>) {}
         override suspend fun stopMusic() {}
         override suspend fun onAppBackground() { backgroundCount += 1 }
         override suspend fun onAppForeground() { foregroundCount += 1 }
@@ -668,13 +646,11 @@ class DefaultRootComponentTest {
         val vibrationFlow = MutableStateFlow(true)
         val darkFlow = MutableStateFlow(false)
         val adsFlow = MutableStateFlow(true)
-        val tutorialFlow = MutableStateFlow(false)
         override val musicEnabled = musicFlow.asStateFlow()
         override val sfxEnabled = sfxFlow.asStateFlow()
         override val vibrationEnabled = vibrationFlow.asStateFlow()
         override val darkTheme = darkFlow.asStateFlow()
         override val adsEnabled = adsFlow.asStateFlow()
-        override val tutorialSeen = tutorialFlow.asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
@@ -685,6 +661,5 @@ class DefaultRootComponentTest {
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
         override suspend fun suppressReviewPrompts(max: Int) {}
-        override suspend fun setTutorialSeen() { tutorialFlow.value = true }
     }
 }

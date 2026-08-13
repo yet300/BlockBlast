@@ -30,7 +30,7 @@ import ge.yet.game.monetization.ads.AdBanner
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
-import ge.yet3.blokblast.component.score.BestScoreCard
+import ge.yet.game.blockblast.ui.score.BestScoreCard
 import ge.yet.game.uikit.theme.PieceColors
 import org.jetbrains.compose.resources.stringResource
 import blockblast.composeapp.generated.resources.Res

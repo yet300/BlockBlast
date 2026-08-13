@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">점수</string>
+    <string name="best">최고</string>
+    <string name="game_over">게임 오버</string>
+    <string name="game_over_subtitle">보드에 움직일 수 있는 공간이 없습니다</string>
+    <string name="new_best">신기록</string>
+    <string name="revive">계속하기</string>
+    <string name="restart">새 게임</string>
+    <string name="new_game">새 게임</string>
+    <string name="exit_to_home">나가기</string>
+    <string name="cd_settings">설정</string>
+    <string name="cd_back">뒤로</string>
+    <string name="cd_close">닫기</string>
+    <string name="cd_advertisement">광고</string>
+    <string name="feedback_good">좋음</string>
+    <string name="feedback_great">대단함!</string>
+    <string name="feedback_excellent">탁월함!</string>
+    <string name="feedback_unbelievable">믿을 수 없음!</string>
+    <string name="feedback_combo">콤보</string>
+    <string name="tutorial_grid_title">보드에 배치하기</string>
+    <string name="review_prompt_title">Logica가 마음에 드시나요?</string>
+    <string name="review_prompt_body">여러분의 리뷰는 더 많은 퍼즐 플레이어가 이 게임을 찾는 데 도움이 됩니다.</string>
+    <string name="review_prompt_leave_feedback">피드백 남기기</string>
+    <string name="review_prompt_dont_show">다시 표시 안 함</string>
+</resources>

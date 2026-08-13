@@ -4,7 +4,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.data.platform.PlatformSoundPlayer
-import ge.yet.game.domain.model.FeedbackType
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
@@ -19,8 +18,8 @@ import kotlinx.coroutines.launch
  * music separately on [SettingsRepository.musicEnabled].
  *
  * Music lifecycle is driven by:
- *   - [musicRequested]: a flow set true by [startMusic] (game session active)
- *     and false by [stopMusic] (round ended or component destroyed).
+ *   - [requestedTracks]: a flow populated by [startMusic] (game session active)
+ *     and cleared by [stopMusic] (round ended or component destroyed).
  *   - [appForeground]: a flow set false on [onAppBackground] and true on
  *     [onAppForeground]. Backgrounding the app silences music without
  *     forgetting that a session is active.
@@ -47,8 +46,8 @@ internal class DefaultAudioRepository(
     private val scope: CoroutineScope,
 ) : AudioRepository {
 
-    /** True while a game session has called [startMusic] and not yet [stopMusic]. */
-    private val musicRequested = MutableStateFlow(false)
+    /** Non-empty while a game session has requested a playlist. */
+    private val requestedTracks = MutableStateFlow<List<String>>(emptyList())
 
     /** True while the app is in the foreground (UI visible). */
     private val appForeground = MutableStateFlow(true)
@@ -68,18 +67,20 @@ internal class DefaultAudioRepository(
         // serialized — no two starts or stops can interleave.
         scope.launch {
             combine(
-                musicRequested,
+                requestedTracks,
                 appForeground,
                 settings.musicEnabled,
-            ) { requested, foreground, enabled -> requested && foreground && enabled }
+            ) { tracks, foreground, enabled ->
+                if (foreground && enabled) tracks else emptyList()
+            }
                 // distinctUntilChanged is critical: combine() re-emits whenever
                 // any upstream emits, even if the boolean output didn't change.
                 // Without this, a transient state-flip would call
                 // player.startMusic / stopMusic in rapid sequence and tear
                 // down a still-preparing MediaPlayer.
                 .distinctUntilChanged()
-                .collect { shouldPlay ->
-                    if (shouldPlay) player.startMusic() else player.stopMusic()
+                .collect { tracks ->
+                    if (tracks.isNotEmpty()) player.startMusic(tracks) else player.stopMusic()
                 }
         }
         // Drain lifecycle events into appForeground in the order received.
@@ -94,15 +95,15 @@ internal class DefaultAudioRepository(
         if (settings.sfxEnabled.value) block()
     }
 
-    override suspend fun playVoiceFeedback(type: FeedbackType) =
-        ifSfxEnabled { player.playVoiceFeedback(type) }
+    override suspend fun playSound(filename: String) =
+        ifSfxEnabled { player.playSound(filename) }
 
-    override suspend fun startMusic() {
-        musicRequested.value = true
+    override suspend fun startMusic(tracks: List<String>) {
+        requestedTracks.value = tracks.toList()
     }
 
     override suspend fun stopMusic() {
-        musicRequested.value = false
+        requestedTracks.value = emptyList()
     }
 
     override suspend fun onAppBackground() {

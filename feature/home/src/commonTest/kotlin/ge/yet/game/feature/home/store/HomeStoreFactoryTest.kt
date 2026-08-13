@@ -1,13 +1,13 @@
 package ge.yet.game.feature.home.store
 
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import ge.yet.game.domain.model.GameState
-import ge.yet.game.domain.model.Grid
-import ge.yet.game.domain.model.Piece
-import ge.yet.game.domain.model.Polyomino
-import ge.yet.game.domain.model.Position
+import ge.yet.game.blockblast.domain.model.GameState
+import ge.yet.game.blockblast.domain.model.Grid
+import ge.yet.game.blockblast.domain.model.Piece
+import ge.yet.game.blockblast.domain.model.Polyomino
+import ge.yet.game.blockblast.domain.model.Position
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.GameSaveRepository
+import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.feature.home.store.HomeStore
 import ge.yet.game.feature.home.store.HomeStoreFactory
@@ -134,7 +134,6 @@ class HomeStoreFactoryTest {
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore = MutableStateFlow(bestScore).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override val tutorialSeen = MutableStateFlow(false).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) {}
         override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
@@ -143,7 +142,6 @@ class HomeStoreFactoryTest {
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
         override suspend fun suppressReviewPrompts(max: Int) {}
-        override suspend fun setTutorialSeen() {}
     }
 
     private class RecordingAnalytics : AnalyticRepository {

@@ -71,7 +71,6 @@ class DefaultVibrationRepositoryTest {
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override val tutorialSeen = MutableStateFlow(false).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) {}
         override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
@@ -80,6 +79,5 @@ class DefaultVibrationRepositoryTest {
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
         override suspend fun suppressReviewPrompts(max: Int) {}
-        override suspend fun setTutorialSeen() {}
     }
 }

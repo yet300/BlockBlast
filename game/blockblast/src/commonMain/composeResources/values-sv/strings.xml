@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Poäng</string>
+    <string name="best">Bästa</string>
+    <string name="game_over">Spelet är slut</string>
+    <string name="game_over_subtitle">Inga drag kvar på brädet</string>
+    <string name="new_best">Nytt rekord</string>
+    <string name="revive">Fortsätt</string>
+    <string name="restart">Nytt spel</string>
+    <string name="new_game">Nytt spel</string>
+    <string name="exit_to_home">Avsluta</string>
+    <string name="cd_settings">Inställningar</string>
+    <string name="cd_back">Bakåt</string>
+    <string name="cd_close">Stäng</string>
+    <string name="cd_advertisement">Annons</string>
+    <string name="feedback_good">Bra</string>
+    <string name="feedback_great">Jättebra!</string>
+    <string name="feedback_excellent">Utmärkt!</string>
+    <string name="feedback_unbelievable">Otroligt!</string>
+    <string name="feedback_combo">Kombo</string>
+    <string name="tutorial_grid_title">Placera på brädet</string>
+    <string name="review_prompt_title">Gillar du Logica?</string>
+    <string name="review_prompt_body">Din recension hjälper fler pusselspelare att hitta spelet.</string>
+    <string name="review_prompt_leave_feedback">Lämna feedback</string>
+    <string name="review_prompt_dont_show">Visa inte igen</string>
+</resources>

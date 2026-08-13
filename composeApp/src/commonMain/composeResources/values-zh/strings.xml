@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">开始</string>
     <string name="continue_game">继续</string>
     <string name="new_game">新游戏</string>
     <string name="best_score_label">最高分</string>
     <string name="home_tagline">一个安静的小拼图</string>
-
-    <!-- Game Screen -->
-    <string name="score">分数</string>
-    <string name="best">最高</string>
-    <string name="game_over">游戏结束</string>
-    <string name="game_over_subtitle">棋盘上没有可移动的方块了</string>
-    <string name="new_best">新纪录</string>
-    <string name="revive">继续</string>
-    <string name="restart">新游戏</string>
-    <string name="exit_to_home">退出</string>
-    <string name="cd_settings">设置</string>
-    <string name="cd_back">返回</string>
-    <string name="cd_close">关闭</string>
-    <string name="cd_advertisement">广告</string>
-
-    <!-- Settings -->
     <string name="settings">设置</string>
     <string name="sound">声音</string>
     <string name="sound_subtitle">游戏音效</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">查看源代码</string>
     <string name="open_source_libraries">开源库</string>
     <string name="open_source_libraries_subtitle">致谢</string>
-
     <string name="advertising">广告</string>
     <string name="advertising_enabled_subtitle">支持免费开发</string>
     <string name="advertising_disabled_subtitle">已关闭 — 复活免费</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">广告帮助我们改进游戏，并让所有功能保持免费。关闭广告后，复活仍然免费 — 你也可以通过 GitHub 加星或捐赠来支持 Logica。</string>
     <string name="keep_ads">保留广告</string>
     <string name="disable_ads_anyway">仍然关闭</string>
-
-    <!-- Common -->
+    <string name="cd_back">返回</string>
     <string name="exit">退出</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">好</string>
-    <string name="feedback_great">太棒了！</string>
-    <string name="feedback_excellent">卓越！</string>
-    <string name="feedback_unbelievable">难以置信！</string>
-    <string name="feedback_combo">连击</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">放置在棋盘上</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">喜欢Logica吗？</string>
-    <string name="review_prompt_body">您的评价可以帮助更多拼图玩家找到这款游戏。</string>
-    <string name="review_prompt_leave_feedback">留下反馈</string>
-    <string name="review_prompt_dont_show">不再显示</string>
 </resources>

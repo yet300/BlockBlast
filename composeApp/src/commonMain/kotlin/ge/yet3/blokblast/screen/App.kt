@@ -12,10 +12,8 @@ import ge.yet.game.monetization.ads.AdMobProvider
 import ge.yet.game.monetization.ads.rememberAdMobState
 import ge.yet.game.monetization.core.MonetizationEntitlement
 import ge.yet.game.uikit.theme.BlockBlastTheme
-import ge.yet3.blokblast.component.utils.LocalOnTutorialSeen
-import ge.yet3.blokblast.component.utils.LocalSoundEnabled
-import ge.yet3.blokblast.component.utils.LocalTutorialSeen
-import ge.yet3.blokblast.component.utils.LocalVibrationEnabled
+import ge.yet.game.blockblast.ui.LocalSoundEnabled
+import ge.yet.game.blockblast.ui.LocalVibrationEnabled
 import ge.yet3.blokblast.screen.root.RootContent
 
 @Composable
@@ -43,14 +41,9 @@ fun App(rootComponent: RootComponent) {
         BlockBlastTheme(darkTheme = darkTheme) {
             val vibrationEnabled by rootComponent.vibrationEnabled.collectAsState()
             val soundEnabled by rootComponent.sfxEnabled.collectAsState()
-            val tutorialSeen by rootComponent.tutorialSeen.collectAsState()
-            val onTutorialSeen = remember(rootComponent) { { rootComponent.onTutorialSeen() } }
-
             CompositionLocalProvider(
                 LocalVibrationEnabled provides vibrationEnabled,
                 LocalSoundEnabled provides soundEnabled,
-                LocalTutorialSeen provides tutorialSeen,
-                LocalOnTutorialSeen provides onTutorialSeen,
             ) {
                 RootContent(component = rootComponent)
             }

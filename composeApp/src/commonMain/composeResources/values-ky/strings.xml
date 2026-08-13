@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Ойноо</string>
     <string name="continue_game">Улантуу</string>
     <string name="new_game">Жаңы оюн</string>
     <string name="best_score_label">Эң жогорку упай</string>
     <string name="home_tagline">Тынч чакан табышмак</string>
-
-    <!-- Game Screen -->
-    <string name="score">Упай</string>
-    <string name="best">Рекорд</string>
-    <string name="game_over">Оюн бүттү</string>
-    <string name="game_over_subtitle">Тактада кадамдар калган жок</string>
-    <string name="new_best">Жаңы рекорд</string>
-    <string name="revive">Улантуу</string>
-    <string name="restart">Жаңы оюн</string>
-    <string name="exit_to_home">Чыгуу</string>
-    <string name="cd_settings">Орнотуулар</string>
-    <string name="cd_back">Артка</string>
-    <string name="cd_close">Жабуу</string>
-    <string name="cd_advertisement">Жарнама</string>
-
-    <!-- Settings -->
     <string name="settings">Орнотуулар</string>
     <string name="sound">Үн</string>
     <string name="sound_subtitle">Оюндун үн эффекттери</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Баштапкы кодду көрүү</string>
     <string name="open_source_libraries">Ачык булактуу китепканалар</string>
     <string name="open_source_libraries_subtitle">Ыраазычылыктар</string>
-
     <string name="advertising">Жарнама</string>
     <string name="advertising_enabled_subtitle">Акысыз иштеп чыгууну колдойт</string>
     <string name="advertising_disabled_subtitle">Өчүрүлгөн — кайра жандануу акысыз</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Жарнама оюнду жакшыртууга жана бардык мүмкүнчүлүктөрдү акысыз сактоого жардам берет. Аны өчүрсөңүз да, кайра жандануу акысыз бойдон калат — Logica'ны GitHub'дагы жылдыз же кайрымдуулук менен колдой аласыз.</string>
     <string name="keep_ads">Жарнаманы калтыруу</string>
     <string name="disable_ads_anyway">Баары бир өчүрүү</string>
-
-    <!-- Common -->
+    <string name="cd_back">Артка</string>
     <string name="exit">Чыгуу</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Жакшы</string>
-    <string name="feedback_great">Азаматсыз!</string>
-    <string name="feedback_excellent">Эң сонун!</string>
-    <string name="feedback_unbelievable">Ишенгис!</string>
-    <string name="feedback_combo">Комбо</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Тактага жайгаштырыңыз</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Logica жакты беби?</string>
-    <string name="review_prompt_body">Сиздин баа берүүңүз башка табышмак ойноочуларга оюнду табууга жардам берет.</string>
-    <string name="review_prompt_leave_feedback">Пикир калтыруу</string>
-    <string name="review_prompt_dont_show">Кайра көрсөтпөө</string>
 </resources>

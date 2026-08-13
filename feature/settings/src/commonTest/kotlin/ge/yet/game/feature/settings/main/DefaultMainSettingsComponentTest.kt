@@ -116,7 +116,6 @@ class DefaultMainSettingsComponentTest {
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override val tutorialSeen = MutableStateFlow(false).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
         override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
@@ -125,7 +124,6 @@ class DefaultMainSettingsComponentTest {
         override suspend fun setBestScore(score: Long) {}
         override suspend fun incrementReviewPromptCount() {}
         override suspend fun suppressReviewPrompts(max: Int) {}
-        override suspend fun setTutorialSeen() {}
     }
 
     private class NoopAnalytics : AnalyticRepository {

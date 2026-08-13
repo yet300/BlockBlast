@@ -5,8 +5,8 @@ import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
-import ge.yet.blockblast.feature.game.GameComponent
-import ge.yet.blockblast.feature.game.result.GameResultComponent
+import ge.yet.game.blockblast.component.game.GameComponent
+import ge.yet.game.blockblast.component.result.GameResultComponent
 import ge.yet.game.feature.home.HomeComponent
 import ge.yet.game.feature.settings.SettingsComponent
 import kotlinx.coroutines.flow.StateFlow
@@ -34,12 +34,6 @@ interface RootComponent : BackHandlerOwner {
 
     /** Whether advertising is enabled by the user. */
     val adsEnabled: StateFlow<Boolean>
-
-    /** Whether the first-launch tutorial has already been seen / dismissed. */
-    val tutorialSeen: StateFlow<Boolean>
-
-    /** Persist that the user has finished the first-launch tutorial. */
-    fun onTutorialSeen()
 
     fun onDismissSheet()
 

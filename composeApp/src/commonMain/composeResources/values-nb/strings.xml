@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Spill</string>
     <string name="continue_game">Fortsett</string>
     <string name="new_game">Nytt spill</string>
     <string name="best_score_label">Beste poengsum</string>
     <string name="home_tagline">Et rolig lite puslespill</string>
-
-    <!-- Game Screen -->
-    <string name="score">Poeng</string>
-    <string name="best">Beste</string>
-    <string name="game_over">Spillet er slutt</string>
-    <string name="game_over_subtitle">Ingen trekk igjen på brettet</string>
-    <string name="new_best">Ny rekord</string>
-    <string name="revive">Fortsett</string>
-    <string name="restart">Nytt spill</string>
-    <string name="exit_to_home">Avslutt</string>
-    <string name="cd_settings">Innstillinger</string>
-    <string name="cd_back">Tilbake</string>
-    <string name="cd_close">Lukk</string>
-    <string name="cd_advertisement">Annonse</string>
-
-    <!-- Settings -->
     <string name="settings">Innstillinger</string>
     <string name="sound">Lyd</string>
     <string name="sound_subtitle">Lydeffekter i spillet</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Vis kildekoden</string>
     <string name="open_source_libraries">Åpen kildekode-biblioteker</string>
     <string name="open_source_libraries_subtitle">Anerkjennelser</string>
-
     <string name="advertising">Annonser</string>
     <string name="advertising_enabled_subtitle">Støtter gratis utvikling</string>
     <string name="advertising_disabled_subtitle">Deaktivert — gjenopplivinger er gratis</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Annonser hjelper oss med å forbedre spillet og holde alle funksjoner gratis. Hvis du slår dem av, forblir gjenopplivinger gratis — og du kan fortsatt støtte Logica med en GitHub-stjerne eller en donasjon.</string>
     <string name="keep_ads">Behold annonser</string>
     <string name="disable_ads_anyway">Deaktiver likevel</string>
-
-    <!-- Common -->
+    <string name="cd_back">Tilbake</string>
     <string name="exit">Avslutt</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Bra</string>
-    <string name="feedback_great">Kjempebra!</string>
-    <string name="feedback_excellent">Utmerket!</string>
-    <string name="feedback_unbelievable">Utrolig!</string>
-    <string name="feedback_combo">Kombo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Plasser på brettet</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Liker du Logica?</string>
-    <string name="review_prompt_body">Din anmeldelse hjelper flere puslespillspillere med å finne spillet.</string>
-    <string name="review_prompt_leave_feedback">Gi tilbakemelding</string>
-    <string name="review_prompt_dont_show">Ikke vis igjen</string>
 </resources>

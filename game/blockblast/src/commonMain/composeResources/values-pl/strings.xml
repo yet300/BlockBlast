@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Wynik</string>
+    <string name="best">Najlepszy</string>
+    <string name="game_over">Koniec gry</string>
+    <string name="game_over_subtitle">Brak ruchów na planszy</string>
+    <string name="new_best">Nowy rekord</string>
+    <string name="revive">Kontynuuj</string>
+    <string name="restart">Nowa gra</string>
+    <string name="new_game">Nowa gra</string>
+    <string name="exit_to_home">Wyjdź</string>
+    <string name="cd_settings">Ustawienia</string>
+    <string name="cd_back">Wstecz</string>
+    <string name="cd_close">Zamknij</string>
+    <string name="cd_advertisement">Reklama</string>
+    <string name="feedback_good">Dobrze</string>
+    <string name="feedback_great">Świetnie!</string>
+    <string name="feedback_excellent">Doskonale!</string>
+    <string name="feedback_unbelievable">Niewiarygodne!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Połóż na planszy</string>
+    <string name="review_prompt_title">Podoba Ci się Logica?</string>
+    <string name="review_prompt_body">Twoja recenzja pomaga innym graczom znaleźć tę grę.</string>
+    <string name="review_prompt_leave_feedback">Zostaw opinię</string>
+    <string name="review_prompt_dont_show">Nie pokazuj ponownie</string>
+</resources>

@@ -1,29 +1,11 @@
 <resources>
-    <!-- App -->
+    <!-- Application resources -->
     <string name="app_name">Logica</string>
-
-    <!-- Home Screen -->
     <string name="play">Oyna</string>
     <string name="continue_game">Devam Et</string>
     <string name="new_game">Yeni Oyun</string>
     <string name="best_score_label">En İyi Skor</string>
     <string name="home_tagline">Sessiz küçük bir bulmaca</string>
-
-    <!-- Game Screen -->
-    <string name="score">Skor</string>
-    <string name="best">En İyi</string>
-    <string name="game_over">Oyun Bitti</string>
-    <string name="game_over_subtitle">Tahtada hamle kalmadı</string>
-    <string name="new_best">Yeni Rekor</string>
-    <string name="revive">Devam Et</string>
-    <string name="restart">Yeni Oyun</string>
-    <string name="exit_to_home">Çıkış</string>
-    <string name="cd_settings">Ayarlar</string>
-    <string name="cd_back">Geri</string>
-    <string name="cd_close">Kapat</string>
-    <string name="cd_advertisement">Reklam</string>
-
-    <!-- Settings -->
     <string name="settings">Ayarlar</string>
     <string name="sound">Ses</string>
     <string name="sound_subtitle">Oyun ses efektleri</string>
@@ -43,7 +25,6 @@
     <string name="github_subtitle">Kaynak kodunu görüntüle</string>
     <string name="open_source_libraries">Açık kaynak kütüphaneler</string>
     <string name="open_source_libraries_subtitle">Krediler ve teşekkürler</string>
-
     <string name="advertising">Reklamlar</string>
     <string name="advertising_enabled_subtitle">Ücretsiz geliştirmeyi destekler</string>
     <string name="advertising_disabled_subtitle">Devre dışı — yeniden canlanmalar ücretsiz</string>
@@ -54,23 +35,6 @@
     <string name="disable_ads_body">Reklamlar oyunu geliştirmemize ve tüm özellikleri ücretsiz sunmamıza yardımcı olur. Reklamları kapatsanız da yeniden canlanmalar ücretsiz kalır — Logica'yı GitHub yıldızı veya bağışla destekleyebilirsiniz.</string>
     <string name="keep_ads">Reklamları koru</string>
     <string name="disable_ads_anyway">Yine de devre dışı bırak</string>
-
-    <!-- Common -->
+    <string name="cd_back">Geri</string>
     <string name="exit">Çıkış</string>
-
-    <!-- Feedback Popups -->
-    <string name="feedback_good">Güzel</string>
-    <string name="feedback_great">Harika!</string>
-    <string name="feedback_excellent">Mükemmel!</string>
-    <string name="feedback_unbelievable">İnanılmaz!</string>
-    <string name="feedback_combo">Kombo</string>
-
-    <!-- Tutorial -->
-    <string name="tutorial_grid_title">Tahtaya yerleştir</string>
-
-    <!-- Review Prompt -->
-    <string name="review_prompt_title">Logica'yı beğeniyor musunuz?</string>
-    <string name="review_prompt_body">Yorumunuz daha fazla bulmaca oyuncusunun oyunu bulmasına yardımcı olur.</string>
-    <string name="review_prompt_leave_feedback">Geri bildirim bırak</string>
-    <string name="review_prompt_dont_show">Tekrar gösterme</string>
 </resources>

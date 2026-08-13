@@ -12,10 +12,8 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.data.repository.DefaultAudioRepository
 import ge.yet.game.data.repository.DefaultVibrationRepository
-import ge.yet.game.data.repository.SettingsBackedGameSaveRepository
 import ge.yet.game.data.repository.SettingsBackedSettingsRepository
 import ge.yet.game.domain.repository.AudioRepository
-import ge.yet.game.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.domain.repository.VibrationRepository
 
@@ -33,9 +31,6 @@ import ge.yet.game.domain.repository.VibrationRepository
 @ContributesTo(AppScope::class)
 @BindingContainer
 abstract class DataBindings {
-
-    @Binds
-    internal abstract val SettingsBackedGameSaveRepository.bindGameSaveRepository: GameSaveRepository
 
     @Binds
     internal abstract val SettingsBackedSettingsRepository.bindSettingsRepository: SettingsRepository

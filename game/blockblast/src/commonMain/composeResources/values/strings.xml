@@ -1,0 +1,27 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Score</string>
+    <string name="best">Best</string>
+    <string name="game_over">Game over</string>
+    <string name="game_over_subtitle">No moves left on the board</string>
+    <string name="new_best">New best score</string>
+    <string name="revive">Continue</string>
+    <string name="restart">New game</string>
+    <string name="new_game">New game</string>
+    <string name="exit_to_home">Exit</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_advertisement">Advertisement</string>
+    <string name="feedback_amazing">Amazing!</string>
+    <string name="feedback_good">Good</string>
+    <string name="feedback_great">Great!</string>
+    <string name="feedback_excellent">Excellent!</string>
+    <string name="feedback_unbelievable">Unbelievable!</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Drop it on the board</string>
+    <string name="review_prompt_title">Enjoying Logica?</string>
+    <string name="review_prompt_body">Your review helps more puzzle players find the game.</string>
+    <string name="review_prompt_leave_feedback">Leave feedback</string>
+    <string name="review_prompt_dont_show">Don't show again</string>
+</resources>

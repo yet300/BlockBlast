@@ -1,0 +1,26 @@
+<resources>
+    <!-- BlockBlast resources -->
+    <string name="score">Score</string>
+    <string name="best">Meilleur</string>
+    <string name="game_over">Jeu terminé</string>
+    <string name="game_over_subtitle">Plus de coups possibles sur le plateau</string>
+    <string name="new_best">Nouveau record</string>
+    <string name="revive">Continuer</string>
+    <string name="restart">Nouveau jeu</string>
+    <string name="new_game">Nouveau jeu</string>
+    <string name="exit_to_home">Quitter</string>
+    <string name="cd_settings">Paramètres</string>
+    <string name="cd_back">Retour</string>
+    <string name="cd_close">Fermer</string>
+    <string name="cd_advertisement">Publicité</string>
+    <string name="feedback_good">Bien !</string>
+    <string name="feedback_great">Génial !</string>
+    <string name="feedback_excellent">Excellent !</string>
+    <string name="feedback_unbelievable">Incroyable !</string>
+    <string name="feedback_combo">Combo</string>
+    <string name="tutorial_grid_title">Dépose-la sur la grille</string>
+    <string name="review_prompt_title">Vous aimez Logica ?</string>
+    <string name="review_prompt_body">Votre avis aide d'autres joueurs de puzzles à trouver le jeu.</string>
+    <string name="review_prompt_leave_feedback">Laisser un avis</string>
+    <string name="review_prompt_dont_show">Ne plus afficher</string>
+</resources>
