@@ -13,9 +13,6 @@ interface SettingsRepository {
     val darkTheme: StateFlow<Boolean>
     val adsEnabled: StateFlow<Boolean>
 
-    /** Persisted personal best, survives across launches. */
-    val bestScore: StateFlow<Long>
-
     /** How many times the in-app review prompt has been shown to this user. */
     val reviewPromptCount: StateFlow<Int>
 
@@ -24,9 +21,6 @@ interface SettingsRepository {
     suspend fun setVibrationEnabled(enabled: Boolean)
     suspend fun setDarkTheme(enabled: Boolean)
     suspend fun setAdsEnabled(enabled: Boolean)
-
-    /** Monotonic write: implementations must ignore scores ≤ current best. */
-    suspend fun setBestScore(score: Long)
 
     /** Increment the lifetime review-prompt counter by one. */
     suspend fun incrementReviewPromptCount()

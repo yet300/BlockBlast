@@ -11,7 +11,7 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
-import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +50,7 @@ class GameStoreOwnershipTest {
             gameReducer = GameSessionReducer(generator, ScoreCalculator()),
             audio = SilentAudioRepository(),
             saveRepository = repository,
-            settings = MemorySettingsRepository(),
+            bestScoreRepository = MemoryBestScoreRepository(),
             tutorialRepository = MemoryTutorialRepository(),
             analytics = SilentAnalyticsRepository(),
         )
@@ -80,22 +80,9 @@ class GameStoreOwnershipTest {
         override suspend fun clear() { state = null }
     }
 
-    private class MemorySettingsRepository : SettingsRepository {
-        override val musicEnabled = MutableStateFlow(true).asStateFlow()
-        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
-        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
-        override val darkTheme = MutableStateFlow(false).asStateFlow()
-        override val adsEnabled = MutableStateFlow(true).asStateFlow()
+    private class MemoryBestScoreRepository : BestScoreRepository {
         override val bestScore = MutableStateFlow(0L).asStateFlow()
-        override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override suspend fun setMusicEnabled(enabled: Boolean) = Unit
-        override suspend fun setSfxEnabled(enabled: Boolean) = Unit
-        override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
-        override suspend fun setDarkTheme(enabled: Boolean) = Unit
-        override suspend fun setAdsEnabled(enabled: Boolean) = Unit
         override suspend fun setBestScore(score: Long) = Unit
-        override suspend fun incrementReviewPromptCount() = Unit
-        override suspend fun suppressReviewPrompts(max: Int) = Unit
     }
 
     private class MemoryTutorialRepository : BlockBlastTutorialRepository {

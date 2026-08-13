@@ -52,14 +52,12 @@ class DefaultAppReviewPolicyTest {
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
-        override val bestScore = MutableStateFlow(0L).asStateFlow()
         override val reviewPromptCount = reviewCountFlow.asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) = Unit
         override suspend fun setSfxEnabled(enabled: Boolean) = Unit
         override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
         override suspend fun setDarkTheme(enabled: Boolean) = Unit
         override suspend fun setAdsEnabled(enabled: Boolean) = Unit
-        override suspend fun setBestScore(score: Long) = Unit
         override suspend fun incrementReviewPromptCount() {
             reviewCountFlow.value += 1
         }

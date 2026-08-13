@@ -44,7 +44,6 @@ class SettingsBackedSettingsRepositoryTest {
         assertTrue(repo.vibrationEnabled.value)
         assertFalse(repo.darkTheme.value)
         assertTrue(repo.adsEnabled.value)
-        assertEquals(0L, repo.bestScore.value)
         assertEquals(0, repo.reviewPromptCount.value)
     }
 
@@ -129,15 +128,6 @@ class SettingsBackedSettingsRepositoryTest {
     }
 
     @Test
-    fun setBestScore_is_monotonic() = runTest {
-        repo.setBestScore(100)
-        repo.setBestScore(50) // ignored
-        assertEquals(100L, repo.bestScore.value)
-        repo.setBestScore(200)
-        assertEquals(200L, repo.bestScore.value)
-    }
-
-    @Test
     fun incrementReviewPromptCount_serial() = runTest {
         repo.incrementReviewPromptCount()
         repo.incrementReviewPromptCount()
@@ -157,31 +147,8 @@ class SettingsBackedSettingsRepositoryTest {
     // ── Race-condition / mutex coverage ──────────────────────────────────
     //
     // These tests run many writers concurrently against the same key. Without
-    // writeMutex, the read-modify-write pairs in setBestScore /
-    // incrementReviewPromptCount / suppressReviewPrompts would interleave and
-    // produce lost updates or non-monotonic state.
-
-    @Test
-    fun setBestScore_concurrent_writers_keep_max() = runTest {
-        // 100 writers shuffle values 1..100. The monotonic guard inside
-        // setBestScore must survive all interleavings — final value must be
-        // exactly the highest candidate, never anything lower.
-        val candidates = (1L..100L).shuffled()
-        candidates
-            .map { async(Dispatchers.Unconfined) { repo.setBestScore(it) } }
-            .awaitAll()
-        assertEquals(100L, repo.bestScore.value)
-    }
-
-    @Test
-    fun setBestScore_concurrent_lower_values_never_overwrite_higher() = runTest {
-        repo.setBestScore(500)
-        // Hammer with values below the current best. None must take effect.
-        (1L..200L)
-            .map { async(Dispatchers.Unconfined) { repo.setBestScore(it) } }
-            .awaitAll()
-        assertEquals(500L, repo.bestScore.value)
-    }
+    // writeMutex, incrementReviewPromptCount / suppressReviewPrompts could
+    // interleave and produce lost updates.
 
     @Test
     fun suppressReviewPrompts_concurrent_callers_settle_at_max() = runTest {

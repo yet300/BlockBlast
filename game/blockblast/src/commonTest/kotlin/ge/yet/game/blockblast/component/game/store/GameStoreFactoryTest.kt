@@ -16,7 +16,7 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
-import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -176,7 +176,6 @@ class GameStoreFactoryTest {
         )
         val deps = TestDependencies(
             saved = saved,
-            reviewCount = AppConfig.REVIEW_MAX_PROMPTS,
         )
         val store = deps.factory.create(isNewGame = false)
         val labels = mutableListOf<GameStore.Label>()
@@ -190,7 +189,6 @@ class GameStoreFactoryTest {
         assertTrue(completed.reviewOpportunity)
         assertTrue(completed.finalState.reviewPromptFiredThisRound)
         assertTrue(deps.save.stored?.reviewPromptFiredThisRound == true)
-        assertEquals(AppConfig.REVIEW_MAX_PROMPTS, deps.settings.reviewPromptCount.value)
     }
 
     @Test
@@ -286,11 +284,10 @@ class GameStoreFactoryTest {
     private inner class TestDependencies(
         saved: GameState? = null,
         bestScore: Long = 0,
-        reviewCount: Int = 0,
         failSaves: Boolean = false,
     ) {
         val save = RecordingSaveRepository(saved, failSaves)
-        val settings = RecordingSettingsRepository(bestScore, reviewCount)
+        val bestScoreRepository = RecordingBestScoreRepository(bestScore)
         val audio = RecordingAudioRepository()
         val tutorial = FakeTutorialRepository()
         val analytics = RecordingAnalyticsRepository()
@@ -299,7 +296,7 @@ class GameStoreFactoryTest {
             gameReducer = GameSessionReducer(FixedShapeGenerator(), ScoreCalculator()),
             audio = audio,
             saveRepository = save,
-            settings = settings,
+            bestScoreRepository = bestScoreRepository,
             tutorialRepository = tutorial,
             analytics = analytics,
         )
@@ -325,29 +322,14 @@ class GameStoreFactoryTest {
         override suspend fun clear() { stored = null }
     }
 
-    private class RecordingSettingsRepository(
+    private class RecordingBestScoreRepository(
         bestScore: Long,
-        reviewPromptCount: Int,
-    ) : SettingsRepository {
+    ) : BestScoreRepository {
         private val best = MutableStateFlow(bestScore)
-        private val reviewCount = MutableStateFlow(reviewPromptCount)
-        override val musicEnabled = MutableStateFlow(true).asStateFlow()
-        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
-        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
-        override val darkTheme = MutableStateFlow(false).asStateFlow()
-        override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore = best.asStateFlow()
-        override val reviewPromptCount = reviewCount.asStateFlow()
-        override suspend fun setMusicEnabled(enabled: Boolean) = Unit
-        override suspend fun setSfxEnabled(enabled: Boolean) = Unit
-        override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
-        override suspend fun setDarkTheme(enabled: Boolean) = Unit
-        override suspend fun setAdsEnabled(enabled: Boolean) = Unit
         override suspend fun setBestScore(score: Long) {
             if (score > best.value) best.value = score
         }
-        override suspend fun incrementReviewPromptCount() { reviewCount.value += 1 }
-        override suspend fun suppressReviewPrompts(max: Int) { reviewCount.value = max }
     }
 
     private class FakeTutorialRepository : BlockBlastTutorialRepository {

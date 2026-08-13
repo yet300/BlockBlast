@@ -3,9 +3,9 @@ package ge.yet.game.blockblast.component.game.store
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.model.RoundStartInfo
-import ge.yet.game.blockblast.domain.repository.GameSaveRepository
+import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
-import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 
 /**
  * Decides what to do at game bootstrap: start a fresh round, restore a saved
@@ -15,7 +15,7 @@ import ge.yet.game.domain.repository.SettingsRepository
 internal class GameInitializer(
     private val gameReducer: GameSessionReducer,
     private val saveRepository: GameSaveRepository,
-    private val settings: SettingsRepository,
+    private val bestScoreRepository: BestScoreRepository,
     private val tutorialRepository: BlockBlastTutorialRepository,
 ) {
     enum class Source(val tag: String) {
@@ -42,22 +42,23 @@ internal class GameInitializer(
             )
         }
 
+        val persistedBestScore = bestScoreRepository.bestScore.value
         val saved = if (isNewGame) null else saveRepository.load()
         if (saved != null && !saved.isGameOver && saved.currentPieces.isNotEmpty()) {
             return Result(
-                state = gameReducer.restore(saved, settings.bestScore.value),
+                state = gameReducer.restore(saved, persistedBestScore),
                 source = Source.Continue,
             )
         }
 
         val previousState = saved ?: GameState(
-            bestScore = settings.bestScore.value,
-            bestAtRoundStart = settings.bestScore.value,
+            bestScore = persistedBestScore,
+            bestAtRoundStart = persistedBestScore,
         )
         val roundStart = gameReducer.startNewGame(
             previousState = previousState,
             seed = newGameSeed,
-            bestScore = maxOf(previousState.bestScore, settings.bestScore.value),
+            bestScore = maxOf(previousState.bestScore, persistedBestScore),
             allowStarterLayout = tutorialRepository.tutorialSeen.value,
         )
         return Result(

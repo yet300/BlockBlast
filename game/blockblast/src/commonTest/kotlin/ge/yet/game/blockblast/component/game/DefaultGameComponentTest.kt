@@ -19,7 +19,7 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
-import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,7 +54,6 @@ class DefaultGameComponentTest {
 
     private fun build(
         isNewGame: Boolean = true,
-        reviewCount: Int = 0,
         bestScore: Long = 0L,
         restoredResultState: GameState? = null,
         savedState: GameState? = null,
@@ -63,7 +62,7 @@ class DefaultGameComponentTest {
         val scope = CoroutineScope(testDispatcher + SupervisorJob())
         val analytics = RecordingAnalytics()
         val audio = RecordingAudio()
-        val settings = FakeSettings(bestScore = bestScore, reviewPromptCount = reviewCount)
+        val bestScoreRepository = FakeBestScoreRepository(bestScore)
         val save = StubSaveRepo(savedState)
         val tutorial = FakeTutorialRepository()
         val generator = OneByOneGenerator()
@@ -72,7 +71,7 @@ class DefaultGameComponentTest {
             gameReducer = GameSessionReducer(generator, ScoreCalculator()),
             audio = audio,
             saveRepository = save,
-            settings = settings,
+            bestScoreRepository = bestScoreRepository,
             tutorialRepository = tutorial,
             analytics = analytics,
         )
@@ -102,7 +101,6 @@ class DefaultGameComponentTest {
             scope,
             audio,
             analytics,
-            settings,
             settingsCalls,
             exitCalls,
             completions,
@@ -217,7 +215,6 @@ class DefaultGameComponentTest {
             AppConfig.REVIEW_MIN_SCORE.toLong() + AppConfig.REVIEW_BEST_SCORE_DELTA + 10L
         val s = build(
             isNewGame = false,
-            reviewCount = 0,
             savedState = stateOneMoveFromGameOver(score = qualifyingScore).copy(
                 bestScore = qualifyingScore,
                 bestAtRoundStart = 0,
@@ -227,7 +224,6 @@ class DefaultGameComponentTest {
         runCurrent()
         assertEquals(1, s.completions.size)
         assertTrue(s.completions.single().third)
-        assertEquals(0, s.settings.reviewPromptCount.value)
         assertTrue(s.component.model.value.game.reviewPromptFiredThisRound)
         assertNull(s.analytics.events.find { it.first == "review_prompt_shown" })
         s.dispose()
@@ -254,7 +250,6 @@ class DefaultGameComponentTest {
         val scope: CoroutineScope,
         val audio: RecordingAudio,
         val analytics: RecordingAnalytics,
-        val settings: FakeSettings,
         val settingsCalls: MutableList<Unit>,
         val exitCalls: MutableList<Unit>,
         val completions: MutableList<Triple<GameState, Boolean, Boolean>>,
@@ -303,26 +298,12 @@ class DefaultGameComponentTest {
         override suspend fun markSeen() { seen.value = true }
     }
 
-    private class FakeSettings(bestScore: Long = 0L, reviewPromptCount: Int = 0) : SettingsRepository {
+    private class FakeBestScoreRepository(bestScore: Long = 0L) : BestScoreRepository {
         private val bestScoreFlow = MutableStateFlow(bestScore)
-        private val reviewFlow = MutableStateFlow(reviewPromptCount)
-        override val musicEnabled = MutableStateFlow(true).asStateFlow()
-        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
-        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
-        override val darkTheme = MutableStateFlow(false).asStateFlow()
-        override val adsEnabled = MutableStateFlow(true).asStateFlow()
         override val bestScore: StateFlow<Long> = bestScoreFlow.asStateFlow()
-        override val reviewPromptCount: StateFlow<Int> = reviewFlow.asStateFlow()
-        override suspend fun setMusicEnabled(enabled: Boolean) {}
-        override suspend fun setSfxEnabled(enabled: Boolean) {}
-        override suspend fun setVibrationEnabled(enabled: Boolean) {}
-        override suspend fun setDarkTheme(enabled: Boolean) {}
-        override suspend fun setAdsEnabled(enabled: Boolean) {}
         override suspend fun setBestScore(score: Long) {
             if (score > bestScoreFlow.value) bestScoreFlow.value = score
         }
-        override suspend fun incrementReviewPromptCount() { reviewFlow.value += 1 }
-        override suspend fun suppressReviewPrompts(max: Int) {}
     }
 
     private class RecordingAudio : AudioRepository {

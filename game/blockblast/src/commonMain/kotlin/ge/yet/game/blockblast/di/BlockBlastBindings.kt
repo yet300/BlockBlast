@@ -11,11 +11,13 @@ import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.result.DefaultGameResultComponentFactory
 import ge.yet.game.blockblast.component.result.GameResultComponent
 import ge.yet.game.blockblast.data.repository.SettingsBackedBlockBlastTutorialRepository
+import ge.yet.game.blockblast.data.repository.SettingsBackedBestScoreRepository
 import ge.yet.game.blockblast.data.repository.SettingsBackedGameSaveRepository
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.ScoreCalculator
 import ge.yet.game.blockblast.domain.engine.ShapeGenerator
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
+import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.api.GameSaveApi
 import ge.yet.game.domain.repository.AudioFileProvider
@@ -23,6 +25,10 @@ import ge.yet.game.domain.repository.AudioFileProvider
 @ContributesTo(AppScope::class)
 @BindingContainer
 abstract class BlockBlastBindings {
+    @Binds
+    internal abstract val SettingsBackedBestScoreRepository.bindBestScoreRepository:
+        BestScoreRepository
+
     @Binds
     internal abstract val SettingsBackedGameSaveRepository.bindGameSaveRepository: GameSaveRepository
 

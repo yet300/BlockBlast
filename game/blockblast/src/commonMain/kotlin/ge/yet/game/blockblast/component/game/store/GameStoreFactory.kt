@@ -7,18 +7,18 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import dev.zacsweers.metro.Inject
+import ge.yet.game.blockblast.data.audio.BlockBlastAudio
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.GameTransition
 import ge.yet.game.blockblast.domain.model.GameEvent
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.model.Grid
 import ge.yet.game.blockblast.domain.model.RoundStartInfo
+import ge.yet.game.blockblast.domain.repository.BestScoreRepository
+import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
+import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
-import ge.yet.game.blockblast.domain.repository.GameSaveRepository
-import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
-import ge.yet.game.blockblast.data.audio.BlockBlastAudio
-import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -28,7 +28,7 @@ internal class GameStoreFactory(
     private val gameReducer: GameSessionReducer,
     private val audio: AudioRepository,
     private val saveRepository: GameSaveRepository,
-    private val settings: SettingsRepository,
+    private val bestScoreRepository: BestScoreRepository,
     private val tutorialRepository: BlockBlastTutorialRepository,
     private val analytics: AnalyticRepository,
 ) {
@@ -38,10 +38,16 @@ internal class GameStoreFactory(
         newGameSeed: Long? = null,
     ): GameStore {
         val logger = GameAnalyticsLogger(analytics)
-        val initializer = GameInitializer(gameReducer, saveRepository, settings, tutorialRepository)
+        val initializer = GameInitializer(
+            gameReducer = gameReducer,
+            saveRepository = saveRepository,
+            bestScoreRepository = bestScoreRepository,
+            tutorialRepository = tutorialRepository,
+        )
+        val persistedBestScore = bestScoreRepository.bestScore.value
         val initialState = restoredResultState?.let(gameReducer::restoreResult) ?: GameState(
-            bestScore = settings.bestScore.value,
-            bestAtRoundStart = settings.bestScore.value,
+            bestScore = persistedBestScore,
+            bestAtRoundStart = persistedBestScore,
         )
         return object : GameStore,
             Store<GameStore.Intent, GameState, GameStore.Label> by storeFactory.create(
@@ -144,7 +150,7 @@ internal class GameStoreFactory(
             }
             if (state.bestScore != before.bestScore) {
                 attemptPersistence(logger, "best_score", state) {
-                    settings.setBestScore(state.bestScore)
+                    bestScoreRepository.setBestScore(state.bestScore)
                 }
             }
             if (event.isGameOver) {
@@ -168,7 +174,7 @@ internal class GameStoreFactory(
                 saveCoordinator.flush(finalState)
             }
             attemptPersistence(logger, "terminal_best_score", finalState) {
-                settings.setBestScore(finalState.bestScore)
+                bestScoreRepository.setBestScore(finalState.bestScore)
             }
             publish(
                 GameStore.Label.GameCompleted(

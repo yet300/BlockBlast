@@ -29,6 +29,7 @@ kotlin {
             implementation(libs.decompose.compose)
             implementation(libs.bundles.mvi)
             implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.coroutines)
         }
 
         commonTest.dependencies {

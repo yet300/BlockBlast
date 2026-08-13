@@ -5,7 +5,6 @@ import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.coroutines.getBooleanStateFlow
 import com.russhwolf.settings.coroutines.getIntStateFlow
-import com.russhwolf.settings.coroutines.getLongStateFlow
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -26,8 +25,8 @@ import kotlinx.coroutines.withContext
  *
  * All writes are funnelled through [dispatchers.io] + [mutex]: the IO dispatcher
  * keeps disk-backed puts off Main, and the mutex serialises the read-modify-write
- * pairs in [incrementReviewPromptCount] / [setBestScore] so concurrent callers
- * never lose an update.
+ * pairs in [incrementReviewPromptCount] / [suppressReviewPrompts] so concurrent
+ * callers never lose an update.
  *
  * `internal` — only the [SettingsRepository] interface is exposed through DI.
  */
@@ -64,9 +63,6 @@ internal class SettingsBackedSettingsRepository(
     override val adsEnabled: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_ADS_ENABLED, defaultValue = true)
 
-    override val bestScore: StateFlow<Long> =
-        settings.getLongStateFlow(scope, KEY_BEST_SCORE, defaultValue = 0L)
-
     override val reviewPromptCount: StateFlow<Int> =
         settings.getIntStateFlow(scope, KEY_REVIEW_PROMPT_COUNT, defaultValue = 0)
 
@@ -88,15 +84,6 @@ internal class SettingsBackedSettingsRepository(
 
     override suspend fun setAdsEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_ADS_ENABLED, enabled)
-    }
-
-    override suspend fun setBestScore(score: Long) = withContext(dispatchers.io) {
-        writeMutex.withLock {
-            // Monotonic — never overwrite a higher persisted best with a lower one.
-            if (score > settings.getLong(KEY_BEST_SCORE, 0L)) {
-                settings.putLong(KEY_BEST_SCORE, score)
-            }
-        }
     }
 
     override suspend fun incrementReviewPromptCount() = withContext(dispatchers.io) {
@@ -134,7 +121,6 @@ internal class SettingsBackedSettingsRepository(
         const val KEY_VIBRATION = "blockblast.vibration"
         const val KEY_DARK = "blockblast.dark_theme"
         const val KEY_ADS_ENABLED = "blockblast.ads_enabled"
-        const val KEY_BEST_SCORE = "blockblast.best_score"
         const val KEY_REVIEW_PROMPT_COUNT = "blockblast.review_prompt_count"
     }
 }
