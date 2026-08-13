@@ -121,6 +121,8 @@ android-play-review-ktx = { module = "com.google.android.play:review-ktx", versi
 #build
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
+compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 metro-plugin = { module = "dev.zacsweers.metro:gradle-plugin", version.ref = "metro" }
 
 
@@ -175,5 +177,5 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
 google-services = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }
 
-local-kotlin-multiplatform = { id = "com.plugins.kotlinMultiplatformPlugin", version = "unspecified" }
-local-compose-multiplatform = { id = "com.plugins.composeMultiplatform", version = "unspecified" }
+local-kotlin-multiplatform = { id = "com.plugins.kotlinMultiplatformPlugin" }
+local-compose-multiplatform = { id = "com.plugins.composeMultiplatform" }

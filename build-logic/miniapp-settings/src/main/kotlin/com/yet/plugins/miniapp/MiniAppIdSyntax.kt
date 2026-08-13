@@ -1,6 +1,6 @@
 package com.yet.plugins.miniapp
 
-internal object MiniAppIdSyntax {
+object MiniAppIdSyntax {
     val pattern = Regex("^[a-z][a-z0-9]*(?:\\.[a-z][a-z0-9]*)+$")
 
     fun requireValid(value: String) {

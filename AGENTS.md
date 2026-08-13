@@ -128,6 +128,14 @@ allowlist is intentionally empty. `verifyMiniAppBundle` rejects missing,
 unexpected or duplicated bundle dependencies, and allowlisted projects that do
 not apply `logica.miniapp`.
 
+## MiniApp Contributor Workflow
+
+Create a reviewable contributor project with `./gradlew createMiniApp -PminiAppId=game.name -PminiAppName="Name"` (or provide a legal explicit `-PminiAppProjectPath=:miniapp:samples:name`). The task accepts only direct `:game:<name>` and `:miniapp:samples:<name>` paths, never overwrites an existing project, and writes through a sibling staging directory.
+
+Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, and dependency-boundary validation. Contributors may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, or native-ad modules. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
+
+Discovery and shipping are intentionally separate: a scaffold becomes discoverable on the next Gradle invocation, but it is not shipped until a maintainer explicitly adds it to the root `miniApps` allowlist. Never treat discovery as production authorization.
+
 ## Source Placement and Architecture
 
 - Put portable Kotlin in `commonMain`; keep tests in the matching `commonTest`
@@ -208,6 +216,11 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :miniapp:bundle:dependencies --configuration commonMainApi
 ./gradlew :miniapp:bundle:compileAndroidMain
 ./gradlew :miniapp:bundle:compileKotlinIosSimulatorArm64
+
+# Verify contributor conventions and root task registration without generating a project
+./gradlew -p build-logic :convention:test --tests '*MiniAppConventionPluginTest' --tests '*MiniAppDependencyBoundaryTest' --tests '*ValidateMiniAppDependenciesTaskTest' --tests '*CreateMiniAppTaskTest'
+./gradlew -p build-logic :convention:validatePlugins
+./gradlew tasks --all
 
 # Verify the stable MiniApp API and Compose-facing contracts
 ./gradlew :miniapp:api:allTests

@@ -33,6 +33,14 @@ gradlePlugin {
             id = "logica.miniapp.bundle"
             implementationClass = "com.yet.plugins.miniapp.MiniAppBundlePlugin"
         }
+        register("miniApp") {
+            id = "logica.miniapp"
+            implementationClass = "com.yet.plugins.miniapp.MiniAppConventionPlugin"
+        }
+        register("miniAppRoot") {
+            id = "logica.miniapp.root"
+            implementationClass = "com.yet.plugins.miniapp.MiniAppRootPlugin"
+        }
     }
 }
 
@@ -43,6 +51,8 @@ evaluationDependsOn(":miniapp-settings")
 dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.compose.gradlePlugin)
+    compileOnly(libs.metro.plugin)
 
     compileOnly(project(":miniapp-settings"))
 
@@ -53,6 +63,8 @@ dependencies {
     testRuntimeOnly(libs.android.gradlePlugin)
     testRuntimeOnly(libs.kotlin.gradlePlugin)
     testRuntimeOnly(libs.kotlin.serialization)
+    testRuntimeOnly(libs.compose.compiler.gradle.plugin)
+    testRuntimeOnly(libs.compose.gradlePlugin)
     testRuntimeOnly(libs.metro.plugin)
 }
 
@@ -67,4 +79,8 @@ tasks.withType<Test>().configureEach {
     inputs.file(miniAppSettingsJar)
     systemProperty("conventionPluginClasspathFile", conventionPluginClasspath.get().asFile.absolutePath)
     systemProperty("miniAppSettingsJar", miniAppSettingsJar.get().asFile.absolutePath)
+    systemProperty("sourceRepositoryRoot", rootProject.projectDir.parentFile.absolutePath)
+    inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/api/src/commonMain"))
+    inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/compose/src/commonMain"))
+    inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/metro/src/commonMain"))
 }
