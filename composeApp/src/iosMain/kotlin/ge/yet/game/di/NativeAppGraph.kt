@@ -1,0 +1,45 @@
+package ge.yet.game.di
+
+import com.app.common.di.CommonBindings
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.DependencyGraph
+import dev.zacsweers.metro.createGraphFactory
+import ge.yet.game.blockblast.di.BlockBlastBindings
+import ge.yet.game.data.di.DataBindings
+import ge.yet.game.data.di.NativeDataBindings
+import ge.yet.game.feature.home.di.HomeBindings
+import ge.yet.game.feature.review.di.ReviewBindings
+import ge.yet.game.feature.root.RootComponent
+import ge.yet.game.feature.root.di.RootBindings
+import ge.yet.game.feature.settings.di.SettingsBindings
+import ge.yet.game.telemetry.di.TelemetryBindings
+
+
+@DependencyGraph(
+    scope = AppScope::class,
+    bindingContainers = [
+        CommonBindings::class,
+        DataBindings::class,
+        NativeDataBindings::class,
+        TelemetryBindings::class,
+        ComposeAppBindings::class,
+        RootBindings::class,
+        HomeBindings::class,
+        ReviewBindings::class,
+        BlockBlastBindings::class,
+        SettingsBindings::class,
+    ],
+)
+interface NativeAppGraph : AppGraph {
+
+    override val rootFactory: RootComponent.Factory
+
+    @DependencyGraph.Factory
+    fun interface Factory {
+        fun create(): NativeAppGraph
+    }
+}
+
+fun getNativeAppGraph(): NativeAppGraph {
+    return createGraphFactory<NativeAppGraph.Factory>().create()
+}

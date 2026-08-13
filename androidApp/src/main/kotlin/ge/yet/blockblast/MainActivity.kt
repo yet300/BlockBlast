@@ -8,7 +8,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.arkivanov.decompose.defaultComponentContext
 import com.google.firebase.Firebase
 import com.google.firebase.initialize
-import ge.yet3.blokblast.screen.App
+import ge.yet.game.screen.App
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

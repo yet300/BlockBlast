@@ -18,7 +18,7 @@ kotlin {
     }
 
     android {
-        namespace = "ge.yet.blokblast.composeApp"
+        namespace = "ge.yet.game.composeApp"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
