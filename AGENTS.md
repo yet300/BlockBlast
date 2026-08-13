@@ -54,7 +54,7 @@ BlockBlast/
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
 │   ├── testkit/                Framework scaffold; plugin contract fixtures are future work
-│   ├── bundle/                 Framework scaffold; shipping/bundle work is future work
+│   ├── bundle/                 Production MiniApp shipping bundle derived from the settings allowlist
 │   └── integration-test/       Framework scaffold; end-to-end integration work is future work
 ├── build-logic/
 │   ├── convention/             Local Kotlin Multiplatform Gradle convention plugin
@@ -85,7 +85,8 @@ BlockBlast/
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
-| `:miniapp:testkit`, `:miniapp:bundle`, `:miniapp:integration-test` | Statically included framework scaffolds; responsibilities will be filled by subsequent MiniApp tasks | no framework implementation yet |
+| `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
+| `:miniapp:testkit`, `:miniapp:integration-test` | Statically included framework scaffolds; responsibilities will be filled by subsequent MiniApp tasks | no framework implementation yet |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 | `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
@@ -118,6 +119,14 @@ session-scope marker is a child lifecycle, not a second game-specific scope.
 Concrete games may later implement the plugin contract; they must not depend on
 a MiniApp host, `:feature:root`, `:composeApp`, or a native application module.
 Host/root migration remains separate follow-up work.
+
+The root settings `miniApps` allowlist is the sole authoritative shipping path:
+the bundle convention consumes its finalized declarations in order, adds exactly
+those projects to `commonMainApi` alongside `:miniapp:metro`, and generates the
+public `ProductionMiniAppExpectation` contributed to Metro. The current root
+allowlist is intentionally empty. `verifyMiniAppBundle` rejects missing,
+unexpected or duplicated bundle dependencies, and allowlisted projects that do
+not apply `logica.miniapp`.
 
 ## Source Placement and Architecture
 
@@ -164,6 +173,10 @@ structural changes.
 - The convention plugin configures JDK 17, Android and iOS ARM64/simulator
   targets for its KMP library modules. Check a module's build file before
   assuming an additional target exists.
+- Build-logic plugin bytecode has a narrower compatibility boundary: the
+  settings-only MiniApp contract targets Java 17, while the convention artifact
+  targets Java 21 because applying Metro 1.4.1 requires its Java 21 Gradle
+  plugin. This does not change the app KMP JDK target.
 - Preserve type-safe project accessors and Gradle repository configuration in
   `settings.gradle.kts`.
 - Never edit generated build output or local-machine configuration.
@@ -188,6 +201,13 @@ the narrowest relevant task first, then broaden verification as appropriate.
 
 # Verify settings-phase MiniApp discovery and its typed shipping model
 ./gradlew -p build-logic :miniapp-settings:test --tests '*MiniAppSettingsPluginTest'
+
+# Verify the authoritative MiniApp shipping bundle and its generated empty expectation
+./gradlew -p build-logic :convention:test --tests '*MiniAppBundlePluginTest'
+./gradlew :miniapp:bundle:verifyMiniAppBundle
+./gradlew :miniapp:bundle:dependencies --configuration commonMainApi
+./gradlew :miniapp:bundle:compileAndroidMain
+./gradlew :miniapp:bundle:compileKotlinIosSimulatorArm64
 
 # Verify the stable MiniApp API and Compose-facing contracts
 ./gradlew :miniapp:api:allTests

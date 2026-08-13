@@ -1,3 +1,1 @@
-plugins {
-    alias(libs.plugins.local.kotlin.multiplatform)
-}
+plugins { id("logica.miniapp.bundle") }
