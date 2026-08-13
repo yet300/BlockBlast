@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Всё равно отключить</string>
     <string name="cd_back">Назад</string>
     <string name="exit">Выйти</string>
+    <string name="review_prompt_title">Нравится Logica?</string>
+    <string name="review_prompt_body">Ваш отзыв поможет другим любителям головоломок найти игру.</string>
+    <string name="review_prompt_leave_feedback">Оставить отзыв</string>
+    <string name="review_prompt_dont_show">Больше не показывать</string>
 </resources>

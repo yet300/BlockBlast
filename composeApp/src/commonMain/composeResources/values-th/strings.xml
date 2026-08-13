@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">ปิดต่อไป</string>
     <string name="cd_back">ย้อนกลับ</string>
     <string name="exit">ออก</string>
+    <string name="review_prompt_title">ชอบ Logica ไหม?</string>
+    <string name="review_prompt_body">รีวิวของคุณช่วยให้ผู้เล่นปริศนาคนอื่นๆ ค้นหาเกมนี้ได้</string>
+    <string name="review_prompt_leave_feedback">ให้ความคิดเห็น</string>
+    <string name="review_prompt_dont_show">ไม่ต้องแสดงอีก</string>
 </resources>

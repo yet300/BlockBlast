@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Toch uitschakelen</string>
     <string name="cd_back">Terug</string>
     <string name="exit">Afsluiten</string>
+    <string name="review_prompt_title">Geniet je van Logica?</string>
+    <string name="review_prompt_body">Jouw beoordeling helpt meer puzzelspelers het spel te vinden.</string>
+    <string name="review_prompt_leave_feedback">Feedback achterlaten</string>
+    <string name="review_prompt_dont_show">Niet meer tonen</string>
 </resources>

@@ -166,7 +166,7 @@ class GameStoreFactoryTest {
     }
 
     @Test
-    fun qualifying_terminal_move_marks_and_persists_review_decision() = runTest {
+    fun qualifying_terminal_move_marks_and_persists_review_opportunity_without_global_policy() = runTest {
         val qualifyingScore =
             AppConfig.REVIEW_MIN_SCORE.toLong() + AppConfig.REVIEW_BEST_SCORE_DELTA
         val saved = stateOneMoveFromGameOver().copy(
@@ -174,7 +174,10 @@ class GameStoreFactoryTest {
             bestScore = qualifyingScore,
             bestAtRoundStart = 0,
         )
-        val deps = TestDependencies(saved = saved)
+        val deps = TestDependencies(
+            saved = saved,
+            reviewCount = AppConfig.REVIEW_MAX_PROMPTS,
+        )
         val store = deps.factory.create(isNewGame = false)
         val labels = mutableListOf<GameStore.Label>()
         backgroundScope.launch { store.labels.collect(labels::add) }
@@ -184,10 +187,10 @@ class GameStoreFactoryTest {
         runCurrent()
 
         val completed = labels.filterIsInstance<GameStore.Label.GameCompleted>().single()
-        assertTrue(completed.shouldRequestReview)
+        assertTrue(completed.reviewOpportunity)
         assertTrue(completed.finalState.reviewPromptFiredThisRound)
         assertTrue(deps.save.stored?.reviewPromptFiredThisRound == true)
-        assertEquals(1, deps.settings.reviewPromptCount.value)
+        assertEquals(AppConfig.REVIEW_MAX_PROMPTS, deps.settings.reviewPromptCount.value)
     }
 
     @Test
@@ -283,10 +286,11 @@ class GameStoreFactoryTest {
     private inner class TestDependencies(
         saved: GameState? = null,
         bestScore: Long = 0,
+        reviewCount: Int = 0,
         failSaves: Boolean = false,
     ) {
         val save = RecordingSaveRepository(saved, failSaves)
-        val settings = RecordingSettingsRepository(bestScore)
+        val settings = RecordingSettingsRepository(bestScore, reviewCount)
         val audio = RecordingAudioRepository()
         val tutorial = FakeTutorialRepository()
         val analytics = RecordingAnalyticsRepository()
@@ -321,9 +325,12 @@ class GameStoreFactoryTest {
         override suspend fun clear() { stored = null }
     }
 
-    private class RecordingSettingsRepository(bestScore: Long) : SettingsRepository {
+    private class RecordingSettingsRepository(
+        bestScore: Long,
+        reviewPromptCount: Int,
+    ) : SettingsRepository {
         private val best = MutableStateFlow(bestScore)
-        private val reviewCount = MutableStateFlow(0)
+        private val reviewCount = MutableStateFlow(reviewPromptCount)
         override val musicEnabled = MutableStateFlow(true).asStateFlow()
         override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()

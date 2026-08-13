@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Ишенгис!</string>
     <string name="feedback_combo">Комбо</string>
     <string name="tutorial_grid_title">Тактага жайгаштырыңыз</string>
-    <string name="review_prompt_title">Logica жакты беби?</string>
-    <string name="review_prompt_body">Сиздин баа берүүңүз башка табышмак ойноочуларга оюнду табууга жардам берет.</string>
-    <string name="review_prompt_leave_feedback">Пикир калтыруу</string>
-    <string name="review_prompt_dont_show">Кайра көрсөтпөө</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.uikit.components.sheet.ClaudeBottomSheet
+import ge.yet3.blokblast.screen.review.AppReviewContent
 import ge.yet3.blokblast.screen.settings.SettingsContent
 
 
@@ -18,6 +19,7 @@ fun RootSheet(component: RootComponent) {
         ) {
             when (child) {
                 is RootComponent.SheetChild.Settings -> SettingsContent(component = child.component)
+                is RootComponent.SheetChild.AppReview -> AppReviewContent(component = child.component)
             }
         }
     }

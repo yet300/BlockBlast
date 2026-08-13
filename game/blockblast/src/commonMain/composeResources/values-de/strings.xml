@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Unglaublich!</string>
     <string name="feedback_combo">Combo</string>
     <string name="tutorial_grid_title">Auf das Spielfeld legen</string>
-    <string name="review_prompt_title">Gefällt dir Logica?</string>
-    <string name="review_prompt_body">Deine Bewertung hilft anderen Puzzle-Spielern, das Spiel zu finden.</string>
-    <string name="review_prompt_leave_feedback">Feedback hinterlassen</string>
-    <string name="review_prompt_dont_show">Nicht mehr anzeigen</string>
 </resources>

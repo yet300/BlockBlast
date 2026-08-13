@@ -26,13 +26,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.blockblast.component.result.GameResultComponent
-import ge.yet.game.monetization.ads.LocalMonetizationState
-import ge.yet.game.monetization.ads.rememberGameOverInterstitial
-import ge.yet.game.uikit.components.background.AmbientMeshBackground
-import ge.yet.game.uikit.components.sheet.ClaudeBottomSheet
-import ge.yet.game.blockblast.ui.game.GameGrid
-import ge.yet.game.blockblast.ui.game.ReviewPromptContent
-import ge.yet.game.blockblast.ui.game.rememberReducedMotion
 import ge.yet.game.blockblast.generated.resources.Res
 import ge.yet.game.blockblast.generated.resources.best
 import ge.yet.game.blockblast.generated.resources.cd_advertisement
@@ -43,6 +36,11 @@ import ge.yet.game.blockblast.generated.resources.new_best
 import ge.yet.game.blockblast.generated.resources.new_game
 import ge.yet.game.blockblast.generated.resources.revive
 import ge.yet.game.blockblast.generated.resources.score
+import ge.yet.game.blockblast.ui.game.GameGrid
+import ge.yet.game.blockblast.ui.game.rememberReducedMotion
+import ge.yet.game.monetization.ads.LocalMonetizationState
+import ge.yet.game.monetization.ads.rememberGameOverInterstitial
+import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -51,7 +49,6 @@ fun GameResultContent(
     modifier: Modifier = Modifier,
 ) {
     val model by component.model.subscribeAsState()
-    val reviewPrompt by component.reviewPrompt.subscribeAsState()
     val showInterstitial = rememberGameOverInterstitial()
     val reducedMotion = rememberReducedMotion()
     val adsEnabled = LocalMonetizationState.current.canShowAds
@@ -67,13 +64,6 @@ fun GameResultContent(
         modifier = modifier,
     )
 
-    reviewPrompt.component?.let { prompt ->
-        ClaudeBottomSheet(
-            onDismiss = { component.onDismissReviewPrompt() },
-        ) {
-            ReviewPromptContent(component = prompt)
-        }
-    }
 }
 
 @Composable

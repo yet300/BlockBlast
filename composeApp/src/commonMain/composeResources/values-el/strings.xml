@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Απενεργοποίηση ούτως ή άλλως</string>
     <string name="cd_back">Πίσω</string>
     <string name="exit">Έξοδος</string>
+    <string name="review_prompt_title">Σου αρέσει το Logica;</string>
+    <string name="review_prompt_body">Η κριτική σου βοηθά περισσότερους παίκτες παζλ να βρουν το παιχνίδι.</string>
+    <string name="review_prompt_leave_feedback">Αφήστε σχόλια</string>
+    <string name="review_prompt_dont_show">Να μην εμφανιστεί ξανά</string>
 </resources>

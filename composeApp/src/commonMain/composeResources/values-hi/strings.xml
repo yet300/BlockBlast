@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">फिर भी बंद करें</string>
     <string name="cd_back">पीछे</string>
     <string name="exit">बाहर निकलें</string>
+    <string name="review_prompt_title">Logica का आनंद ले रहे हैं?</string>
+    <string name="review_prompt_body">आपकी समीक्षा अधिक पहेली खिलाड़ियों को खेल खोजने में मदद करती है।</string>
+    <string name="review_prompt_leave_feedback">फीडबैक दें</string>
+    <string name="review_prompt_dont_show">दोबारा न दिखाएं</string>
 </resources>

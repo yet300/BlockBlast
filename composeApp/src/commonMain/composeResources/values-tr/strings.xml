@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Yine de devre dışı bırak</string>
     <string name="cd_back">Geri</string>
     <string name="exit">Çıkış</string>
+    <string name="review_prompt_title">Logica'yı beğeniyor musunuz?</string>
+    <string name="review_prompt_body">Yorumunuz daha fazla bulmaca oyuncusunun oyunu bulmasına yardımcı olur.</string>
+    <string name="review_prompt_leave_feedback">Geri bildirim bırak</string>
+    <string name="review_prompt_dont_show">Tekrar gösterme</string>
 </resources>

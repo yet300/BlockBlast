@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Միևնույն է անջատել</string>
     <string name="cd_back">Հետ</string>
     <string name="exit">Ելք</string>
+    <string name="review_prompt_title">Հավանու՞մ եք Logica-ն</string>
+    <string name="review_prompt_body">Ձեր գնահատականը կօգնի ավելի շատ գլուխկոտրուկների սիրահարների գտնել խաղը:</string>
+    <string name="review_prompt_leave_feedback">Թողնել կարծիք</string>
+    <string name="review_prompt_dont_show">Այլևս չցուցադրել</string>
 </resources>

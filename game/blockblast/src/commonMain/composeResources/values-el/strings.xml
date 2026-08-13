@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Απίστευτο!</string>
     <string name="feedback_combo">Combo</string>
     <string name="tutorial_grid_title">Τοποθέτησέ το στο ταμπλό</string>
-    <string name="review_prompt_title">Σου αρέσει το Logica;</string>
-    <string name="review_prompt_body">Η κριτική σου βοηθά περισσότερους παίκτες παζλ να βρουν το παιχνίδι.</string>
-    <string name="review_prompt_leave_feedback">Αφήστε σχόλια</string>
-    <string name="review_prompt_dont_show">Να μην εμφανιστεί ξανά</string>
 </resources>

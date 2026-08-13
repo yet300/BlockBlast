@@ -90,8 +90,8 @@ class DefaultGameComponentTest {
             restoredResultState = restoredResultState,
             onSettingsClick = { settingsCalls += Unit },
             onExitClickedCb = { exitCalls += Unit },
-            onGameCompletedCb = { finalState, canContinue, shouldRequestReview ->
-                completions += Triple(finalState, canContinue, shouldRequestReview)
+            onGameCompletedCb = { finalState, canContinue, reviewOpportunity ->
+                completions += Triple(finalState, canContinue, reviewOpportunity)
             },
             onReviveCompletedCb = { reviveCompletions += it },
             onReviveFailedCb = {},
@@ -209,10 +209,10 @@ class DefaultGameComponentTest {
         s.dispose()
     }
 
-    // ── Review prompt sheet ──────────────────────────────────────────────
+    // ── Review opportunity ──────────────────────────────────────────────
 
     @Test
-    fun qualifying_game_over_navigates_immediately_with_result_review_flag() = runTest(testDispatcher) {
+    fun qualifying_game_over_reports_game_review_opportunity_without_app_policy_side_effects() = runTest(testDispatcher) {
         val qualifyingScore =
             AppConfig.REVIEW_MIN_SCORE.toLong() + AppConfig.REVIEW_BEST_SCORE_DELTA + 10L
         val s = build(
@@ -227,7 +227,7 @@ class DefaultGameComponentTest {
         runCurrent()
         assertEquals(1, s.completions.size)
         assertTrue(s.completions.single().third)
-        assertEquals(1, s.settings.reviewPromptCount.value)
+        assertEquals(0, s.settings.reviewPromptCount.value)
         assertTrue(s.component.model.value.game.reviewPromptFiredThisRound)
         assertNull(s.analytics.events.find { it.first == "review_prompt_shown" })
         s.dispose()

@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Անհավանական՛</string>
     <string name="feedback_combo">Կոմբո</string>
     <string name="tutorial_grid_title">Տեղադրիր տախտակին</string>
-    <string name="review_prompt_title">Հավանու՞մ եք Logica-ն</string>
-    <string name="review_prompt_body">Ձեր գնահատականը կօգնի ավելի շատ գլուխկոտրուկների սիրահարների գտնել խաղը:</string>
-    <string name="review_prompt_leave_feedback">Թողնել կարծիք</string>
-    <string name="review_prompt_dont_show">Այլևս չցուցադրել</string>
 </resources>

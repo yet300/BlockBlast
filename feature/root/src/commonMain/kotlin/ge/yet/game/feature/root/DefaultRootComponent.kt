@@ -24,6 +24,8 @@ import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.result.BlockBlastResultSnapshot
 import ge.yet.game.blockblast.component.result.GameResultComponent
 import ge.yet.game.feature.home.HomeComponent
+import ge.yet.game.feature.review.AppReviewComponent
+import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.SettingsRepository
@@ -46,6 +48,8 @@ internal class DefaultRootComponent(
     private val settingsFactory: SettingsComponent.Factory,
     private val gameFactory: GameComponent.Factory,
     private val resultFactory: GameResultComponent.Factory,
+    private val reviewFactory: AppReviewComponent.Factory,
+    private val reviewPolicy: AppReviewPolicy,
     private val audio: AudioRepository,
     private val settingsRepository: SettingsRepository,
 ) : RootComponent, ComponentContext by componentContext {
@@ -104,10 +108,11 @@ internal class DefaultRootComponent(
     }
 
     override fun onBackClicked() {
-        val result = stack.value.active.instance as? RootComponent.Child.Result
-        if (result?.component?.onDismissReviewPrompt() == true) {
+        if (sheetSlot.value.child != null) {
+            onDismissSheet()
             return
         }
+        val result = stack.value.active.instance as? RootComponent.Child.Result
         if (result != null) {
             navigateHome()
         } else {
@@ -135,12 +140,12 @@ internal class DefaultRootComponent(
                     isNewGame = config.isNewGame,
                     restoredResultState = config.restoredResultState,
                     onExitClicked = { navigation.pop() },
-                    onGameCompleted = { finalState, canContinue, shouldRequestReview ->
+                    onGameCompleted = { finalState, canContinue, reviewOpportunity ->
                         showResult(
                             gameInstanceId = config.instanceId,
                             finalState = finalState,
                             canContinue = canContinue,
-                            shouldRequestReview = shouldRequestReview,
+                            reviewOpportunity = reviewOpportunity,
                         )
                     },
                     onSettingsClicked = { sheetNavigation.activate(SheetConfig.Settings) },
@@ -160,7 +165,6 @@ internal class DefaultRootComponent(
                 componentContext = componentContext,
                 snapshot = BlockBlastResultSnapshot.from(config.finalState),
                 canContinue = config.canContinue,
-                shouldRequestReview = config.shouldRequestReview,
                 onContinueRequested = ::continueGame,
                 onNewGameRequested = {
                     navigation.replaceAll(Config.Home, newGameConfig(isNewGame = true))
@@ -178,8 +182,21 @@ internal class DefaultRootComponent(
             is SheetConfig.Settings -> RootComponent.SheetChild.Settings(
                 component = settingsFactory.create(
                     componentContext = componentContext,
-                    onBackClicked = ::onDismissSheet
+                    onBackClicked = ::onDismissSheet,
                 )
+            )
+
+            is SheetConfig.AppReview -> RootComponent.SheetChild.AppReview(
+                component = reviewFactory.create(
+                    componentContext = componentContext,
+                    analyticsParams = mapOf(
+                        "source" to config.source,
+                        "score" to config.score,
+                        "best_score" to config.bestScore,
+                        "revives_used" to config.revivesUsed,
+                    ),
+                    onCloseRequested = ::onDismissSheet,
+                ),
             )
         }
 
@@ -237,6 +254,7 @@ internal class DefaultRootComponent(
     }
 
     private fun navigateHome() {
+        onDismissSheet()
         navigation.replaceAll(Config.Home)
     }
 
@@ -251,12 +269,14 @@ internal class DefaultRootComponent(
         gameInstanceId: Long,
         finalState: GameState,
         canContinue: Boolean,
-        shouldRequestReview: Boolean,
+        reviewOpportunity: Boolean,
     ) {
+        var resultAdded = false
         navigation.navigate { configurations ->
             if (configurations.lastOrNull() is Config.Result) {
                 configurations
             } else {
+                resultAdded = true
                 configurations.map { config ->
                     if (config is Config.Game && config.instanceId == gameInstanceId) {
                         config.copy(restoredResultState = finalState)
@@ -267,7 +287,25 @@ internal class DefaultRootComponent(
                     gameInstanceId = gameInstanceId,
                     finalState = finalState,
                     canContinue = canContinue,
-                    shouldRequestReview = shouldRequestReview,
+                )
+            }
+        }
+        if (resultAdded && reviewOpportunity) {
+            scope.launch {
+                val activeResult = stack.value.active.configuration as? Config.Result
+                if (activeResult?.gameInstanceId != gameInstanceId) return@launch
+                if (sheetSlot.value.child != null) return@launch
+                if (!reviewPolicy.tryAcquirePrompt()) return@launch
+                if (sheetSlot.value.child != null) return@launch
+                val stillActiveResult = stack.value.active.configuration as? Config.Result
+                if (stillActiveResult?.gameInstanceId != gameInstanceId) return@launch
+                sheetNavigation.activate(
+                    SheetConfig.AppReview(
+                        source = "block_blast_result",
+                        score = finalState.score,
+                        bestScore = finalState.bestScore,
+                        revivesUsed = finalState.revivesUsed,
+                    ),
                 )
             }
         }
@@ -290,7 +328,6 @@ internal class DefaultRootComponent(
             val gameInstanceId: Long,
             val finalState: GameState,
             val canContinue: Boolean,
-            val shouldRequestReview: Boolean = false,
         ) : Config
     }
 
@@ -298,6 +335,14 @@ internal class DefaultRootComponent(
     sealed interface SheetConfig {
         @Serializable
         data object Settings : SheetConfig
+
+        @Serializable
+        data class AppReview(
+            val source: String,
+            val score: Long,
+            val bestScore: Long,
+            val revivesUsed: Int,
+        ) : SheetConfig
     }
 }
 
@@ -307,6 +352,8 @@ internal class DefaultRootComponentFactory(
     private val settingsFactory: SettingsComponent.Factory,
     private val gameFactory: GameComponent.Factory,
     private val resultFactory: GameResultComponent.Factory,
+    private val reviewFactory: AppReviewComponent.Factory,
+    private val reviewPolicy: AppReviewPolicy,
     private val audio: AudioRepository,
     private val settingsRepository: SettingsRepository,
 ) : RootComponent.Factory {
@@ -317,6 +364,8 @@ internal class DefaultRootComponentFactory(
             settingsFactory = settingsFactory,
             gameFactory = gameFactory,
             resultFactory = resultFactory,
+            reviewFactory = reviewFactory,
+            reviewPolicy = reviewPolicy,
             audio = audio,
             settingsRepository = settingsRepository,
         )

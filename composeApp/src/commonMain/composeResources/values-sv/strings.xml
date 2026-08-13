@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Inaktivera ändå</string>
     <string name="cd_back">Bakåt</string>
     <string name="exit">Avsluta</string>
+    <string name="review_prompt_title">Gillar du Logica?</string>
+    <string name="review_prompt_body">Din recension hjälper fler pusselspelare att hitta spelet.</string>
+    <string name="review_prompt_leave_feedback">Lämna feedback</string>
+    <string name="review_prompt_dont_show">Visa inte igen</string>
 </resources>

@@ -42,6 +42,7 @@ BlockBlast/
 ├── feature/
 │   ├── root/                   Top-level navigation component
 │   ├── home/                   Home screen feature
+│   ├── review/                 App review policy and component
 │   └── settings/               Settings feature
 ├── game/
 │   └── blockblast/             Block Blast rules, persistence, resources, components and UI
@@ -66,8 +67,9 @@ BlockBlast/
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
+| `:feature:review` | Reusable app-review policy, analytics and component | `:core:domain`, `:core:common` |
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common`, `:feature:settings`, `:game:blockblast` |
-| `:feature:root` | Top-level navigation and feature composition | core modules, `:feature:home`, `:feature:settings`, `:game:blockblast` |
+| `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
 | `:game:blockblast` | Block Blast rules, models, state/tutorial persistence, resources, audio catalog, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
@@ -84,6 +86,10 @@ the game module must not depend on `:composeApp`, `:feature:root` or a native
 application module. Block Blast's internal engine and implementation types stay
 `internal`; only the component and model contracts required by Root, Home and
 the application composition are public.
+
+Games may emit game-specific review opportunities, but `:feature:review` owns
+the app-wide prompt limit, suppression, analytics and store-review request.
+`:feature:root` decides when to open the reusable review sheet.
 
 Keep monetization policy in `:monetization:core`; it must not depend on Compose,
 Firebase, advertising SDKs, or either application shell. Native AdMob and UMP
@@ -148,6 +154,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :core:domain:allTests
 ./gradlew :core:data:allTests
 ./gradlew :game:blockblast:allTests
+./gradlew :feature:review:allTests
 ./gradlew :feature:root:allTests
 ./gradlew :monetization:core:allTests
 

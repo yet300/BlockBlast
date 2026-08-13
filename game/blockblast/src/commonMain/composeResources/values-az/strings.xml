@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">İnanılmaz!</string>
     <string name="feedback_combo">Kombo</string>
     <string name="tutorial_grid_title">Lövhəyə yerləşdirin</string>
-    <string name="review_prompt_title">Logica xoşunuza gəlir?</string>
-    <string name="review_prompt_body">Rəyiniz daha çox tapmaca oyunçusunun oyunu tapmasına kömək edir.</string>
-    <string name="review_prompt_leave_feedback">Rəy yazın</string>
-    <string name="review_prompt_dont_show">Bir daha göstərmə</string>
 </resources>

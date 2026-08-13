@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Baribir o'chirish</string>
     <string name="cd_back">Orqaga</string>
     <string name="exit">Chiqish</string>
+    <string name="review_prompt_title">Logica yoqdimi?</string>
+    <string name="review_prompt_body">Sizning sharhingiz ko'proq jumboq o'yinchilariga o'yinni topishga yordam beradi.</string>
+    <string name="review_prompt_leave_feedback">Fikr qoldirish</string>
+    <string name="review_prompt_dont_show">Yana ko'rsatmaslik</string>
 </resources>

@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Poista silti käytöstä</string>
     <string name="cd_back">Takaisin</string>
     <string name="exit">Poistu</string>
+    <string name="review_prompt_title">Pidätkö Logicasta?</string>
+    <string name="review_prompt_body">Arviosi auttaa muita palapelipelaajia löytämään pelin.</string>
+    <string name="review_prompt_leave_feedback">Jätä palaute</string>
+    <string name="review_prompt_dont_show">Älä näytä uudelleen</string>
 </resources>

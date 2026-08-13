@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">להשבית בכל זאת</string>
     <string name="cd_back">חזור</string>
     <string name="exit">יציאה</string>
+    <string name="review_prompt_title">נהנה מ-Logica?</string>
+    <string name="review_prompt_body">הביקורת שלך עוזרת לשחקני פאזלים נוספים למצוא את המשחק.</string>
+    <string name="review_prompt_leave_feedback">השאר משוב</string>
+    <string name="review_prompt_dont_show">אל תציג שוב</string>
 </resources>

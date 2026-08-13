@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Incredibil!</string>
     <string name="feedback_combo">Combo</string>
     <string name="tutorial_grid_title">Pune-o pe tablă</string>
-    <string name="review_prompt_title">Îți place Logica?</string>
-    <string name="review_prompt_body">Recenzia ta îi ajută pe mai mulți jucători de puzzle să găsească jocul.</string>
-    <string name="review_prompt_leave_feedback">Lasă un feedback</string>
-    <string name="review_prompt_dont_show">Nu mai afișa</string>
 </resources>

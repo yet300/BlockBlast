@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Kikapcsolás mindenképp</string>
     <string name="cd_back">Vissza</string>
     <string name="exit">Kilépés</string>
+    <string name="review_prompt_title">Tetszik a Logica?</string>
+    <string name="review_prompt_body">Az értékelésed segít több kirakós játékosnak megtalálni a játékot.</string>
+    <string name="review_prompt_leave_feedback">Visszajelzés küldése</string>
+    <string name="review_prompt_dont_show">Ne jelenjen meg újra</string>
 </resources>

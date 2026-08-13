@@ -67,7 +67,7 @@ internal class DefaultGameComponent(
                         onGameCompletedCb(
                             label.finalState,
                             label.canContinue,
-                            label.shouldRequestReview,
+                            label.reviewOpportunity,
                         )
                     is GameStore.Label.ReviveCompleted ->
                         onReviveCompletedCb(label.playableState)

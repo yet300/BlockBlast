@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Luar Biasa!</string>
     <string name="feedback_combo">Kombo</string>
     <string name="tutorial_grid_title">Letakkan di papan</string>
-    <string name="review_prompt_title">Menikmati Logica?</string>
-    <string name="review_prompt_body">Ulasan Anda membantu lebih banyak pemain teka-teki menemukan permainan ini.</string>
-    <string name="review_prompt_leave_feedback">Berikan masukan</string>
-    <string name="review_prompt_dont_show">Jangan tampilkan lagi</string>
 </resources>

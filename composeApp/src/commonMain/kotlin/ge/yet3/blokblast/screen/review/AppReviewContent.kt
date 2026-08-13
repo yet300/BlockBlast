@@ -1,4 +1,4 @@
-package ge.yet.game.blockblast.ui.game
+package ge.yet3.blokblast.screen.review
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -22,18 +22,18 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import ge.yet.game.blockblast.generated.resources.Res
-import ge.yet.game.blockblast.generated.resources.review_prompt_body
-import ge.yet.game.blockblast.generated.resources.review_prompt_dont_show
-import ge.yet.game.blockblast.generated.resources.review_prompt_leave_feedback
-import ge.yet.game.blockblast.generated.resources.review_prompt_title
-import ge.yet.game.blockblast.component.review.AppReviewComponent
+import ge.yet.game.feature.review.AppReviewComponent
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
+import blockblast.composeapp.generated.resources.Res
+import blockblast.composeapp.generated.resources.review_prompt_body
+import blockblast.composeapp.generated.resources.review_prompt_dont_show
+import blockblast.composeapp.generated.resources.review_prompt_leave_feedback
+import blockblast.composeapp.generated.resources.review_prompt_title
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun ReviewPromptContent(component: AppReviewComponent) {
+fun AppReviewContent(component: AppReviewComponent) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

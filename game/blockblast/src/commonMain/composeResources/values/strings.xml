@@ -20,8 +20,4 @@
     <string name="feedback_unbelievable">Unbelievable!</string>
     <string name="feedback_combo">Combo</string>
     <string name="tutorial_grid_title">Drop it on the board</string>
-    <string name="review_prompt_title">Enjoying Logica?</string>
-    <string name="review_prompt_body">Your review helps more puzzle players find the game.</string>
-    <string name="review_prompt_leave_feedback">Leave feedback</string>
-    <string name="review_prompt_dont_show">Don't show again</string>
 </resources>

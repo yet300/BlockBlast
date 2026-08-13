@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Desativar mesmo assim</string>
     <string name="cd_back">Voltar</string>
     <string name="exit">Sair</string>
+    <string name="review_prompt_title">Gostando de Logica?</string>
+    <string name="review_prompt_body">Sua avaliação ajuda mais jogadores de quebra-cabeças a encontrar o jogo.</string>
+    <string name="review_prompt_leave_feedback">Deixar feedback</string>
+    <string name="review_prompt_dont_show">Não mostrar novamente</string>
 </resources>

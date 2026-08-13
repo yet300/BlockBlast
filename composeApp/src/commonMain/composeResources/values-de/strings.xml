@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Trotzdem deaktivieren</string>
     <string name="cd_back">Zurück</string>
     <string name="exit">Beenden</string>
+    <string name="review_prompt_title">Gefällt dir Logica?</string>
+    <string name="review_prompt_body">Deine Bewertung hilft anderen Puzzle-Spielern, das Spiel zu finden.</string>
+    <string name="review_prompt_leave_feedback">Feedback hinterlassen</string>
+    <string name="review_prompt_dont_show">Nicht mehr anzeigen</string>
 </resources>

@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Otroligt!</string>
     <string name="feedback_combo">Kombo</string>
     <string name="tutorial_grid_title">Placera på brädet</string>
-    <string name="review_prompt_title">Gillar du Logica?</string>
-    <string name="review_prompt_body">Din recension hjälper fler pusselspelare att hitta spelet.</string>
-    <string name="review_prompt_leave_feedback">Lämna feedback</string>
-    <string name="review_prompt_dont_show">Visa inte igen</string>
 </resources>

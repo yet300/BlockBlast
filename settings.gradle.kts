@@ -50,6 +50,7 @@ include(":monetization:ads")
 include(":feature")
 include(":feature:root")
 include(":feature:settings")
+include(":feature:review")
 include(":feature:home")
 
 include(":game")

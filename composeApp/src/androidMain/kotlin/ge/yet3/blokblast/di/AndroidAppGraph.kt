@@ -7,6 +7,7 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import ge.yet.game.blockblast.di.BlockBlastBindings
 import ge.yet.game.feature.home.di.HomeBindings
+import ge.yet.game.feature.review.di.ReviewBindings
 import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.feature.root.di.RootBindings
 import ge.yet.game.feature.settings.di.SettingsBindings
@@ -24,6 +25,7 @@ import ge.yet.game.telemetry.di.TelemetryBindings
         ComposeAppBindings::class,
         RootBindings::class,
         HomeBindings::class,
+        ReviewBindings::class,
         BlockBlastBindings::class,
         SettingsBindings::class,
     ],

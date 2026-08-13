@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Усё роўна адключыць</string>
     <string name="cd_back">Назад</string>
     <string name="exit">Выйсці</string>
+    <string name="review_prompt_title">Падабаецца Logica?</string>
+    <string name="review_prompt_body">Ваш водгук дапаможа іншым аматарам галаваломак знайсці гульню.</string>
+    <string name="review_prompt_leave_feedback">Пакінуць водгук</string>
+    <string name="review_prompt_dont_show">Больш не паказваць</string>
 </resources>

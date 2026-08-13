@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Utroligt!</string>
     <string name="feedback_combo">Combo</string>
     <string name="tutorial_grid_title">Placer på brættet</string>
-    <string name="review_prompt_title">Nyder du Logica?</string>
-    <string name="review_prompt_body">Din anmeldelse hjælper flere puslespilsspillere med at finde spillet.</string>
-    <string name="review_prompt_leave_feedback">Giv feedback</string>
-    <string name="review_prompt_dont_show">Vis ikke igen</string>
 </resources>

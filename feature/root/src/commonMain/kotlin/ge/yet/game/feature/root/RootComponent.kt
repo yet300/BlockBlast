@@ -8,6 +8,7 @@ import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.result.GameResultComponent
 import ge.yet.game.feature.home.HomeComponent
+import ge.yet.game.feature.review.AppReviewComponent
 import ge.yet.game.feature.settings.SettingsComponent
 import kotlinx.coroutines.flow.StateFlow
 
@@ -47,6 +48,7 @@ interface RootComponent : BackHandlerOwner {
 
     sealed interface SheetChild {
         class Settings(val component: SettingsComponent) : SheetChild
+        class AppReview(val component: AppReviewComponent) : SheetChild
     }
 
     /** DI-friendly factory; the concrete impl is created with the Metro graph. */

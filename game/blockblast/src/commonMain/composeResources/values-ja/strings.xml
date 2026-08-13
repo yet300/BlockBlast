@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Unbelievable!</string>
     <string name="feedback_combo">コンボ</string>
     <string name="tutorial_grid_title">ボードに置こう</string>
-    <string name="review_prompt_title">Logicaを楽しんでいますか？</string>
-    <string name="review_prompt_body">あなたのレビューは、より多くのパズルプレイヤーがこのゲームを見つけるのに役立ちます。</string>
-    <string name="review_prompt_leave_feedback">フィードバックを残す</string>
-    <string name="review_prompt_dont_show">今後表示しない</string>
 </resources>

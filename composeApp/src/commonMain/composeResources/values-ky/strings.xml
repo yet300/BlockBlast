@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Баары бир өчүрүү</string>
     <string name="cd_back">Артка</string>
     <string name="exit">Чыгуу</string>
+    <string name="review_prompt_title">Logica жакты беби?</string>
+    <string name="review_prompt_body">Сиздин баа берүүңүз башка табышмак ойноочуларга оюнду табууга жардам берет.</string>
+    <string name="review_prompt_leave_feedback">Пикир калтыруу</string>
+    <string name="review_prompt_dont_show">Кайра көрсөтпөө</string>
 </resources>

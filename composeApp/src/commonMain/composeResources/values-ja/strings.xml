@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">無効にする</string>
     <string name="cd_back">戻る</string>
     <string name="exit">終了</string>
+    <string name="review_prompt_title">Logicaを楽しんでいますか？</string>
+    <string name="review_prompt_body">あなたのレビューは、より多くのパズルプレイヤーがこのゲームを見つけるのに役立ちます。</string>
+    <string name="review_prompt_leave_feedback">フィードバックを残す</string>
+    <string name="review_prompt_dont_show">今後表示しない</string>
 </resources>

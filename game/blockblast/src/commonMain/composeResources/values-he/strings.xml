@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">לא ייאמן!</string>
     <string name="feedback_combo">קומבו</string>
     <string name="tutorial_grid_title">הנח אותו על הלוח</string>
-    <string name="review_prompt_title">נהנה מ-Logica?</string>
-    <string name="review_prompt_body">הביקורת שלך עוזרת לשחקני פאזלים נוספים למצוא את המשחק.</string>
-    <string name="review_prompt_leave_feedback">השאר משוב</string>
-    <string name="review_prompt_dont_show">אל תציג שוב</string>
 </resources>

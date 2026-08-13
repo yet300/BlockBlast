@@ -155,11 +155,8 @@ internal class GameStoreFactory(
 
         private suspend fun completeGame(gameState: GameState) {
             logger.log("game_over", gameState)
-            val shouldRequestReview = qualifiesForReview(gameState) &&
-                attemptPersistence(logger, "review_prompt_count", gameState) {
-                    settings.incrementReviewPromptCount()
-                }
-            val markedState = if (shouldRequestReview) {
+            val reviewOpportunity = qualifiesForReview(gameState)
+            val markedState = if (reviewOpportunity) {
                 gameReducer.markReviewPromptFired(gameState).also {
                     dispatch(GameStore.Msg.Snapshot(it))
                 }
@@ -177,7 +174,7 @@ internal class GameStoreFactory(
                 GameStore.Label.GameCompleted(
                     finalState = finalState,
                     canContinue = finalState.revivesUsed < GameState.MAX_REVIVES,
-                    shouldRequestReview = shouldRequestReview,
+                    reviewOpportunity = reviewOpportunity,
                 ),
             )
         }
@@ -331,7 +328,6 @@ internal class GameStoreFactory(
         val beatBy = state.score - state.bestAtRoundStart
         return !state.reviewPromptFiredThisRound &&
             state.score >= AppConfig.REVIEW_MIN_SCORE.toLong() &&
-            beatBy >= AppConfig.REVIEW_BEST_SCORE_DELTA &&
-            settings.reviewPromptCount.value < AppConfig.REVIEW_MAX_PROMPTS
+            beatBy >= AppConfig.REVIEW_BEST_SCORE_DELTA
     }
 }

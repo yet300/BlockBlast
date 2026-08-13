@@ -37,4 +37,8 @@
     <string name="disable_ads_anyway">Şonda-da öçür</string>
     <string name="cd_back">Yza</string>
     <string name="exit">Çykyş</string>
+    <string name="review_prompt_title">Logica halaýarmy?</string>
+    <string name="review_prompt_body">Siziň synlaryňyz has köp tapmaça oýunçylaryna oýny tapmaga kömek eder.</string>
+    <string name="review_prompt_leave_feedback">Pikir galdyrmak</string>
+    <string name="review_prompt_dont_show">Ýene görkezme</string>
 </resources>

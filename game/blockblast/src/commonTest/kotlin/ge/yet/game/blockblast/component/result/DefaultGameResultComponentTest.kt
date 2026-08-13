@@ -1,25 +1,16 @@
 package ge.yet.game.blockblast.component.result
 
-import com.app.common.AppDispatchers
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
-import com.arkivanov.essenty.statekeeper.StateKeeper
-import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import ge.yet.game.blockblast.domain.model.Grid
-import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.ReviewCode
 import ge.yet.game.domain.repository.SettingsRepository
-import ge.yet.game.domain.repository.StoreReviewRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -32,8 +23,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,101 +78,6 @@ class DefaultGameResultComponentTest {
         assertFalse(setup.component.model.value.isContinuePhase)
 
         setup.lifecycle.destroy()
-    }
-
-    @Test
-    fun review_prompt_is_visible_only_when_requested_and_dismiss_consumes_once() {
-        val requested = build(canContinue = false, shouldRequestReview = true)
-        val notRequested = build(canContinue = false, shouldRequestReview = false)
-
-        assertNotNull(requested.component.reviewPrompt.value.component)
-        assertNull(notRequested.component.reviewPrompt.value.component)
-        assertTrue(requested.component.onDismissReviewPrompt())
-        assertFalse(requested.component.onDismissReviewPrompt())
-        assertNull(requested.component.reviewPrompt.value.component)
-
-        requested.lifecycle.destroy()
-        notRequested.lifecycle.destroy()
-    }
-
-    @Test
-    fun review_leave_feedback_requests_store_review_and_consumes_prompt() = runTest(testDispatcher) {
-        val setup = build(canContinue = false, shouldRequestReview = true)
-
-        assertNotNull(setup.component.reviewPrompt.value.component).onLeaveFeedbackClicked()
-        setup.lifecycle.destroy()
-        runCurrent()
-
-        assertEquals(1, setup.storeReview.inAppRequests)
-        assertNull(setup.component.reviewPrompt.value.component)
-    }
-
-    @Test
-    fun review_dont_show_again_suppresses_future_prompts_and_consumes() = runTest(testDispatcher) {
-        val setup = build(canContinue = false, shouldRequestReview = true)
-
-        assertNotNull(setup.component.reviewPrompt.value.component).onDontShowAgainClicked()
-        runCurrent()
-
-        assertEquals(2, setup.settings.reviewPromptCount.value)
-        assertNull(setup.component.reviewPrompt.value.component)
-        setup.lifecycle.destroy()
-    }
-
-    @Test
-    fun dismissing_review_prompt_does_not_reset_continue_countdown() = runTest(testDispatcher) {
-        val setup = build(canContinue = true, shouldRequestReview = true)
-        advanceTimeBy(2_000)
-        runCurrent()
-        assertEquals(3, setup.component.model.value.continueSecondsRemaining)
-
-        setup.component.onDismissReviewPrompt()
-
-        assertEquals(3, setup.component.model.value.continueSecondsRemaining)
-        setup.lifecycle.destroy()
-    }
-
-    @Test
-    fun consumed_review_prompt_stays_consumed_after_state_restore() {
-        val stateKeeper = StateKeeperDispatcher()
-        val first = build(
-            canContinue = false,
-            shouldRequestReview = true,
-            stateKeeper = stateKeeper,
-        )
-        first.component.onDismissReviewPrompt()
-        val saved = stateKeeper.save()
-        first.lifecycle.destroy()
-
-        val restored = build(
-            canContinue = false,
-            shouldRequestReview = true,
-            stateKeeper = StateKeeperDispatcher(saved),
-        )
-
-        assertNull(restored.component.reviewPrompt.value.component)
-        restored.lifecycle.destroy()
-    }
-
-    @Test
-    fun open_review_prompt_is_restored_until_consumed() {
-        val stateKeeper = StateKeeperDispatcher()
-        val first = build(
-            canContinue = false,
-            shouldRequestReview = true,
-            stateKeeper = stateKeeper,
-        )
-        val saved = stateKeeper.save()
-        first.lifecycle.destroy()
-
-        val restored = build(
-            canContinue = false,
-            shouldRequestReview = true,
-            stateKeeper = StateKeeperDispatcher(saved),
-        )
-
-        assertNotNull(restored.component.reviewPrompt.value.component)
-        restored.lifecycle.destroy()
     }
 
     @Test
@@ -389,35 +283,19 @@ class DefaultGameResultComponentTest {
 
     private fun build(
         canContinue: Boolean,
-        shouldRequestReview: Boolean = false,
-        stateKeeper: StateKeeper? = null,
         adsEnabled: Boolean = true,
         onContinueRequested: () -> Unit = {},
     ): Setup {
         val lifecycle = LifecycleRegistry()
         val settings = FakeSettings(adsEnabled)
-        val storeReview = RecordingStoreReview()
         var continueCalls = 0
         var newGameCalls = 0
         var homeCalls = 0
         val component = DefaultGameResultComponent(
-            componentContext = DefaultComponentContext(
-                lifecycle = lifecycle,
-                stateKeeper = stateKeeper,
-            ),
+            componentContext = DefaultComponentContext(lifecycle = lifecycle),
             snapshot = snapshot,
             canContinue = canContinue,
-            shouldRequestReview = shouldRequestReview,
             settings = settings,
-            storeReview = storeReview,
-            analytics = RecordingAnalytics(),
-            appScope = CoroutineScope(testDispatcher),
-            dispatchers = AppDispatchers(
-                default = testDispatcher,
-                io = testDispatcher,
-                main = Dispatchers.Main,
-                unconfined = testDispatcher,
-            ),
             onContinueRequested = {
                 continueCalls += 1
                 onContinueRequested()
@@ -432,8 +310,6 @@ class DefaultGameResultComponentTest {
             continueCallsProvider = { continueCalls },
             newGameCallsProvider = { newGameCalls },
             homeCallsProvider = { homeCalls },
-            settings = settings,
-            storeReview = storeReview,
         )
     }
 
@@ -443,8 +319,6 @@ class DefaultGameResultComponentTest {
         val continueCallsProvider: () -> Int,
         val newGameCallsProvider: () -> Int,
         val homeCallsProvider: () -> Int,
-        val settings: FakeSettings,
-        val storeReview: RecordingStoreReview,
     ) {
         val continueCalls: Int get() = continueCallsProvider()
         val newGameCalls: Int get() = newGameCallsProvider()
@@ -475,20 +349,6 @@ class DefaultGameResultComponentTest {
         override suspend fun suppressReviewPrompts(max: Int) {
             reviewFlow.value = maxOf(reviewFlow.value, max)
         }
-    }
-
-    private class RecordingStoreReview : StoreReviewRepository {
-        var inAppRequests = 0
-        override fun requestInAppReview(): Flow<ReviewCode> {
-            inAppRequests += 1
-            return flowOf(ReviewCode.NO_ERROR)
-        }
-        override fun requestInMarketReview(): Flow<ReviewCode> = flowOf(ReviewCode.NO_ERROR)
-    }
-
-    private class RecordingAnalytics : AnalyticRepository {
-        override fun logEvent(eventName: String, params: Map<String, Any>?) = Unit
-        override fun deleteData() = Unit
     }
 
     private companion object {

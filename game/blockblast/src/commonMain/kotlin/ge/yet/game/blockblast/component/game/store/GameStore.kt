@@ -28,7 +28,7 @@ internal interface GameStore : Store<GameStore.Intent, GameState, GameStore.Labe
         data class GameCompleted(
             val finalState: GameState,
             val canContinue: Boolean,
-            val shouldRequestReview: Boolean,
+            val reviewOpportunity: Boolean,
         ) : Label
 
         data class ReviveCompleted(

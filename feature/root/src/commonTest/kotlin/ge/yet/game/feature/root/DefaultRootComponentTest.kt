@@ -12,11 +12,12 @@ import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.result.BlockBlastResultSnapshot
 import ge.yet.game.blockblast.component.result.GameResultComponent
-import ge.yet.game.blockblast.component.review.AppReviewComponent
 import ge.yet.game.blockblast.component.tray.PieceTrayComponent
 import ge.yet.game.blockblast.component.tray.TraySelection
 import ge.yet.game.blockblast.component.tray.TraySlotComponent
 import ge.yet.game.feature.home.HomeComponent
+import ge.yet.game.feature.review.AppReviewComponent
+import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.model.Grid
@@ -34,8 +35,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -43,13 +49,28 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DefaultRootComponentTest {
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private fun build(
         stateKeeper: StateKeeper? = null,
         gameFactory: RecordingGameFactory = RecordingGameFactory(),
         resultFactory: RecordingResultFactory = RecordingResultFactory(),
         settingsFactory: RecordingSettingsFactory = RecordingSettingsFactory(),
+        reviewFactory: RecordingReviewFactory = RecordingReviewFactory(),
+        reviewPolicy: RecordingReviewPolicy = RecordingReviewPolicy(),
     ): Setup {
         val lifecycle = LifecycleRegistry()
         val audio = RecordingAudio()
@@ -64,6 +85,8 @@ class DefaultRootComponentTest {
             settingsFactory = settingsFactory,
             gameFactory = gameFactory,
             resultFactory = resultFactory,
+            reviewFactory = reviewFactory,
+            reviewPolicy = reviewPolicy,
             audio = audio,
             settingsRepository = settings,
         )
@@ -76,6 +99,8 @@ class DefaultRootComponentTest {
             gameFactory,
             resultFactory,
             settingsFactory,
+            reviewFactory,
+            reviewPolicy,
         )
     }
 
@@ -177,30 +202,43 @@ class DefaultRootComponentTest {
     }
 
     @Test
-    fun game_completion_pushes_result_with_final_snapshot() {
+    fun game_completion_pushes_result_and_opens_app_review_sheet_when_policy_allows() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
         val finalState = resultState()
         setup.gameFactory.created.single().complete(
             finalState,
             canContinue = true,
-            shouldRequestReview = true,
+            reviewOpportunity = true,
         )
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
         assertEquals(BlockBlastResultSnapshot.from(finalState), setup.resultFactory.created.single().snapshot)
         assertEquals(finalState, setup.gameFactory.created.last().restoredResultState)
         assertTrue(setup.resultFactory.created.single().canContinue)
-        assertTrue(setup.resultFactory.created.single().shouldRequestReview)
+        assertEquals(1, setup.reviewPolicy.acquireCalls)
+        val review = assertIs<RootComponent.SheetChild.AppReview>(
+            setup.component.sheetSlot.value.child?.instance,
+        ).component
+        assertEquals(review, setup.reviewFactory.created.single())
+        assertEquals(
+            mapOf(
+                "source" to "block_blast_result",
+                "score" to finalState.score,
+                "best_score" to finalState.bestScore,
+                "revives_used" to finalState.revivesUsed,
+            ),
+            setup.reviewFactory.analyticsParams.single(),
+        )
     }
 
     @Test
-    fun back_dismisses_review_prompt_before_leaving_result() {
+    fun back_dismisses_app_review_sheet_before_leaving_result() {
         val setup = build()
         setup.homeFactory.created.first().onNewGameClicked(true)
         setup.gameFactory.created.single().complete(
             resultState(),
             canContinue = true,
-            shouldRequestReview = true,
+            reviewOpportunity = true,
         )
         val result = setup.resultFactory.created.single()
         result.model.value = result.model.value.copy(continueSecondsRemaining = 3)
@@ -210,9 +248,57 @@ class DefaultRootComponentTest {
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
         assertEquals(1, setup.resultFactory.created.size)
         assertEquals(3, result.model.value.continueSecondsRemaining)
-        assertEquals(null, result.reviewPrompt.value.component)
+        assertNull(setup.component.sheetSlot.value.child)
         setup.component.onBackClicked()
         assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
+    }
+
+    @Test
+    fun review_action_requests_root_to_close_sheet() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            reviewOpportunity = true,
+        )
+
+        setup.reviewFactory.created.single().onLeaveFeedbackClicked()
+
+        assertNull(setup.component.sheetSlot.value.child)
+    }
+
+    @Test
+    fun game_completion_does_not_open_review_sheet_when_global_policy_rejects() {
+        val policy = RecordingReviewPolicy(allow = false)
+        val setup = build(reviewPolicy = policy)
+        setup.homeFactory.created.first().onNewGameClicked(true)
+
+        setup.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            reviewOpportunity = true,
+        )
+
+        assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
+        assertEquals(1, policy.acquireCalls)
+        assertNull(setup.component.sheetSlot.value.child)
+        assertTrue(setup.reviewFactory.created.isEmpty())
+    }
+
+    @Test
+    fun game_completion_without_game_opportunity_does_not_consult_global_policy() {
+        val setup = build()
+        setup.homeFactory.created.first().onNewGameClicked(true)
+
+        setup.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            reviewOpportunity = false,
+        )
+
+        assertEquals(0, setup.reviewPolicy.acquireCalls)
+        assertNull(setup.component.sheetSlot.value.child)
     }
 
     @Test
@@ -221,10 +307,39 @@ class DefaultRootComponentTest {
         setup.homeFactory.created.first().onNewGameClicked(true)
         val game = setup.gameFactory.created.single()
         val finalState = resultState()
-        game.complete(finalState, canContinue = true)
-        game.complete(finalState, canContinue = true)
+        game.complete(finalState, canContinue = true, reviewOpportunity = true)
+        game.complete(finalState, canContinue = true, reviewOpportunity = true)
         assertEquals(3, setup.component.stack.value.items.size)
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
+        assertEquals(1, setup.reviewPolicy.acquireCalls)
+        assertEquals(1, setup.reviewFactory.created.size)
+    }
+
+    @Test
+    fun open_review_sheet_restores_without_reacquiring_global_policy() {
+        val stateKeeper = StateKeeperDispatcher()
+        val first = build(stateKeeper = stateKeeper)
+        first.homeFactory.created.first().onNewGameClicked(true)
+        first.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            reviewOpportunity = true,
+        )
+        val saved = stateKeeper.save()
+        first.lifecycle.destroy()
+
+        val restoredPolicy = RecordingReviewPolicy()
+        val restored = build(
+            stateKeeper = StateKeeperDispatcher(saved),
+            reviewPolicy = restoredPolicy,
+        )
+
+        assertIs<RootComponent.Child.Result>(restored.component.stack.value.active.instance)
+        assertIs<RootComponent.SheetChild.AppReview>(
+            restored.component.sheetSlot.value.child?.instance,
+        )
+        assertEquals(0, restoredPolicy.acquireCalls)
+        assertEquals(1, restored.reviewFactory.created.size)
     }
 
     @Test
@@ -395,6 +510,8 @@ class DefaultRootComponentTest {
         val gameFactory: RecordingGameFactory,
         val resultFactory: RecordingResultFactory,
         val settingsFactory: RecordingSettingsFactory,
+        val reviewFactory: RecordingReviewFactory,
+        val reviewPolicy: RecordingReviewPolicy,
     )
 
     // ── Fakes ────────────────────────────────────────────────────────────
@@ -538,9 +655,9 @@ class DefaultRootComponentTest {
         fun complete(
             finalState: GameState,
             canContinue: Boolean,
-            shouldRequestReview: Boolean = false,
+            reviewOpportunity: Boolean = false,
         ) {
-            onGameCompleted(finalState, canContinue, shouldRequestReview)
+            onGameCompleted(finalState, canContinue, reviewOpportunity)
         }
         fun failRevive() = onReviveFailed()
     }
@@ -569,7 +686,6 @@ class DefaultRootComponentTest {
             componentContext: ComponentContext,
             snapshot: BlockBlastResultSnapshot,
             canContinue: Boolean,
-            shouldRequestReview: Boolean,
             onContinueRequested: () -> Unit,
             onNewGameRequested: () -> Unit,
             onHomeRequested: () -> Unit,
@@ -577,7 +693,6 @@ class DefaultRootComponentTest {
             FakeResult(
                 snapshot = snapshot,
                 canContinue = canContinue,
-                shouldRequestReview = shouldRequestReview,
                 continueRequested = onContinueRequested,
                 newGameRequested = onNewGameRequested,
                 homeRequested = onHomeRequested,
@@ -587,17 +702,11 @@ class DefaultRootComponentTest {
     private class FakeResult(
         val snapshot: BlockBlastResultSnapshot,
         val canContinue: Boolean,
-        val shouldRequestReview: Boolean,
         val continueRequested: () -> Unit,
         val newGameRequested: () -> Unit,
         val homeRequested: () -> Unit,
     ) : GameResultComponent {
         var continueFailureCount = 0
-        override val reviewPrompt = MutableValue(
-            GameResultComponent.ReviewPromptSlot(
-                component = if (shouldRequestReview) FakeReviewPrompt() else null,
-            ),
-        )
         override val model = MutableValue(
             GameResultComponent.Model(
                 snapshot = snapshot,
@@ -618,16 +727,38 @@ class DefaultRootComponentTest {
             continueFailureCount += 1
         }
 
-        override fun onDismissReviewPrompt(): Boolean {
-            if (reviewPrompt.value.component == null) return false
-            reviewPrompt.value = GameResultComponent.ReviewPromptSlot(component = null)
-            return true
+    }
+
+    private class RecordingReviewFactory : AppReviewComponent.Factory {
+        val created = mutableListOf<FakeReview>()
+        val analyticsParams = mutableListOf<Map<String, Any>>()
+
+        override fun create(
+            componentContext: ComponentContext,
+            analyticsParams: Map<String, Any>,
+            onCloseRequested: () -> Unit,
+        ): AppReviewComponent {
+            this.analyticsParams += analyticsParams
+            return FakeReview(onCloseRequested).also(created::add)
         }
     }
 
-    private class FakeReviewPrompt : AppReviewComponent {
-        override fun onDontShowAgainClicked() = Unit
-        override fun onLeaveFeedbackClicked() = Unit
+    private class RecordingReviewPolicy(
+        private val allow: Boolean = true,
+    ) : AppReviewPolicy {
+        var acquireCalls = 0
+
+        override suspend fun tryAcquirePrompt(): Boolean {
+            acquireCalls += 1
+            return allow
+        }
+    }
+
+    private class FakeReview(
+        private val onCloseRequested: () -> Unit,
+    ) : AppReviewComponent {
+        override fun onDontShowAgainClicked() = onCloseRequested()
+        override fun onLeaveFeedbackClicked() = onCloseRequested()
     }
 
     private class RecordingAudio : AudioRepository {

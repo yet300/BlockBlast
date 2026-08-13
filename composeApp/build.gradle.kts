@@ -60,6 +60,7 @@ kotlin {
             api(projects.feature.root)
             implementation(projects.feature.home)
             implementation(projects.feature.settings)
+            implementation(projects.feature.review)
 
 
             implementation(libs.compose.runtime)

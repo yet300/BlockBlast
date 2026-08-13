@@ -13,6 +13,7 @@ kotlin {
             implementation(projects.game.blockblast)
             implementation(projects.feature.home)
             implementation(projects.feature.settings)
+            implementation(projects.feature.review)
 
             implementation(libs.bundles.decompose)
             implementation(libs.bundles.mvi)

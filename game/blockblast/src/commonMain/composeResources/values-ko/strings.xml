@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">믿을 수 없음!</string>
     <string name="feedback_combo">콤보</string>
     <string name="tutorial_grid_title">보드에 배치하기</string>
-    <string name="review_prompt_title">Logica가 마음에 드시나요?</string>
-    <string name="review_prompt_body">여러분의 리뷰는 더 많은 퍼즐 플레이어가 이 게임을 찾는 데 도움이 됩니다.</string>
-    <string name="review_prompt_leave_feedback">피드백 남기기</string>
-    <string name="review_prompt_dont_show">다시 표시 안 함</string>
 </resources>

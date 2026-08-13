@@ -19,8 +19,4 @@
     <string name="feedback_unbelievable">Inacreditável!</string>
     <string name="feedback_combo">Combo</string>
     <string name="tutorial_grid_title">Coloque no tabuleiro</string>
-    <string name="review_prompt_title">Gostando de Logica?</string>
-    <string name="review_prompt_body">Sua avaliação ajuda mais jogadores de quebra-cabeças a encontrar o jogo.</string>
-    <string name="review_prompt_leave_feedback">Deixar feedback</string>
-    <string name="review_prompt_dont_show">Não mostrar novamente</string>
 </resources>
