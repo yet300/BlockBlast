@@ -32,20 +32,6 @@ object AppConfig {
 
     // ── In-app review ──────────────────────────────────────────────────────
     /**
-     * Minimum score at which the OS-level in-app review prompt is requested
-     * on a new personal best. The store SDK additionally throttles requests,
-     * so crossing this threshold often will not spam the user.
-     */
-    const val REVIEW_MIN_SCORE: Int = 500
-
-    /**
-     * Additional score the user must beat their previous best by before the
-     * in-app review prompt is requested again. Combined with [REVIEW_MIN_SCORE]
-     * and [REVIEW_MAX_PROMPTS], this keeps the dialog from feeling pushy.
-     */
-    const val REVIEW_BEST_SCORE_DELTA: Long = 1000L
-
-    /**
      * Hard lifetime cap on how many times the in-app review prompt may be
      * triggered for a given user. The OS SDK already throttles further, but
      * this guarantees we never ask more than this many times even on devices
@@ -66,11 +52,4 @@ object AppConfig {
     const val GITHUB_SUPPORT_URL: String =
         "$GITHUB_URL#support-me"
 
-    // ── Drag & Drop ────────────────────────────────────────────────────────
-    /**
-     * Multiplier for drag speed. Values > 1.0 make the piece move faster than
-     * the finger relative to the pickup point. 1.15 is a good balance for
-     * reaching screen corners on large phones.
-     */
-    const val DRAG_SENSITIVITY: Float = 1.15f
 }

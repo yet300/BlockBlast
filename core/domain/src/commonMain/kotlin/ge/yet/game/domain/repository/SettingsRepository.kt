@@ -6,7 +6,7 @@ interface SettingsRepository {
     /** Background music gate. Independent of [sfxEnabled] since v1.5.0. */
     val musicEnabled: StateFlow<Boolean>
 
-    /** SFX + voice-line gate (piece placement, line clear, combo voice). */
+    /** Sound-effects and voice-line gate, independent of [musicEnabled]. */
     val sfxEnabled: StateFlow<Boolean>
 
     val vibrationEnabled: StateFlow<Boolean>

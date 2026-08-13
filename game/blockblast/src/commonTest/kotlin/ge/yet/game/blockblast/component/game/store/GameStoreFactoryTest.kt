@@ -1,6 +1,5 @@
 package ge.yet.game.blockblast.component.game.store
 
-import com.app.common.config.AppConfig
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
@@ -168,7 +167,7 @@ class GameStoreFactoryTest {
     @Test
     fun qualifying_terminal_move_marks_and_persists_review_opportunity_without_global_policy() = runTest {
         val qualifyingScore =
-            AppConfig.REVIEW_MIN_SCORE.toLong() + AppConfig.REVIEW_BEST_SCORE_DELTA
+            ReviewOpportunityConfig.MIN_SCORE + ReviewOpportunityConfig.BEST_SCORE_DELTA
         val saved = stateOneMoveFromGameOver().copy(
             score = qualifyingScore,
             bestScore = qualifyingScore,

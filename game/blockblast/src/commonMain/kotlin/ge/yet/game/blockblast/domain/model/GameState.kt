@@ -29,7 +29,7 @@ data class GameState(
     /**
      * Snapshot of [bestScore] at the start of the current round. Used at
      * game-over to detect a *new* personal best that beat the previous best
-     * by [REVIEW_BEST_SCORE_DELTA] points (review-prompt qualifier). Lives
+     * by the configured review-opportunity delta (review-prompt qualifier). Lives
      * on [GameState] rather than as a store-executor local so it survives
      * store recreation when the user navigates Home → Play.
      */

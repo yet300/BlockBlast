@@ -1,6 +1,5 @@
 package ge.yet.game.blockblast.component.game.store
 
-import com.app.common.config.AppConfig
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
@@ -333,7 +332,7 @@ internal class GameStoreFactory(
     private fun qualifiesForReview(state: GameState): Boolean {
         val beatBy = state.score - state.bestAtRoundStart
         return !state.reviewPromptFiredThisRound &&
-            state.score >= AppConfig.REVIEW_MIN_SCORE.toLong() &&
-            beatBy >= AppConfig.REVIEW_BEST_SCORE_DELTA
+            state.score >= ReviewOpportunityConfig.MIN_SCORE &&
+            beatBy >= ReviewOpportunityConfig.BEST_SCORE_DELTA
     }
 }

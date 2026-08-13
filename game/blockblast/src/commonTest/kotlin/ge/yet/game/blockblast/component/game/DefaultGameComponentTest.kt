@@ -1,12 +1,12 @@
 package ge.yet.game.blockblast.component.game
 
-import com.app.common.config.AppConfig
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.blockblast.component.game.store.GameStoreFactory
+import ge.yet.game.blockblast.component.game.store.ReviewOpportunityConfig
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.ScoreCalculator
 import ge.yet.game.blockblast.domain.engine.ShapeGenerator
@@ -212,7 +212,7 @@ class DefaultGameComponentTest {
     @Test
     fun qualifying_game_over_reports_game_review_opportunity_without_app_policy_side_effects() = runTest(testDispatcher) {
         val qualifyingScore =
-            AppConfig.REVIEW_MIN_SCORE.toLong() + AppConfig.REVIEW_BEST_SCORE_DELTA + 10L
+            ReviewOpportunityConfig.MIN_SCORE + ReviewOpportunityConfig.BEST_SCORE_DELTA + 10L
         val s = build(
             isNewGame = false,
             savedState = stateOneMoveFromGameOver(score = qualifyingScore).copy(

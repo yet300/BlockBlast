@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
-import com.app.common.config.AppConfig
 import ge.yet.game.blockblast.domain.model.Grid
 import ge.yet.game.blockblast.domain.model.Piece
 import ge.yet.game.blockblast.domain.model.Polyomino
@@ -97,7 +96,7 @@ class DragDropState {
         // to the pickup point. This allows reaching screen corners with less
         // physical thumb movement.
         val delta = position - dragStartFingerPos
-        dragPosition = dragStartFingerPos + delta * AppConfig.DRAG_SENSITIVITY
+        dragPosition = dragStartFingerPos + delta * DRAG_SENSITIVITY
 
         val piece = draggedPiece ?: return
 
@@ -163,6 +162,8 @@ class DragDropState {
         presentation = DragPresentation.Idle
     }
 }
+
+private const val DRAG_SENSITIVITY = 1.15f
 
 @Composable
 fun rememberDragDropState(): DragDropState = remember { DragDropState() }

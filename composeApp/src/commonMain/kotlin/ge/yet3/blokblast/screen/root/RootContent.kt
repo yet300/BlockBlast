@@ -20,6 +20,7 @@ fun RootContent(
     component: RootComponent
 ) {
     val childStack by component.stack.subscribeAsState()
+    val sheetSlot by component.sheetSlot.subscribeAsState()
 
     Children(
         modifier = modifier,
@@ -30,7 +31,10 @@ fun RootContent(
         ),
     ) { child ->
         when (val instance = child.instance) {
-            is RootComponent.Child.Game -> BlockBlastGameContent(component = instance.component)
+            is RootComponent.Child.Game -> BlockBlastGameContent(
+                component = instance.component,
+                isAppOverlayVisible = sheetSlot.child != null,
+            )
             is RootComponent.Child.Home -> HomeContent(component = instance.component)
             is RootComponent.Child.Result -> GameResultContent(component = instance.component)
         }

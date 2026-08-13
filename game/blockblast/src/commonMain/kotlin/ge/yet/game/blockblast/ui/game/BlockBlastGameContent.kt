@@ -86,7 +86,10 @@ private val DRAG_GHOST_GAP = 2.dp
 private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
-fun BlockBlastGameContent(component: GameComponent) {
+fun BlockBlastGameContent(
+    component: GameComponent,
+    isAppOverlayVisible: Boolean,
+) {
     val uiModel by component.model.subscribeAsState()
     val model = uiModel.game
     val traySelection by component.pieceTray.selection.subscribeAsState()
@@ -386,7 +389,10 @@ fun BlockBlastGameContent(component: GameComponent) {
                 )
             }
 
-            val hideBanner =  model.isGameOver
+            val showBanner = shouldShowBanner(
+                isGameOver = model.isGameOver,
+                isAppOverlayVisible = isAppOverlayVisible,
+            )
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -395,7 +401,7 @@ fun BlockBlastGameContent(component: GameComponent) {
                     .padding(bottom = 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                if (!hideBanner) {
+                if (showBanner) {
                     AdBanner()
                 }
             }
