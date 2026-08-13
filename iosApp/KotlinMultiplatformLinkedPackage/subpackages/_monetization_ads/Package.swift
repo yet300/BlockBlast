@@ -1,15 +1,15 @@
 // swift-tools-version: 5.9
 import PackageDescription
 let package = Package(
-  name: "_monetization_basic_ads",
+  name: "_monetization_ads",
   platforms: [
     .iOS("15.0")
   ],
   products: [
     .library(
-      name: "_monetization_basic_ads",
+      name: "_monetization_ads",
       type: .none,
-      targets: ["_monetization_basic_ads"]
+      targets: ["_monetization_ads"]
     )
   ],
   dependencies: [
@@ -24,7 +24,7 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "_monetization_basic_ads",
+      name: "_monetization_ads",
       dependencies: [
         .product(
           name: "GoogleMobileAds",
