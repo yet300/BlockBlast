@@ -57,3 +57,11 @@ include(":feature:review")
 include(":feature:home")
 
 include(":game")
+
+include(":miniapp")
+include(":miniapp:api")
+include(":miniapp:compose")
+include(":miniapp:metro")
+include(":miniapp:testkit")
+include(":miniapp:bundle")
+include(":miniapp:integration-test")

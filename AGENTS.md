@@ -49,6 +49,13 @@ BlockBlast/
 ├── monetization/
 │   ├── core/                   SDK-free entitlement and advertising policy
 │   └── ads/                    AdMob, UMP, ATT bridge and Compose ad adapter
+├── miniapp/
+│   ├── api/                    Stable, Compose-free MiniApp domain contracts
+│   ├── compose/                Compose-facing plugin, session and manifest contracts
+│   ├── metro/                  Framework scaffold; Metro registry work is future work
+│   ├── testkit/                Framework scaffold; plugin contract fixtures are future work
+│   ├── bundle/                 Framework scaffold; shipping/bundle work is future work
+│   └── integration-test/       Framework scaffold; end-to-end integration work is future work
 ├── build-logic/
 │   ├── convention/             Local Kotlin Multiplatform Gradle convention plugin
 │   └── miniapp-settings/       Isolated settings-phase MiniApp discovery Gradle plugin
@@ -75,6 +82,9 @@ BlockBlast/
 | `:game:blockblast` | Block Blast rules, models, save/best-score/tutorial persistence, resources, audio catalog, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
+| `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
+| `:miniapp:compose` | Compose-facing MiniApp plugin, session, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
+| `:miniapp:metro`, `:miniapp:testkit`, `:miniapp:bundle`, `:miniapp:integration-test` | Statically included framework scaffolds; responsibilities will be filled by subsequent MiniApp tasks | no framework implementation yet |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 | `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
@@ -98,6 +108,14 @@ Keep monetization policy in `:monetization:core`; it must not depend on Compose,
 Firebase, advertising SDKs, or either application shell. Native AdMob and UMP
 dependencies belong in `:monetization:ads`. Product configuration, such
 as ad unit IDs and the current entitlement, enters through `:composeApp`.
+
+MiniApp dependencies also flow inward. `:miniapp:api` is Compose-free and owns
+only stable portable contracts. `:miniapp:compose` depends on that API and owns
+the UI-facing plugin/session contracts, but does not implement a registry or
+host composition. Concrete games may later implement the plugin contract; they
+must not depend on a MiniApp host, `:feature:root`, `:composeApp`, or a native
+application module. Host/root migration and the Metro registry remain separate
+follow-up work.
 
 ## Source Placement and Architecture
 
@@ -168,6 +186,12 @@ the narrowest relevant task first, then broaden verification as appropriate.
 
 # Verify settings-phase MiniApp discovery and its typed shipping model
 ./gradlew -p build-logic :miniapp-settings:test --tests '*MiniAppSettingsPluginTest'
+
+# Verify the stable MiniApp API and Compose-facing contracts
+./gradlew :miniapp:api:allTests
+./gradlew :miniapp:compose:allTests
+./gradlew :miniapp:compose:compileAndroidMain
+./gradlew :miniapp:compose:compileKotlinIosSimulatorArm64
 
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain
