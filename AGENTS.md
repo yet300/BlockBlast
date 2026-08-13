@@ -67,7 +67,7 @@ BlockBlast/
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
-| `:feature:review` | Reusable app-review policy, analytics and component | `:core:domain`, `:core:common` |
+| `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
 | `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
 | `:game:blockblast` | Block Blast rules, models, save/best-score/tutorial persistence, resources, audio catalog, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
@@ -88,7 +88,7 @@ application module. Block Blast's internal engine and implementation types stay
 the application composition are public.
 
 Games may emit game-specific review opportunities, but `:feature:review` owns
-the app-wide prompt limit, suppression, analytics and store-review request.
+the app-wide prompt limit, persistence, suppression, analytics and store-review request.
 `:feature:root` decides when to open the reusable review sheet.
 
 Keep monetization policy in `:monetization:core`; it must not depend on Compose,

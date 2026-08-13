@@ -167,13 +167,10 @@ class DefaultAudioRepositoryTest {
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
-        override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
         override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) {}
         override suspend fun setDarkTheme(enabled: Boolean) {}
         override suspend fun setAdsEnabled(enabled: Boolean) {}
-        override suspend fun incrementReviewPromptCount() {}
-        override suspend fun suppressReviewPrompts(max: Int) {}
     }
 }

@@ -326,26 +326,18 @@ class DefaultGameResultComponentTest {
     }
 
     private class FakeSettings(adsEnabled: Boolean) : SettingsRepository {
-        private val reviewFlow = MutableStateFlow(0)
         private val adsFlow = MutableStateFlow(adsEnabled)
         override val musicEnabled = MutableStateFlow(true).asStateFlow()
         override val sfxEnabled = MutableStateFlow(true).asStateFlow()
         override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val adsEnabled = adsFlow.asStateFlow()
-        override val reviewPromptCount = reviewFlow.asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) = Unit
         override suspend fun setSfxEnabled(enabled: Boolean) = Unit
         override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
         override suspend fun setDarkTheme(enabled: Boolean) = Unit
         override suspend fun setAdsEnabled(enabled: Boolean) {
             adsFlow.value = enabled
-        }
-        override suspend fun incrementReviewPromptCount() {
-            reviewFlow.value += 1
-        }
-        override suspend fun suppressReviewPrompts(max: Int) {
-            reviewFlow.value = maxOf(reviewFlow.value, max)
         }
     }
 

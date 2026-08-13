@@ -11,6 +11,12 @@ kotlin {
             implementation(projects.core.common)
 
             implementation(libs.bundles.decompose)
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.coroutines)
+        }
+
+        commonTest.dependencies {
+            implementation(libs.multiplatform.settings.test)
         }
     }
 }

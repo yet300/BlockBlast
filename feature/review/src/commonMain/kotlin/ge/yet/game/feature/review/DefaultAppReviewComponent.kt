@@ -5,15 +5,15 @@ import com.app.common.config.AppConfig
 import com.arkivanov.decompose.ComponentContext
 import dev.zacsweers.metro.Inject
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.domain.repository.StoreReviewRepository
+import ge.yet.game.feature.review.domain.repository.ReviewPromptRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal class DefaultAppReviewComponent(
     componentContext: ComponentContext,
-    private val settings: SettingsRepository,
+    private val reviewPromptRepository: ReviewPromptRepository,
     private val storeReview: StoreReviewRepository,
     private val analytics: AnalyticRepository,
     private val appScope: CoroutineScope,
@@ -33,7 +33,7 @@ internal class DefaultAppReviewComponent(
         if (!claimAction()) return
         logReview("review_prompt_suppressed")
         launchReviewSideEffect("review_prompt_suppress_failed") {
-            settings.suppressReviewPrompts(AppConfig.REVIEW_MAX_PROMPTS)
+            reviewPromptRepository.suppressPrompts(AppConfig.REVIEW_MAX_PROMPTS)
         }
         onCloseRequested()
     }
@@ -75,7 +75,7 @@ internal class DefaultAppReviewComponent(
 
 @Inject
 internal class DefaultAppReviewComponentFactory(
-    private val settings: SettingsRepository,
+    private val reviewPromptRepository: ReviewPromptRepository,
     private val storeReview: StoreReviewRepository,
     private val analytics: AnalyticRepository,
     private val appScope: CoroutineScope,
@@ -88,7 +88,7 @@ internal class DefaultAppReviewComponentFactory(
     ): AppReviewComponent =
         DefaultAppReviewComponent(
             componentContext = componentContext,
-            settings = settings,
+            reviewPromptRepository = reviewPromptRepository,
             storeReview = storeReview,
             analytics = analytics,
             appScope = appScope,

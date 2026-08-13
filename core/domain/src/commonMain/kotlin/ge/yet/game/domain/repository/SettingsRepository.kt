@@ -13,22 +13,9 @@ interface SettingsRepository {
     val darkTheme: StateFlow<Boolean>
     val adsEnabled: StateFlow<Boolean>
 
-    /** How many times the in-app review prompt has been shown to this user. */
-    val reviewPromptCount: StateFlow<Int>
-
     suspend fun setMusicEnabled(enabled: Boolean)
     suspend fun setSfxEnabled(enabled: Boolean)
     suspend fun setVibrationEnabled(enabled: Boolean)
     suspend fun setDarkTheme(enabled: Boolean)
     suspend fun setAdsEnabled(enabled: Boolean)
-
-    /** Increment the lifetime review-prompt counter by one. */
-    suspend fun incrementReviewPromptCount()
-
-    /**
-     * Cap the review-prompt counter at [max] so no further prompts ever fire.
-     * Idempotent: no-op when the counter is already at or above [max].
-     */
-    suspend fun suppressReviewPrompts(max: Int)
-
 }

@@ -782,13 +782,10 @@ class DefaultRootComponentTest {
         override val vibrationEnabled = vibrationFlow.asStateFlow()
         override val darkTheme = darkFlow.asStateFlow()
         override val adsEnabled = adsFlow.asStateFlow()
-        override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) { musicFlow.value = enabled }
         override suspend fun setSfxEnabled(enabled: Boolean) { sfxFlow.value = enabled }
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
         override suspend fun setDarkTheme(enabled: Boolean) { darkFlow.value = enabled }
         override suspend fun setAdsEnabled(enabled: Boolean) { adsFlow.value = enabled }
-        override suspend fun incrementReviewPromptCount() {}
-        override suspend fun suppressReviewPrompts(max: Int) {}
     }
 }

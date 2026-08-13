@@ -5,8 +5,8 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.ReviewCode
-import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.domain.repository.StoreReviewRepository
+import ge.yet.game.feature.review.domain.repository.ReviewPromptRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -72,7 +72,7 @@ class DefaultAppReviewComponentTest {
         setup.component.onDontShowAgainClicked()
         runCurrent()
 
-        assertEquals(2, setup.settings.reviewPromptCount.value)
+        assertEquals(2, setup.reviewPromptRepository.promptCount.value)
         assertEquals(1, setup.closeRequestCount)
         assertEquals(
             listOf("review_prompt_shown", "review_prompt_suppressed"),
@@ -81,13 +81,13 @@ class DefaultAppReviewComponentTest {
     }
 
     private fun build(): Setup {
-        val settings = FakeSettings()
+        val reviewPromptRepository = FakeReviewPromptRepository()
         val storeReview = RecordingStoreReview()
         val analytics = RecordingAnalytics()
         var closeRequestCount = 0
         val component = DefaultAppReviewComponent(
             componentContext = DefaultComponentContext(LifecycleRegistry()),
-            settings = settings,
+            reviewPromptRepository = reviewPromptRepository,
             storeReview = storeReview,
             analytics = analytics,
             appScope = CoroutineScope(dispatcher),
@@ -102,7 +102,7 @@ class DefaultAppReviewComponentTest {
         )
         return Setup(
             component = component,
-            settings = settings,
+            reviewPromptRepository = reviewPromptRepository,
             storeReview = storeReview,
             analytics = analytics,
             closeRequestCountProvider = { closeRequestCount },
@@ -111,7 +111,7 @@ class DefaultAppReviewComponentTest {
 
     private data class Setup(
         val component: DefaultAppReviewComponent,
-        val settings: FakeSettings,
+        val reviewPromptRepository: FakeReviewPromptRepository,
         val storeReview: RecordingStoreReview,
         val analytics: RecordingAnalytics,
         val closeRequestCountProvider: () -> Int,
@@ -119,24 +119,16 @@ class DefaultAppReviewComponentTest {
         val closeRequestCount: Int get() = closeRequestCountProvider()
     }
 
-    private class FakeSettings : SettingsRepository {
-        private val reviewCount = MutableStateFlow(0)
-        override val musicEnabled = MutableStateFlow(true).asStateFlow()
-        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
-        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
-        override val darkTheme = MutableStateFlow(false).asStateFlow()
-        override val adsEnabled = MutableStateFlow(true).asStateFlow()
-        override val reviewPromptCount = reviewCount.asStateFlow()
-        override suspend fun setMusicEnabled(enabled: Boolean) = Unit
-        override suspend fun setSfxEnabled(enabled: Boolean) = Unit
-        override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
-        override suspend fun setDarkTheme(enabled: Boolean) = Unit
-        override suspend fun setAdsEnabled(enabled: Boolean) = Unit
-        override suspend fun incrementReviewPromptCount() {
-            reviewCount.value += 1
+    private class FakeReviewPromptRepository : ReviewPromptRepository {
+        private val promptCountFlow = MutableStateFlow(0)
+        override val promptCount = promptCountFlow.asStateFlow()
+
+        override suspend fun incrementPromptCount() {
+            promptCountFlow.value += 1
         }
-        override suspend fun suppressReviewPrompts(max: Int) {
-            reviewCount.value = maxOf(reviewCount.value, max)
+
+        override suspend fun suppressPrompts(max: Int) {
+            promptCountFlow.value = maxOf(promptCountFlow.value, max)
         }
     }
 

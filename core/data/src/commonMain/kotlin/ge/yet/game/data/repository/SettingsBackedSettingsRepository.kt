@@ -4,15 +4,12 @@ import com.app.common.AppDispatchers
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.coroutines.getBooleanStateFlow
-import com.russhwolf.settings.coroutines.getIntStateFlow
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -23,10 +20,8 @@ import kotlinx.coroutines.withContext
  * mirror required, and external writes (e.g. from a platform Settings screen)
  * propagate to observers too.
  *
- * All writes are funnelled through [dispatchers.io] + [mutex]: the IO dispatcher
- * keeps disk-backed puts off Main, and the mutex serialises the read-modify-write
- * pairs in [incrementReviewPromptCount] / [suppressReviewPrompts] so concurrent
- * callers never lose an update.
+ * All writes are funnelled through [dispatchers.io] so disk-backed puts stay
+ * off Main.
  *
  * `internal` — only the [SettingsRepository] interface is exposed through DI.
  */
@@ -38,8 +33,6 @@ internal class SettingsBackedSettingsRepository(
     private val scope: CoroutineScope,
     private val dispatchers: AppDispatchers,
 ) : SettingsRepository {
-
-    private val writeMutex = Mutex()
 
     init {
         // 1.5.0 migration: prior versions had a single KEY_SOUND_LEGACY flag
@@ -63,9 +56,6 @@ internal class SettingsBackedSettingsRepository(
     override val adsEnabled: StateFlow<Boolean> =
         settings.getBooleanStateFlow(scope, KEY_ADS_ENABLED, defaultValue = true)
 
-    override val reviewPromptCount: StateFlow<Int> =
-        settings.getIntStateFlow(scope, KEY_REVIEW_PROMPT_COUNT, defaultValue = 0)
-
     override suspend fun setMusicEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_MUSIC, enabled)
     }
@@ -84,21 +74,6 @@ internal class SettingsBackedSettingsRepository(
 
     override suspend fun setAdsEnabled(enabled: Boolean) = withContext(dispatchers.io) {
         settings.putBoolean(KEY_ADS_ENABLED, enabled)
-    }
-
-    override suspend fun incrementReviewPromptCount() = withContext(dispatchers.io) {
-        writeMutex.withLock {
-            val next = settings.getInt(KEY_REVIEW_PROMPT_COUNT, 0) + 1
-            settings.putInt(KEY_REVIEW_PROMPT_COUNT, next)
-        }
-    }
-
-    override suspend fun suppressReviewPrompts(max: Int) = withContext(dispatchers.io) {
-        writeMutex.withLock {
-            if (settings.getInt(KEY_REVIEW_PROMPT_COUNT, 0) < max) {
-                settings.putInt(KEY_REVIEW_PROMPT_COUNT, max)
-            }
-        }
     }
 
     /**
@@ -121,6 +96,5 @@ internal class SettingsBackedSettingsRepository(
         const val KEY_VIBRATION = "blockblast.vibration"
         const val KEY_DARK = "blockblast.dark_theme"
         const val KEY_ADS_ENABLED = "blockblast.ads_enabled"
-        const val KEY_REVIEW_PROMPT_COUNT = "blockblast.review_prompt_count"
     }
 }

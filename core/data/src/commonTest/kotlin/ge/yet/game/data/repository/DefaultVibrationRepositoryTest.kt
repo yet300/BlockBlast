@@ -69,13 +69,10 @@ class DefaultVibrationRepositoryTest {
         override val vibrationEnabled: StateFlow<Boolean> = vibrationFlow.asStateFlow()
         override val darkTheme = MutableStateFlow(false).asStateFlow()
         override val adsEnabled = MutableStateFlow(true).asStateFlow()
-        override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
         override suspend fun setMusicEnabled(enabled: Boolean) {}
         override suspend fun setSfxEnabled(enabled: Boolean) {}
         override suspend fun setVibrationEnabled(enabled: Boolean) { vibrationFlow.value = enabled }
         override suspend fun setDarkTheme(enabled: Boolean) {}
         override suspend fun setAdsEnabled(enabled: Boolean) {}
-        override suspend fun incrementReviewPromptCount() {}
-        override suspend fun suppressReviewPrompts(max: Int) {}
     }
 }
