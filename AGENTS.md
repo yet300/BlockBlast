@@ -52,7 +52,7 @@ BlockBlast/
 ├── miniapp/
 │   ├── api/                    Stable, Compose-free MiniApp domain contracts
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
-│   ├── metro/                  Framework scaffold; Metro registry work is future work
+│   ├── metro/                  Immutable Metro registry and session-scope foundation
 │   ├── testkit/                Framework scaffold; plugin contract fixtures are future work
 │   ├── bundle/                 Framework scaffold; shipping/bundle work is future work
 │   └── integration-test/       Framework scaffold; end-to-end integration work is future work
@@ -84,7 +84,8 @@ BlockBlast/
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
-| `:miniapp:metro`, `:miniapp:testkit`, `:miniapp:bundle`, `:miniapp:integration-test` | Statically included framework scaffolds; responsibilities will be filled by subsequent MiniApp tasks | no framework implementation yet |
+| `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
+| `:miniapp:testkit`, `:miniapp:bundle`, `:miniapp:integration-test` | Statically included framework scaffolds; responsibilities will be filled by subsequent MiniApp tasks | no framework implementation yet |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 | `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
@@ -111,11 +112,12 @@ as ad unit IDs and the current entitlement, enters through `:composeApp`.
 
 MiniApp dependencies also flow inward. `:miniapp:api` is Compose-free and owns
 only stable portable contracts. `:miniapp:compose` depends on that API and owns
-the UI-facing plugin/session contracts, but does not implement a registry or
-host composition. Concrete games may later implement the plugin contract; they
-must not depend on a MiniApp host, `:feature:root`, `:composeApp`, or a native
-application module. Host/root migration and the Metro registry remain separate
-follow-up work.
+the UI-facing plugin/session contracts. `:miniapp:metro` owns the immutable
+app-scoped registry and its empty-capable compile-time plugin aggregation; its
+session-scope marker is a child lifecycle, not a second game-specific scope.
+Concrete games may later implement the plugin contract; they must not depend on
+a MiniApp host, `:feature:root`, `:composeApp`, or a native application module.
+Host/root migration remains separate follow-up work.
 
 ## Source Placement and Architecture
 
@@ -192,6 +194,9 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :miniapp:compose:allTests
 ./gradlew :miniapp:compose:compileAndroidMain
 ./gradlew :miniapp:compose:compileKotlinIosSimulatorArm64
+./gradlew :miniapp:metro:allTests
+./gradlew :miniapp:metro:compileAndroidMain
+./gradlew :miniapp:metro:compileKotlinIosSimulatorArm64
 
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain
