@@ -296,9 +296,14 @@ internal class DefaultRootComponent(
                 if (activeResult?.gameInstanceId != gameInstanceId) return@launch
                 if (sheetSlot.value.child != null) return@launch
                 if (!reviewPolicy.tryAcquirePrompt()) return@launch
-                if (sheetSlot.value.child != null) return@launch
                 val stillActiveResult = stack.value.active.configuration as? Config.Result
-                if (stillActiveResult?.gameInstanceId != gameInstanceId) return@launch
+                if (
+                    sheetSlot.value.child != null ||
+                    stillActiveResult?.gameInstanceId != gameInstanceId
+                ) {
+                    reviewPolicy.releasePrompt()
+                    return@launch
+                }
                 sheetNavigation.activate(
                     SheetConfig.AppReview(
                         source = "block_blast_result",

@@ -25,9 +25,9 @@ import ge.yet.game.blockblast.domain.model.Piece
 import ge.yet.game.blockblast.domain.model.Polyomino
 import ge.yet.game.blockblast.domain.model.Position
 import ge.yet.game.domain.repository.AudioRepository
-import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -282,6 +282,29 @@ class DefaultRootComponentTest {
 
         assertIs<RootComponent.Child.Result>(setup.component.stack.value.active.instance)
         assertEquals(1, policy.acquireCalls)
+        assertNull(setup.component.sheetSlot.value.child)
+        assertTrue(setup.reviewFactory.created.isEmpty())
+    }
+
+    @Test
+    fun leaving_result_while_policy_is_pending_releases_prompt_reservation() = runTest {
+        val acquisitionGate = CompletableDeferred<Unit>()
+        val policy = RecordingReviewPolicy(acquisitionGate = acquisitionGate)
+        val setup = build(reviewPolicy = policy)
+        setup.homeFactory.created.first().onNewGameClicked(true)
+        setup.gameFactory.created.single().complete(
+            resultState(),
+            canContinue = true,
+            reviewOpportunity = true,
+        )
+        assertEquals(1, policy.acquireCalls)
+
+        setup.component.onBackClicked()
+        acquisitionGate.complete(Unit)
+        runCurrent()
+
+        assertIs<RootComponent.Child.Home>(setup.component.stack.value.active.instance)
+        assertEquals(1, policy.releaseCalls)
         assertNull(setup.component.sheetSlot.value.child)
         assertTrue(setup.reviewFactory.created.isEmpty())
     }
@@ -664,18 +687,14 @@ class DefaultRootComponentTest {
 
     private class RecordingGameSaveRepository(
         initial: GameState? = null,
-    ) : GameSaveRepository {
+    ) {
         var saved: GameState? = initial
             private set
         var saveCount: Int = 0
             private set
-        override suspend fun save(state: GameState) {
+        suspend fun save(state: GameState) {
             saved = state
             saveCount += 1
-        }
-        override suspend fun load(): GameState? = saved
-        override suspend fun clear() {
-            saved = null
         }
     }
 
@@ -745,12 +764,19 @@ class DefaultRootComponentTest {
 
     private class RecordingReviewPolicy(
         private val allow: Boolean = true,
+        private val acquisitionGate: CompletableDeferred<Unit>? = null,
     ) : AppReviewPolicy {
         var acquireCalls = 0
+        var releaseCalls = 0
 
         override suspend fun tryAcquirePrompt(): Boolean {
             acquireCalls += 1
+            acquisitionGate?.await()
             return allow
+        }
+
+        override suspend fun releasePrompt() {
+            releaseCalls += 1
         }
     }
 

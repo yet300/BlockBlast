@@ -127,6 +127,10 @@ class DefaultAppReviewComponentTest {
             promptCountFlow.value += 1
         }
 
+        override suspend fun decrementPromptCount() {
+            promptCountFlow.value = (promptCountFlow.value - 1).coerceAtLeast(0)
+        }
+
         override suspend fun suppressPrompts(max: Int) {
             promptCountFlow.value = maxOf(promptCountFlow.value, max)
         }

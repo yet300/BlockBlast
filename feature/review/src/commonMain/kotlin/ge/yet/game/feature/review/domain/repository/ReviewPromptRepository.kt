@@ -7,5 +7,7 @@ internal interface ReviewPromptRepository {
 
     suspend fun incrementPromptCount()
 
+    suspend fun decrementPromptCount()
+
     suspend fun suppressPrompts(max: Int)
 }

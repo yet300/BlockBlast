@@ -24,6 +24,7 @@ kotlin {
             implementation(projects.monetization.ads)
 
             implementation(libs.compose.components.resources)
+            implementation(libs.confettikit)
 
             implementation(libs.bundles.decompose)
             implementation(libs.decompose.compose)

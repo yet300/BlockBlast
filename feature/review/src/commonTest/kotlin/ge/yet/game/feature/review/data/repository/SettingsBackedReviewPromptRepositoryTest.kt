@@ -68,6 +68,16 @@ class SettingsBackedReviewPromptRepositoryTest {
     }
 
     @Test
+    fun decrement_returns_a_reserved_prompt_without_going_below_zero() = runTest {
+        repository.incrementPromptCount()
+
+        repository.decrementPromptCount()
+        repository.decrementPromptCount()
+
+        assertEquals(0, repository.promptCount.value)
+    }
+
+    @Test
     fun concurrent_increment_and_suppress_never_finish_below_limit() = runTest {
         val increments = List(20) {
             async(Dispatchers.Unconfined) { repository.incrementPromptCount() }

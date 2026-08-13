@@ -22,7 +22,6 @@ class ComposeMultiplatformPlugin : Plugin<Project> {
                         implementation(libs.findLibrary("compose-material3").get())
                         implementation(libs.findLibrary("compose-ui").get())
                         implementation(libs.findLibrary("compose-uiToolingPreview").get())
-                        implementation(libs.findLibrary("confettikit").get())
                     }
                 }
             }

@@ -36,6 +36,13 @@ internal class SettingsBackedReviewPromptRepository(
         }
     }
 
+    override suspend fun decrementPromptCount() = withContext(dispatchers.io) {
+        writeMutex.withLock {
+            val next = (settings.getInt(KEY_PROMPT_COUNT, 0) - 1).coerceAtLeast(0)
+            settings.putInt(KEY_PROMPT_COUNT, next)
+        }
+    }
+
     override suspend fun suppressPrompts(max: Int) = withContext(dispatchers.io) {
         writeMutex.withLock {
             if (settings.getInt(KEY_PROMPT_COUNT, 0) < max) {
