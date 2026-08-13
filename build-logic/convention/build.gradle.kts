@@ -8,6 +8,10 @@ gradlePlugin {
             id = "com.plugins.kotlinMultiplatformPlugin"
             implementationClass = "com.yet.plugins.KotlinMultiplatformPlugin"
         }
+        register("composeMultiplatform") {
+            id = "com.plugins.composeMultiplatform"
+            implementationClass = "com.yet.plugins.ComposeMultiplatformPlugin"
+        }
     }
 }
 

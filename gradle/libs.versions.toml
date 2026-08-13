@@ -174,3 +174,4 @@ crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlu
 google-services = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }
 
 local-kotlin-multiplatform = { id = "com.plugins.kotlinMultiplatformPlugin", version = "unspecified" }
+local-compose-multiplatform = { id = "com.plugins.composeMultiplatform", version = "unspecified" }

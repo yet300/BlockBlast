@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.local.kotlin.multiplatform)
-    alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.local.compose.multiplatform)
     alias(libs.plugins.metro)
 }
 
@@ -24,13 +23,7 @@ kotlin {
             implementation(projects.core.uikit)
             implementation(projects.monetization.ads)
 
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.confettikit)
 
             implementation(libs.bundles.decompose)
             implementation(libs.decompose.compose)
