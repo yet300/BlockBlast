@@ -17,7 +17,10 @@ pluginManagement {
 }
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    id("logica.miniapp.settings")
 }
+
+miniApps { }
 
 dependencyResolutionManagement {
     repositories {
@@ -54,4 +57,3 @@ include(":feature:review")
 include(":feature:home")
 
 include(":game")
-include(":game:blockblast")

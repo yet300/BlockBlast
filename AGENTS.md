@@ -49,7 +49,9 @@ BlockBlast/
 ├── monetization/
 │   ├── core/                   SDK-free entitlement and advertising policy
 │   └── ads/                    AdMob, UMP, ATT bridge and Compose ad adapter
-├── build-logic/convention/     Local Kotlin Multiplatform Gradle convention plugin
+├── build-logic/
+│   ├── convention/             Local Kotlin Multiplatform Gradle convention plugin
+│   └── miniapp-settings/       Isolated settings-phase MiniApp discovery Gradle plugin
 ├── gradle/libs.versions.toml   Central versions, libraries, bundles and plugins
 ├── fastlane/                   Store metadata and release automation
 └── .agents/skills/             Repository-local guidance for agents
@@ -74,6 +76,7 @@ BlockBlast/
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
+| `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
 Keep dependencies flowing inward. In particular, core modules must not depend on
 features or UI, and feature modules must not depend on `:composeApp` or either
@@ -133,6 +136,11 @@ structural changes.
 - Declare project dependencies in the consuming module's `build.gradle.kts`.
 - Put shared KMP configuration in `build-logic/convention`; keep one-off module
   configuration local.
+- Keep settings-phase MiniApp discovery in the isolated
+  `build-logic/miniapp-settings` plugin artifact so applying it in root settings
+  does not place project convention plugin descriptors on the build classpath.
+  Its public shipping-model types are the compileOnly contract for later
+  build-logic consumers.
 - The convention plugin configures JDK 17, Android and iOS ARM64/simulator
   targets for its KMP library modules. Check a module's build file before
   assuming an additional target exists.
@@ -157,6 +165,9 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :feature:review:allTests
 ./gradlew :feature:root:allTests
 ./gradlew :monetization:core:allTests
+
+# Verify settings-phase MiniApp discovery and its typed shipping model
+./gradlew -p build-logic :miniapp-settings:test --tests '*MiniAppSettingsPluginTest'
 
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain
