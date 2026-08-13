@@ -1,20 +1,10 @@
 package ge.yet.game.feature.home.store
 
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import ge.yet.game.blockblast.domain.model.GameState
-import ge.yet.game.blockblast.domain.model.Grid
-import ge.yet.game.blockblast.domain.model.Piece
-import ge.yet.game.blockblast.domain.model.Polyomino
-import ge.yet.game.blockblast.domain.model.Position
+import ge.yet.game.domain.api.GameSaveApi
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.blockblast.domain.repository.GameSaveRepository
-import ge.yet.game.domain.repository.SettingsRepository
-import ge.yet.game.feature.home.store.HomeStore
-import ge.yet.game.feature.home.store.HomeStoreFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -31,124 +21,81 @@ import kotlin.test.assertTrue
 class HomeStoreFactoryTest {
 
     @BeforeTest
-    fun setUp() { Dispatchers.setMain(UnconfinedTestDispatcher()) }
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
 
     @AfterTest
-    fun tearDown() { Dispatchers.resetMain() }
-
-    private fun factory(
-        saved: GameState? = null,
-        settingsBest: Long = 0L,
-        analytics: RecordingAnalytics = RecordingAnalytics(),
-    ): Pair<HomeStoreFactory, RecordingAnalytics> {
-        val f = HomeStoreFactory(
-            storeFactory = DefaultStoreFactory(),
-            saveRepository = StubSaveRepo(saved),
-            settings = StubSettings(bestScore = settingsBest),
-            analytics = analytics,
-        )
-        return f to analytics
-    }
-
-    private fun playableState(best: Long = 0L): GameState = GameState(
-        grid = Grid().withCell(0, 0, 1),
-        bestScore = best,
-        currentPieces = listOf(
-            Piece(1L, Polyomino("h2", listOf(Position(0, 0), Position(1, 0))), 1),
-        ),
-        isGameOver = false,
-    )
-
-    @Test
-    fun no_save_yields_hasSavedGame_false_and_uses_settings_best() = runTest {
-        val (f, _) = factory(saved = null, settingsBest = 750L)
-        val store = f.create()
-        assertEquals(750L, store.state.bestScore)
-        assertFalse(store.state.hasSavedGame)
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
-    fun playable_save_yields_hasSavedGame_true() = runTest {
-        val (f, _) = factory(saved = playableState(best = 1000L), settingsBest = 500L)
-        val store = f.create()
+    fun initial_load_reads_saved_game_status_from_game_api() = runTest {
+        val (factory, _) = factory(hasSavedGame = true)
+
+        val store = factory.create()
+
         assertTrue(store.state.hasSavedGame)
-        assertEquals(1000L, store.state.bestScore) // max
     }
 
     @Test
-    fun bestScore_is_max_of_settings_and_save() = runTest {
-        val (f, _) = factory(saved = playableState(best = 300L), settingsBest = 800L)
-        val store = f.create()
-        assertEquals(800L, store.state.bestScore)
-    }
+    fun initial_load_reports_missing_save() = runTest {
+        val (factory, _) = factory(hasSavedGame = false)
 
-    @Test
-    fun game_over_save_yields_hasSavedGame_false() = runTest {
-        val (f, _) = factory(saved = playableState().copy(isGameOver = true))
-        val store = f.create()
+        val store = factory.create()
+
         assertFalse(store.state.hasSavedGame)
     }
 
     @Test
-    fun empty_grid_save_yields_hasSavedGame_false() = runTest {
-        val (f, _) = factory(
-            saved = playableState().copy(grid = Grid()),
-        )
-        val store = f.create()
-        assertFalse(store.state.hasSavedGame)
-    }
+    fun refresh_re_reads_status_and_logs_home_shown() = runTest {
+        val gameSaveApi = MutableGameSaveApi(hasSavedGame = false)
+        val (factory, analytics) = factory(gameSaveApi = gameSaveApi)
+        val store = factory.create()
+        gameSaveApi.hasSavedGame = true
 
-    @Test
-    fun refresh_re_reads_state_and_logs_home_shown() = runTest {
-        val (f, analytics) = factory(saved = playableState(best = 600L), settingsBest = 100L)
-        val store = f.create()
         store.accept(HomeStore.Intent.Refresh)
+
         assertTrue(store.state.hasSavedGame)
-        assertEquals(600L, store.state.bestScore)
         val event = analytics.events.lastOrNull { it.first == "home_shown" }
         assertNotNull(event)
-        assertEquals(600L, event.second["best_score"])
-        assertEquals(true, event.second["has_saved_game"])
+        assertEquals(mapOf("has_saved_game" to true), event.second)
     }
 
     @Test
     fun initial_load_does_not_log_home_shown() = runTest {
-        // home_shown is only emitted on explicit Refresh per current design.
-        val (_, analytics) = factory(saved = playableState())
+        val (_, analytics) = factory(hasSavedGame = true)
+
         assertTrue(analytics.events.none { it.first == "home_shown" })
     }
 
-    // ── Fakes ────────────────────────────────────────────────────────────
-
-    private class StubSaveRepo(private val state: GameState?) : GameSaveRepository {
-        override suspend fun save(state: GameState) {}
-        override suspend fun load(): GameState? = state
-        override suspend fun clear() {}
+    private fun factory(
+        hasSavedGame: Boolean = false,
+        gameSaveApi: GameSaveApi = MutableGameSaveApi(hasSavedGame),
+        analytics: RecordingAnalytics = RecordingAnalytics(),
+    ): Pair<HomeStoreFactory, RecordingAnalytics> {
+        val factory = HomeStoreFactory(
+            storeFactory = DefaultStoreFactory(),
+            gameSaveApi = gameSaveApi,
+            analytics = analytics,
+        )
+        return factory to analytics
     }
 
-    private class StubSettings(bestScore: Long) : SettingsRepository {
-        override val musicEnabled = MutableStateFlow(true).asStateFlow()
-        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
-        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
-        override val darkTheme = MutableStateFlow(false).asStateFlow()
-        override val adsEnabled = MutableStateFlow(true).asStateFlow()
-        override val bestScore = MutableStateFlow(bestScore).asStateFlow()
-        override val reviewPromptCount = MutableStateFlow(0).asStateFlow()
-        override suspend fun setMusicEnabled(enabled: Boolean) {}
-        override suspend fun setSfxEnabled(enabled: Boolean) {}
-        override suspend fun setVibrationEnabled(enabled: Boolean) {}
-        override suspend fun setDarkTheme(enabled: Boolean) {}
-        override suspend fun setAdsEnabled(enabled: Boolean) {}
-        override suspend fun setBestScore(score: Long) {}
-        override suspend fun incrementReviewPromptCount() {}
-        override suspend fun suppressReviewPrompts(max: Int) {}
+    private class MutableGameSaveApi(
+        var hasSavedGame: Boolean,
+    ) : GameSaveApi {
+        override suspend fun hasSavedGame(): Boolean = hasSavedGame
     }
 
     private class RecordingAnalytics : AnalyticRepository {
         val events = mutableListOf<Pair<String, Map<String, Any>>>()
+
         override fun logEvent(eventName: String, params: Map<String, Any>?) {
             events += eventName to (params ?: emptyMap())
         }
-        override fun deleteData() {}
+
+        override fun deleteData() = Unit
     }
 }

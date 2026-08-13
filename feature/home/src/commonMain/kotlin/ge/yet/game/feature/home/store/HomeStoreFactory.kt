@@ -6,16 +6,14 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import dev.zacsweers.metro.Inject
+import ge.yet.game.domain.api.GameSaveApi
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.blockblast.domain.repository.GameSaveRepository
-import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.launch
 
 @Inject
 internal class HomeStoreFactory(
     private val storeFactory: StoreFactory,
-    private val saveRepository: GameSaveRepository,
-    private val settings: SettingsRepository,
+    private val gameSaveApi: GameSaveApi,
     private val analytics: AnalyticRepository,
 ) {
     fun create(): HomeStore {
@@ -33,26 +31,19 @@ internal class HomeStoreFactory(
                     // foreground (see DefaultHomeComponent.lifecycle.doOnStart).
                     onAction<HomeStore.Action.LoadStarted> {
                         launch {
-                            val saved = saveRepository.load()
-                            val bestScore = maxOf(settings.bestScore.value, saved?.bestScore ?: 0L)
                             dispatch(
                                 HomeStore.Msg.Loaded(
-                                    bestScore = bestScore,
-                                    hasSavedGame = saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty(),
+                                    hasSavedGame = gameSaveApi.hasSavedGame(),
                                 )
                             )
                         }
                     }
                     onIntent<HomeStore.Intent.Refresh> {
                         launch {
-                            val saved = saveRepository.load()
-                            val bestScore = maxOf(settings.bestScore.value, saved?.bestScore ?: 0L)
-                            val hasSavedGame =
-                                saved != null && !saved.isGameOver && !saved.grid.isBoardEmpty()
-                            logger.log("home_shown", bestScore, hasSavedGame)
+                            val hasSavedGame = gameSaveApi.hasSavedGame()
+                            logger.log("home_shown", hasSavedGame)
                             dispatch(
                                 HomeStore.Msg.Loaded(
-                                    bestScore = bestScore,
                                     hasSavedGame = hasSavedGame,
                                 )
                             )
@@ -66,7 +57,7 @@ internal class HomeStoreFactory(
 
     internal object HomeReducer : Reducer<HomeStore.State, HomeStore.Msg> {
         override fun HomeStore.State.reduce(msg: HomeStore.Msg): HomeStore.State = when (msg) {
-            is HomeStore.Msg.Loaded -> copy(bestScore = msg.bestScore, hasSavedGame = msg.hasSavedGame)
+            is HomeStore.Msg.Loaded -> copy(hasSavedGame = msg.hasSavedGame)
         }
     }
 

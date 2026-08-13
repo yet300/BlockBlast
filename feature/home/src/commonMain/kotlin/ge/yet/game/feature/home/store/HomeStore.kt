@@ -5,7 +5,6 @@ import com.arkivanov.mvikotlin.core.store.Store
 internal interface HomeStore : Store<HomeStore.Intent, HomeStore.State, Nothing> {
 
     data class State(
-        val bestScore: Long = 0L,
         val hasSavedGame: Boolean = false,
     )
 
@@ -20,7 +19,7 @@ internal interface HomeStore : Store<HomeStore.Intent, HomeStore.State, Nothing>
     }
 
     sealed interface Msg {
-        data class Loaded(val bestScore: Long, val hasSavedGame: Boolean) : Msg
+        data class Loaded(val hasSavedGame: Boolean) : Msg
     }
 
 }

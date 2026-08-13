@@ -45,7 +45,7 @@ internal class DefaultHomeComponent(
 
     private fun logHomeClick(eventName: String) {
         val state = store.state
-        logger.log(eventName, state.bestScore, state.hasSavedGame)
+        logger.log(eventName, state.hasSavedGame)
     }
 }
 

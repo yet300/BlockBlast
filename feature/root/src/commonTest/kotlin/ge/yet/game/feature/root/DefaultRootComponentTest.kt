@@ -550,7 +550,7 @@ class DefaultRootComponentTest {
         val onNewGameClicked: (Boolean) -> Unit,
     ) : HomeComponent {
         override val model = MutableValue(
-            HomeComponent.Model(bestScore = 0L, hasSavedGame = false),
+            HomeComponent.Model(hasSavedGame = false),
         )
         override fun onContinueClicked() = onContinueClicked(false)
         override fun onNewGameClicked() = onNewGameClicked(true)

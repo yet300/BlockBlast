@@ -6,7 +6,6 @@ import ge.yet.game.feature.home.store.HomeStore
 internal val stateToModel: (HomeStore.State) -> HomeComponent.Model =
     { state ->
         HomeComponent.Model(
-            bestScore = state.bestScore,
             hasSavedGame = state.hasSavedGame,
         )
     }

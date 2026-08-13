@@ -30,12 +30,10 @@ import ge.yet.game.monetization.ads.AdBanner
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
-import ge.yet.game.blockblast.ui.score.BestScoreCard
 import ge.yet.game.uikit.theme.PieceColors
 import org.jetbrains.compose.resources.stringResource
 import blockblast.composeapp.generated.resources.Res
 import blockblast.composeapp.generated.resources.app_name
-import blockblast.composeapp.generated.resources.best_score_label
 import blockblast.composeapp.generated.resources.continue_game
 import blockblast.composeapp.generated.resources.home_tagline
 import blockblast.composeapp.generated.resources.new_game
@@ -76,15 +74,7 @@ fun HomeContent(component: HomeComponent) {
 
                 Spacer(Modifier.height(48.dp))
 
-                if (model.bestScore > 0L) {
-                    BestScoreCard(
-                        label = stringResource(Res.string.best_score_label),
-                        bestScore = model.bestScore,
-                    )
-                    Spacer(Modifier.height(40.dp))
-                } else {
-                    Spacer(Modifier.height(24.dp))
-                }
+                Spacer(Modifier.height(24.dp))
 
                 PrimaryTerracottaButton(
                     text = if (model.hasSavedGame) {

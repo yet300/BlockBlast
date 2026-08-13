@@ -62,13 +62,13 @@ BlockBlast/
 | `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
 | `:composeApp` | Shared application UI, app-owned resources and app composition | core, feature, game and monetization modules |
-| `:core:domain` | Reusable platform-neutral domain contracts and app-level models | no project dependency declared |
+| `:core:domain` | Reusable platform-neutral domain contracts, including the game-save status API, and app-level models | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
 | `:feature:review` | Reusable app-review policy, analytics and component | `:core:domain`, `:core:common` |
-| `:feature:home` | Home components and stores | `:core:domain`, `:core:common`, `:feature:settings`, `:game:blockblast` |
+| `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
 | `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
 | `:game:blockblast` | Block Blast rules, models, state/tutorial persistence, resources, audio catalog, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |

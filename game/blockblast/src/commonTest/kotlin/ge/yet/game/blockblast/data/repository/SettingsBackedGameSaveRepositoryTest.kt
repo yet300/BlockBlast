@@ -19,6 +19,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SettingsBackedGameSaveRepositoryTest {
 
@@ -63,6 +64,30 @@ class SettingsBackedGameSaveRepositoryTest {
         val loaded = repo.load()
         assertNotNull(loaded)
         assertEquals(sampleState, loaded)
+    }
+
+    @Test
+    fun hasSavedGame_returns_true_for_playable_save() = runTest {
+        val repo = newRepo()
+        repo.save(sampleState)
+
+        assertTrue(repo.hasSavedGame())
+    }
+
+    @Test
+    fun hasSavedGame_returns_false_for_game_over_save() = runTest {
+        val repo = newRepo()
+        repo.save(sampleState.copy(isGameOver = true))
+
+        assertFalse(repo.hasSavedGame())
+    }
+
+    @Test
+    fun hasSavedGame_returns_false_for_empty_board() = runTest {
+        val repo = newRepo()
+        repo.save(sampleState.copy(grid = Grid()))
+
+        assertFalse(repo.hasSavedGame())
     }
 
     @Test

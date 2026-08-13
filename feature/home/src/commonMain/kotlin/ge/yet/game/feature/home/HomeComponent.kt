@@ -4,7 +4,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.Value
 
 /**
- * Home / main-menu screen. Exposes best score and navigation to Game/Settings.
+ * Home / main-menu screen. Exposes saved-game status and game navigation.
  */
 interface HomeComponent {
 
@@ -14,7 +14,6 @@ interface HomeComponent {
     fun onNewGameClicked()
 
     data class Model(
-        val bestScore: Long,
         val hasSavedGame: Boolean,
     )
 
