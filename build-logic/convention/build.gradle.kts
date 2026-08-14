@@ -83,4 +83,5 @@ tasks.withType<Test>().configureEach {
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/api/src/commonMain"))
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/compose/src/commonMain"))
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/metro/src/commonMain"))
+    inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/testkit/src/commonMain"))
 }

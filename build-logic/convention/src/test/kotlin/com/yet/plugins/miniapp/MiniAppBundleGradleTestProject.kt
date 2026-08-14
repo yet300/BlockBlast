@@ -92,7 +92,7 @@ internal class MiniAppBundleGradleTestProject(
 
     fun copyRealMiniAppContracts() {
         val sourceRoot = Path.of(requireNotNull(System.getProperty("sourceRepositoryRoot")))
-        listOf("miniapp/api", "miniapp/compose", "miniapp/metro").forEach { module ->
+        listOf("miniapp/api", "miniapp/compose", "miniapp/metro", "miniapp/testkit").forEach { module ->
             val source = sourceRoot.resolve("$module/src/commonMain")
             val target = root.resolve("$module/src/commonMain")
             Files.walk(source).use { paths ->
@@ -114,6 +114,19 @@ internal class MiniAppBundleGradleTestProject(
         write("miniapp/metro/build.gradle.kts", """
             plugins { id("com.plugins.kotlinMultiplatformPlugin"); id("com.plugins.composeMultiplatform"); id("dev.zacsweers.metro") }
             kotlin { sourceSets.commonMain.dependencies { api(project(":miniapp:compose")) } }
+        """)
+        write("miniapp/testkit/build.gradle.kts", """
+            plugins { id("com.plugins.kotlinMultiplatformPlugin"); id("com.plugins.composeMultiplatform") }
+            kotlin {
+                sourceSets.commonMain.dependencies {
+                    api(project(":miniapp:api"))
+                    api(project(":miniapp:compose"))
+                    api(project(":miniapp:metro"))
+                    api(libs.decompose)
+                    api(libs.compose.components.resources)
+                    api(libs.kotlin.test)
+                }
+            }
         """)
     }
 

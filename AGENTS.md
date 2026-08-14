@@ -53,7 +53,9 @@ BlockBlast/
 │   ├── api/                    Stable, Compose-free MiniApp domain contracts
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
-│   ├── testkit/                Framework scaffold; plugin contract fixtures are future work
+│   ├── testkit/                Reusable MiniApp host, visibility, lifecycle and contract fixtures
+│   ├── samples/
+│   │   └── counter/            Discovered, unshipped reference MiniApp plugin
 │   ├── bundle/                 Production MiniApp shipping bundle derived from the settings allowlist
 │   └── integration-test/       Framework scaffold; end-to-end integration work is future work
 ├── build-logic/
@@ -86,7 +88,9 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
-| `:miniapp:testkit`, `:miniapp:integration-test` | Statically included framework scaffolds; responsibilities will be filled by subsequent MiniApp tasks | no framework implementation yet |
+| `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
+| `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
+| `:miniapp:integration-test` | Statically included scaffold for later cross-module and platform integration proofs | no framework implementation yet |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 | `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
@@ -216,6 +220,14 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :miniapp:bundle:dependencies --configuration commonMainApi
 ./gradlew :miniapp:bundle:compileAndroidMain
 ./gradlew :miniapp:bundle:compileKotlinIosSimulatorArm64
+
+# Verify the reusable MiniApp contract fixtures and the discovered Counter reference plugin
+./gradlew :miniapp:testkit:allTests
+./gradlew :miniapp:testkit:compileAndroidMain
+./gradlew :miniapp:testkit:compileKotlinIosSimulatorArm64
+./gradlew :miniapp:samples:counter:allTests
+./gradlew :miniapp:samples:counter:compileAndroidMain
+./gradlew :miniapp:samples:counter:compileKotlinIosSimulatorArm64
 
 # Verify contributor conventions and root task registration without generating a project
 ./gradlew -p build-logic :convention:test --tests '*MiniAppConventionPluginTest' --tests '*MiniAppDependencyBoundaryTest' --tests '*ValidateMiniAppDependenciesTaskTest' --tests '*CreateMiniAppTaskTest'

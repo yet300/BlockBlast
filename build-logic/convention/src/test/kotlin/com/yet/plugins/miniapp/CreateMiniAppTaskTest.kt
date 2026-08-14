@@ -59,6 +59,24 @@ class CreateMiniAppTaskTest {
     }
 
     @Test
+    fun `generated contract owns an isolated final graph and checks its only plugin`() {
+        val target = temporaryFolder.newFolder("snake-contract")
+        MiniAppScaffoldRenderer("game.snake", "Snake", ":game:snake").writeTo(target)
+
+        val contract = target.resolve(
+            "src/commonTest/kotlin/ge/yet/game/snake/SnakePluginContractTest.kt",
+        ).readText()
+
+        assertContains(contract, "@DependencyGraph(")
+        assertContains(contract, "scope = AppScope::class")
+        assertContains(contract, "bindingContainers = [MiniAppMetroBindings::class]")
+        assertContains(contract, "createGraph<SnakePluginTestGraph>()")
+        assertContains(contract, "MiniAppContractAssertions.assertSinglePlugin")
+        assertContains(contract, "MiniAppContractAssertions.assertManifest")
+        assertContains(contract, "MiniAppContractAssertions.assertRetainedGraphSession")
+    }
+
+    @Test
     fun `root task creates a discoverable but unshipped game under strict configuration cache`() {
         val fixture = MiniAppBundleGradleTestProject(temporaryFolder, declarations = "", useMarker = false)
         fixture.write("build.gradle.kts", """

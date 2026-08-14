@@ -75,14 +75,54 @@ internal class MiniAppScaffoldRenderer(
         write(root, "src/commonTest/kotlin/${packageName.replace('.', '/')}/${classPrefix}PluginContractTest.kt", """
             package $packageName
 
-            import kotlin.test.Test
-            import kotlin.test.assertEquals
+            import dev.zacsweers.metro.AppScope
+            import dev.zacsweers.metro.DependencyGraph
+            import dev.zacsweers.metro.createGraph
             import ge.yet.game.miniapp.api.MiniAppId
+            import ge.yet.game.miniapp.compose.MiniAppRegistry
+            import ge.yet.game.miniapp.metro.MiniAppMetroBindings
+            import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
+            import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
+            import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
+            import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
+            import kotlin.test.Test
+            import kotlin.test.assertNotNull
+
+            @DependencyGraph(
+                scope = AppScope::class,
+                bindingContainers = [MiniAppMetroBindings::class],
+            )
+            interface ${classPrefix}PluginTestGraph {
+                val registry: MiniAppRegistry
+            }
 
             class ${classPrefix}PluginContractTest {
-                @Test fun `plugin exposes its manifest without creating a session`() {
-                    val plugin = ${classPrefix}Plugin(${classPrefix}SessionGraph.Factory { _, _, _ -> error("session should not be created") })
-                    assertEquals(MiniAppId("$id"), plugin.manifest.id)
+                @Test
+                fun `isolated graph contains exactly this plugin`() {
+                    val expectedId = MiniAppId("$id")
+                    val graph = createGraph<${classPrefix}PluginTestGraph>()
+
+                    MiniAppContractAssertions.assertSinglePlugin(graph.registry, expectedId)
+                    val plugin = assertNotNull(graph.registry[expectedId])
+                    MiniAppContractAssertions.assertManifest(plugin, expectedId)
+                }
+
+                @Test
+                fun `plugin creates a graph retained session`() {
+                    val expectedId = MiniAppId("$id")
+                    val graph = createGraph<${classPrefix}PluginTestGraph>()
+                    val plugin = assertNotNull(graph.registry[expectedId])
+                    val lifecycle = MiniAppLifecycleHarness()
+                    lifecycle.resume()
+
+                    val session = plugin.createSession(
+                        componentContext = lifecycle.componentContext,
+                        visibility = MutableMiniAppVisibilitySource(),
+                        host = RecordingMiniAppSessionHost(),
+                    )
+
+                    MiniAppContractAssertions.assertRetainedGraphSession(session)
+                    lifecycle.destroy()
                 }
             }
         """.trimIndent() + "\n")
@@ -139,10 +179,10 @@ internal class MiniAppScaffoldRenderer(
         import ge.yet.game.miniapp.compose.MiniAppPlugin
         import ge.yet.game.miniapp.compose.MiniAppSession
         import ge.yet.game.miniapp.metro.RetainedMiniAppSession
-            import $resourcePackage.Res
-            import $resourcePackage.miniapp_description
-            import $resourcePackage.miniapp_icon
-            import $resourcePackage.miniapp_title
+        import $resourcePackage.Res
+        import $resourcePackage.miniapp_description
+        import $resourcePackage.miniapp_icon
+        import $resourcePackage.miniapp_title
 
         @Inject
         @ContributesIntoSet(AppScope::class)

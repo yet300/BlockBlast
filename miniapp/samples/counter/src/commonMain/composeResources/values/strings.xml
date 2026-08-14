@@ -1,0 +1,4 @@
+<resources>
+    <string name="miniapp_title">Counter</string>
+    <string name="miniapp_description">Counter mini-app</string>
+</resources>
