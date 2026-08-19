@@ -1,12 +1,10 @@
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
-import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 private const val JDK_VERSION = 17
-val JAVA_VERSION = JavaVersion.VERSION_17
 
 
 internal fun Project.configureKotlinMultiplatform(
@@ -21,7 +19,7 @@ internal fun Project.configureKotlinMultiplatform(
 
     extensions.configure<KotlinMultiplatformAndroidLibraryExtension>("android") {
         val moduleName = path.split(":").drop(2).joinToString(".")
-        namespace = if (moduleName.isNotEmpty()) "com.yet.$moduleName" else "com.yet.tetris"
+        namespace = if (moduleName.isNotEmpty()) "com.yet.$moduleName" else "com.yet.game"
 
         compileSdk = libs.findVersion("android-compileSdk").get().requiredVersion.toInt()
         minSdk = libs.findVersion("android-minSdk").get().requiredVersion.toInt()

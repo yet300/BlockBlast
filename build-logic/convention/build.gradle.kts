@@ -54,12 +54,12 @@ dependencies {
     compileOnly(libs.compose.gradlePlugin)
     compileOnly(libs.metro.plugin)
 
-    compileOnly(project(":miniapp-settings"))
+    compileOnly(projects.miniappSettings)
 
     testImplementation(gradleTestKit())
     testImplementation(kotlin("test"))
     testImplementation(libs.junit)
-    testImplementation(project(":miniapp-settings"))
+    testImplementation(projects.miniappSettings)
     testRuntimeOnly(libs.android.gradlePlugin)
     testRuntimeOnly(libs.kotlin.gradlePlugin)
     testRuntimeOnly(libs.kotlin.serialization)

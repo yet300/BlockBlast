@@ -179,3 +179,5 @@ google-services = { id = "com.google.gms.google-services", version.ref = "gradle
 
 local-kotlin-multiplatform = { id = "com.plugins.kotlinMultiplatformPlugin" }
 local-compose-multiplatform = { id = "com.plugins.composeMultiplatform" }
+miniapp = { id = "logica.miniapp" }
+miniapp-bundle = { id = "logica.miniapp.bundle" }

@@ -1,1 +1,1 @@
-plugins { id("logica.miniapp.bundle") }
+plugins { alias(libs.plugins.miniapp.bundle) }
