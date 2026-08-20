@@ -55,6 +55,7 @@ kotlin {
             implementation(projects.core.telemetry)
             implementation(projects.core.uikit)
             implementation(projects.monetization.ads)
+            implementation(projects.miniapp.compose)
             implementation(projects.game.blockblast)
 
             api(projects.feature.root)

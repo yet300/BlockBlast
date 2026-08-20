@@ -2,14 +2,14 @@ package ge.yet.game.domain.repository
 
 import kotlinx.coroutines.flow.StateFlow
 
-interface SettingsRepository {
+interface SettingsRepository : FeedbackPreferences {
     /** Background music gate. Independent of [sfxEnabled] since v1.5.0. */
     val musicEnabled: StateFlow<Boolean>
 
     /** Sound-effects and voice-line gate, independent of [musicEnabled]. */
-    val sfxEnabled: StateFlow<Boolean>
+    override val sfxEnabled: StateFlow<Boolean>
 
-    val vibrationEnabled: StateFlow<Boolean>
+    override val vibrationEnabled: StateFlow<Boolean>
     val darkTheme: StateFlow<Boolean>
     val adsEnabled: StateFlow<Boolean>
 

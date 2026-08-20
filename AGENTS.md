@@ -72,7 +72,7 @@ BlockBlast/
 |---|---|---|
 | `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
-| `:composeApp` | Shared application UI, app-owned resources and app composition | core, feature, game and monetization modules |
+| `:composeApp` | Shared application UI, app-owned resources and app composition | core, feature, game and monetization modules; `:miniapp:compose` contracts |
 | `:core:domain` | Reusable platform-neutral domain contracts, including the game-save status API, and app-level models | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |

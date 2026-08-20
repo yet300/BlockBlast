@@ -8,12 +8,14 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.GraphPrivate
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.data.repository.DefaultAudioRepository
 import ge.yet.game.data.repository.DefaultVibrationRepository
 import ge.yet.game.data.repository.SettingsBackedSettingsRepository
 import ge.yet.game.domain.repository.AudioRepository
+import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.domain.repository.VibrationRepository
 
@@ -32,12 +34,17 @@ import ge.yet.game.domain.repository.VibrationRepository
 @BindingContainer
 abstract class DataBindings {
 
+    @GraphPrivate
     @Binds
     internal abstract val SettingsBackedSettingsRepository.bindSettingsRepository: SettingsRepository
 
     @Binds
+    internal abstract val SettingsBackedSettingsRepository.bindFeedbackPreferences: FeedbackPreferences
+
+    @Binds
     internal abstract val DefaultAudioRepository.bindAudioRepository: AudioRepository
 
+    @GraphPrivate
     @Binds
     internal abstract val DefaultVibrationRepository.bindVibrationRepository: VibrationRepository
 
@@ -47,10 +54,12 @@ abstract class DataBindings {
      * duplicate stores, no lost writes.
      */
     companion object {
+        @GraphPrivate
         @Provides
         @SingleIn(AppScope::class)
         internal fun provideSettings(): Settings = Settings()
 
+        @GraphPrivate
         @Provides
         @SingleIn(AppScope::class)
         internal fun provideObservableSettings(impl: Settings): ObservableSettings = impl.makeObservable()
