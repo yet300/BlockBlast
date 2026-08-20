@@ -133,8 +133,10 @@ The current Root result-screen adapter remains a private transition owned by
 The root settings `miniApps` allowlist is the sole authoritative shipping path:
 the bundle convention consumes its finalized declarations in order, adds exactly
 those projects to `commonMainApi` alongside `:miniapp:metro`, and generates the
-public `ProductionMiniAppExpectation` contributed to Metro. The current root
-allowlist is intentionally empty. `verifyMiniAppBundle` rejects missing,
+public `ProductionMiniAppExpectation` contributed to Metro. Block Blast is the
+sole current production allowlist entry and shipped MiniApp; Counter remains
+discovered but excluded from the allowlist and unshipped.
+`verifyMiniAppBundle` rejects missing,
 unexpected or duplicated bundle dependencies, and allowlisted projects that do
 not apply `logica.miniapp`.
 
@@ -220,7 +222,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 # Verify settings-phase MiniApp discovery and its typed shipping model
 ./gradlew -p build-logic :miniapp-settings:test --tests '*MiniAppSettingsPluginTest'
 
-# Verify the authoritative MiniApp shipping bundle and its generated empty expectation
+# Verify the authoritative MiniApp shipping bundle and its generated expectation
 ./gradlew -p build-logic :convention:test --tests '*MiniAppBundlePluginTest'
 ./gradlew :miniapp:bundle:verifyMiniAppBundle
 ./gradlew :miniapp:bundle:dependencies --configuration commonMainApi

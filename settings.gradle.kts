@@ -20,7 +20,12 @@ plugins {
     id("logica.miniapp.settings")
 }
 
-miniApps { }
+miniApps {
+    include(
+        projectPath = ":game:blockblast",
+        expectedId = "game.blockblast",
+    )
+}
 
 dependencyResolutionManagement {
     repositories {
