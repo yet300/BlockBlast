@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Տեղադրեք բլոկները, մաքրեք գծերը և գերազանցեք ձեր լավագույն հաշիվը։</string>
     <string name="score">Միավոր</string>
     <string name="best">Ռեկորդ</string>
     <string name="game_over">Խաղն ավարտվեց</string>

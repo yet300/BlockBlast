@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Platziere Blöcke, räume Reihen ab und knacke deinen Highscore.</string>
     <string name="score">Punkte</string>
     <string name="best">Best</string>
     <string name="game_over">Spiel vorbei</string>

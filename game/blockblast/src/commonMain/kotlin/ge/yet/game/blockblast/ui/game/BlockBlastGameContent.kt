@@ -51,7 +51,6 @@ import ge.yet.game.blockblast.generated.resources.score
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.uikit.components.button.IconCircleButton
-import ge.yet.game.monetization.ads.AdBanner
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.components.icon.ArrowBack
 import ge.yet.game.uikit.components.icon.Settings
@@ -86,7 +85,10 @@ private val DRAG_GHOST_GAP = 2.dp
 private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
-fun BlockBlastGameContent(component: GameComponent) {
+fun BlockBlastGameContent(
+    component: GameComponent,
+    modifier: Modifier = Modifier,
+) {
     val uiModel by component.model.subscribeAsState()
     val model = uiModel.game
     val traySelection by component.pieceTray.selection.subscribeAsState()
@@ -274,7 +276,7 @@ fun BlockBlastGameContent(component: GameComponent) {
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         topBar = {
             GameTopBar(
@@ -303,8 +305,7 @@ fun BlockBlastGameContent(component: GameComponent) {
                     .fillMaxSize()
                     .comboZoom(comboPunch)
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 58.dp),
+                    .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(20.dp))
@@ -384,20 +385,6 @@ fun BlockBlastGameContent(component: GameComponent) {
                         }
                     },
                 )
-            }
-
-            val hideBanner = model.isGameOver
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(innerPadding)
-                    .padding(bottom = 4.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (!hideBanner) {
-                    AdBanner()
-                }
             }
 
             // ── Floating dragged piece overlay ───────────────────────────

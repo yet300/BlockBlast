@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Helyezz el blokkokat, törölj sorokat, és döntsd meg a rekordodat.</string>
     <string name="score">Pontszám</string>
     <string name="best">Legjobb</string>
     <string name="game_over">Játék vége</string>

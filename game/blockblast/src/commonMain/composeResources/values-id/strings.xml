@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Susun balok, bersihkan garis, dan pecahkan skor terbaikmu.</string>
     <string name="score">Skor</string>
     <string name="best">Terbaik</string>
     <string name="game_over">Permainan Berakhir</string>

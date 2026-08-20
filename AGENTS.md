@@ -81,7 +81,7 @@ BlockBlast/
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
 | `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
-| `:game:blockblast` | Block Blast rules, models, save/best-score/tutorial persistence, resources, audio catalog, session flow, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:miniapp:api`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
+| `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; core contracts, ConfettiKit, MVIKotlin and multiplatform-settings; no native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
@@ -122,9 +122,13 @@ only stable portable contracts. `:miniapp:compose` depends on that API and owns
 the UI-facing plugin/session contracts. `:miniapp:metro` owns the immutable
 app-scoped registry and its empty-capable compile-time plugin aggregation; its
 session-scope marker is a child lifecycle, not a second game-specific scope.
-Concrete games may later implement the plugin contract; they must not depend on
-a MiniApp host, `:feature:root`, `:composeApp`, or a native application module.
-Host/root migration remains separate follow-up work.
+Block Blast implements `MiniAppPlugin` through a retained Metro child graph;
+session-owned components and reducers live in `MiniAppSessionScope`, while save,
+best-score and preference repositories remain app-scoped. Game plugins consume
+`MiniAppInterstitialCapability` and must not depend on a MiniApp host,
+`:feature:root`, `:composeApp`, native application modules or native-ad modules.
+The current Root result-screen adapter remains a private transition owned by
+`:composeApp`; host/root migration remains separate follow-up work.
 
 The root settings `miniApps` allowlist is the sole authoritative shipping path:
 the bundle convention consumes its finalized declarations in order, adds exactly

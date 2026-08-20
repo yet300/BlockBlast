@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Placera block, rensa linjer och slå ditt rekord.</string>
     <string name="score">Poäng</string>
     <string name="best">Bästa</string>
     <string name="game_over">Spelet är slut</string>

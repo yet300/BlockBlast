@@ -47,9 +47,11 @@ abstract class BlockBlastBindings {
     @Binds
     internal abstract val ComposeAudioFileProvider.bindAudioFileProvider: AudioFileProvider
 
+    @GraphPrivate
     @Binds
     internal abstract val DefaultGameComponentFactory.bindGameComponentFactory: GameComponent.Factory
 
+    @GraphPrivate
     @Binds
     internal abstract val DefaultGameResultComponentFactory.bindGameResultComponentFactory:
         GameResultComponent.Factory
@@ -64,13 +66,16 @@ abstract class BlockBlastBindings {
                     MutableStateFlow(MiniAppVisibility.ACTIVE).asStateFlow()
             }
 
+        @GraphPrivate
         @Provides
         @SingleIn(AppScope::class)
         internal fun provideShapeGenerator(): ShapeGenerator = ShapeGenerator.default()
 
+        @GraphPrivate
         @Provides
         internal fun provideScoreCalculator(): ScoreCalculator = ScoreCalculator()
 
+        @GraphPrivate
         @Provides
         internal fun provideGameSessionReducer(
             shapeGenerator: ShapeGenerator,

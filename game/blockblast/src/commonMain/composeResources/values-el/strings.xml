@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Τοποθέτησε τουβλάκια, καθάρισε γραμμές και ξεπέρασε το ρεκόρ σου.</string>
     <string name="score">Βαθμολογία</string>
     <string name="best">Καλύτερο</string>
     <string name="game_over">Τέλος παιχνιδιού</string>

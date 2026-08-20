@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Blokları yerləşdir, xətləri təmizlə və rekordunu yenilə.</string>
     <string name="score">Xal</string>
     <string name="best">Rekord</string>
     <string name="game_over">Oyun bitdi</string>

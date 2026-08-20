@@ -38,41 +38,39 @@ import ge.yet.game.blockblast.generated.resources.revive
 import ge.yet.game.blockblast.generated.resources.score
 import ge.yet.game.blockblast.ui.game.GameGrid
 import ge.yet.game.blockblast.ui.game.rememberReducedMotion
-import ge.yet.game.monetization.ads.LocalMonetizationState
-import ge.yet.game.monetization.ads.rememberGameOverInterstitial
+import ge.yet.game.miniapp.compose.MiniAppInterstitialGate
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun GameResultContent(
     component: GameResultComponent,
+    interstitialGate: MiniAppInterstitialGate,
     modifier: Modifier = Modifier,
 ) {
     val model by component.model.subscribeAsState()
-    val showInterstitial = rememberGameOverInterstitial()
     val reducedMotion = rememberReducedMotion()
-    val adsEnabled = LocalMonetizationState.current.canShowAds
 
     GameResultContent(
         model = model,
         onPrimaryClicked = {
-            component.onPrimaryClicked(showInterstitial)
+            component.onPrimaryClicked(interstitialGate.request)
         },
         onHomeClicked = component::onHomeClicked,
         reducedMotion = reducedMotion,
-        adsEnabled = adsEnabled,
+        willShowAd = interstitialGate.willShowAd,
         modifier = modifier,
     )
 
 }
 
 @Composable
-fun GameResultContent(
+internal fun GameResultContent(
     model: GameResultComponent.Model,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     reducedMotion: Boolean = false,
-    adsEnabled: Boolean = true,
+    willShowAd: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -101,7 +99,7 @@ fun GameResultContent(
                             model = model,
                             layoutPolicy = layoutPolicy,
                             reducedMotion = reducedMotion,
-                            adsEnabled = adsEnabled,
+                            willShowAd = willShowAd,
                             onPrimaryClicked = onPrimaryClicked,
                             onHomeClicked = onHomeClicked,
                             modifier = Modifier.fillMaxSize(),
@@ -111,7 +109,7 @@ fun GameResultContent(
                             model = model,
                             layoutPolicy = layoutPolicy,
                             reducedMotion = reducedMotion,
-                            adsEnabled = adsEnabled,
+                            willShowAd = willShowAd,
                             onPrimaryClicked = onPrimaryClicked,
                             onHomeClicked = onHomeClicked,
                             modifier = Modifier.fillMaxSize(),
@@ -128,7 +126,7 @@ private fun PortraitResultLayout(
     model: GameResultComponent.Model,
     layoutPolicy: ResultLayoutPolicy,
     reducedMotion: Boolean,
-    adsEnabled: Boolean,
+    willShowAd: Boolean,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
@@ -156,7 +154,7 @@ private fun PortraitResultLayout(
         ResultActions(
             model = model,
             layoutPolicy = layoutPolicy,
-            adsEnabled = adsEnabled,
+            willShowAd = willShowAd,
             onPrimaryClicked = onPrimaryClicked,
             onHomeClicked = onHomeClicked,
             modifier = Modifier
@@ -171,7 +169,7 @@ private fun LandscapeResultLayout(
     model: GameResultComponent.Model,
     layoutPolicy: ResultLayoutPolicy,
     reducedMotion: Boolean,
-    adsEnabled: Boolean,
+    willShowAd: Boolean,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
@@ -205,7 +203,7 @@ private fun LandscapeResultLayout(
             ResultActions(
                 model = model,
                 layoutPolicy = layoutPolicy,
-                adsEnabled = adsEnabled,
+                willShowAd = willShowAd,
                 onPrimaryClicked = onPrimaryClicked,
                 onHomeClicked = onHomeClicked,
                 modifier = Modifier
@@ -275,7 +273,7 @@ private fun ResultBoard(
 private fun ResultActions(
     model: GameResultComponent.Model,
     layoutPolicy: ResultLayoutPolicy,
-    adsEnabled: Boolean,
+    willShowAd: Boolean,
     onPrimaryClicked: () -> Unit,
     onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
@@ -288,7 +286,7 @@ private fun ResultActions(
         continueLabel = stringResource(Res.string.revive),
         newGameLabel = stringResource(Res.string.new_game),
         homeLabel = stringResource(Res.string.exit_to_home),
-        advertisementLabel = if (adsEnabled) {
+        advertisementLabel = if (willShowAd) {
             stringResource(Res.string.cd_advertisement)
         } else {
             null

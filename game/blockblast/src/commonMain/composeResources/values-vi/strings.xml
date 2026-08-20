@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Xếp khối, xóa hàng và phá kỷ lục của bạn.</string>
     <string name="score">Điểm</string>
     <string name="best">Cao nhất</string>
     <string name="game_over">Trò chơi kết thúc</string>

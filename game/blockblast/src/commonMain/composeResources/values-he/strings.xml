@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">מקמו בלוקים, נקו שורות ושברו את השיא שלכם.</string>
     <string name="score">ניקוד</string>
     <string name="best">שיא</string>
     <string name="game_over">המשחק נגמר</string>

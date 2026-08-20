@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Plaats blokken, wis lijnen en verbeter je topscore.</string>
     <string name="score">Score</string>
     <string name="best">Beste</string>
     <string name="game_over">Game over</string>

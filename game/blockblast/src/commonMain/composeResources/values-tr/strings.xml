@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Blokları yerleştir, satırları temizle ve en yüksek puanını geç.</string>
     <string name="score">Skor</string>
     <string name="best">En İyi</string>
     <string name="game_over">Oyun Bitti</string>
