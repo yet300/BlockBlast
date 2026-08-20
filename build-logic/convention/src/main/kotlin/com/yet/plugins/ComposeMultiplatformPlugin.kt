@@ -15,6 +15,10 @@ class ComposeMultiplatformPlugin : Plugin<Project> {
 
         extensions.configure<KotlinMultiplatformExtension> {
             sourceSets.apply {
+                androidMain.dependencies {
+                    implementation(libs.findLibrary("compose-uiTooling").get())
+                }
+
                 commonMain {
                     dependencies {
                         implementation(libs.findLibrary("compose-runtime").get())

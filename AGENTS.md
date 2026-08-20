@@ -41,6 +41,7 @@ BlockBlast/
 │   └── telemetry/              Firebase analytics and Crashlytics abstraction
 ├── feature/
 │   ├── root/                   Top-level navigation component
+│   ├── catalog/                Registry-backed MiniApp catalog and host-owned cards
 │   ├── home/                   Home screen feature
 │   ├── review/                 App review policy and component
 │   └── settings/               Settings feature
@@ -78,6 +79,7 @@ BlockBlast/
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
+| `:feature:catalog` | Registry-backed MiniApp catalog with uniform host-owned cards and one Play action per manifest | `:miniapp:compose`, `:core:uikit`, Decompose and Compose resources |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
 | `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
@@ -128,7 +130,8 @@ best-score and preference repositories remain app-scoped. Game plugins consume
 `MiniAppInterstitialCapability` and must not depend on a MiniApp host,
 `:feature:root`, `:composeApp`, native application modules or native-ad modules.
 The current Root result-screen adapter remains a private transition owned by
-`:composeApp`; host/root migration remains separate follow-up work.
+`:composeApp`; the catalog does not create sessions, and host/root migration
+remains separate follow-up work.
 
 The root settings `miniApps` allowlist is the sole authoritative shipping path:
 the bundle convention consumes its finalized declarations in order, adds exactly
@@ -216,6 +219,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :core:data:allTests
 ./gradlew :game:blockblast:allTests
 ./gradlew :feature:review:allTests
+./gradlew :feature:catalog:allTests
 ./gradlew :feature:root:allTests
 ./gradlew :monetization:core:allTests
 
