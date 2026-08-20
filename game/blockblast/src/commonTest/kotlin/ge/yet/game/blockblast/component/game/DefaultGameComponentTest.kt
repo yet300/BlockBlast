@@ -20,11 +20,10 @@ import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.blockblast.domain.repository.BestScoreRepository
-import kotlinx.coroutines.CoroutineScope
+import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,9 +56,9 @@ class DefaultGameComponentTest {
         bestScore: Long = 0L,
         restoredResultState: GameState? = null,
         savedState: GameState? = null,
+        visibility: MutableMiniAppVisibilitySource = MutableMiniAppVisibilitySource(),
     ): Setup {
         val lifecycle = LifecycleRegistry()
-        val scope = CoroutineScope(testDispatcher + SupervisorJob())
         val analytics = RecordingAnalytics()
         val audio = RecordingAudio()
         val bestScoreRepository = FakeBestScoreRepository(bestScore)
@@ -85,6 +84,7 @@ class DefaultGameComponentTest {
             audio = audio,
             tutorialRepository = tutorial,
             analytics = analytics,
+            visibility = visibility,
             isNewGame = isNewGame,
             restoredResultState = restoredResultState,
             onSettingsClick = { settingsCalls += Unit },
@@ -98,7 +98,6 @@ class DefaultGameComponentTest {
         return Setup(
             component,
             lifecycle,
-            scope,
             audio,
             analytics,
             settingsCalls,
@@ -154,13 +153,22 @@ class DefaultGameComponentTest {
     }
 
     @Test
-    fun onRestartClicked_starts_new_round_via_store() {
-        val s = build()
-        val piece = s.component.model.value.game.currentPieces.first()
-        s.component.onCellClicked(piece.pieceId, 0, 0)
-        assertTrue(s.component.model.value.game.score > 0)
-        s.component.onRestartClicked()
-        assertEquals(0L, s.component.model.value.game.score)
+    fun non_active_visibility_rejects_store_intents() = runTest(testDispatcher) {
+        val visibility = MutableMiniAppVisibilitySource(MiniAppVisibility.OBSCURED)
+        val s = build(
+            restoredResultState = GameState(isGameOver = true),
+            visibility = visibility,
+        )
+
+        s.component.onReviveClicked()
+        runCurrent()
+        assertTrue(s.component.model.value.game.isGameOver)
+
+        visibility.set(MiniAppVisibility.BACKGROUND)
+        s.component.onReviveClicked()
+        runCurrent()
+        assertTrue(s.component.model.value.game.isGameOver)
+        assertTrue(s.reviveCompletions.isEmpty())
         s.dispose()
     }
 
@@ -236,7 +244,7 @@ class DefaultGameComponentTest {
         val s = build()
         s.lifecycle.resume()
         s.audio.stopMusicCount = 0
-        s.lifecycle.destroy()
+        s.dispose()
         runCurrent()
         assertTrue(s.audio.stopMusicCount >= 1)
         s.dispose()
@@ -247,7 +255,6 @@ class DefaultGameComponentTest {
     private data class Setup(
         val component: DefaultGameComponent,
         val lifecycle: LifecycleRegistry,
-        val scope: CoroutineScope,
         val audio: RecordingAudio,
         val analytics: RecordingAnalytics,
         val settingsCalls: MutableList<Unit>,
@@ -256,7 +263,13 @@ class DefaultGameComponentTest {
         val reviveCompletions: MutableList<GameState>,
         val save: StubSaveRepo,
     ) {
-        fun dispose() { scope.cancel() }
+        private var disposed = false
+
+        fun dispose() {
+            if (disposed) return
+            disposed = true
+            lifecycle.destroy()
+        }
     }
 
     private class OneByOneGenerator : ShapeGenerator {

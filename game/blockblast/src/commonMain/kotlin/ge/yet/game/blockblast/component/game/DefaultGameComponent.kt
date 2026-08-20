@@ -20,6 +20,8 @@ import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
+import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import kotlinx.coroutines.launch
 
 internal class DefaultGameComponent(
@@ -28,6 +30,7 @@ internal class DefaultGameComponent(
     private val gameStoreFactory: GameStoreFactory,
     private val audio: AudioRepository,
     private val tutorialRepository: BlockBlastTutorialRepository,
+    private val visibility: MiniAppVisibilitySource,
     private val isNewGame: Boolean,
     private val restoredResultState: GameState?,
     private val onSettingsClick: () -> Unit,
@@ -78,11 +81,10 @@ internal class DefaultGameComponent(
     }
 
     override fun onCellClicked(pieceId: Long, x: Int, y: Int) {
-        store.accept(GameStore.Intent.Place(pieceId, x, y))
+        whenActive { store.accept(GameStore.Intent.Place(pieceId, x, y)) }
     }
 
-    override fun onReviveClicked() = store.accept(GameStore.Intent.Revive)
-    override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
+    override fun onReviveClicked() = whenActive { store.accept(GameStore.Intent.Revive) }
     override fun onSettingsClicked() {
         log("settings_opened")
         onSettingsClick()
@@ -97,6 +99,10 @@ internal class DefaultGameComponent(
         lifecycleScope.launch { tutorialRepository.markSeen() }
     }
 
+    private inline fun whenActive(action: () -> Unit) {
+        if (visibility.visibility.value == MiniAppVisibility.ACTIVE) action()
+    }
+
     private fun log(eventName: String) = logger.log(eventName, store.state)
 
 }
@@ -107,6 +113,7 @@ internal class DefaultGameComponentFactory(
     private val audio: AudioRepository,
     private val tutorialRepository: BlockBlastTutorialRepository,
     private val analytics: AnalyticRepository,
+    private val visibility: MiniAppVisibilitySource,
 ) : GameComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
@@ -123,6 +130,7 @@ internal class DefaultGameComponentFactory(
         audio = audio,
         tutorialRepository = tutorialRepository,
         analytics = analytics,
+        visibility = visibility,
         isNewGame = isNewGame,
         restoredResultState = restoredResultState,
         onSettingsClick = onSettingsClicked,

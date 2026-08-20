@@ -81,7 +81,7 @@ BlockBlast/
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
 | `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
-| `:game:blockblast` | Block Blast rules, models, save/best-score/tutorial persistence, resources, audio catalog, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
+| `:game:blockblast` | Block Blast rules, models, save/best-score/tutorial persistence, resources, audio catalog, session flow, components, tests and Compose UI | `:core:common`, `:core:domain`, `:core:uikit`, `:miniapp:api`, `:monetization:ads`, Compose, Decompose, MVIKotlin, Metro |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
@@ -104,7 +104,9 @@ UI for their respective games. `:feature:root` composes the current game, while
 the game module must not depend on `:composeApp`, `:feature:root` or a native
 application module. Block Blast's internal engine and implementation types stay
 `internal`; only the component and model contracts required by Root, Home and
-the application composition are public.
+the application composition are public. Block Blast also owns its transient
+Playing/Result, resume, revive and review-opportunity session flow; the common
+host remains responsible for leaving the MiniApp.
 
 Games may emit game-specific review opportunities, but `:feature:review` owns
 the app-wide prompt limit, persistence, suppression, analytics and store-review request.

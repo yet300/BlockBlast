@@ -21,6 +21,7 @@ kotlin {
             implementation(projects.core.common)
             implementation(projects.core.domain)
             implementation(projects.core.uikit)
+            implementation(projects.miniapp.api)
             implementation(projects.monetization.ads)
 
             implementation(libs.compose.components.resources)
@@ -34,6 +35,7 @@ kotlin {
         }
 
         commonTest.dependencies {
+            implementation(projects.miniapp.testkit)
             implementation(libs.multiplatform.settings.test)
         }
     }

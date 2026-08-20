@@ -671,7 +671,6 @@ class DefaultRootComponentTest {
                 onReviveCompleted(playableState)
             }
         }
-        override fun onRestartClicked() {}
         override fun onSettingsClicked() = onSettingsClicked.invoke()
         override fun onExitClicked() {}
         override fun onTutorialSeen() {}

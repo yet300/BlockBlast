@@ -5,16 +5,22 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import dev.zacsweers.metro.Inject
-import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 internal class DefaultGameResultComponent(
     componentContext: ComponentContext,
     snapshot: BlockBlastResultSnapshot,
     canContinue: Boolean,
-    private val settings: SettingsRepository,
+    private val visibility: MiniAppVisibilitySource,
     private val onContinueRequested: () -> Unit,
     private val onNewGameRequested: () -> Unit,
     private val onHomeRequested: () -> Unit,
@@ -44,12 +50,6 @@ internal class DefaultGameResultComponent(
         countdownJob?.cancel()
 
         if (continueSelected) {
-            if (!settings.adsEnabled.value) {
-                componentScope.launch {
-                    onContinueRequested()
-                }
-                return
-            }
             var approvalHandled = false
             requestContinue {
                 componentScope.launch {
@@ -77,17 +77,31 @@ internal class DefaultGameResultComponent(
         startCountdown()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun startCountdown() {
         countdownJob?.cancel()
         if (!modelState.value.isContinuePhase) return
         countdownJob = componentScope.launch {
-            while (modelState.value.continueSecondsRemaining > 0) {
-                delay(COUNTDOWN_TICK_MILLIS)
-                modelState.value = modelState.value.copy(
-                    continueSecondsRemaining =
-                        (modelState.value.continueSecondsRemaining - 1).coerceAtLeast(0),
-                )
-            }
+            visibility.visibility
+                .flatMapLatest { state ->
+                    if (state == MiniAppVisibility.ACTIVE) {
+                        flow {
+                            repeat(modelState.value.continueSecondsRemaining) {
+                                delay(COUNTDOWN_TICK_MILLIS)
+                                emit(Unit)
+                            }
+                        }
+                    } else {
+                        emptyFlow()
+                    }
+                }
+                .collect {
+                    val current = modelState.value
+                    if (current.continueSecondsRemaining <= 0) return@collect
+                    modelState.value = current.copy(
+                        continueSecondsRemaining = current.continueSecondsRemaining - 1,
+                    )
+                }
         }
     }
 
@@ -105,7 +119,7 @@ internal class DefaultGameResultComponent(
 
 @Inject
 internal class DefaultGameResultComponentFactory(
-    private val settings: SettingsRepository,
+    private val visibility: MiniAppVisibilitySource,
 ) : GameResultComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
@@ -119,7 +133,7 @@ internal class DefaultGameResultComponentFactory(
             componentContext = componentContext,
             snapshot = snapshot,
             canContinue = canContinue,
-            settings = settings,
+            visibility = visibility,
             onContinueRequested = onContinueRequested,
             onNewGameRequested = onNewGameRequested,
             onHomeRequested = onHomeRequested,

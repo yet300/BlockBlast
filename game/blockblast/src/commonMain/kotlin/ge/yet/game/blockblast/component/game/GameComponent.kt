@@ -21,7 +21,6 @@ interface GameComponent {
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
     fun onReviveClicked()
-    fun onRestartClicked()
     fun onSettingsClicked()
     fun onExitClicked()
     fun onTutorialSeen()
