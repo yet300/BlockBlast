@@ -57,7 +57,7 @@ BlockBlast/
 │   ├── samples/
 │   │   └── counter/            Discovered, unshipped reference MiniApp plugin
 │   ├── bundle/                 Production MiniApp shipping bundle derived from the settings allowlist
-│   └── integration-test/       Framework scaffold; end-to-end integration work is future work
+│   └── integration-test/       Non-shipping Counter aggregation and platform resource proofs
 ├── build-logic/
 │   ├── convention/             Local Kotlin Multiplatform Gradle convention plugin
 │   └── miniapp-settings/       Isolated settings-phase MiniApp discovery Gradle plugin
@@ -90,7 +90,7 @@ BlockBlast/
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
 | `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
-| `:miniapp:integration-test` | Statically included scaffold for later cross-module and platform integration proofs | no framework implementation yet |
+| `:miniapp:integration-test` | Non-shipping host proving Counter Metro aggregation, retained sessions and real Android/iOS Compose resources | `:miniapp:samples:counter` as `commonMainApi`, `:miniapp:metro`, `:miniapp:testkit` |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 | `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
@@ -228,6 +228,12 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :miniapp:samples:counter:allTests
 ./gradlew :miniapp:samples:counter:compileAndroidMain
 ./gradlew :miniapp:samples:counter:compileKotlinIosSimulatorArm64
+
+# Verify the non-shipping Counter integration host and real platform resources
+./gradlew :miniapp:integration-test:allTests
+./gradlew :miniapp:integration-test:testAndroidHostTest
+./gradlew :miniapp:integration-test:iosSimulatorArm64Test
+./gradlew :miniapp:integration-test:compileAndroidMain :miniapp:integration-test:linkDebugFrameworkIosSimulatorArm64
 
 # Verify contributor conventions and root task registration without generating a project
 ./gradlew -p build-logic :convention:test --tests '*MiniAppConventionPluginTest' --tests '*MiniAppDependencyBoundaryTest' --tests '*ValidateMiniAppDependenciesTaskTest' --tests '*CreateMiniAppTaskTest'
