@@ -66,7 +66,7 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val host = RecordingMiniAppSessionHost()
-        val sessionGraph = appGraph.sessionFactory.create(
+        val sessionGraph = appGraph.sessionFactory.createSample_CounterSessionGraph(
             componentContext = lifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = host,
@@ -88,12 +88,12 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
-        val first = appGraph.sessionFactory.create(
+        val first = appGraph.sessionFactory.createSample_CounterSessionGraph(
             componentContext = firstLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
         )
-        val second = appGraph.sessionFactory.create(
+        val second = appGraph.sessionFactory.createSample_CounterSessionGraph(
             componentContext = secondLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),

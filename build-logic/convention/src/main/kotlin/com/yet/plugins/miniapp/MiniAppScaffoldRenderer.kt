@@ -11,6 +11,9 @@ internal class MiniAppScaffoldRenderer(
     private val packageName = "ge.yet.${segments.joinToString(".")}"
     private val resourcePackage = MiniAppResourcePackage.from(projectPath)
     private val classPrefix = segments.last().replaceFirstChar(Char::uppercaseChar)
+    private val graphFactoryMethod = "create" +
+        segments.joinToString("_") { it.replaceFirstChar(Char::uppercaseChar) } +
+        "SessionGraph"
 
     fun writeTo(root: File) {
         write(root, "build.gradle.kts", "plugins { id(\"logica.miniapp\") }\n")
@@ -135,6 +138,7 @@ internal class MiniAppScaffoldRenderer(
         import dev.zacsweers.metro.AppScope
         import dev.zacsweers.metro.ContributesTo
         import dev.zacsweers.metro.GraphExtension
+        import dev.zacsweers.metro.Named
         import dev.zacsweers.metro.Provides
         import dev.zacsweers.metro.SingleIn
         import ge.yet.game.miniapp.api.MiniAppSessionHost
@@ -144,18 +148,19 @@ internal class MiniAppScaffoldRenderer(
 
         @GraphExtension(MiniAppSessionScope::class)
         interface ${classPrefix}SessionGraph {
+            @Named("$id.session")
             val session: MiniAppSession
 
             @Provides @SingleIn(MiniAppSessionScope::class)
             fun provideComponent(componentContext: ComponentContext): ${classPrefix}Component = Default${classPrefix}Component(componentContext)
 
-            @Provides @SingleIn(MiniAppSessionScope::class)
+            @Provides @SingleIn(MiniAppSessionScope::class) @Named("$id.session")
             fun provideSession(component: ${classPrefix}Component): MiniAppSession = ${classPrefix}Session(component)
 
             @ContributesTo(AppScope::class)
             @GraphExtension.Factory
             fun interface Factory {
-                fun create(
+                fun $graphFactoryMethod(
                     @Provides componentContext: ComponentContext,
                     @Provides visibility: MiniAppVisibilitySource,
                     @Provides host: MiniAppSessionHost,
@@ -192,7 +197,7 @@ internal class MiniAppScaffoldRenderer(
                 icon = Res.drawable.miniapp_icon, cover = null, category = MiniAppCategoryId("${segments.first()}"), sortPriority = 0,
             )
             override fun createSession(componentContext: ComponentContext, visibility: MiniAppVisibilitySource, host: MiniAppSessionHost): MiniAppSession {
-                val graph = graphFactory.create(componentContext, visibility, host)
+                val graph = graphFactory.$graphFactoryMethod(componentContext, visibility, host)
                 return RetainedMiniAppSession(graph, graph.session)
             }
         }

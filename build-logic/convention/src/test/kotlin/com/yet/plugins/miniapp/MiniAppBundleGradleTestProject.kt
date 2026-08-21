@@ -260,6 +260,7 @@ internal class MiniAppBundleGradleTestProject(
             compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
             compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
             compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+            compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose" }
             compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }
             compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
             decompose-compose = { module = "com.arkivanov.decompose:extensions-compose", version.ref = "decompose" }

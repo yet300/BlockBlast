@@ -24,6 +24,14 @@ kotlin {
 
     sourceSets.commonMain.dependencies {
         api(projects.miniapp.samples.counter)
+        implementation(projects.core.common)
+        implementation(projects.core.domain)
+        implementation(projects.core.data)
+        implementation(projects.core.telemetry)
+        implementation(projects.feature.review)
+        implementation(projects.feature.root)
+        implementation(projects.feature.catalog)
+        implementation(projects.feature.settings)
         implementation(projects.miniapp.metro)
         implementation(projects.miniapp.testkit)
         implementation(libs.compose.components.resources)
@@ -31,9 +39,18 @@ kotlin {
 
     sourceSets.named("androidHostTest") {
         dependencies {
+            implementation(projects.composeApp)
             implementation(kotlin("test-junit"))
+            implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.compose.ui.test.manifest)
+            implementation(libs.core.ktx)
             implementation(libs.junit)
+            implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.robolectric)
         }
+    }
+
+    sourceSets.iosTest.dependencies {
+        implementation(projects.miniapp.bundle)
     }
 }

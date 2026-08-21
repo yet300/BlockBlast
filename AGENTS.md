@@ -58,7 +58,7 @@ BlockBlast/
 │   ├── samples/
 │   │   └── counter/            Discovered, unshipped reference MiniApp plugin
 │   ├── bundle/                 Production MiniApp shipping bundle derived from the settings allowlist
-│   └── integration-test/       Non-shipping Counter aggregation and platform resource proofs
+│   └── integration-test/       Non-shipping Counter aggregation, Root/frame and platform proofs
 ├── build-logic/
 │   ├── convention/             Local Kotlin Multiplatform Gradle convention plugin
 │   └── miniapp-settings/       Isolated settings-phase MiniApp discovery Gradle plugin
@@ -92,7 +92,7 @@ BlockBlast/
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
 | `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
-| `:miniapp:integration-test` | Non-shipping host proving Counter Metro aggregation, retained sessions and real Android/iOS Compose resources | `:miniapp:samples:counter` as `commonMainApi`, `:miniapp:metro`, `:miniapp:testkit` |
+| `:miniapp:integration-test` | Non-shipping host proving Counter Metro aggregation, generic Root/session lifecycle, real MiniAppFrame layout and Android/iOS Compose resources | `:miniapp:samples:counter` as `commonMainApi`, `:miniapp:metro`, `:miniapp:testkit`; test-only host composition dependencies |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
 | `build-logic:miniapp-settings` | Settings-phase discovery and typed shipping model for MiniApp projects | isolated Gradle plugin artifact; Gradle API only |
 
@@ -167,6 +167,14 @@ not apply `logica.miniapp`.
 Create a reviewable contributor project with `./gradlew createMiniApp -PminiAppId=game.name -PminiAppName="Name"` (or provide a legal explicit `-PminiAppProjectPath=:miniapp:samples:name`). The task accepts only direct `:game:<name>` and `:miniapp:samples:<name>` paths, never overwrites an existing project, and writes through a sibling staging directory.
 
 Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, and dependency-boundary validation. Contributors may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, or native-ad modules. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
+
+Generated `@GraphExtension.Factory` methods are namespaced from the complete
+MiniApp ID (for example, `createGame_SnakeSessionGraph`). Preserve that naming:
+Kotlin cannot merge factories that differ only by return type when multiple
+MiniApps are aggregated into the same native application graph. The generated
+`MiniAppSession` binding is likewise qualified with the complete ID (for
+example, `@Named("game.snake.session")`) so sibling child graphs can share the
+framework session scope without binding collisions.
 
 Discovery and shipping are intentionally separate: a scaffold becomes discoverable on the next Gradle invocation, but it is not shipped until a maintainer explicitly adds it to the root `miniApps` allowlist. Never treat discovery as production authorization.
 

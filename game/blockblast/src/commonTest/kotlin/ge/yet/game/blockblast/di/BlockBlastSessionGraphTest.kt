@@ -15,6 +15,7 @@ import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.GraphExtension
+import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraph
@@ -95,6 +96,7 @@ internal interface BlockBlastPluginTestGraph {
 
 @GraphExtension(MiniAppSessionScope::class)
 internal interface InspectableBlockBlastSessionGraph {
+    @Named("game.blockblast.session")
     val session: MiniAppSession
     val sessionComponent: BlockBlastSessionComponent
     val gameReducer: GameSessionReducer
@@ -355,7 +357,7 @@ class BlockBlastSessionGraphTest {
             appGraph.settings.putString("blockblast.game_save", CURRENT_SAVE_BYTES)
             val plugin = BlockBlastPlugin(
                 BlockBlastSessionGraph.Factory { componentContext, visibility, host ->
-                    appGraph.sessionFactory.create(componentContext, visibility, host).also {
+                    appGraph.sessionFactory.createGame_BlockblastSessionGraph(componentContext, visibility, host).also {
                         createdGraph = it
                     }
                 },

@@ -35,7 +35,7 @@ class CounterPlugin(private val graphFactory: CounterSessionGraph.Factory) : Min
         visibility: MiniAppVisibilitySource,
         host: MiniAppSessionHost,
     ): MiniAppSession {
-        val graph = graphFactory.create(componentContext, visibility, host)
+        val graph = graphFactory.createSample_CounterSessionGraph(componentContext, visibility, host)
         return RetainedMiniAppSession(graph, graph.session)
     }
 }

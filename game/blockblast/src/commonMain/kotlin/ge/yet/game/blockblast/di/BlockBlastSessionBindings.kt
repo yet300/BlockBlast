@@ -3,6 +3,7 @@ package ge.yet.game.blockblast.di
 import com.arkivanov.decompose.ComponentContext
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.blockblast.component.game.DefaultGameComponentFactory
@@ -88,6 +89,7 @@ abstract class BlockBlastSessionBindings {
 
         @Provides
         @SingleIn(MiniAppSessionScope::class)
+        @Named("game.blockblast.session")
         internal fun provideMiniAppSession(
             component: BlockBlastSessionComponent,
             interstitials: MiniAppInterstitialCapability,
