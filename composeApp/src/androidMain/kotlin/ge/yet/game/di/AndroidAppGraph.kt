@@ -7,7 +7,7 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import ge.yet.game.data.di.AndroidDataBindings
 import ge.yet.game.data.di.DataBindings
-import ge.yet.game.feature.home.di.HomeBindings
+import ge.yet.game.feature.catalog.di.CatalogBindings
 import ge.yet.game.feature.review.di.ReviewBindings
 import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.feature.root.di.RootBindings
@@ -24,7 +24,7 @@ import ge.yet.game.telemetry.di.TelemetryBindings
         TelemetryBindings::class,
         ComposeAppBindings::class,
         RootBindings::class,
-        HomeBindings::class,
+        CatalogBindings::class,
         ReviewBindings::class,
         SettingsBindings::class,
     ],

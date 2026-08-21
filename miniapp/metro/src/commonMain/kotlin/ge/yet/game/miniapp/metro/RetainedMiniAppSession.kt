@@ -9,5 +9,8 @@ class RetainedMiniAppSession<G : Any>(
     private val delegate: MiniAppSession,
 ) : MiniAppSession {
     @Composable
+    override fun TopBarContent() = delegate.TopBarContent()
+
+    @Composable
     override fun Content(modifier: Modifier) = delegate.Content(modifier)
 }

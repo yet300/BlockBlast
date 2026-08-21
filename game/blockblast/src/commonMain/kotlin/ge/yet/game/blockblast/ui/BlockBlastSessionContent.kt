@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.stack.Children
+import com.arkivanov.decompose.extensions.compose.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.blockblast.session.BlockBlastSessionComponent
 import ge.yet.game.blockblast.ui.game.BlockBlastGameContent
@@ -22,6 +24,7 @@ internal fun BlockBlastSessionContent(
     Children(
         stack = stack,
         modifier = modifier,
+        animation = stackAnimation(fade()),
     ) { child ->
         when (val instance = child.instance) {
             is BlockBlastSessionComponent.Child.Playing -> BlockBlastGameContent(

@@ -1,7 +1,6 @@
 package ge.yet.game.screen
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -11,10 +10,8 @@ import ge.yet.game.monetization.ads.AdMobConfiguration
 import ge.yet.game.monetization.ads.AdMobProvider
 import ge.yet.game.monetization.ads.rememberAdMobState
 import ge.yet.game.monetization.core.MonetizationEntitlement
-import ge.yet.game.uikit.theme.BlockBlastTheme
-import ge.yet.game.blockblast.ui.LocalSoundEnabled
-import ge.yet.game.blockblast.ui.LocalVibrationEnabled
 import ge.yet.game.screen.root.RootContent
+import ge.yet.game.uikit.theme.LogicaTheme
 
 @Composable
 fun App(rootComponent: RootComponent) {
@@ -38,15 +35,8 @@ fun App(rootComponent: RootComponent) {
         state = monetizationState,
         configuration = adMobConfiguration,
     ) {
-        BlockBlastTheme(darkTheme = darkTheme) {
-            val vibrationEnabled by rootComponent.vibrationEnabled.collectAsState()
-            val soundEnabled by rootComponent.sfxEnabled.collectAsState()
-            CompositionLocalProvider(
-                LocalVibrationEnabled provides vibrationEnabled,
-                LocalSoundEnabled provides soundEnabled,
-            ) {
-                RootContent(component = rootComponent)
-            }
+        LogicaTheme(darkTheme = darkTheme) {
+            RootContent(component = rootComponent)
         }
     }
 }

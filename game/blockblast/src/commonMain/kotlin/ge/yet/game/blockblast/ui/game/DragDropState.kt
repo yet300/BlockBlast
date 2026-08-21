@@ -34,7 +34,7 @@ class DragDropState {
         private set
 
     /** Current drag position in window coordinates. */
-    var dragPosition by mutableStateOf(Offset.Zero)
+    var dragPositionInWindow by mutableStateOf(Offset.Zero)
         private set
 
     /** Grid cell (x, y) the piece anchor maps to, or null if off-grid. */
@@ -50,40 +50,40 @@ class DragDropState {
         private set
 
     /** Center of the source tray slot in window coordinates. */
-    var sourcePosition by mutableStateOf(Offset.Zero)
+    var sourcePositionInWindow by mutableStateOf(Offset.Zero)
         private set
 
     /** Position from which an invalid-drop return begins. */
-    var returnStartPosition by mutableStateOf(Offset.Zero)
+    var returnStartPositionInWindow by mutableStateOf(Offset.Zero)
         private set
 
     /** Finger position where the drag started. */
-    private var dragStartFingerPos by mutableStateOf(Offset.Zero)
+    private var dragStartFingerPositionInWindow by mutableStateOf(Offset.Zero)
 
     val isDragging: Boolean get() = presentation == DragPresentation.Dragging
     val isReturning: Boolean get() = presentation == DragPresentation.Returning
 
     fun startDrag(
         piece: Piece,
-        startPosition: Offset,
+        startPositionInWindow: Offset,
         pieceOriginOffset: Offset,
-        sourcePosition: Offset,
+        sourcePositionInWindow: Offset,
     ) {
         if (presentation != DragPresentation.Idle) return
         draggedPiece = piece
-        dragPosition = startPosition
-        dragStartFingerPos = startPosition
+        dragPositionInWindow = startPositionInWindow
+        dragStartFingerPositionInWindow = startPositionInWindow
         fingerOffset = pieceOriginOffset
-        this.sourcePosition = sourcePosition
-        returnStartPosition = Offset.Zero
+        this.sourcePositionInWindow = sourcePositionInWindow
+        returnStartPositionInWindow = Offset.Zero
         hoverAnchor = null
         isValidPlacement = false
         presentation = DragPresentation.Dragging
     }
 
     fun updateDrag(
-        position: Offset,
-        gridOrigin: Offset,
+        positionInWindow: Offset,
+        gridOriginInWindow: Offset,
         cellSizePx: Float,
         gapPx: Float,
         grid: Grid,
@@ -95,13 +95,13 @@ class DragDropState {
         // Apply sensitivity: the piece moves faster than the finger relative
         // to the pickup point. This allows reaching screen corners with less
         // physical thumb movement.
-        val delta = position - dragStartFingerPos
-        dragPosition = dragStartFingerPos + delta * DRAG_SENSITIVITY
+        val delta = positionInWindow - dragStartFingerPositionInWindow
+        dragPositionInWindow = dragStartFingerPositionInWindow + delta * DRAG_SENSITIVITY
 
         val piece = draggedPiece ?: return
 
         // The floating ghost is drawn with its top-left at
-        //   (dragPosition - fingerOffset) - (ghostW/2, ghostH) - (0, verticalLift)
+        //   (dragPositionInWindow - fingerOffset) - (ghostW/2, ghostH) - (0, verticalLift)
         // so the snap anchor must be computed from that same top-left,
         // otherwise the piece lands below/beside where the user sees it.
         val ghostW = piece.shape.width * ghostCellSizePx +
@@ -109,19 +109,19 @@ class DragDropState {
         val ghostH = piece.shape.height * ghostCellSizePx +
             (piece.shape.height - 1).coerceAtLeast(0) * ghostGapPx
 
-        // The floating ghost is drawn with its center at [dragPosition] (virtual
+        // The floating ghost is drawn with its center at [dragPositionInWindow] (virtual
         // finger) horizontally, and entirely above the finger vertically.
         // This is a "lifted" drag style that ensures the piece is never
         // obscured by the user's thumb.
-        val ghostTopLeftX = dragPosition.x - ghostW / 2f
-        val ghostTopLeftY = dragPosition.y - ghostH - verticalLiftPx
+        val ghostTopLeftX = dragPositionInWindow.x - ghostW / 2f
+        val ghostTopLeftY = dragPositionInWindow.y - ghostH - verticalLiftPx
 
         // Snap by rounding the ghost's top-left to the nearest grid cell
         // — rounding (not floor) so half-cell overlaps jump to the closer
         // column/row, which matches user expectation.
         val step = cellSizePx + gapPx
-        val relX = ghostTopLeftX - gridOrigin.x
-        val relY = ghostTopLeftY - gridOrigin.y
+        val relX = ghostTopLeftX - gridOriginInWindow.x
+        val relY = ghostTopLeftY - gridOriginInWindow.y
 
         val anchorX = kotlin.math.round(relX / step).toInt()
         val anchorY = kotlin.math.round(relY / step).toInt()
@@ -136,7 +136,7 @@ class DragDropState {
 
     fun beginReturn() {
         if (!isDragging || draggedPiece == null) return
-        returnStartPosition = dragPosition
+        returnStartPositionInWindow = dragPositionInWindow
         hoverAnchor = null
         isValidPlacement = false
         fingerOffset = Offset.Zero
@@ -152,13 +152,13 @@ class DragDropState {
 
     private fun clearPresentation() {
         draggedPiece = null
-        dragPosition = Offset.Zero
-        dragStartFingerPos = Offset.Zero
+        dragPositionInWindow = Offset.Zero
+        dragStartFingerPositionInWindow = Offset.Zero
         hoverAnchor = null
         isValidPlacement = false
         fingerOffset = Offset.Zero
-        sourcePosition = Offset.Zero
-        returnStartPosition = Offset.Zero
+        sourcePositionInWindow = Offset.Zero
+        returnStartPositionInWindow = Offset.Zero
         presentation = DragPresentation.Idle
     }
 }

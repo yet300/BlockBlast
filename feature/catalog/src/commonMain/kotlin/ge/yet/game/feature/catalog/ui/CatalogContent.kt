@@ -4,10 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -16,6 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -27,7 +32,7 @@ import ge.yet.game.feature.catalog.generated.resources.play
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
-import ge.yet.game.uikit.theme.BlockBlastTheme
+import ge.yet.game.uikit.theme.LogicaTheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -51,9 +56,38 @@ private fun CatalogContent(
     onPlay: (MiniAppId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val safeDrawing = WindowInsets.safeDrawing
+    val padding = catalogContentPadding(
+        contentPadding = 20.dp,
+        safeTop = with(density) { safeDrawing.getTop(this).toDp() },
+        safeBottom = with(density) { safeDrawing.getBottom(this).toDp() },
+        safeStart = with(density) {
+            val pixels = if (layoutDirection == LayoutDirection.Ltr) {
+                safeDrawing.getLeft(this, layoutDirection)
+            } else {
+                safeDrawing.getRight(this, layoutDirection)
+            }
+            pixels.toDp()
+        },
+        safeEnd = with(density) {
+            val pixels = if (layoutDirection == LayoutDirection.Ltr) {
+                safeDrawing.getRight(this, layoutDirection)
+            } else {
+                safeDrawing.getLeft(this, layoutDirection)
+            }
+            pixels.toDp()
+        },
+    )
     LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(20.dp),
+        modifier = modifier.testTag("catalog_content"),
+        contentPadding = PaddingValues(
+            start = padding.start,
+            top = padding.top,
+            end = padding.end,
+            bottom = padding.bottom,
+        ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         items(
@@ -109,7 +143,7 @@ private fun MiniAppCard(
 
 @PreviewLightDark
 @Composable
-fun CatalogContentPreview() = BlockBlastTheme {
+fun CatalogContentPreview() = LogicaTheme {
     CatalogContent(
         modifier = Modifier.fillMaxSize(),
         component = PreviewCatalogComponent()

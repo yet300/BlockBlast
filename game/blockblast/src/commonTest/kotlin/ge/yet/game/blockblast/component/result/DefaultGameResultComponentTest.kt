@@ -167,7 +167,7 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun failed_continue_unlocks_retry_and_home_actions() = runTest(testDispatcher) {
+    fun failed_continue_unlocks_retry_action() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
 
         setup.component.onPrimaryClicked(approveImmediately)
@@ -179,9 +179,6 @@ class DefaultGameResultComponentTest {
         runCurrent()
         assertEquals(2, setup.continueCalls)
 
-        setup.component.onContinueFailed()
-        setup.component.onHomeClicked()
-        assertEquals(1, setup.homeCalls)
         setup.lifecycle.destroy()
     }
 
@@ -258,20 +255,6 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun home_is_a_single_terminal_action() {
-        val setup = build(canContinue = true)
-
-        setup.component.onHomeClicked()
-        setup.component.onHomeClicked()
-        setup.component.onPrimaryClicked(failIfContinueGateRequested)
-
-        assertEquals(1, setup.homeCalls)
-        assertEquals(0, setup.continueCalls)
-        assertEquals(0, setup.newGameCalls)
-        setup.lifecycle.destroy()
-    }
-
-    @Test
     fun destroy_cancels_the_countdown() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
         advanceTimeBy(1_000)
@@ -314,7 +297,6 @@ class DefaultGameResultComponentTest {
         val lifecycle = LifecycleRegistry()
         var continueCalls = 0
         var newGameCalls = 0
-        var homeCalls = 0
         val component = DefaultGameResultComponent(
             componentContext = DefaultComponentContext(lifecycle = lifecycle),
             snapshot = snapshot,
@@ -325,7 +307,6 @@ class DefaultGameResultComponentTest {
                 onContinueRequested()
             },
             onNewGameRequested = { newGameCalls += 1 },
-            onHomeRequested = { homeCalls += 1 },
         )
         lifecycle.resume()
         return Setup(
@@ -333,7 +314,6 @@ class DefaultGameResultComponentTest {
             lifecycle = lifecycle,
             continueCallsProvider = { continueCalls },
             newGameCallsProvider = { newGameCalls },
-            homeCallsProvider = { homeCalls },
         )
     }
 
@@ -342,11 +322,9 @@ class DefaultGameResultComponentTest {
         val lifecycle: LifecycleRegistry,
         val continueCallsProvider: () -> Int,
         val newGameCallsProvider: () -> Int,
-        val homeCallsProvider: () -> Int,
     ) {
         val continueCalls: Int get() = continueCallsProvider()
         val newGameCalls: Int get() = newGameCallsProvider()
-        val homeCalls: Int get() = homeCallsProvider()
     }
 
     private companion object {

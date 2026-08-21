@@ -64,6 +64,7 @@ kotlin {
             implementation(projects.miniapp.bundle)
 
             api(projects.feature.root)
+            implementation(projects.feature.catalog)
             implementation(projects.feature.home)
             implementation(projects.feature.settings)
             implementation(projects.feature.review)
@@ -86,21 +87,21 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.bundles.testing)
+            implementation(libs.compose.ui.test)
 
             implementation(libs.multiplatform.settings.test)
         }
         named("androidHostTest") {
             dependencies {
                 implementation(projects.miniapp.testkit)
+                implementation(kotlin("test-junit"))
                 implementation(libs.core.ktx)
                 implementation(libs.junit)
                 implementation(libs.robolectric)
             }
         }
-        named("iosTest") {
-            dependencies {
-                implementation(projects.miniapp.testkit)
-            }
+        iosTest.dependencies {
+            implementation(projects.miniapp.testkit)
         }
     }
 }
@@ -121,6 +122,9 @@ tasks.withType<Test>().configureEach {
         // This common parser test calls Android framework stubs and is covered by native tests.
         filter {
             excludeTestsMatching("ge.yet.game.ComposeLibrariesProviderTest")
+            // Compose UI's Android host environment requires a Robolectric runner;
+            // this common suite executes on the iOS simulator in allTests.
+            excludeTestsMatching("ge.yet.game.screen.root.RootContentTest")
         }
     }
 }

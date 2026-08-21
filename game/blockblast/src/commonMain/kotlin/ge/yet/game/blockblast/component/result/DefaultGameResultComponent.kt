@@ -10,7 +10,6 @@ import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -23,7 +22,6 @@ internal class DefaultGameResultComponent(
     private val visibility: MiniAppVisibilitySource,
     private val onContinueRequested: () -> Unit,
     private val onNewGameRequested: () -> Unit,
-    private val onHomeRequested: () -> Unit,
 ) : GameResultComponent,
     ComponentContext by componentContext {
 
@@ -61,12 +59,6 @@ internal class DefaultGameResultComponent(
         } else {
             onNewGameRequested()
         }
-    }
-
-    override fun onHomeClicked() {
-        if (!claimTerminalAction()) return
-        countdownJob?.cancel()
-        onHomeRequested()
     }
 
     override fun onContinueFailed() {
@@ -127,7 +119,6 @@ internal class DefaultGameResultComponentFactory(
         canContinue: Boolean,
         onContinueRequested: () -> Unit,
         onNewGameRequested: () -> Unit,
-        onHomeRequested: () -> Unit,
     ): GameResultComponent =
         DefaultGameResultComponent(
             componentContext = componentContext,
@@ -136,6 +127,5 @@ internal class DefaultGameResultComponentFactory(
             visibility = visibility,
             onContinueRequested = onContinueRequested,
             onNewGameRequested = onNewGameRequested,
-            onHomeRequested = onHomeRequested,
         )
 }

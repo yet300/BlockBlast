@@ -8,7 +8,6 @@ interface GameResultComponent {
     val model: Value<Model>
 
     fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit)
-    fun onHomeClicked()
     fun onContinueFailed()
 
     data class Model(
@@ -27,7 +26,6 @@ interface GameResultComponent {
             canContinue: Boolean,
             onContinueRequested: () -> Unit,
             onNewGameRequested: () -> Unit,
-            onHomeRequested: () -> Unit,
         ): GameResultComponent
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import ge.yet.game.blockblast.ui.BlockBlastSessionContent
+import ge.yet.game.blockblast.ui.BlockBlastSessionTopBarContent
 import ge.yet.game.blockblast.ui.LocalSoundEnabled
 import ge.yet.game.blockblast.ui.LocalVibrationEnabled
 import ge.yet.game.domain.repository.FeedbackPreferences
@@ -17,6 +18,11 @@ internal class BlockBlastSession(
     private val interstitials: MiniAppInterstitialCapability,
     internal val feedback: FeedbackPreferences,
 ) : MiniAppSession {
+    @Composable
+    override fun TopBarContent() {
+        BlockBlastSessionTopBarContent(component)
+    }
+
     @Composable
     override fun Content(modifier: Modifier) {
         val vibrationEnabled by feedback.vibrationEnabled.collectAsState()

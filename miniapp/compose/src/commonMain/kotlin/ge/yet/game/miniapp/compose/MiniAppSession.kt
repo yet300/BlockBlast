@@ -6,5 +6,8 @@ import androidx.compose.ui.Modifier
 interface MiniAppSession {
 
     @Composable
+    fun TopBarContent() = Unit
+
+    @Composable
     fun Content(modifier: Modifier)
 }

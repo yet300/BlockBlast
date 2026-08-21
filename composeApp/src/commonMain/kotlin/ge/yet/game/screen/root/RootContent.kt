@@ -3,58 +3,102 @@ package ge.yet.game.screen.root
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.testTag
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import ge.yet.game.blockblast.component.result.GameResultComponent
-import ge.yet.game.blockblast.ui.game.BlockBlastGameContent
-import ge.yet.game.blockblast.ui.result.GameResultContent
+import ge.yet.game.feature.catalog.ui.CatalogContent
 import ge.yet.game.feature.root.RootComponent
-import ge.yet.game.miniapp.miniAppInterstitialGate
 import ge.yet.game.monetization.ads.LocalMonetizationState
-import ge.yet.game.monetization.ads.rememberGameOverInterstitial
-import ge.yet.game.screen.home.HomeContent
+import ge.yet.game.monetization.ads.AdBanner
+import ge.yet.game.screen.miniapp.MiniAppFrame
+import ge.yet.game.screen.miniapp.MiniAppUnavailableContent
+import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.utils.cupertinoPredictiveBackAnimation
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun RootContent(
+    component: RootComponent,
     modifier: Modifier = Modifier,
-    component: RootComponent
 ) {
     val childStack by component.stack.subscribeAsState()
-    Children(
-        modifier = modifier,
-        stack = childStack,
-        animation = cupertinoPredictiveBackAnimation(
-            backHandler = component.backHandler,
-            onBack = component::onBackClicked,
-        ),
-    ) { child ->
-        when (val instance = child.instance) {
-            is RootComponent.Child.Game -> BlockBlastGameContent(component = instance.component)
-            is RootComponent.Child.Home -> HomeContent(component = instance.component)
-            is RootComponent.Child.Result -> LegacyGameResultContent(
-                component = instance.component,
+    RootHost(modifier = modifier) {
+        Children(
+            modifier = Modifier.fillMaxSize(),
+            stack = childStack,
+            animation = cupertinoPredictiveBackAnimation(
+                backHandler = component.backHandler,
+                onBack = component::onBackClicked,
+            ),
+        ) { child ->
+            RootChildContent(
+                child = child.instance,
+                onBack = component::onBackClicked,
+                onSettings = component::onSettingsClicked,
             )
         }
+        RootSheet(component = component)
     }
-    RootSheet(component = component)
 }
 
 @Composable
-private fun LegacyGameResultContent(
-    component: GameResultComponent,
+internal fun RootHost(
     modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
 ) {
-    val presenter = rememberGameOverInterstitial()
-    val gate = miniAppInterstitialGate(
-        canShowAds = LocalMonetizationState.current.canShowAds,
-        presenter = presenter,
-    )
-    GameResultContent(
-        component = component,
-        interstitialGate = gate,
-        modifier = modifier,
-    )
+    Box(modifier = modifier.fillMaxSize()) {
+        AmbientMeshBackground(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("root_ambient_background"),
+            baseColor = MaterialTheme.colorScheme.background,
+        )
+        content()
+    }
+}
+
+@Composable
+internal fun RootChildContent(
+    child: RootComponent.Child,
+    onBack: () -> Unit,
+    onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    bottomBar: (@Composable () -> Unit)? = null,
+) {
+    when (child) {
+        is RootComponent.Child.Catalog -> CatalogContent(
+            component = child.component,
+            modifier = modifier.fillMaxSize(),
+        )
+
+        is RootComponent.Child.RunningMiniApp -> MiniAppFrame(
+            onBack = onBack,
+            onSettings = onSettings,
+            modifier = modifier,
+            topBar = {
+                (child.state as? RootComponent.MiniAppState.Content)
+                    ?.session
+                    ?.TopBarContent()
+            },
+            bottomBar = bottomBar ?: if (LocalMonetizationState.current.canShowAds) {
+                { AdBanner() }
+            } else {
+                null
+            },
+        ) { viewport ->
+            when (val state = child.state) {
+                is RootComponent.MiniAppState.Content -> state.session.Content(viewport)
+                is RootComponent.MiniAppState.Unavailable -> MiniAppUnavailableContent(
+                    id = state.id,
+                    onBack = onBack,
+                    modifier = viewport,
+                )
+            }
+        }
+    }
 }

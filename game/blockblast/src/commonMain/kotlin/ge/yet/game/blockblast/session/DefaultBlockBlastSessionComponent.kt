@@ -51,8 +51,6 @@ internal class DefaultBlockBlastSessionComponent(
                     componentContext = componentContext,
                     isNewGame = config.isNewGame,
                     restoredResultState = config.restoredResultState,
-                    onSettingsClicked = {},
-                    onExitClicked = {},
                     onGameCompleted = { finalState, canContinue, reviewOpportunity ->
                         showResult(
                             gameInstanceId = config.instanceId,
@@ -76,7 +74,6 @@ internal class DefaultBlockBlastSessionComponent(
                 canContinue = config.canContinue,
                 onContinueRequested = { continueGame(config) },
                 onNewGameRequested = { startNewGame(config) },
-                onHomeRequested = {},
             ),
         )
     }

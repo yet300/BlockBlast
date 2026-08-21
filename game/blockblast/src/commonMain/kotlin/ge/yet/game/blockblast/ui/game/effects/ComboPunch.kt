@@ -29,14 +29,14 @@ class ComboPunchState {
      * Origin of the radial flash in container-local pixels.
      * Null falls back to a full-bounds white wash (legacy behavior).
      */
-    var flashOrigin: Offset? by mutableStateOf(null)
+    var flashOriginInViewport: Offset? by mutableStateOf(null)
         private set
     /** Cached level so the modifier can scale flash radius to combo intensity. */
     var lastLevel: Int by mutableStateOf(0)
         private set
 
-    suspend fun punch(level: Int, origin: Offset? = null) {
-        flashOrigin = origin
+    suspend fun punch(level: Int, originInViewport: Offset? = null) {
+        flashOriginInViewport = originInViewport
         lastLevel = level
         val flashStrength = (0.10f + 0.06f * level).coerceAtMost(0.32f)
         val zoomTarget = (1f + 0.012f * level).coerceAtMost(1.045f)
@@ -64,7 +64,7 @@ fun Modifier.comboZoom(state: ComboPunchState): Modifier = this.graphicsLayer {
 }
 
 /**
- * Renders the combo flash overlay. If [ComboPunchState.flashOrigin] is set,
+ * Renders the combo flash overlay. If [ComboPunchState.flashOriginInViewport] is set,
  * the flash is a radial bloom centered on that point (container-local px),
  * shrinking to a point with combo level boosting the radius. Otherwise it
  * falls back to a full-bounds white wash.
@@ -73,8 +73,8 @@ fun Modifier.comboFlash(state: ComboPunchState): Modifier = this.drawWithContent
     drawContent()
     val a = state.flashAlpha.value
     if (a <= 0f) return@drawWithContent
-    val origin = state.flashOrigin
-    if (origin == null) {
+    val originInViewport = state.flashOriginInViewport
+    if (originInViewport == null) {
         drawRect(color = Color.White.copy(alpha = a))
     } else {
         // Radius scales with combo level — a single line is a focused puff,
@@ -88,7 +88,7 @@ fun Modifier.comboFlash(state: ComboPunchState): Modifier = this.drawWithContent
                     Color.White.copy(alpha = a * 0.55f),
                     Color.Transparent,
                 ),
-                center = origin,
+                center = originInViewport,
                 radius = radius,
             ),
         )

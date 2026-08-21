@@ -21,8 +21,6 @@ interface GameComponent {
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
     fun onReviveClicked()
-    fun onSettingsClicked()
-    fun onExitClicked()
     fun onTutorialSeen()
 
 
@@ -31,8 +29,6 @@ interface GameComponent {
             componentContext: ComponentContext,
             isNewGame: Boolean,
             restoredResultState: GameState?,
-            onSettingsClicked: () -> Unit,
-            onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
             onReviveFailed: () -> Unit,

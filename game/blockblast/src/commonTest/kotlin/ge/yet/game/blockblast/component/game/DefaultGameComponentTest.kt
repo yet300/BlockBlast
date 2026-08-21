@@ -74,8 +74,6 @@ class DefaultGameComponentTest {
             tutorialRepository = tutorial,
             analytics = analytics,
         )
-        val settingsCalls = mutableListOf<Unit>()
-        val exitCalls = mutableListOf<Unit>()
         val completions = mutableListOf<Triple<GameState, Boolean, Boolean>>()
         val reviveCompletions = mutableListOf<GameState>()
         val component = DefaultGameComponent(
@@ -87,8 +85,6 @@ class DefaultGameComponentTest {
             visibility = visibility,
             isNewGame = isNewGame,
             restoredResultState = restoredResultState,
-            onSettingsClick = { settingsCalls += Unit },
-            onExitClickedCb = { exitCalls += Unit },
             onGameCompletedCb = { finalState, canContinue, reviewOpportunity ->
                 completions += Triple(finalState, canContinue, reviewOpportunity)
             },
@@ -100,34 +96,10 @@ class DefaultGameComponentTest {
             lifecycle,
             audio,
             analytics,
-            settingsCalls,
-            exitCalls,
             completions,
             reviveCompletions,
             save,
         )
-    }
-
-    // ── Navigation ──────────────────────────────────────────────────
-
-    @Test
-    fun onSettingsClicked_invokes_parent_callback_and_logs() {
-        val s = build()
-        s.component.onSettingsClicked()
-        assertEquals(1, s.settingsCalls.size)
-        assertNotNull(s.analytics.events.find { it.first == "settings_opened" })
-        s.dispose()
-    }
-
-    // ── Exit ─────────────────────────────────────────────────────────────
-
-    @Test
-    fun onExitClicked_invokes_callback_and_logs() {
-        val s = build()
-        s.component.onExitClicked()
-        assertEquals(1, s.exitCalls.size)
-        assertNotNull(s.analytics.events.find { it.first == "exit_clicked" })
-        s.dispose()
     }
 
     @Test
@@ -257,8 +229,6 @@ class DefaultGameComponentTest {
         val lifecycle: LifecycleRegistry,
         val audio: RecordingAudio,
         val analytics: RecordingAnalytics,
-        val settingsCalls: MutableList<Unit>,
-        val exitCalls: MutableList<Unit>,
         val completions: MutableList<Triple<GameState, Boolean, Boolean>>,
         val reviveCompletions: MutableList<GameState>,
         val save: StubSaveRepo,

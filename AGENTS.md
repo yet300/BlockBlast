@@ -73,7 +73,7 @@ BlockBlast/
 |---|---|---|
 | `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
-| `:composeApp` | Shared application UI, app-owned resources and app composition | core, feature, game and monetization modules; `:miniapp:compose` contracts |
+| `:composeApp` | Shared application UI, app-owned resources, the common MiniApp frame and app composition | core, catalog/root/settings/review, transitional `:feature:home`, monetization, the production MiniApp bundle and `:miniapp:compose` contracts |
 | `:core:domain` | Reusable platform-neutral domain contracts, including the game-save status API, and app-level models | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
@@ -82,12 +82,12 @@ BlockBlast/
 | `:feature:catalog` | Registry-backed MiniApp catalog with uniform host-owned cards and one Play action per manifest | `:miniapp:compose`, `:core:uikit`, Decompose and Compose resources |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
-| `:feature:root` | Top-level navigation, sheet ownership and feature composition | core modules, `:feature:home`, `:feature:review`, `:feature:settings`, `:game:blockblast` |
+| `:feature:root` | Catalog/running-MiniApp navigation, session visibility and sheet ownership | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; core contracts, ConfettiKit, MVIKotlin and multiplatform-settings; no native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
-| `:miniapp:compose` | Compose-facing MiniApp plugin, session, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
+| `:miniapp:compose` | Compose-facing MiniApp plugin, session, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
@@ -101,8 +101,13 @@ features or UI, and feature modules must not depend on `:composeApp` or either
 native application shell. Treat a new cross-feature dependency as an
 architecture decision, not a convenience import.
 
+`:composeApp` still compiles the legacy `HomeContent` through a direct
+`:feature:home` dependency, but Root no longer renders it and the platform
+graphs no longer install `HomeBindings`. Task 17 removes that transitional UI
+and dependency; do not treat it as part of the active Catalog navigation.
+
 Game modules own all rules, game-specific models, persistence, components and
-UI for their respective games. `:feature:root` composes the current game, while
+UI for their respective games. `:feature:root` hosts a selected plugin session, while
 the game module must not depend on `:composeApp`, `:feature:root` or a native
 application module. Block Blast's internal engine and implementation types stay
 `internal`; only the component and model contracts required by Root, Home and
@@ -129,9 +134,19 @@ session-owned components and reducers live in `MiniAppSessionScope`, while save,
 best-score and preference repositories remain app-scoped. Game plugins consume
 `MiniAppInterstitialCapability` and must not depend on a MiniApp host,
 `:feature:root`, `:composeApp`, native application modules or native-ad modules.
-The current Root result-screen adapter remains a private transition owned by
-`:composeApp`; the catalog does not create sessions, and host/root migration
-remains separate follow-up work.
+`:composeApp` renders every running session inside one host-owned frame. Back,
+Settings, toolbar sizing and accessibility, safe-area ownership and the
+conditional banner stay host-owned. A session may contribute optional center
+content through `MiniAppSession.TopBarContent`; that content renders in the
+host theme, outside the plugin viewport. Plugin-local themes therefore remain
+confined to `MiniAppSession.Content` and cannot leak into host chrome. Root owns
+one ambient background behind its child stack and sheets; child transitions
+must not recreate that background.
+
+Block Blast drag, grid and tray hit-testing measurements use window
+coordinates, reflected by `InWindow` names. Convert points and rectangles only
+at viewport-local rendering boundaries through the shared `windowToViewport`
+contract; overlay and effect inputs use explicit `InViewport` names.
 
 The root settings `miniApps` allowlist is the sole authoritative shipping path:
 the bundle convention consumes its finalized declarations in order, adds exactly

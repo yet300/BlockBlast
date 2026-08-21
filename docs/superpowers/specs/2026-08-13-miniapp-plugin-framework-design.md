@@ -94,8 +94,9 @@ framework version:
 - Supporting native Android Views, UIKit, or SwiftUI as plugin UI contracts.
 - Restoring an active mini-app automatically after process death.
 - Exposing `Replay` or other game-specific commands in the initial generic API.
-- Allowing plugins to provide arbitrary catalog cards, top bars, settings UI,
-  or advertisements.
+- Allowing plugins to replace host-owned catalog cards, toolbar layout and
+  controls, settings UI, or advertisements. A session may contribute only the
+  narrow optional center-content slot defined below.
 - Designing binary compatibility for independently compiled third-party
   artifacts.
 - Introducing a custom annotation processor before real plugin implementations
@@ -231,6 +232,9 @@ interface MiniAppPlugin {
 
 interface MiniAppSession {
     @Composable
+    fun TopBarContent() = Unit
+
+    @Composable
     fun Content(modifier: Modifier)
 }
 
@@ -257,7 +261,9 @@ instance retained by the Root child for the complete session lifetime.
 The session content receives a `Modifier` for its root viewport. The plugin
 must apply it to the root layout and must not add assumptions about system
 insets, top-bar height, or banner height. Those are already resolved by the
-host frame.
+host frame. `TopBarContent` is an optional center-content slot: the host still
+owns the toolbar row, sizing, controls and accessibility, and renders the slot
+under the host theme. The default is empty so contributors incur no boilerplate.
 
 `MiniAppSessionHost` deliberately stays small:
 
@@ -302,6 +308,7 @@ LogicaTheme
 └── MiniAppFrame
     ├── Top bar
     │   ├── Back
+    │   ├── optional MiniAppSession.TopBarContent
     │   └── Settings
     ├── Mini-app viewport
     │   └── optional plugin-local theme and MiniAppSession.Content
@@ -316,6 +323,7 @@ fun MiniAppFrame(
     onBack: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    topBar: @Composable () -> Unit = {},
     bottomBar: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 )
@@ -324,7 +332,8 @@ fun MiniAppFrame(
 The frame, not the plugin:
 
 - applies window and safe-area insets;
-- owns top-bar sizing and accessibility;
+- owns top-bar layout, sizing, controls and accessibility while accepting only
+  optional center content from the session;
 - maps toolbar Back and system Back to the same Root action;
 - presents global Settings without destroying the session;
 - reserves space for the bottom banner when it is eligible;
@@ -340,7 +349,8 @@ running mini-app frame.
 The application uses a host-level `LogicaTheme` for Catalog, Back, Settings,
 Review, error states, and the banner area. A plugin may wrap only its viewport
 in a local theme such as `BlockBlastGameTheme`. Plugin theming cannot alter the
-common chrome.
+common chrome. Root renders one ambient background behind both its child stack
+and sheets, so child transitions never duplicate or restart that background.
 
 ## Navigation and Product Behavior
 

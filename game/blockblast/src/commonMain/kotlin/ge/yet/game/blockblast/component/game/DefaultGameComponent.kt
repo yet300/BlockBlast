@@ -33,8 +33,6 @@ internal class DefaultGameComponent(
     private val visibility: MiniAppVisibilitySource,
     private val isNewGame: Boolean,
     private val restoredResultState: GameState?,
-    private val onSettingsClick: () -> Unit,
-    private val onExitClickedCb: () -> Unit,
     private val onGameCompletedCb: (GameState, Boolean, Boolean) -> Unit,
     private val onReviveCompletedCb: (GameState) -> Unit,
     private val onReviveFailedCb: () -> Unit,
@@ -85,16 +83,6 @@ internal class DefaultGameComponent(
     }
 
     override fun onReviveClicked() = whenActive { store.accept(GameStore.Intent.Revive) }
-    override fun onSettingsClicked() {
-        log("settings_opened")
-        onSettingsClick()
-    }
-
-    override fun onExitClicked() {
-        log("exit_clicked")
-        onExitClickedCb()
-    }
-
     override fun onTutorialSeen() {
         lifecycleScope.launch { tutorialRepository.markSeen() }
     }
@@ -119,8 +107,6 @@ internal class DefaultGameComponentFactory(
         componentContext: ComponentContext,
         isNewGame: Boolean,
         restoredResultState: GameState?,
-        onSettingsClicked: () -> Unit,
-        onExitClicked: () -> Unit,
         onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
         onReviveCompleted: (GameState) -> Unit,
         onReviveFailed: () -> Unit,
@@ -133,8 +119,6 @@ internal class DefaultGameComponentFactory(
         visibility = visibility,
         isNewGame = isNewGame,
         restoredResultState = restoredResultState,
-        onSettingsClick = onSettingsClicked,
-        onExitClickedCb = onExitClicked,
         onGameCompletedCb = onGameCompleted,
         onReviveCompletedCb = onReviveCompleted,
         onReviveFailedCb = onReviveFailed,

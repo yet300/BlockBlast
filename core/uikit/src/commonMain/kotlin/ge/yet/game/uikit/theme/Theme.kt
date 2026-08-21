@@ -135,7 +135,7 @@ private val ClaudeDarkScheme = darkColorScheme(
 
 
 @Composable
-fun BlockBlastTheme(
+fun LogicaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {

@@ -424,8 +424,6 @@ class DefaultBlockBlastSessionComponentTest {
             visibility = visibility,
             isNewGame = false,
             restoredResultState = restoredResultState,
-            onSettingsClick = {},
-            onExitClickedCb = {},
             onGameCompletedCb = { _, _, _ -> },
             onReviveCompletedCb = {},
             onReviveFailedCb = {},
@@ -451,8 +449,6 @@ class DefaultBlockBlastSessionComponentTest {
             componentContext: ComponentContext,
             isNewGame: Boolean,
             restoredResultState: GameState?,
-            onSettingsClicked: () -> Unit,
-            onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
             onReviveFailed: () -> Unit,
@@ -480,8 +476,6 @@ class DefaultBlockBlastSessionComponentTest {
             componentContext: ComponentContext,
             isNewGame: Boolean,
             restoredResultState: GameState?,
-            onSettingsClicked: () -> Unit,
-            onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
             onReviveFailed: () -> Unit,
@@ -546,8 +540,6 @@ class DefaultBlockBlastSessionComponentTest {
             onReviveCompleted(playable)
         }
 
-        override fun onSettingsClicked() = Unit
-        override fun onExitClicked() = Unit
         override fun onTutorialSeen() = Unit
 
         fun setState(state: GameState) {
@@ -575,7 +567,6 @@ class DefaultBlockBlastSessionComponentTest {
             canContinue: Boolean,
             onContinueRequested: () -> Unit,
             onNewGameRequested: () -> Unit,
-            onHomeRequested: () -> Unit,
         ): GameResultComponent = FakeResult(
             snapshot = snapshot,
             canContinue = canContinue,
@@ -601,8 +592,6 @@ class DefaultBlockBlastSessionComponentTest {
 
         override fun onPrimaryClicked(requestContinue: (onApproved: () -> Unit) -> Unit) =
             continueRequested()
-
-        override fun onHomeClicked() = Unit
 
         override fun onContinueFailed() {
             continueFailureCount += 1

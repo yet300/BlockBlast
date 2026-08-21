@@ -1,6 +1,5 @@
 package ge.yet.game.blockblast.ui.game
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,30 +23,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.geometry.Rect
 import ge.yet.game.blockblast.ui.overlay.GestureTutorial
 import ge.yet.game.blockblast.domain.model.Grid
 import androidx.compose.ui.unit.dp
-import ge.yet.game.blockblast.generated.resources.Res
-import ge.yet.game.blockblast.generated.resources.best
-import ge.yet.game.blockblast.generated.resources.cd_back
-import ge.yet.game.blockblast.generated.resources.cd_settings
-import ge.yet.game.blockblast.generated.resources.score
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.blockblast.component.game.GameComponent
-import ge.yet.game.uikit.components.button.IconCircleButton
-import ge.yet.game.uikit.components.background.AmbientMeshBackground
-import ge.yet.game.uikit.components.icon.ArrowBack
-import ge.yet.game.uikit.components.icon.Settings
 import ge.yet.game.blockblast.ui.score.ScoreChip
 import ge.yet.game.blockblast.ui.game.effects.FeedbackPopupOverlay
 import ge.yet.game.blockblast.ui.game.effects.FeedbackPopupState
@@ -69,7 +53,6 @@ import ge.yet.game.blockblast.ui.game.effects.rememberGlitchState
 import ge.yet.game.uikit.theme.pieceColor
 import ge.yet.game.blockblast.ui.LocalVibrationEnabled
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
 
 // Ghost-piece visual constants. Shared with DragDropState so the snap
 // target always matches where the floating ghost is rendered.
@@ -118,14 +101,15 @@ fun BlockBlastGameContent(
     )
 
     // Grid measurement (populated by GameGrid's onGloballyPositioned)
-    var gridOriginX by remember { mutableFloatStateOf(0f) }
-    var gridOriginY by remember { mutableFloatStateOf(0f) }
+    var gridOriginInWindowX by remember { mutableFloatStateOf(0f) }
+    var gridOriginInWindowY by remember { mutableFloatStateOf(0f) }
     var cellSizePx by remember { mutableFloatStateOf(0f) }
     var gapPx by remember { mutableFloatStateOf(0f) }
 
-    // Bounds (root-coords) used by the first-launch gesture tutorial.
-    var gridBounds by remember { mutableStateOf(Rect.Zero) }
-    var trayBounds by remember { mutableStateOf(Rect.Zero) }
+    // Measurements stay in window coordinates until a viewport-local overlay consumes them.
+    var gridBoundsInWindow by remember { mutableStateOf(Rect.Zero) }
+    var trayBoundsInWindow by remember { mutableStateOf(Rect.Zero) }
+    var viewportOriginInWindow by remember { mutableStateOf(Offset.Zero) }
     val tutorialSeen by component.tutorialSeen.collectAsState()
 
     // The wordless tutorial dismisses itself the moment the player engages —
@@ -160,17 +144,18 @@ fun BlockBlastGameContent(
                 // just cleared, so the radial bloom appears to emanate from
                 // the actual point of impact instead of washing the screen.
                 val cleared = model.lastClearedCells.cells
-                val origin = if (cleared.isNotEmpty() && cellSizePx > 0f) {
+                val originInViewport = if (cleared.isNotEmpty() && cellSizePx > 0f) {
                     val avgX = cleared.map { it.x }.average().toFloat()
                     val avgY = cleared.map { it.y }.average().toFloat()
                     val step = cellSizePx + gapPx
-                    androidx.compose.ui.geometry.Offset(
-                        x = gridOriginX + avgX * step + cellSizePx / 2f,
-                        y = gridOriginY + avgY * step + cellSizePx / 2f,
+                    val originInWindow = Offset(
+                        x = gridOriginInWindowX + avgX * step + cellSizePx / 2f,
+                        y = gridOriginInWindowY + avgY * step + cellSizePx / 2f,
                     )
+                    windowToViewport(originInWindow, viewportOriginInWindow)
                 } else null
                 if (!reducedMotion) {
-                    scope.launch { comboPunch.punch(model.comboLevel, origin) }
+                    scope.launch { comboPunch.punch(model.comboLevel, originInViewport) }
                 }
             }
         }
@@ -193,9 +178,19 @@ fun BlockBlastGameContent(
     LaunchedEffect(model.lastPointsAwarded) {
         val points = model.lastPointsAwarded.points
         if (points > 0) {
-            val cx = gridOriginX + (Grid.SIZE * cellSizePx + (Grid.SIZE - 1) * gapPx) / 2f
-            val cy = gridOriginY + (Grid.SIZE * cellSizePx + (Grid.SIZE - 1) * gapPx) / 2f
-            floatingScore.add(points, androidx.compose.ui.geometry.Offset(cx, cy))
+            val gridCenterInWindow = Offset(
+                x = gridOriginInWindowX +
+                    (Grid.SIZE * cellSizePx + (Grid.SIZE - 1) * gapPx) / 2f,
+                y = gridOriginInWindowY +
+                    (Grid.SIZE * cellSizePx + (Grid.SIZE - 1) * gapPx) / 2f,
+            )
+            floatingScore.add(
+                points = points,
+                originInViewport = windowToViewport(
+                    gridCenterInWindow,
+                    viewportOriginInWindow,
+                ),
+            )
         }
     }
 
@@ -275,217 +270,180 @@ fun BlockBlastGameContent(
         haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = Color.Transparent,
-        topBar = {
-            GameTopBar(
-                score = model.score,
-                bestScore = model.bestScore,
-                scoreLabel = stringResource(Res.string.score),
-                bestLabel = stringResource(Res.string.best),
-                onExitClicked = component::onExitClicked,
-                onSettingsClicked = component::onSettingsClicked,
-            )
-        },
-    ) { innerPadding ->
-        Box(
+    Box(
+        modifier = modifier
+            .onGloballyPositioned { viewportOriginInWindow = it.positionInWindow() }
+            .glitchEffect(glitchState)
+            .comboFlash(comboPunch),
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .glitchEffect(glitchState)
-                .comboFlash(comboPunch),
+                .comboZoom(comboPunch)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            AmbientMeshBackground(
-                modifier = Modifier.fillMaxSize(),
-                baseColor = MaterialTheme.colorScheme.background,
+            GameGrid(
+                grid = model.grid,
+                selectedPiece = selectedPiece,
+                onCellTapped = { x, y ->
+                    val piece = selectedPiece
+                    if (piece != null) {
+                        component.onCellClicked(piece.pieceId, x, y)
+                        component.pieceTray.clearSelection()
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .widthIn(max = 500.dp)
+                    .onGloballyPositioned { gridBoundsInWindow = it.boundsInWindow() },
+                dragDropState = dragDrop,
+                comboStripes = comboStripes,
+                particleBurst = particleBurst,
+                comboLevel = model.comboLevel,
+                reducedMotion = reducedMotion,
+                clearedEvent = model.lastClearedCells,
+                isGameOver = model.isGameOver,
+                onGridMeasured = { originInWindowX, originInWindowY, cs, gp ->
+                    gridOriginInWindowX = originInWindowX
+                    gridOriginInWindowY = originInWindowY
+                    cellSizePx = cs
+                    gapPx = gp
+                },
             )
 
-            Column(
+            Spacer(Modifier.height(24.dp))
+
+            PieceTray(
+                tray = component.pieceTray,
+                dragEnabled = !dragDrop.isReturning,
+                spatialMotionEnabled = screenMotion.spatialMotionEnabled,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .comboZoom(comboPunch)
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(Modifier.height(20.dp))
-
-                GameGrid(
-                    grid = model.grid,
-                    selectedPiece = selectedPiece,
-                    onCellTapped = { x, y ->
-                        val piece = selectedPiece
-                        if (piece != null) {
-                            component.onCellClicked(piece.pieceId, x, y)
-                            component.pieceTray.clearSelection()
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .widthIn(max = 500.dp)
-                        .onGloballyPositioned { gridBounds = it.boundsInRoot() },
-                    dragDropState = dragDrop,
-                    comboStripes = comboStripes,
-                    particleBurst = particleBurst,
-                    comboLevel = model.comboLevel,
-                    reducedMotion = reducedMotion,
-                    clearedEvent = model.lastClearedCells,
-                    isGameOver = model.isGameOver,
-                    onGridMeasured = { ox, oy, cs, gp ->
-                        gridOriginX = ox
-                        gridOriginY = oy
-                        cellSizePx = cs
-                        gapPx = gp
-                    },
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                PieceTray(
-                    tray = component.pieceTray,
-                    dragEnabled = !dragDrop.isReturning,
-                    spatialMotionEnabled = screenMotion.spatialMotionEnabled,
-                    modifier = Modifier
-                        .widthIn(max = 500.dp)
-                        .padding(bottom = 8.dp)
-                        .onGloballyPositioned { trayBounds = it.boundsInRoot() },
-                    onDragStart = { piece, startPos, offset, sourcePosition ->
-                        if (!dragDrop.isDragging && !dragDrop.isReturning) {
-                            dragDrop.startDrag(piece, startPos, offset, sourcePosition)
-                            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
-                        }
-                    },
-                    onDragMove = { position ->
-                        dragDrop.updateDrag(
-                            position = position,
-                            gridOrigin = androidx.compose.ui.geometry.Offset(gridOriginX, gridOriginY),
-                            cellSizePx = cellSizePx,
-                            gapPx = gapPx,
-                            grid = model.grid,
-                            ghostCellSizePx = with(density) { DRAG_GHOST_CELL_SIZE.toPx() },
-                            ghostGapPx = with(density) { DRAG_GHOST_GAP.toPx() },
-                            verticalLiftPx = with(density) { DRAG_GHOST_VERTICAL_LIFT.toPx() },
+                    .widthIn(max = 500.dp)
+                    .padding(bottom = 8.dp)
+                    .onGloballyPositioned { trayBoundsInWindow = it.boundsInWindow() },
+                onDragStart = { piece, startPositionInWindow, offset, sourcePositionInWindow ->
+                    if (!dragDrop.isDragging && !dragDrop.isReturning) {
+                        dragDrop.startDrag(
+                            piece,
+                            startPositionInWindow,
+                            offset,
+                            sourcePositionInWindow,
                         )
-                    },
-                    onDragEnd = {
-                        val piece = dragDrop.draggedPiece
-                        val anchor = dragDrop.hoverAnchor
-                        if (piece != null && anchor != null && dragDrop.isValidPlacement) {
-                            // Valid drop — place piece
-                            component.onCellClicked(piece.pieceId, anchor.first, anchor.second)
-                            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.TextHandleMove)
-                            dragDrop.endDrag()
-                        } else if (piece != null) {
-                            // Invalid drop — retain the overlay while it returns
-                            // to the source slot; the haptic supplies the reject cue.
-                            haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
-                            dragDrop.beginReturn()
-                        } else {
-                            dragDrop.endDrag()
-                        }
-                    },
-                )
-            }
-
-            // ── Floating dragged piece overlay ───────────────────────────
-            if (dragDrop.isDragging || dragDrop.isReturning) {
-                val piece = dragDrop.draggedPiece!!
-                DraggedPieceOverlay(
-                    piece = piece,
-                    color = pieceColor(piece.colorId),
-                    cellSize = DRAG_GHOST_CELL_SIZE,
-                    gap = DRAG_GHOST_GAP,
-                    verticalLift = DRAG_GHOST_VERTICAL_LIFT,
-                    dragDropState = dragDrop,
-                    reducedMotion = reducedMotion,
-                    onReturnFinished = dragDrop::finishReturn,
-                )
-            }
-
-            // ── First-launch gesture tutorial ───────────────────────────────
-            // A wordless looping hand demonstrates the drag gesture. Persisted
-            // via Settings so it never appears again, and only renders once both
-            // targets have been measured so the spotlight lands on real geometry.
-            if (!reducedMotion && !tutorialSeen && !tutorialDismissed &&
-                trayBounds != Rect.Zero && gridBounds != Rect.Zero && !model.isGameOver
-            ) {
-                GestureTutorial(
-                    trayBounds = trayBounds,
-                    gridBounds = gridBounds,
-                    piece = traySlots.firstOrNull()?.piece,
-                    captionTopPadding = innerPadding.calculateTopPadding() + 8.dp,
-                    dismissing = tutorialDismissing,
-                    onExitComplete = {
-                        tutorialDismissed = true
-                        component.onTutorialSeen()
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-
-            // ── Floating score & feedback overlays ──────────────────────────
-            FloatingScoreOverlay(
-                state = floatingScore,
-                reducedMotion = reducedMotion,
-                modifier = Modifier.fillMaxSize()
-            )
-            FeedbackPopupOverlay(
-                state = feedbackPopups,
-                reducedMotion = reducedMotion,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(y = 200.dp)
+                        haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+                    }
+                },
+                onDragMove = { positionInWindow ->
+                    dragDrop.updateDrag(
+                        positionInWindow = positionInWindow,
+                        gridOriginInWindow = Offset(
+                            gridOriginInWindowX,
+                            gridOriginInWindowY,
+                        ),
+                        cellSizePx = cellSizePx,
+                        gapPx = gapPx,
+                        grid = model.grid,
+                        ghostCellSizePx = with(density) { DRAG_GHOST_CELL_SIZE.toPx() },
+                        ghostGapPx = with(density) { DRAG_GHOST_GAP.toPx() },
+                        verticalLiftPx = with(density) { DRAG_GHOST_VERTICAL_LIFT.toPx() },
+                    )
+                },
+                onDragEnd = {
+                    val piece = dragDrop.draggedPiece
+                    val anchor = dragDrop.hoverAnchor
+                    if (piece != null && anchor != null && dragDrop.isValidPlacement) {
+                        // Valid drop — place piece
+                        component.onCellClicked(piece.pieceId, anchor.first, anchor.second)
+                        haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.TextHandleMove)
+                        dragDrop.endDrag()
+                    } else if (piece != null) {
+                        // Invalid drop — retain the overlay while it returns
+                        // to the source slot; the haptic supplies the reject cue.
+                        haptic.vibrateIf(vibrationEnabled, HapticFeedbackType.LongPress)
+                        dragDrop.beginReturn()
+                    } else {
+                        dragDrop.endDrag()
+                    }
+                },
+                onDragCancel = dragDrop::endDrag,
             )
         }
+
+        // ── Floating dragged piece overlay ───────────────────────────
+        if (dragDrop.isDragging || dragDrop.isReturning) {
+            val piece = dragDrop.draggedPiece!!
+            DraggedPieceOverlay(
+                piece = piece,
+                color = pieceColor(piece.colorId),
+                cellSize = DRAG_GHOST_CELL_SIZE,
+                gap = DRAG_GHOST_GAP,
+                verticalLift = DRAG_GHOST_VERTICAL_LIFT,
+                dragDropState = dragDrop,
+                viewportOriginInWindow = viewportOriginInWindow,
+                reducedMotion = reducedMotion,
+                onReturnFinished = dragDrop::finishReturn,
+            )
+        }
+
+        // ── First-launch gesture tutorial ───────────────────────────────
+        // A wordless looping hand demonstrates the drag gesture. Persisted
+        // via Settings so it never appears again, and only renders once both
+        // targets have been measured so the spotlight lands on real geometry.
+        if (!reducedMotion && !tutorialSeen && !tutorialDismissed &&
+            trayBoundsInWindow != Rect.Zero && gridBoundsInWindow != Rect.Zero && !model.isGameOver
+        ) {
+            GestureTutorial(
+                trayBoundsInViewport = windowToViewport(
+                    trayBoundsInWindow,
+                    viewportOriginInWindow,
+                ),
+                gridBoundsInViewport = windowToViewport(
+                    gridBoundsInWindow,
+                    viewportOriginInWindow,
+                ),
+                piece = traySlots.firstOrNull()?.piece,
+                captionTopPadding = 8.dp,
+                dismissing = tutorialDismissing,
+                onExitComplete = {
+                    tutorialDismissed = true
+                    component.onTutorialSeen()
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        // ── Floating score & feedback overlays ──────────────────────────
+        FloatingScoreOverlay(
+            state = floatingScore,
+            reducedMotion = reducedMotion,
+            modifier = Modifier.fillMaxSize()
+        )
+        FeedbackPopupOverlay(
+            state = feedbackPopups,
+            reducedMotion = reducedMotion,
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = 200.dp)
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GameTopBar(
+internal fun ScoreHeader(
     score: Long,
     bestScore: Long,
     scoreLabel: String,
     bestLabel: String,
-    onExitClicked: () -> Unit,
-    onSettingsClicked: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    CenterAlignedTopAppBar(
-        navigationIcon = {
-            IconCircleButton(
-                icon = ArrowBack,
-                contentDescription = stringResource(Res.string.cd_back),
-                onClick = onExitClicked,
-            )
-        },
-        title = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Box(modifier = Modifier
-                        .size(48.dp)
-                        .graphicsLayer { rotationZ = 45f }
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                    )
-                    ScoreChip(label = scoreLabel, value = score)
-                }
-                ScoreChip(label = bestLabel, value = bestScore, highlight = true)
-            }
-        },
-        actions = {
-            IconCircleButton(
-                icon = Settings,
-                contentDescription = stringResource(Res.string.cd_settings),
-                onClick = onSettingsClicked,
-            )
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
-        ),
-    )
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ScoreChip(label = scoreLabel, value = score)
+        ScoreChip(label = bestLabel, value = bestScore, highlight = true)
+    }
 }
 
 /** Fires haptic feedback only when [enabled] is true. */
