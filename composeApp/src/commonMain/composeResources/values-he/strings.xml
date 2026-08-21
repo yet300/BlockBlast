@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">שחק</string>
-    <string name="continue_game">המשך</string>
-    <string name="new_game">משחק חדש</string>
-    <string name="home_tagline">פאזל קטן ושקט</string>
     <string name="settings">הגדרות</string>
     <string name="sound">צליל</string>
     <string name="sound_subtitle">אפקטים קוליים של המשחק</string>

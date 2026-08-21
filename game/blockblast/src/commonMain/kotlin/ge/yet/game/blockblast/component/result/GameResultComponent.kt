@@ -3,7 +3,7 @@ package ge.yet.game.blockblast.component.result
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.Value
 
-interface GameResultComponent {
+internal interface GameResultComponent {
 
     val model: Value<Model>
 

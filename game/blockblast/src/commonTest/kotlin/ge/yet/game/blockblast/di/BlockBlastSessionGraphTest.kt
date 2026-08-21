@@ -78,7 +78,7 @@ import kotlin.test.assertTrue
     scope = AppScope::class,
     bindingContainers = [
         MiniAppMetroBindings::class,
-        BlockBlastBindings::class,
+        BlockBlastAppBindings::class,
         BlockBlastGraphTestBindings::class,
     ],
 )

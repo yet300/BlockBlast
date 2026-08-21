@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Oýnamak</string>
-    <string name="continue_game">Dowam et</string>
-    <string name="new_game">Täze oýun</string>
-    <string name="home_tagline">Asuda kiçijik tapmaça</string>
     <string name="settings">Sazlamalar</string>
     <string name="sound">Ses</string>
     <string name="sound_subtitle">Oýnuň ses effektleri</string>

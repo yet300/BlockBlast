@@ -68,7 +68,7 @@ private val DRAG_GHOST_GAP = 2.dp
 private val DRAG_GHOST_VERTICAL_LIFT = 28.dp
 
 @Composable
-fun BlockBlastGameContent(
+internal fun BlockBlastGameContent(
     component: GameComponent,
     modifier: Modifier = Modifier,
 ) {

@@ -39,7 +39,7 @@ import ge.yet.game.miniapp.compose.MiniAppInterstitialGate
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun GameResultContent(
+internal fun GameResultContent(
     component: GameResultComponent,
     interstitialGate: MiniAppInterstitialGate,
     modifier: Modifier = Modifier,

@@ -65,7 +65,6 @@ kotlin {
 
             api(projects.feature.root)
             implementation(projects.feature.catalog)
-            implementation(projects.feature.home)
             implementation(projects.feature.settings)
             implementation(projects.feature.review)
 

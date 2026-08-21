@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Ойнау</string>
-    <string name="continue_game">Жалғастыру</string>
-    <string name="new_game">Жаңа ойын</string>
-    <string name="home_tagline">Тыныш шағын жұмбақ</string>
     <string name="settings">Параметрлер</string>
     <string name="sound">Дыбыс</string>
     <string name="sound_subtitle">Ойынның дыбыстық эффектілері</string>

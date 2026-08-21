@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Játék</string>
-    <string name="continue_game">Folytatás</string>
-    <string name="new_game">Új játék</string>
-    <string name="home_tagline">Egy csendes kis kirakó</string>
     <string name="settings">Beállítások</string>
     <string name="sound">Hang</string>
     <string name="sound_subtitle">Játék hanghatások</string>

@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">খেলুন</string>
-    <string name="continue_game">চালিয়ে যান</string>
-    <string name="new_game">নতুন খেলা</string>
-    <string name="home_tagline">একটি শান্ত ছোট ধাঁধা</string>
     <string name="settings">সেটিংস</string>
     <string name="sound">শব্দ</string>
     <string name="sound_subtitle">খেলার শব্দ প্রভাব</string>

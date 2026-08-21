@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Παίξε</string>
-    <string name="continue_game">Συνέχεια</string>
-    <string name="new_game">Νέο παιχνίδι</string>
-    <string name="home_tagline">Ένα ήσυχο μικρό παζλ</string>
     <string name="settings">Ρυθμίσεις</string>
     <string name="sound">Ήχος</string>
     <string name="sound_subtitle">Ηχητικά εφέ παιχνιδιού</string>

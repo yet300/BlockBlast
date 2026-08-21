@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Jugar</string>
-    <string name="continue_game">Continuar</string>
-    <string name="new_game">Nuevo juego</string>
-    <string name="home_tagline">Un pequeño y tranquilo rompecabezas</string>
     <string name="settings">Ajustes</string>
     <string name="sound">Sonido</string>
     <string name="sound_subtitle">Efectos de sonido del juego</string>

@@ -42,7 +42,6 @@ BlockBlast/
 ├── feature/
 │   ├── root/                   Top-level navigation component
 │   ├── catalog/                Registry-backed MiniApp catalog and host-owned cards
-│   ├── home/                   Home screen feature
 │   ├── review/                 App review policy and component
 │   └── settings/               Settings feature
 ├── game/
@@ -73,15 +72,14 @@ BlockBlast/
 |---|---|---|
 | `:androidApp` | Android app entry point, packaging, Android SDK integration and Decompose Root retention across configuration changes | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
-| `:composeApp` | Shared application UI, app-owned resources, the common MiniApp frame and app composition | core, catalog/root/settings/review, transitional `:feature:home`, monetization, the production MiniApp bundle and `:miniapp:compose` contracts |
-| `:core:domain` | Reusable platform-neutral domain contracts, including the game-save status API, and app-level models | no project dependency declared |
+| `:composeApp` | Shared application UI, app-owned resources, the common MiniApp frame and app composition | core, catalog/root/settings/review, monetization, the production MiniApp bundle and `:miniapp:compose` contracts |
+| `:core:domain` | Reusable platform-neutral domain contracts and app-level models | no project dependency declared |
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with uniform host-owned cards and one Play action per manifest | `:miniapp:compose`, `:core:uikit`, Decompose and Compose resources |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
-| `:feature:home` | Home components and stores | `:core:domain`, `:core:common` |
 | `:feature:root` | Catalog/running-MiniApp navigation, session visibility and sheet ownership | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; core contracts, ConfettiKit, MVIKotlin and multiplatform-settings; no native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
@@ -101,17 +99,12 @@ features or UI, and feature modules must not depend on `:composeApp` or either
 native application shell. Treat a new cross-feature dependency as an
 architecture decision, not a convenience import.
 
-`:composeApp` still compiles the legacy `HomeContent` through a direct
-`:feature:home` dependency, but Root no longer renders it and the platform
-graphs no longer install `HomeBindings`. Task 17 removes that transitional UI
-and dependency; do not treat it as part of the active Catalog navigation.
-
 Game modules own all rules, game-specific models, persistence, components and
 UI for their respective games. `:feature:root` hosts a selected plugin session, while
 the game module must not depend on `:composeApp`, `:feature:root` or a native
 application module. Block Blast's internal engine and implementation types stay
-`internal`; only the component and model contracts required by Root, Home and
-the application composition are public. Block Blast also owns its transient
+`internal`; only the MiniApp plugin, child-graph factory and app binding bridge
+cross the module boundary. Block Blast also owns its transient
 Playing/Result, resume, revive and review-opportunity session flow; the common
 host remains responsible for leaving the MiniApp.
 

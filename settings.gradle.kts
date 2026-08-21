@@ -59,7 +59,6 @@ include(":feature")
 include(":feature:root")
 include(":feature:settings")
 include(":feature:review")
-include(":feature:home")
 include(":feature:catalog")
 
 include(":game")

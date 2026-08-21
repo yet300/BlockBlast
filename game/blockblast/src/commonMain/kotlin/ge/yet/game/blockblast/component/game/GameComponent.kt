@@ -7,7 +7,7 @@ import ge.yet.game.blockblast.domain.model.GameState
 import kotlinx.coroutines.flow.StateFlow
 
 
-interface GameComponent {
+internal interface GameComponent {
 
     val model: Value<Model>
 
