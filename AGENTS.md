@@ -71,7 +71,7 @@ BlockBlast/
 
 | Module | Responsibility | Important dependencies |
 |---|---|---|
-| `:androidApp` | Android app entry point, packaging and Android SDK integration | `:composeApp` |
+| `:androidApp` | Android app entry point, packaging, Android SDK integration and Decompose Root retention across configuration changes | `:composeApp` |
 | `iosApp` | Native SwiftUI host, iOS ATT lifecycle and SDK packaging | Imports the `ComposeApp` framework |
 | `:composeApp` | Shared application UI, app-owned resources, the common MiniApp frame and app composition | core, catalog/root/settings/review, transitional `:feature:home`, monetization, the production MiniApp bundle and `:miniapp:compose` contracts |
 | `:core:domain` | Reusable platform-neutral domain contracts, including the game-save status API, and app-level models | no project dependency declared |
@@ -283,6 +283,9 @@ the narrowest relevant task first, then broaden verification as appropriate.
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain
 ./gradlew :androidApp:assembleDebug
+
+# With an unlocked emulator/device, verify the live Root and MiniApp session survive Activity recreation
+./gradlew :androidApp:connectedDebugAndroidTest
 
 # Verify the Compose framework for the iOS simulator
 ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64

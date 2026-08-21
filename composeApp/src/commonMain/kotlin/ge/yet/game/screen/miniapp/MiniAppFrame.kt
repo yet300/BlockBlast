@@ -45,7 +45,9 @@ fun MiniAppFrame(
     content: @Composable (Modifier) -> Unit,
 ) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .testTag("miniapp_frame"),
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {

@@ -19,6 +19,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = (project.findProperty("appVersionCode") as String).toInt()
         versionName = project.findProperty("appVersionName") as String
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
@@ -66,6 +67,11 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    androidTestImplementation(libs.androidx.testExt.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 
     implementation(project.dependencies.platform(libs.firebase.android.bom))
     implementation(libs.gitlive.firebase.kotlin.crashlytics)
