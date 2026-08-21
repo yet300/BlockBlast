@@ -36,6 +36,7 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
 import kotlinx.coroutines.CoroutineScope
@@ -124,6 +125,20 @@ class DefaultBlockBlastSessionComponentTest {
         val result = result(setup)
         assertEquals(BlockBlastResultSnapshot.from(finalState), result.model.value.snapshot)
         assertTrue(result.model.value.canContinue)
+        setup.destroy()
+    }
+
+    @Test
+    fun frame_mode_follows_the_active_decompose_child() {
+        val setup = build()
+
+        assertEquals(MiniAppFrameMode.Standard, setup.component.frameMode.value)
+
+        playing(setup).complete(resultState(), canContinue = true)
+        assertEquals(MiniAppFrameMode.ContentOnly, setup.component.frameMode.value)
+
+        fakeResult(setup).newGameRequested()
+        assertEquals(MiniAppFrameMode.Standard, setup.component.frameMode.value)
         setup.destroy()
     }
 

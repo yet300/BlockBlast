@@ -7,6 +7,7 @@ import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.navigate
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.operator.map
 import dev.zacsweers.metro.Inject
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.result.BlockBlastResultSnapshot
@@ -15,6 +16,7 @@ import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 
 internal class DefaultBlockBlastSessionComponent(
     componentContext: ComponentContext,
@@ -39,6 +41,13 @@ internal class DefaultBlockBlastSessionComponent(
         handleBackButton = false,
         childFactory = ::createChild,
     )
+
+    override val frameMode: Value<MiniAppFrameMode> = stack.map { childStack ->
+        when (childStack.active.instance) {
+            is BlockBlastSessionComponent.Child.Playing -> MiniAppFrameMode.Standard
+            is BlockBlastSessionComponent.Child.Result -> MiniAppFrameMode.ContentOnly
+        }
+    }
 
     private fun createChild(
         config: Config,

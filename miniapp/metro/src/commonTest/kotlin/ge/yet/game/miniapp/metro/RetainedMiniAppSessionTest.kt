@@ -2,8 +2,12 @@ package ge.yet.game.miniapp.metro
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.arkivanov.decompose.value.MutableValue
+import com.arkivanov.decompose.value.Value
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.compose.MiniAppSession
 import kotlin.test.Test
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class RetainedMiniAppSessionTest {
@@ -27,7 +31,18 @@ class RetainedMiniAppSessionTest {
         assertTrue(firstHandle !== secondHandle)
     }
 
-    private class FakeSession : MiniAppSession {
+    @Test
+    fun frame_mode_is_the_delegate_decompose_value() {
+        val mode = MutableValue(MiniAppFrameMode.ContentOnly)
+        val handle = RetainedMiniAppSession(Any(), FakeSession(mode))
+
+        assertSame(mode, handle.frameMode)
+    }
+
+    private class FakeSession(
+        override val frameMode: Value<MiniAppFrameMode> =
+            MutableValue(MiniAppFrameMode.Standard),
+    ) : MiniAppSession {
         @Composable
         override fun Content(modifier: Modifier) = Unit
     }

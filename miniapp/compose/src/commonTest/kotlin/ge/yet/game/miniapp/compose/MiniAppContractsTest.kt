@@ -1,5 +1,7 @@
 package ge.yet.game.miniapp.compose
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
 import ge.yet.game.miniapp.api.MiniAppCategoryId
 import ge.yet.game.miniapp.api.MiniAppId
@@ -14,6 +16,16 @@ import org.jetbrains.compose.resources.StringResource
 
 @OptIn(InternalResourceApi::class)
 class MiniAppContractsTest {
+
+    @Test
+    fun `sessions use the standard host frame by default`() {
+        val session = object : MiniAppSession {
+            @Composable
+            override fun Content(modifier: Modifier) = Unit
+        }
+
+        assertEquals(MiniAppFrameMode.Standard, session.frameMode.value)
+    }
 
     @Test
     fun `reading plugin metadata does not create a session`() {

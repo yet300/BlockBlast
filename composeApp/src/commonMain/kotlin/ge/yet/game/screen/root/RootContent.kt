@@ -15,6 +15,7 @@ import ge.yet.game.feature.catalog.ui.CatalogContent
 import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.monetization.ads.LocalMonetizationState
 import ge.yet.game.monetization.ads.AdBanner
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.screen.miniapp.MiniAppFrame
 import ge.yet.game.screen.miniapp.MiniAppUnavailableContent
 import ge.yet.game.uikit.components.background.AmbientMeshBackground
@@ -76,28 +77,31 @@ internal fun RootChildContent(
             modifier = modifier.fillMaxSize(),
         )
 
-        is RootComponent.Child.RunningMiniApp -> MiniAppFrame(
-            onBack = onBack,
-            onSettings = onSettings,
-            modifier = modifier,
-            topBar = {
-                (child.state as? RootComponent.MiniAppState.Content)
-                    ?.session
-                    ?.TopBarContent()
-            },
-            bottomBar = bottomBar ?: if (LocalMonetizationState.current.canShowAds) {
-                { AdBanner() }
-            } else {
-                null
-            },
-        ) { viewport ->
-            when (val state = child.state) {
-                is RootComponent.MiniAppState.Content -> state.session.Content(viewport)
-                is RootComponent.MiniAppState.Unavailable -> MiniAppUnavailableContent(
-                    id = state.id,
-                    onBack = onBack,
-                    modifier = viewport,
-                )
+        is RootComponent.Child.RunningMiniApp -> {
+            val session = (child.state as? RootComponent.MiniAppState.Content)?.session
+            val frameMode = session?.frameMode?.subscribeAsState()?.value
+                ?: MiniAppFrameMode.Standard
+
+            MiniAppFrame(
+                onBack = onBack,
+                onSettings = onSettings,
+                frameMode = frameMode,
+                modifier = modifier,
+                topBar = { session?.TopBarContent() },
+                bottomBar = bottomBar ?: if (LocalMonetizationState.current.canShowAds) {
+                    { AdBanner() }
+                } else {
+                    null
+                },
+            ) { viewport ->
+                when (val state = child.state) {
+                    is RootComponent.MiniAppState.Content -> state.session.Content(viewport)
+                    is RootComponent.MiniAppState.Unavailable -> MiniAppUnavailableContent(
+                        id = state.id,
+                        onBack = onBack,
+                        modifier = viewport,
+                    )
+                }
             }
         }
     }

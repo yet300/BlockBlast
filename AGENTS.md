@@ -139,9 +139,13 @@ Settings, toolbar sizing and accessibility, safe-area ownership and the
 conditional banner stay host-owned. A session may contribute optional center
 content through `MiniAppSession.TopBarContent`; that content renders in the
 host theme, outside the plugin viewport. Plugin-local themes therefore remain
-confined to `MiniAppSession.Content` and cannot leak into host chrome. Root owns
-one ambient background behind its child stack and sheets; child transitions
-must not recreate that background.
+confined to `MiniAppSession.Content` and cannot leak into host chrome. Sessions
+publish a Decompose `Value<MiniAppFrameMode>` derived from their active internal
+child; the default is `Standard`, while screens such as results can select
+`ContentOnly` without imperative visibility flags on `MiniAppPlugin` or leaking
+game-specific navigation types into the host. Root owns one ambient background
+behind its child stack and sheets; child transitions must not recreate that
+background.
 
 Block Blast drag, grid and tray hit-testing measurements use window
 coordinates, reflected by `InWindow` names. Convert points and rectangles only

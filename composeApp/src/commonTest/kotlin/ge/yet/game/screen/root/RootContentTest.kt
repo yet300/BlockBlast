@@ -28,6 +28,7 @@ import com.arkivanov.decompose.value.MutableValue
 import ge.yet.game.feature.catalog.CatalogComponent
 import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.miniapp.api.MiniAppId
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.compose.MiniAppSession
 import ge.yet.game.screen.miniapp.MiniAppFrame
 import kotlin.test.Test
@@ -165,6 +166,32 @@ class RootContentTest {
     }
 
     @Test
+    fun content_only_mode_animates_the_host_toolbar_out_before_removing_it() =
+        runComposeUiTest {
+            mainClock.autoAdvance = false
+            val session = MutableFrameSession()
+            setContent {
+                RootChildContent(
+                    child = running(session),
+                    onBack = {},
+                    onSettings = {},
+                )
+            }
+
+            mainClock.advanceTimeByFrame()
+            onNodeWithTag("miniapp_back_control").assertIsDisplayed()
+            onNodeWithTag("miniapp_settings_control").assertIsDisplayed()
+
+            runOnIdle { session.frameMode.value = MiniAppFrameMode.ContentOnly }
+            mainClock.advanceTimeByFrame()
+            onNodeWithTag("miniapp_back_control").assertExists()
+
+            mainClock.advanceTimeBy(1_000)
+            onNodeWithTag("miniapp_back_control").assertDoesNotExist()
+            onNodeWithTag("miniapp_settings_control").assertDoesNotExist()
+        }
+
+    @Test
     fun plugin_local_theme_is_confined_to_the_viewport() = runComposeUiTest {
         var pluginPrimary: Color? = null
         var hostTopPrimary: Color? = null
@@ -241,6 +268,15 @@ class RootContentTest {
         override fun TopBarContent() {
             Box(Modifier.size(24.dp).testTag("session_top_bar"))
         }
+
+        @Composable
+        override fun Content(modifier: Modifier) {
+            Box(modifier)
+        }
+    }
+
+    private class MutableFrameSession : MiniAppSession {
+        override val frameMode = MutableValue(MiniAppFrameMode.Standard)
 
         @Composable
         override fun Content(modifier: Modifier) {
