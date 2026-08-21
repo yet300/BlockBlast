@@ -157,7 +157,20 @@ not apply `logica.miniapp`.
 
 ## MiniApp Contributor Workflow
 
-Create a reviewable contributor project with `./gradlew createMiniApp -PminiAppId=game.name -PminiAppName="Name"` (or provide a legal explicit `-PminiAppProjectPath=:miniapp:samples:name`). The task accepts only direct `:game:<name>` and `:miniapp:samples:<name>` paths, never overwrites an existing project, and writes through a sibling staging directory.
+Create and verify a reviewable contributor project with:
+
+```bash
+./gradlew createMiniApp -PminiAppId=game.snake -PminiAppName=Snake
+./gradlew :game:snake:allTests :game:snake:validateMiniAppDependencies
+```
+
+The task accepts only direct `:game:<name>` and
+`:miniapp:samples:<name>` paths (or the matching explicit
+`-PminiAppProjectPath`), never overwrites an existing project, and writes
+through a sibling staging directory. Discovery makes every project under
+`game/*` and `miniapp/samples/*` independently buildable on the next Gradle
+invocation. There is no server, runtime catalog download or remote plugin
+loading.
 
 Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, and dependency-boundary validation. Contributors may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, or native-ad modules. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
 
@@ -169,7 +182,25 @@ MiniApps are aggregated into the same native application graph. The generated
 example, `@Named("game.snake.session")`) so sibling child graphs can share the
 framework session scope without binding collisions.
 
-Discovery and shipping are intentionally separate: a scaffold becomes discoverable on the next Gradle invocation, but it is not shipped until a maintainer explicitly adds it to the root `miniApps` allowlist. Never treat discovery as production authorization.
+Discovery and shipping are intentionally separate: a scaffold becomes
+discoverable on the next Gradle invocation, but only an exact
+`miniApps.include(projectPath, expectedId)` entry ships it. A maintainer adds
+that single allowlist entry only after review. Never treat discovery as
+production authorization.
+
+Plugins depend inward on MiniApp contracts and typed capabilities, never on
+features, application modules or SDK adapters. Every active plugin creates one
+`MiniAppSessionScope` child graph retained by its `MiniAppSession` handle. Root
+owns Catalog/Running navigation, Settings/Review, Back, visibility and stale
+callback rejection. Block Blast owns resume/new-game choice,
+Playing/Result/Revive, persistence and any future Replay behavior.
+
+Use `MiniAppId.storageKey(localName)` for every new persistent key. Block
+Blast's existing `blockblast.game_save`, `blockblast.best_score` and
+`blockblast.tutorial_seen` keys are a compatibility exception and must not be
+migrated merely to satisfy the new convention. Plugins cannot provide Catalog
+cards, host Back/Settings controls, the host toolbar, ad containers or Replay
+actions. Replay is deliberately absent from the initial public MiniApp API.
 
 ## Source Placement and Architecture
 
