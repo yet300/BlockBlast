@@ -22,6 +22,7 @@ import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -306,6 +307,31 @@ class MiniAppRuntimeCoordinatorTest {
     }
 
     @Test
+    fun cancellation_after_review_reservation_is_persisted_releases_it_once() = runTest {
+        val reservationPersisted = CompletableDeferred<Unit>()
+        val allowReturn = CompletableDeferred<Unit>()
+        val policy = RecordingReviewPolicy(
+            afterAcquire = {
+                reservationPersisted.complete(Unit)
+                allowReturn.await()
+            },
+        )
+        val setup = build(reviewPolicy = policy)
+        val childLifecycle = lifecycle().also(LifecycleRegistry::resume)
+        setup.launchAndCreate(FIRST_ID, DefaultComponentContext(childLifecycle))
+
+        setup.firstPlugin.hosts.single().requestReview(MiniAppReviewOpportunity("result"))
+        reservationPersisted.await()
+        childLifecycle.destroy()
+        allowReturn.complete(Unit)
+        runCurrent()
+
+        assertEquals(1, policy.acquireCalls)
+        assertEquals(1, policy.releaseCalls)
+        assertEquals(emptyList(), setup.reviews)
+    }
+
+    @Test
     fun restored_key_advances_generator_and_old_callbacks_cannot_mutate_new_context() = runTest {
         val setup = build()
         val restoredLifecycle = lifecycle()
@@ -409,7 +435,7 @@ class MiniAppRuntimeCoordinatorTest {
             analytics = analytics,
             crashlytics = crashlytics,
             initialForeground = true,
-            closeActiveSession = {
+            navigateToCatalog = {
                 closeCalls += 1
                 afterClose()
             },
@@ -555,7 +581,7 @@ class MiniAppRuntimeCoordinatorTest {
 
     private class RecordingReviewPolicy(
         private val allow: Boolean = true,
-        private val afterAcquire: () -> Unit = {},
+        private val afterAcquire: suspend () -> Unit = {},
     ) : AppReviewPolicy {
         var acquireCalls = 0
         var releaseCalls = 0

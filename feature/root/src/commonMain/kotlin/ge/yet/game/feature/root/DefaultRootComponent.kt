@@ -63,7 +63,7 @@ internal class DefaultRootComponent(
         analytics = analytics,
         crashlytics = crashlytics,
         initialForeground = lifecycle.state.isForeground,
-        closeActiveSession = {
+        navigateToCatalog = {
             navigation.replaceAll(Config.Catalog)
             if (sheetSlot.value.child != null) sheetNavigation.dismiss()
         },
@@ -132,7 +132,7 @@ internal class DefaultRootComponent(
             is RootComponent.SheetChild.Settings -> sheet.component.onBackClicked()
             is RootComponent.SheetChild.AppReview -> sheetNavigation.dismiss()
             null -> if (stack.value.active.configuration is Config.Running) {
-                navigation.replaceAll(Config.Catalog)
+                runtimeCoordinator.closeActiveSession()
             }
         }
     }

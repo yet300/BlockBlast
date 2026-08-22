@@ -199,19 +199,29 @@ class DefaultRootComponentTest {
     @Test
     fun toolbar_back_closes_running_session_and_destroys_child_once() {
         val setup = build()
+        setup.lifecycle.resume()
         setup.play(FIRST_ID)
         setup.component.onBackClicked()
         assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
         assertEquals(1, setup.firstPlugin.destroyCount)
+        assertEquals(
+            listOf("miniapp_session_closed id=game.alpha key=1 visibility=ACTIVE"),
+            setup.crashlytics.closeBreadcrumbs(),
+        )
     }
 
     @Test
     fun system_back_matches_toolbar_back_when_no_sheet_is_open() {
         val setup = build()
+        setup.lifecycle.resume()
         setup.play(FIRST_ID)
         assertTrue(setup.backDispatcher.back())
         assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
         assertEquals(1, setup.firstPlugin.destroyCount)
+        assertEquals(
+            listOf("miniapp_session_closed id=game.alpha key=1 visibility=ACTIVE"),
+            setup.crashlytics.closeBreadcrumbs(),
+        )
     }
 
     @Test
@@ -630,6 +640,11 @@ class DefaultRootComponentTest {
             operations.filterIsInstance<CrashOperation.Value>()
                 .filter { it.key == key }
                 .map { it.value }
+
+        fun closeBreadcrumbs(): List<String> =
+            operations.filterIsInstance<CrashOperation.Message>()
+                .map { it.value }
+                .filter { it.startsWith("miniapp_session_closed") }
 
         override fun setCustomValue(key: String, value: Any) {
             operations += CrashOperation.Value(key, value)

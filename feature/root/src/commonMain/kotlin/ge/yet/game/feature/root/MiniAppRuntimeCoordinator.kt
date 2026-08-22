@@ -34,7 +34,7 @@ internal class MiniAppRuntimeCoordinator(
     private val analytics: AnalyticRepository,
     private val crashlytics: CrashlyticsRepository,
     initialForeground: Boolean,
-    private val closeActiveSession: () -> Unit,
+    private val navigateToCatalog: () -> Unit,
     private val showReview: (MiniAppId, MiniAppReviewOpportunity) -> Boolean,
 ) {
     private var lastSessionKey = 0L
@@ -148,6 +148,20 @@ internal class MiniAppRuntimeCoordinator(
         updateActiveVisibility()
     }
 
+    fun closeActiveSession() {
+        val key = activeKey ?: return
+        val id = activeId ?: return
+        val visibility = activeVisibilitySource?.current ?: currentVisibility()
+        crash {
+            logMessage(
+                "miniapp_session_closed id=${id.value} key=${key.value} " +
+                    "visibility=${visibility.name}",
+            )
+        }
+        if (!isActive(key)) return
+        navigateToCatalog()
+    }
+
     private fun updateActiveVisibility() {
         val key = activeKey ?: return
         val id = activeId ?: return
@@ -243,14 +257,6 @@ internal class MiniAppRuntimeCoordinator(
                 // MiniApp hosts have no caller-thread contract; the child scope is the actor boundary.
                 if (!armed || !isActive(key) || closeDelivered) return@launch
                 closeDelivered = true
-                val visibility = activeVisibilitySource?.current ?: currentVisibility()
-                crash {
-                    logMessage(
-                        "miniapp_session_closed id=${id.value} key=${key.value} " +
-                            "visibility=${visibility.name}",
-                    )
-                }
-                if (!isActive(key)) return@launch
                 closeActiveSession()
             }
         }
@@ -262,7 +268,7 @@ internal class MiniAppRuntimeCoordinator(
                 var acquired = false
                 var committed = false
                 try {
-                    acquired = reviewPolicy.tryAcquirePrompt()
+                    acquired = withContext(NonCancellable) { reviewPolicy.tryAcquirePrompt() }
                     if (!acquired || !canRequestReview(key)) return@launch
                     committed = showReview(id, opportunity)
                 } finally {
