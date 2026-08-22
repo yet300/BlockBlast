@@ -16,5 +16,8 @@ class RetainedMiniAppSession<G : Any>(
     override fun TopBarContent() = delegate.TopBarContent()
 
     @Composable
+    override fun Background(modifier: Modifier) = delegate.Background(modifier)
+
+    @Composable
     override fun Content(modifier: Modifier) = delegate.Content(modifier)
 }

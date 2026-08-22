@@ -3,11 +3,7 @@ package ge.yet.game.screen.root
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.platform.testTag
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -18,7 +14,6 @@ import ge.yet.game.monetization.ads.AdBanner
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.screen.miniapp.MiniAppFrame
 import ge.yet.game.screen.miniapp.MiniAppUnavailableContent
-import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.utils.cupertinoPredictiveBackAnimation
 
 @OptIn(ExperimentalDecomposeApi::class)
@@ -28,39 +23,21 @@ fun RootContent(
     modifier: Modifier = Modifier,
 ) {
     val childStack by component.stack.subscribeAsState()
-    RootHost(modifier = modifier) {
-        Children(
-            modifier = Modifier.fillMaxSize(),
-            stack = childStack,
-            animation = cupertinoPredictiveBackAnimation(
-                backHandler = component.backHandler,
-                onBack = component::onBackClicked,
-            ),
-        ) { child ->
-            RootChildContent(
-                child = child.instance,
-                onBack = component::onBackClicked,
-                onSettings = component::onSettingsClicked,
-            )
-        }
-        RootSheet(component = component)
-    }
-}
-
-@Composable
-internal fun RootHost(
-    modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit,
-) {
-    Box(modifier = modifier.fillMaxSize()) {
-        AmbientMeshBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("root_ambient_background"),
-            baseColor = MaterialTheme.colorScheme.background,
+    Children(
+        modifier = modifier.fillMaxSize(),
+        stack = childStack,
+        animation = cupertinoPredictiveBackAnimation(
+            backHandler = component.backHandler,
+            onBack = component::onBackClicked,
+        ),
+    ) { child ->
+        RootChildContent(
+            child = child.instance,
+            onBack = component::onBackClicked,
+            onSettings = component::onSettingsClicked,
         )
-        content()
     }
+    RootSheet(component = component)
 }
 
 @Composable
@@ -87,6 +64,9 @@ internal fun RootChildContent(
                 onSettings = onSettings,
                 frameMode = frameMode,
                 modifier = modifier,
+                background = session?.let { currentSession ->
+                    { backgroundModifier -> currentSession.Background(backgroundModifier) }
+                },
                 topBar = { session?.TopBarContent() },
                 bottomBar = bottomBar ?: if (LocalMonetizationState.current.canShowAds) {
                     { AdBanner() }

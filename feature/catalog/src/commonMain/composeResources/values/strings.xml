@@ -1,3 +1,5 @@
 <resources>
+    <string name="app_name">Logica</string>
     <string name="play">Play</string>
+    <string name="catalog_empty_title">No apps yet</string>
 </resources>

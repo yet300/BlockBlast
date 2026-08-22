@@ -13,10 +13,10 @@ internal class DefaultCatalogComponent(
     private val onPlay: (MiniAppId) -> Unit,
 ) : CatalogComponent,
     ComponentContext by componentContext {
-    private val mutableModel = MutableValue(
-        CatalogComponent.Model(manifests = registry.manifests.toList()),
+    private val manifests = registry.manifests.toList()
+    override val model: Value<CatalogComponent.Model> = MutableValue(
+        CatalogComponent.Model(manifests = manifests),
     )
-    override val model: Value<CatalogComponent.Model> = mutableModel
 
     override fun onPlayClicked(id: MiniAppId) {
         onPlay(id)

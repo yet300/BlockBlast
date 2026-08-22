@@ -1988,16 +1988,44 @@
             ]
         },
         {
-            "uniqueId": "androidx.tracing:tracing",
-            "artifactVersion": "1.2.0",
-            "name": "Android Tracing",
+            "uniqueId": "androidx.tracing:tracing-android",
+            "artifactVersion": "1.3.0",
+            "name": "Tracing",
             "description": "Android Tracing",
-            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.2.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.tracing:tracing-ktx",
+            "artifactVersion": "1.3.0",
+            "name": "Tracing Kotlin Extensions",
+            "description": "Android Tracing",
+            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -3139,6 +3167,29 @@
                 "connection": "scm:git:git://github.com/square/okio.git",
                 "developerConnection": "scm:git:ssh://git@github.com/square/okio.git",
                 "url": "https://github.com/square/okio/"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "dev.chrisbanes.haze:haze-android",
+            "artifactVersion": "1.7.2",
+            "name": "Haze",
+            "description": "Haze",
+            "website": "https://github.com/chrisbanes/haze/",
+            "developers": [
+                {
+                    "name": "Chris Banes"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:git://github.com/chrisbanes/haze.git",
+                "developerConnection": "scm:git:git://github.com/chrisbanes/haze.git",
+                "url": "https://github.com/chrisbanes/haze/"
             },
             "licenses": [
                 "Apache-2.0"

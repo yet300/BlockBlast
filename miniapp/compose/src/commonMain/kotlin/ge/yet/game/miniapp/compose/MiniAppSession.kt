@@ -28,5 +28,8 @@ interface MiniAppSession {
     fun TopBarContent() = Unit
 
     @Composable
+    fun Background(modifier: Modifier) = Unit
+
+    @Composable
     fun Content(modifier: Modifier)
 }

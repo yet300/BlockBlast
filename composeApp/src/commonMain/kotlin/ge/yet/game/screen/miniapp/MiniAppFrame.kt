@@ -40,65 +40,72 @@ fun MiniAppFrame(
     onSettings: () -> Unit,
     frameMode: MiniAppFrameMode = MiniAppFrameMode.Standard,
     modifier: Modifier = Modifier,
+    background: (@Composable (Modifier) -> Unit)? = null,
     topBar: @Composable () -> Unit = {},
     bottomBar: (@Composable () -> Unit)? = null,
     content: @Composable (Modifier) -> Unit,
 ) {
-    Scaffold(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .testTag("miniapp_frame"),
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = {
-            AnimatedVisibility(
-                visible = frameMode == MiniAppFrameMode.Standard,
-                enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-                exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top),
-            ) {
-                CenterAlignedTopAppBar(
-                    title = topBar,
-                    navigationIcon = {
-                        IconCircleButton(
-                            icon = ArrowBack,
-                            contentDescription = stringResource(Res.string.cd_back),
-                            onClick = onBack,
-                            modifier = Modifier.testTag("miniapp_back_control"),
-                        )
-                    },
-                    actions = {
-                        IconCircleButton(
-                            icon = Settings,
-                            contentDescription = stringResource(Res.string.cd_settings),
-                            onClick = onSettings,
-                            modifier = Modifier.testTag("miniapp_settings_control"),
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                    ),
-                )
-            }
-        },
-        bottomBar = {
-            if (bottomBar != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .height(MINI_APP_BANNER_HEIGHT_DP.dp)
-                        .testTag("miniapp_banner_container"),
-                    contentAlignment = Alignment.Center,
+    ) {
+        background?.invoke(Modifier.fillMaxSize())
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets.safeDrawing,
+            topBar = {
+                AnimatedVisibility(
+                    visible = frameMode == MiniAppFrameMode.Standard,
+                    enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
+                    exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top),
                 ) {
-                    bottomBar()
+                    CenterAlignedTopAppBar(
+                        title = topBar,
+                        navigationIcon = {
+                            IconCircleButton(
+                                icon = ArrowBack,
+                                contentDescription = stringResource(Res.string.cd_back),
+                                onClick = onBack,
+                                modifier = Modifier.testTag("miniapp_back_control"),
+                            )
+                        },
+                        actions = {
+                            IconCircleButton(
+                                icon = Settings,
+                                contentDescription = stringResource(Res.string.cd_settings),
+                                onClick = onSettings,
+                                modifier = Modifier.testTag("miniapp_settings_control"),
+                            )
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                        ),
+                    )
                 }
-            }
-        },
-    ) { padding ->
-        content(
-            Modifier
-                .padding(padding)
-                .fillMaxSize(),
-        )
+            },
+            bottomBar = {
+                if (bottomBar != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .height(MINI_APP_BANNER_HEIGHT_DP.dp)
+                            .testTag("miniapp_banner_container"),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        bottomBar()
+                    }
+                }
+            },
+        ) { padding ->
+            content(
+                Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+            )
+        }
     }
 }

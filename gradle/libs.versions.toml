@@ -21,6 +21,7 @@ androidx-lifecycle = "2.11.0"
 composeMultiplatform = "1.11.1"
 confettikit = "0.8.0"
 material3 = "1.10.0-alpha05"
+haze = "1.7.2"
 aboutLibraries = "15.0.4"
 
 kotlin = "2.4.10"
@@ -59,6 +60,7 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMul
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 confettikit = { module = "io.github.vinceglb:confettikit", version.ref = "confettikit" }
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 

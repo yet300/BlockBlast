@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.value.Value
 import ge.yet.game.blockblast.ui.BlockBlastSessionContent
+import ge.yet.game.blockblast.ui.BlockBlastSessionBackground
 import ge.yet.game.blockblast.ui.BlockBlastSessionTopBarContent
 import ge.yet.game.blockblast.ui.LocalSoundEnabled
 import ge.yet.game.blockblast.ui.LocalVibrationEnabled
@@ -25,6 +26,11 @@ class BlockBlastSession internal constructor(
     @Composable
     override fun TopBarContent() {
         BlockBlastSessionTopBarContent(component)
+    }
+
+    @Composable
+    override fun Background(modifier: Modifier) {
+        BlockBlastSessionBackground(modifier)
     }
 
     @Composable

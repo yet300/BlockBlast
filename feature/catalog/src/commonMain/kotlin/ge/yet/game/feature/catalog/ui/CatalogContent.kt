@@ -1,39 +1,46 @@
 package ge.yet.game.feature.catalog.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import ge.yet.game.feature.catalog.CatalogComponent
 import ge.yet.game.feature.catalog.PreviewCatalogComponent
 import ge.yet.game.feature.catalog.generated.resources.Res
-import ge.yet.game.feature.catalog.generated.resources.play
+import ge.yet.game.feature.catalog.generated.resources.app_name
+import ge.yet.game.feature.catalog.generated.resources.catalog_empty_title
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.compose.MiniAppManifest
-import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
+import ge.yet.game.uikit.components.background.AmbientMeshBackground
 import ge.yet.game.uikit.theme.LogicaTheme
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -43,100 +50,130 @@ fun CatalogContent(
 ) {
     val model by component.model.subscribeAsState()
 
-    CatalogContent(
-        model = model,
-        onPlay = component::onPlayClicked,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun CatalogContent(
-    model: CatalogComponent.Model,
-    onPlay: (MiniAppId) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val density = LocalDensity.current
-    val layoutDirection = LocalLayoutDirection.current
-    val safeDrawing = WindowInsets.safeDrawing
-    val padding = catalogContentPadding(
-        contentPadding = 20.dp,
-        safeTop = with(density) { safeDrawing.getTop(this).toDp() },
-        safeBottom = with(density) { safeDrawing.getBottom(this).toDp() },
-        safeStart = with(density) {
-            val pixels = if (layoutDirection == LayoutDirection.Ltr) {
-                safeDrawing.getLeft(this, layoutDirection)
-            } else {
-                safeDrawing.getRight(this, layoutDirection)
-            }
-            pixels.toDp()
-        },
-        safeEnd = with(density) {
-            val pixels = if (layoutDirection == LayoutDirection.Ltr) {
-                safeDrawing.getRight(this, layoutDirection)
-            } else {
-                safeDrawing.getLeft(this, layoutDirection)
-            }
-            pixels.toDp()
-        },
-    )
-    LazyColumn(
-        modifier = modifier.testTag("catalog_content"),
-        contentPadding = PaddingValues(
-            start = padding.start,
-            top = padding.top,
-            end = padding.end,
-            bottom = padding.bottom,
-        ),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        items(
-            items = model.manifests,
-            key = { it.id.value },
-        ) { manifest ->
-            MiniAppCard(
-                manifest = manifest,
-                onPlay = { onPlay(manifest.id) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+    Box(modifier = modifier) {
+        AmbientMeshBackground(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("catalog_ambient_background"),
+            baseColor = MaterialTheme.colorScheme.background,
+        )
+        CatalogScreen(
+            manifests = model.manifests,
+            onPlay = component::onPlayClicked,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MiniAppCard(
-    manifest: MiniAppManifest,
-    onPlay: () -> Unit,
+private fun CatalogScreen(
+    manifests: List<MiniAppManifest>,
+    onPlay: (MiniAppId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.testTag("catalog_card_${manifest.id.value}"),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
+    val hazeState = rememberHazeState()
+
+    Scaffold(
+        modifier = modifier.testTag("catalog_content"),
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets.safeDrawing,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(Res.string.app_name),
+                        modifier = Modifier.testTag("catalog_title"),
+                    )
+                },
+                modifier = Modifier
+                    .hazeEffect(hazeState)
+                    .testTag("catalog_top_bar"),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent,
+                ),
+            )
+        },
+    ) { scaffoldPadding ->
+        CatalogGrid(
+            manifests = manifests,
+            scaffoldPadding = scaffoldPadding,
+            onPlay = onPlay,
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(hazeState),
+        )
+    }
+
+}
+
+@Composable
+private fun CatalogGrid(
+    manifests: List<MiniAppManifest>,
+    scaffoldPadding: PaddingValues,
+    onPlay: (MiniAppId) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val layoutDirection = LocalLayoutDirection.current
+        val outerPadding = catalogOuterPadding(maxWidth)
+        val padding = catalogContentPadding(
+            contentPadding = outerPadding,
+            safeTop = scaffoldPadding.calculateTopPadding(),
+            safeBottom = scaffoldPadding.calculateBottomPadding(),
+            safeStart = if (layoutDirection == LayoutDirection.Ltr) {
+                scaffoldPadding.calculateLeftPadding(layoutDirection)
+            } else {
+                scaffoldPadding.calculateRightPadding(layoutDirection)
+            },
+            safeEnd = if (layoutDirection == LayoutDirection.Ltr) {
+                scaffoldPadding.calculateRightPadding(layoutDirection)
+            } else {
+                scaffoldPadding.calculateLeftPadding(layoutDirection)
+            },
+        )
+
+        if (manifests.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(scaffoldPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(Res.string.catalog_empty_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            return@BoxWithConstraints
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(catalogColumnCount(maxWidth)),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .width(catalogContentWidth(maxWidth))
+                .testTag("catalog_grid"),
+            contentPadding = PaddingValues(
+                start = padding.start,
+                top = padding.top,
+                end = padding.end,
+                bottom = padding.bottom,
+            ),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Image(
-                painter = painterResource(manifest.icon),
-                contentDescription = null,
-                modifier = Modifier.size(72.dp),
-            )
-            Text(
-                text = stringResource(manifest.title),
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                text = stringResource(manifest.description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PrimaryTerracottaButton(
-                text = stringResource(Res.string.play),
-                onClick = onPlay,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("catalog_play_${manifest.id.value}"),
-            )
+            items(
+                items = manifests,
+                key = { it.id.value },
+            ) { manifest ->
+                MiniAppListItemCard(
+                    manifest = manifest,
+                    onPlay = { onPlay(manifest.id) },
+                )
+            }
         }
     }
 }

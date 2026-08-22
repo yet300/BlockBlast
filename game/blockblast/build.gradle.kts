@@ -16,6 +16,7 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.multiplatform.settings.test)
+            implementation(libs.compose.ui.test)
         }
     }
 }

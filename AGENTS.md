@@ -78,7 +78,7 @@ BlockBlast/
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
-| `:feature:catalog` | Registry-backed MiniApp catalog with uniform host-owned cards and one Play action per manifest | `:miniapp:compose`, `:core:uikit`, Decompose and Compose resources |
+| `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:root` | Catalog/running-MiniApp navigation, session visibility and sheet ownership | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; core contracts, ConfettiKit, MVIKotlin and multiplatform-settings; no native-ad dependency |
@@ -138,9 +138,12 @@ confined to `MiniAppSession.Content` and cannot leak into host chrome. Sessions
 publish a Decompose `Value<MiniAppFrameMode>` derived from their active internal
 child; the default is `Standard`, while screens such as results can select
 `ContentOnly` without imperative visibility flags on `MiniAppPlugin` or leaking
-game-specific navigation types into the host. Root owns one ambient background
-behind its child stack and sheets; child transitions must not recreate that
-background.
+game-specific navigation types into the host. Root owns navigation and sheets,
+but does not impose a background or color theme on its children. Catalog owns
+its ambient background. A MiniApp session may draw its background through the
+host's full-frame background layer so it also sits behind common chrome, while
+the plugin-local content theme remains confined to the viewport; Root
+transitions must preserve those boundaries.
 
 Block Blast drag, grid and tray hit-testing measurements use window
 coordinates, reflected by `InWindow` names. Convert points and rectangles only
@@ -202,6 +205,12 @@ Blast's existing `blockblast.game_save`, `blockblast.best_score` and
 migrated merely to satisfy the new convention. Plugins cannot provide Catalog
 cards, host Back/Settings controls, the host toolbar, ad containers or Replay
 actions. Replay is deliberately absent from the initial public MiniApp API.
+
+The catalog uses a centered `Logica` app bar and an adaptive grid: one column
+below 840 dp and two columns at or above it, capped at 1200 dp. Each host-owned
+card contains one Material 3 `ListItem`, and its trailing Play button launches
+the MiniApp. Card details, context menus, Share actions and deep links are
+deliberately deferred and must not be exposed as inert catalog UI.
 
 ## Source Placement and Architecture
 

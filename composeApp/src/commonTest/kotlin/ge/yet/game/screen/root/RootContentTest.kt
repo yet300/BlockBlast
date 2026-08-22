@@ -7,17 +7,13 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -54,25 +50,8 @@ class RootContentTest {
         onNodeWithContentDescription("Settings").assertDoesNotExist()
         onNodeWithTag("test_banner").assertDoesNotExist()
         onNodeWithTag("root_ambient_background").assertDoesNotExist()
+        onNodeWithTag("catalog_ambient_background").assertIsDisplayed()
         onNodeWithTag("catalog_content").assertExists()
-    }
-
-    @Test
-    fun host_keeps_exactly_one_background_when_child_content_switches() = runComposeUiTest {
-        var running by mutableStateOf(false)
-        setContent {
-            RootHost {
-                Box(Modifier.testTag(if (running) "running_child" else "catalog_child"))
-            }
-        }
-
-        onAllNodesWithTag("root_ambient_background").assertCountEquals(1)
-        onNodeWithTag("catalog_child").assertExists()
-
-        runOnIdle { running = true }
-
-        onAllNodesWithTag("root_ambient_background").assertCountEquals(1)
-        onNodeWithTag("running_child").assertExists()
     }
 
     @Test
@@ -87,6 +66,8 @@ class RootContentTest {
                 bottomBar = { Box(Modifier.testTag("eligible_banner_content")) },
             )
         }
+
+        onNodeWithTag("catalog_ambient_background").assertDoesNotExist()
 
         val viewportBounds = onNodeWithTag("session_viewport").getUnclippedBoundsInRoot()
         val backControl = onNodeWithTag("miniapp_back_control")
@@ -104,6 +85,27 @@ class RootContentTest {
 
         backControl.performClick()
         assertEquals(1, backClicks)
+    }
+
+    @Test
+    fun session_background_covers_the_frame_behind_host_chrome() = runComposeUiTest {
+        setContent {
+            RootChildContent(
+                child = running(BackgroundSession()),
+                onBack = {},
+                onSettings = {},
+                bottomBar = { Box(Modifier.testTag("eligible_banner_content")) },
+            )
+        }
+
+        val background = onNodeWithTag("session_background").getUnclippedBoundsInRoot()
+        val frame = onNodeWithTag("miniapp_frame").getUnclippedBoundsInRoot()
+        val back = onNodeWithTag("miniapp_back_control").getUnclippedBoundsInRoot()
+        val banner = onNodeWithTag("miniapp_banner_container").getUnclippedBoundsInRoot()
+
+        assertEquals(frame, background)
+        assertTrue(background.top <= back.top)
+        assertTrue(background.bottom >= banner.bottom)
     }
 
     @Test
@@ -267,6 +269,18 @@ class RootContentTest {
         @Composable
         override fun TopBarContent() {
             Box(Modifier.size(24.dp).testTag("session_top_bar"))
+        }
+
+        @Composable
+        override fun Content(modifier: Modifier) {
+            Box(modifier)
+        }
+    }
+
+    private class BackgroundSession : MiniAppSession {
+        @Composable
+        override fun Background(modifier: Modifier) {
+            Box(modifier.testTag("session_background"))
         }
 
         @Composable

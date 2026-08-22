@@ -1,8 +1,10 @@
 package ge.yet.game.blockblast.ui
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
@@ -12,6 +14,7 @@ import ge.yet.game.blockblast.ui.game.BlockBlastGameContent
 import ge.yet.game.blockblast.ui.result.GameResultContent
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
+import ge.yet.game.uikit.components.background.AmbientMeshBackground
 
 @Composable
 internal fun BlockBlastSessionContent(
@@ -44,4 +47,14 @@ internal fun BlockBlastSessionContent(
             }
         }
     }
+}
+
+@Composable
+internal fun BlockBlastSessionBackground(
+    modifier: Modifier = Modifier,
+) {
+    AmbientMeshBackground(
+        modifier = modifier.testTag("blockblast_ambient_background"),
+        baseColor = MaterialTheme.colorScheme.background,
+    )
 }

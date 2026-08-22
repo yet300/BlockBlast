@@ -22,6 +22,11 @@ kotlin {
             implementation(libs.bundles.decompose)
             implementation(libs.decompose.compose)
             implementation(libs.compose.components.resources)
+            implementation(libs.haze)
+        }
+        commonTest.dependencies {
+            implementation(libs.bundles.testing)
+            implementation(libs.compose.ui.test)
         }
     }
 }
