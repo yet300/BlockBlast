@@ -80,7 +80,7 @@ BlockBlast/
 | `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
-| `:feature:root` | Catalog/running-MiniApp navigation, session visibility and sheet ownership | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
+| `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its internal `MiniAppRuntimeCoordinator` owns registry lookup and session creation, monotonic session keys, active visibility, child-scope-bound host callbacks and stale-callback rejection, review-reservation coordination, and MiniApp Crashlytics context. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; core contracts, ConfettiKit, MVIKotlin and multiplatform-settings; no native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
@@ -113,6 +113,12 @@ host remains responsible for leaving the MiniApp.
 Games may emit game-specific review opportunities, but `:feature:review` owns
 the app-wide prompt limit, persistence, suppression, analytics and store-review request.
 `:feature:root` decides when to open the reusable review sheet.
+
+MiniApp Crashlytics context is runtime-scoped and best-effort. Synchronous, caught
+MiniApp session-creation failures are recorded as non-fatal exceptions; launch,
+close and visibility transitions are diagnostic breadcrumbs and custom values,
+not exceptions. Root installs no global exception handler. Normal analytics
+remains a separate channel and does not replace Crashlytics context.
 
 Keep monetization policy in `:monetization:core`; it must not depend on Compose,
 Firebase, advertising SDKs, or either application shell. Native AdMob and UMP
