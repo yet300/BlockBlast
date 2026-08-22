@@ -102,9 +102,11 @@ architecture decision, not a convenience import.
 Game modules own all rules, game-specific models, persistence, components and
 UI for their respective games. `:feature:root` hosts a selected plugin session, while
 the game module must not depend on `:composeApp`, `:feature:root` or a native
-application module. Block Blast's internal engine and implementation types stay
-`internal`; only the MiniApp plugin, child-graph factory and app binding bridge
-cross the module boundary. Block Blast also owns its transient
+application module. Block Blast's engine and implementation details stay
+`internal`; only the MiniApp plugin, concrete session binding type, child-graph
+factory and app binding bridge cross the module boundary. A session binding
+type may be public for cross-module Metro aggregation, but its constructor and
+state remain internal. Block Blast also owns its transient
 Playing/Result, resume, revive and review-opportunity session flow; the common
 host remains responsible for leaving the MiniApp.
 
@@ -175,12 +177,11 @@ loading.
 Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, and dependency-boundary validation. Contributors may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, or native-ad modules. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
 
 Generated `@GraphExtension.Factory` methods are namespaced from the complete
-MiniApp ID (for example, `createGame_SnakeSessionGraph`). Preserve that naming:
+MiniApp ID (for example, `createGameSnakeSessionGraph`). Preserve that naming:
 Kotlin cannot merge factories that differ only by return type when multiple
-MiniApps are aggregated into the same native application graph. The generated
-`MiniAppSession` binding is likewise qualified with the complete ID (for
-example, `@Named("game.snake.session")`) so sibling child graphs can share the
-framework session scope without binding collisions.
+MiniApps are aggregated into the same native application graph. Each child
+graph exposes its concrete session type instead of a qualified
+`MiniAppSession`; this keeps sibling bindings distinct without `@Named` strings.
 
 Discovery and shipping are intentionally separate: a scaffold becomes
 discoverable on the next Gradle invocation, but only an exact

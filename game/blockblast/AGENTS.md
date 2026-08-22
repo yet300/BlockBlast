@@ -9,7 +9,9 @@ MiniApp contracts.
 
 - Depend inward on `:miniapp:*` contracts and approved core contracts. Never
   depend on a feature, `:composeApp`, a native app or `:monetization:ads`.
-- Keep engine, component, result and UI implementation types `internal`.
+- Keep engine, component, result and UI implementation details `internal`.
+  `BlockBlastSession` is public only as the graph's unique Metro binding type;
+  its constructor and state remain internal.
 - Create session-owned components through `BlockBlastSessionGraph`; app-scoped
   repositories and resource providers belong in `BlockBlastAppBindings`.
 - Consume `MiniAppVisibilitySource` and typed capabilities supplied at session

@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.compose.MiniAppSession
 
-internal class CounterSession(
+class CounterSession internal constructor(
     internal val component: CounterComponent,
     internal val host: MiniAppSessionHost,
 ) : MiniAppSession {

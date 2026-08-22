@@ -40,6 +40,7 @@ kotlin {
     sourceSets.named("androidHostTest") {
         dependencies {
             implementation(projects.composeApp)
+            implementation(projects.miniapp.bundle)
             implementation(kotlin("test-junit"))
             implementation(libs.androidx.compose.ui.test.junit4)
             implementation(libs.androidx.compose.ui.test.manifest)

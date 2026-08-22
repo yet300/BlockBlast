@@ -6,11 +6,13 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.createGraphFactory
 import ge.yet.game.data.di.DataBindings
 import ge.yet.game.data.di.NativeDataBindings
+import ge.yet.game.blockblast.di.BlockBlastSessionGraph
 import ge.yet.game.feature.catalog.di.CatalogBindings
 import ge.yet.game.feature.review.di.ReviewBindings
 import ge.yet.game.feature.root.di.RootBindings
 import ge.yet.game.feature.settings.di.SettingsBindings
 import ge.yet.game.miniapp.metro.MiniAppMetroBindings
+import ge.yet.sample.counter.CounterSessionGraph
 import kotlin.test.Test
 
 @DependencyGraph(
@@ -29,6 +31,9 @@ import kotlin.test.Test
     ],
 )
 internal interface IosCounterRootGraph : CounterRootTestGraph {
+    val blockBlastSessionFactory: BlockBlastSessionGraph.Factory
+    val counterSessionFactory: CounterSessionGraph.Factory
+
     @DependencyGraph.Factory
     fun interface Factory {
         fun create(): IosCounterRootGraph
@@ -40,6 +45,13 @@ internal fun createIosCounterRootGraph(): CounterRootTestGraph =
 
 class CounterRootIosIntegrationTest {
     private val contract = CounterRootContract(::createIosCounterRootGraph)
+
+    @Test
+    fun blockblast_and_counter_session_factories_coexist_in_one_final_graph() {
+        val graph = createIosCounterRootGraph() as IosCounterRootGraph
+
+        kotlin.test.assertSame<Any>(graph.blockBlastSessionFactory, graph.counterSessionFactory)
+    }
 
     @Test
     fun catalog_play_creates_real_counter_session() =

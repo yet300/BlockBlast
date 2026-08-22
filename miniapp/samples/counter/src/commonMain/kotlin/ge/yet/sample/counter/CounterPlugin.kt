@@ -19,7 +19,9 @@ import ge.yet.miniapp.samples.counter.generated.resources.miniapp_title
 
 @Inject
 @ContributesIntoSet(AppScope::class)
-class CounterPlugin(private val graphFactory: CounterSessionGraph.Factory) : MiniAppPlugin {
+class CounterPlugin(
+    private val graphFactory: CounterSessionGraph.Factory,
+) : MiniAppPlugin {
     override val manifest = MiniAppManifest(
         id = MiniAppId("sample.counter"),
         title = Res.string.miniapp_title,
@@ -35,7 +37,7 @@ class CounterPlugin(private val graphFactory: CounterSessionGraph.Factory) : Min
         visibility: MiniAppVisibilitySource,
         host: MiniAppSessionHost,
     ): MiniAppSession {
-        val graph = graphFactory.createSample_CounterSessionGraph(componentContext, visibility, host)
+        val graph = graphFactory.createSampleCounterSessionGraph(componentContext, visibility, host)
         return RetainedMiniAppSession(graph, graph.session)
     }
 }

@@ -66,14 +66,14 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val host = RecordingMiniAppSessionHost()
-        val sessionGraph = appGraph.sessionFactory.createSample_CounterSessionGraph(
+        val sessionGraph = appGraph.sessionFactory.createSampleCounterSessionGraph(
             componentContext = lifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = host,
         )
 
         assertSame(sessionGraph.session, sessionGraph.session)
-        val session = sessionGraph.session as CounterSession
+        val session = sessionGraph.session
         assertSame(host, session.host)
         lifecycle.destroy()
         lifecycle.destroy()
@@ -88,19 +88,19 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
-        val first = appGraph.sessionFactory.createSample_CounterSessionGraph(
+        val first = appGraph.sessionFactory.createSampleCounterSessionGraph(
             componentContext = firstLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
         )
-        val second = appGraph.sessionFactory.createSample_CounterSessionGraph(
+        val second = appGraph.sessionFactory.createSampleCounterSessionGraph(
             componentContext = secondLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
         )
 
-        val firstSession = first.session as CounterSession
-        val secondSession = second.session as CounterSession
+        val firstSession = first.session
+        val secondSession = second.session
         firstSession.component.onIncrementClicked()
 
         assertNotSame(first.session, second.session)

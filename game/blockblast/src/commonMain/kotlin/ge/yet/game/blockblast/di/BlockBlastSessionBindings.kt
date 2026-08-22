@@ -3,7 +3,6 @@ package ge.yet.game.blockblast.di
 import com.arkivanov.decompose.ComponentContext
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.blockblast.component.game.DefaultGameComponentFactory
@@ -24,7 +23,6 @@ import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
-import ge.yet.game.miniapp.compose.MiniAppSession
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 
 @ContributesTo(MiniAppSessionScope::class)
@@ -89,11 +87,10 @@ abstract class BlockBlastSessionBindings {
 
         @Provides
         @SingleIn(MiniAppSessionScope::class)
-        @Named("game.blockblast.session")
         internal fun provideMiniAppSession(
             component: BlockBlastSessionComponent,
             interstitials: MiniAppInterstitialCapability,
             feedback: FeedbackPreferences,
-        ): MiniAppSession = BlockBlastSession(component, interstitials, feedback)
+        ): BlockBlastSession = BlockBlastSession(component, interstitials, feedback)
     }
 }

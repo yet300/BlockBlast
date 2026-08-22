@@ -15,7 +15,6 @@ import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.GraphExtension
-import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraph
@@ -42,7 +41,6 @@ import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialGate
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
 import ge.yet.game.miniapp.compose.MiniAppRegistry
-import ge.yet.game.miniapp.compose.MiniAppSession
 import ge.yet.game.miniapp.metro.MiniAppMetroBindings
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
@@ -96,8 +94,7 @@ internal interface BlockBlastPluginTestGraph {
 
 @GraphExtension(MiniAppSessionScope::class)
 internal interface InspectableBlockBlastSessionGraph {
-    @Named("game.blockblast.session")
-    val session: MiniAppSession
+    val session: BlockBlastSession
     val sessionComponent: BlockBlastSessionComponent
     val gameReducer: GameSessionReducer
     val saveRepository: GameSaveRepository
@@ -355,13 +352,15 @@ class BlockBlastSessionGraphTest {
         var createdGraph: BlockBlastSessionGraph? = null
         try {
             appGraph.settings.putString("blockblast.game_save", CURRENT_SAVE_BYTES)
-            val plugin = BlockBlastPlugin(
-                BlockBlastSessionGraph.Factory { componentContext, visibility, host ->
-                    appGraph.sessionFactory.createGame_BlockblastSessionGraph(componentContext, visibility, host).also {
-                        createdGraph = it
-                    }
-                },
-            )
+            val plugin = BlockBlastPlugin { componentContext, visibility, host ->
+                appGraph.sessionFactory.createGameBlockblastSessionGraph(
+                    componentContext,
+                    visibility,
+                    host
+                ).also {
+                    createdGraph = it
+                }
+            }
 
             plugin.createSession(
                 componentContext = lifecycle.componentContext,

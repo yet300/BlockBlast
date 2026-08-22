@@ -15,7 +15,7 @@ import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.compose.MiniAppSession
 
-internal class BlockBlastSession(
+class BlockBlastSession internal constructor(
     internal val component: BlockBlastSessionComponent,
     private val interstitials: MiniAppInterstitialCapability,
     internal val feedback: FeedbackPreferences,
