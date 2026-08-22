@@ -20,50 +20,62 @@ import com.arkivanov.essenty.lifecycle.doOnStop
 import dev.zacsweers.metro.Inject
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
+import ge.yet.game.domain.repository.CrashlyticsRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.feature.catalog.CatalogComponent
 import ge.yet.game.feature.review.AppReviewComponent
 import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.miniapp.api.MiniAppId
-import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
-import ge.yet.game.miniapp.api.MiniAppSessionHost
-import ge.yet.game.miniapp.api.MiniAppVisibility
-import ge.yet.game.miniapp.api.MiniAppVisibilitySource
-import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
 
 internal class DefaultRootComponent(
     componentContext: ComponentContext,
     settingsRepository: SettingsRepository,
+    reviewPolicy: AppReviewPolicy,
+    miniAppRegistry: MiniAppRegistry,
+    analytics: AnalyticRepository,
+    crashlytics: CrashlyticsRepository,
     private val catalogFactory: CatalogComponent.Factory,
     private val settingsFactory: SettingsComponent.Factory,
     private val reviewFactory: AppReviewComponent.Factory,
-    private val reviewPolicy: AppReviewPolicy,
-    private val miniAppRegistry: MiniAppRegistry,
     private val audio: AudioRepository,
-    private val analytics: AnalyticRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val rootScope = coroutineScope()
     private val navigation = StackNavigation<Config>()
     private val sheetNavigation = SlotNavigation<SheetConfig>()
-    private var lastSessionKey = 0L
-    private var playInProgress = false
-    private var pendingPlugin: Pair<SessionKey, MiniAppPlugin>? = null
-    private var isForeground = lifecycle.state.isForeground
-    private var isObscured = false
-    private var activeSessionKey: SessionKey? = null
-    private var activeVisibilitySource: DefaultMiniAppVisibilitySource? = null
+
+    private val runtimeCoordinator = MiniAppRuntimeCoordinator(
+        registry = miniAppRegistry,
+        reviewPolicy = reviewPolicy,
+        analytics = analytics,
+        crashlytics = crashlytics,
+        initialForeground = lifecycle.state.isForeground,
+        closeActiveSession = {
+            if (sheetSlot.value.child != null) sheetNavigation.dismiss()
+            navigation.replaceAll(Config.Catalog)
+        },
+        showReview = { id, opportunity ->
+            if (sheetSlot.value.child != null) {
+                false
+            } else {
+                sheetNavigation.activate(
+                    SheetConfig.AppReview(
+                        miniAppId = id.value,
+                        source = opportunity.triggerId,
+                        score = opportunity.score,
+                        bestScore = opportunity.bestScore,
+                        revivesUsed = opportunity.revivesUsed,
+                    ),
+                )
+                true
+            }
+        },
+    )
 
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
     override val adsEnabled: StateFlow<Boolean> = settingsRepository.adsEnabled
@@ -94,18 +106,15 @@ internal class DefaultRootComponent(
         backHandler.register(backCallback)
         val stackSubscription = stack.subscribe { updateBackCallback() }
         val sheetSubscription = sheetSlot.subscribe { slot ->
-            isObscured = slot.child != null
-            updateActiveVisibility()
+            runtimeCoordinator.setObscured(slot.child != null)
             updateBackCallback()
         }
         lifecycle.doOnStart {
-            isForeground = true
-            updateActiveVisibility()
+            runtimeCoordinator.setForeground(true)
             rootScope.launch { audio.onAppForeground() }
         }
         lifecycle.doOnStop {
-            isForeground = false
-            updateActiveVisibility()
+            runtimeCoordinator.setForeground(false)
             rootScope.launch { audio.onAppBackground() }
         }
         lifecycle.doOnDestroy {
@@ -145,20 +154,8 @@ internal class DefaultRootComponent(
         }
 
     private fun launchMiniApp(id: MiniAppId) {
-        if (playInProgress || stack.value.active.configuration is Config.Running) return
-        val plugin = miniAppRegistry[id]
-        if (plugin == null) {
-            analytics.logEvent("miniapp_launch_missing", mapOf("miniapp_id" to id.value))
-            return
-        }
-        playInProgress = true
-        val key = SessionKey(++lastSessionKey)
-        pendingPlugin = key to plugin
-        try {
+        runtimeCoordinator.launch(id) { key ->
             navigation.replaceAll(Config.Running(id, key))
-        } finally {
-            pendingPlugin = null
-            playInProgress = false
         }
     }
 
@@ -166,49 +163,14 @@ internal class DefaultRootComponent(
         config: Config.Running,
         componentContext: ComponentContext,
     ): RootComponent.Child.RunningMiniApp {
-        lastSessionKey = maxOf(lastSessionKey, config.key.value)
         val scope = componentContext.coroutineScope()
-        val visibility = DefaultMiniAppVisibilitySource()
-        val host = BoundMiniAppSessionHost(config.key, config.id, scope)
-        activeSessionKey = config.key
-        activeVisibilitySource = visibility
-        visibility.set(currentVisibility())
-        componentContext.lifecycle.doOnDestroy {
-            if (activeSessionKey == config.key) {
-                activeSessionKey = null
-                activeVisibilitySource = null
-            }
-        }
-
-        val plugin = pendingPlugin?.takeIf { it.first == config.key }?.second ?: miniAppRegistry[config.id]
-        val state = if (plugin == null) {
-            analytics.logEvent("miniapp_launch_missing", mapOf("miniapp_id" to config.id.value))
-            RootComponent.MiniAppState.Unavailable(config.id)
-        } else {
-            createSessionState(plugin, config, componentContext, visibility, host)
-        }
-        return RootComponent.Child.RunningMiniApp(config.id, state)
-    }
-
-    private fun createSessionState(
-        plugin: MiniAppPlugin,
-        config: Config.Running,
-        componentContext: ComponentContext,
-        visibility: MiniAppVisibilitySource,
-        host: BoundMiniAppSessionHost,
-    ): RootComponent.MiniAppState = try {
-        val session = plugin.createSession(componentContext, visibility, host)
-        host.arm()
-        RootComponent.MiniAppState.Content(session)
-    } catch (error: Throwable) {
-        analytics.logEvent(
-            "miniapp_launch_failed",
-            mapOf(
-                "miniapp_id" to config.id.value,
-                "error" to (error::class.simpleName ?: "Unknown"),
-            ),
+        val state = runtimeCoordinator.createSession(
+            id = config.id,
+            key = config.key,
+            componentContext = componentContext,
+            scope = scope,
         )
-        RootComponent.MiniAppState.Unavailable(config.id)
+        return RootComponent.Child.RunningMiniApp(config.id, state)
     }
 
     private fun createSheetChild(
@@ -237,89 +199,13 @@ internal class DefaultRootComponent(
             sheetSlot.value.child != null || stack.value.active.configuration is Config.Running
     }
 
-    private fun updateActiveVisibility() {
-        val active = stack.value.active.configuration as? Config.Running ?: return
-        if (activeSessionKey == active.key) {
-            activeVisibilitySource?.set(currentVisibility())
-        }
-    }
-
-    private fun currentVisibility(): MiniAppVisibility = when {
-        !isForeground -> MiniAppVisibility.BACKGROUND
-        isObscured -> MiniAppVisibility.OBSCURED
-        else -> MiniAppVisibility.ACTIVE
-    }
-
-    private fun isActive(key: SessionKey): Boolean =
-        (stack.value.active.configuration as? Config.Running)?.key == key
-
-    private inner class BoundMiniAppSessionHost(
-        private val key: SessionKey,
-        private val miniAppId: MiniAppId,
-        private val scope: CoroutineScope,
-    ) : MiniAppSessionHost {
-        private var armed = false
-
-        fun arm() {
-            armed = true
-        }
-
-        override fun close() {
-            if (!armed) return
-            scope.launch {
-                if (!isActive(key)) return@launch
-                if (sheetSlot.value.child != null) sheetNavigation.dismiss()
-                if (isActive(key)) navigation.replaceAll(Config.Catalog)
-            }
-        }
-
-        override fun requestReview(opportunity: MiniAppReviewOpportunity) {
-            if (!armed) return
-            scope.launch {
-                if (!isActive(key) || sheetSlot.value.child != null) return@launch
-                var acquired = false
-                var committed = false
-                try {
-                    acquired = reviewPolicy.tryAcquirePrompt()
-                    if (!acquired || !isActive(key) || sheetSlot.value.child != null) return@launch
-                    sheetNavigation.activate(
-                        SheetConfig.AppReview(
-                            miniAppId = miniAppId.value,
-                            source = opportunity.triggerId,
-                            score = opportunity.score,
-                            bestScore = opportunity.bestScore,
-                            revivesUsed = opportunity.revivesUsed,
-                        ),
-                    )
-                    committed = true
-                } finally {
-                    if (acquired && !committed) {
-                        withContext(NonCancellable) { reviewPolicy.releasePrompt() }
-                    }
-                }
-            }
-        }
-    }
-
-    private class DefaultMiniAppVisibilitySource : MiniAppVisibilitySource {
-        private val mutableVisibility = MutableStateFlow(MiniAppVisibility.BACKGROUND)
-        override val visibility: StateFlow<MiniAppVisibility> = mutableVisibility.asStateFlow()
-        fun set(value: MiniAppVisibility) {
-            mutableVisibility.value = value
-        }
-    }
-
-    @Serializable
-    @JvmInline
-    private value class SessionKey(val value: Long)
-
     @Serializable
     private sealed interface Config {
         @Serializable
         data object Catalog : Config
 
         @Serializable
-        data class Running(val id: MiniAppId, val key: SessionKey) : Config
+        data class Running(val id: MiniAppId, val key: MiniAppSessionKey) : Config
     }
 
     @Serializable
@@ -351,6 +237,7 @@ internal class DefaultRootComponentFactory(
     private val audio: AudioRepository,
     private val settingsRepository: SettingsRepository,
     private val analytics: AnalyticRepository,
+    private val crashlytics: CrashlyticsRepository,
 ) : RootComponent.Factory {
     override fun create(componentContext: ComponentContext): RootComponent = DefaultRootComponent(
         componentContext = componentContext,
@@ -362,5 +249,6 @@ internal class DefaultRootComponentFactory(
         audio = audio,
         settingsRepository = settingsRepository,
         analytics = analytics,
+        crashlytics = crashlytics,
     )
 }

@@ -17,6 +17,7 @@ import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
+import ge.yet.game.domain.repository.CrashlyticsRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.feature.catalog.CatalogComponent
 import ge.yet.game.feature.review.AppReviewComponent
@@ -109,11 +110,13 @@ class DefaultRootComponentTest {
         assertEquals(1, restoredPlugin.createCount)
         restored.component.onBackClicked()
         restored.play(SECOND_ID)
+        val crashContext = restored.crashlytics.operations.toList()
 
         staleHost.close()
         staleHost.requestReview(MiniAppReviewOpportunity("stale"))
         runCurrent()
 
+        assertEquals(crashContext, restored.crashlytics.operations)
         assertEquals(SECOND_ID, restored.running().id)
         assertEquals(1, restored.secondPlugin.createCount)
         assertEquals(0, restored.reviewPolicy.acquireCalls)
@@ -154,7 +157,8 @@ class DefaultRootComponentTest {
 
     @Test
     fun synchronous_factory_failure_creates_unavailable_state_without_arming_host() = runTest {
-        val failed = RecordingPlugin(FIRST_ID, failure = IllegalStateException("broken"))
+        val failure = IllegalStateException("broken")
+        val failed = RecordingPlugin(FIRST_ID, failure = failure)
         val setup = build(firstPlugin = failed)
         setup.play(FIRST_ID)
 
@@ -167,6 +171,7 @@ class DefaultRootComponentTest {
         assertEquals(0, setup.reviewPolicy.acquireCalls)
         assertEquals("miniapp_launch_failed", setup.analytics.events.single().first)
         assertEquals("IllegalStateException", setup.analytics.events.single().second?.get("error"))
+        assertSame(failure, setup.crashlytics.exceptions.single())
     }
 
     @Test
@@ -260,6 +265,27 @@ class DefaultRootComponentTest {
         setup.lifecycle.resume()
         assertEquals(MiniAppVisibility.ACTIVE, visibility.value)
         assertEquals(1, setup.firstPlugin.createCount)
+    }
+
+    @Test
+    fun root_lifecycle_and_sheet_changes_are_delegated_to_runtime_visibility_and_crash_context() {
+        val setup = build()
+        setup.lifecycle.resume()
+        setup.play(FIRST_ID)
+        val session = assertIs<RootComponent.MiniAppState.Content>(setup.running().state).session
+
+        setup.component.onSettingsClicked()
+        assertSame(session, assertIs<RootComponent.MiniAppState.Content>(setup.running().state).session)
+        setup.lifecycle.stop()
+        setup.component.onDismissSheet()
+        setup.lifecycle.resume()
+
+        assertSame(session, assertIs<RootComponent.MiniAppState.Content>(setup.running().state).session)
+        assertEquals(1, setup.firstPlugin.createCount)
+        assertEquals(
+            listOf("ACTIVE", "OBSCURED", "BACKGROUND", "ACTIVE"),
+            setup.crashlytics.valuesFor("mini_app_visibility"),
+        )
     }
 
     @Test
@@ -376,6 +402,7 @@ class DefaultRootComponentTest {
         val audio = RecordingAudio()
         val settings = FakeSettings()
         val analytics = RecordingAnalytics()
+        val crashlytics = RecordingCrashlytics()
         val component = DefaultRootComponent(
             componentContext = DefaultComponentContext(lifecycle, stateKeeper, backHandler = backDispatcher),
             catalogFactory = catalogFactory,
@@ -386,9 +413,10 @@ class DefaultRootComponentTest {
             audio = audio,
             settingsRepository = settings,
             analytics = analytics,
+            crashlytics = crashlytics,
         )
         return Setup(component, lifecycle, backDispatcher, catalogFactory, settingsFactory, registry,
-            firstPlugin, secondPlugin, reviewFactory, reviewPolicy, audio, analytics).also(setups::add)
+            firstPlugin, secondPlugin, reviewFactory, reviewPolicy, audio, analytics, crashlytics).also(setups::add)
     }
 
     private data class Setup(
@@ -404,6 +432,7 @@ class DefaultRootComponentTest {
         val reviewPolicy: RecordingReviewPolicy,
         val audio: RecordingAudio,
         val analytics: RecordingAnalytics,
+        val crashlytics: RecordingCrashlytics,
     ) {
         private var destroyed = false
         fun play(id: MiniAppId) = catalogFactory.onPlay(id)
@@ -537,6 +566,38 @@ class DefaultRootComponentTest {
         val events = mutableListOf<Pair<String, Map<String, Any>?>>()
         override fun logEvent(eventName: String, params: Map<String, Any>?) { events += eventName to params }
         override fun deleteData() = Unit
+    }
+
+    private sealed interface CrashOperation {
+        data class Value(val key: String, val value: Any) : CrashOperation
+        data class Message(val value: String) : CrashOperation
+        data class Exception(val value: Throwable) : CrashOperation
+    }
+
+    private class RecordingCrashlytics : CrashlyticsRepository {
+        val operations = mutableListOf<CrashOperation>()
+        val exceptions: List<Throwable>
+            get() = operations.filterIsInstance<CrashOperation.Exception>().map { it.value }
+
+        fun valuesFor(key: String): List<Any> =
+            operations.filterIsInstance<CrashOperation.Value>()
+                .filter { it.key == key }
+                .map { it.value }
+
+        override fun setCustomValue(key: String, value: Any) {
+            operations += CrashOperation.Value(key, value)
+        }
+
+        override fun logMessage(message: String) {
+            operations += CrashOperation.Message(message)
+        }
+
+        override fun logException(throwable: Throwable) {
+            operations += CrashOperation.Exception(throwable)
+        }
+
+        override fun setUserID(id: String) = Unit
+        override fun clearUserID() = Unit
     }
 
     companion object {
