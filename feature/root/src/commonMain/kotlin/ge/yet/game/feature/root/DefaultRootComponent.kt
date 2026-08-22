@@ -49,6 +49,14 @@ internal class DefaultRootComponent(
     private val navigation = StackNavigation<Config>()
     private val sheetNavigation = SlotNavigation<SheetConfig>()
 
+    override val sheetSlot: Value<ChildSlot<*, RootComponent.SheetChild>> = childSlot(
+        source = sheetNavigation,
+        serializer = SheetConfig.serializer(),
+        key = "RootSheet",
+        handleBackButton = true,
+        childFactory = ::createSheetChild,
+    )
+
     private val runtimeCoordinator = MiniAppRuntimeCoordinator(
         registry = miniAppRegistry,
         reviewPolicy = reviewPolicy,
@@ -56,8 +64,8 @@ internal class DefaultRootComponent(
         crashlytics = crashlytics,
         initialForeground = lifecycle.state.isForeground,
         closeActiveSession = {
-            if (sheetSlot.value.child != null) sheetNavigation.dismiss()
             navigation.replaceAll(Config.Catalog)
+            if (sheetSlot.value.child != null) sheetNavigation.dismiss()
         },
         showReview = { id, opportunity ->
             if (sheetSlot.value.child != null) {
@@ -75,7 +83,9 @@ internal class DefaultRootComponent(
                 true
             }
         },
-    )
+    ).also { coordinator ->
+        coordinator.setObscured(sheetSlot.value.child != null)
+    }
 
     override val darkTheme: StateFlow<Boolean> = settingsRepository.darkTheme
     override val adsEnabled: StateFlow<Boolean> = settingsRepository.adsEnabled
@@ -86,14 +96,6 @@ internal class DefaultRootComponent(
         initialConfiguration = Config.Catalog,
         handleBackButton = false,
         childFactory = ::createChild,
-    )
-
-    override val sheetSlot: Value<ChildSlot<*, RootComponent.SheetChild>> = childSlot(
-        source = sheetNavigation,
-        serializer = SheetConfig.serializer(),
-        key = "RootSheet",
-        handleBackButton = true,
-        childFactory = ::createSheetChild,
     )
 
     private val backCallback = BackCallback(

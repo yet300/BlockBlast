@@ -93,6 +93,28 @@ class DefaultRootComponentTest {
     }
 
     @Test
+    fun restored_running_with_settings_is_obscured_before_session_creation() {
+        val stateKeeper = StateKeeperDispatcher()
+        val first = build(stateKeeper = stateKeeper)
+        first.play(FIRST_ID)
+        first.component.onSettingsClicked()
+        val saved = stateKeeper.save()
+        first.destroy()
+        val restoredPlugin = RecordingPlugin(FIRST_ID)
+        val restoredLifecycle = LifecycleRegistry().also(LifecycleRegistry::resume)
+
+        val restored = build(
+            stateKeeper = StateKeeperDispatcher(saved),
+            firstPlugin = restoredPlugin,
+            lifecycle = restoredLifecycle,
+        )
+
+        assertIs<RootComponent.SheetChild.Settings>(restored.component.sheetSlot.value.child?.instance)
+        assertEquals(listOf(MiniAppVisibility.OBSCURED), restoredPlugin.initialVisibilities)
+        assertEquals(MiniAppVisibility.OBSCURED, restoredPlugin.visibility.single().visibility.value)
+    }
+
+    @Test
     fun restored_running_key_advances_generator_and_stale_host_cannot_affect_new_session() = runTest {
         val stateKeeper = StateKeeperDispatcher()
         val first = build(stateKeeper = stateKeeper)
@@ -236,6 +258,29 @@ class DefaultRootComponentTest {
         assertNull(setup.component.sheetSlot.value.child)
         assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
         assertEquals(1, setup.firstPlugin.destroyCount)
+    }
+
+    @Test
+    fun closing_session_with_settings_never_reactivates_it_before_catalog() = runTest {
+        val setup = build()
+        setup.lifecycle.resume()
+        setup.play(FIRST_ID)
+        val visibility = setup.firstPlugin.visibility.single().visibility
+        setup.component.onSettingsClicked()
+        val visibilityAtCloseRequest = visibility.value
+        val crashSnapshotSize = setup.crashlytics.operations.size
+
+        setup.firstPlugin.hosts.single().close()
+        runCurrent()
+
+        assertEquals(MiniAppVisibility.OBSCURED, visibilityAtCloseRequest)
+        assertEquals(visibilityAtCloseRequest, visibility.value)
+        assertFalse(
+            CrashOperation.Value("mini_app_visibility", "ACTIVE") in
+                setup.crashlytics.operations.drop(crashSnapshotSize),
+        )
+        assertNull(setup.component.sheetSlot.value.child)
+        assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
     }
 
     @Test
@@ -391,8 +436,8 @@ class DefaultRootComponentTest {
         stateKeeper: StateKeeper? = null,
         firstPlugin: RecordingPlugin = RecordingPlugin(FIRST_ID),
         reviewPolicy: RecordingReviewPolicy = RecordingReviewPolicy(),
+        lifecycle: LifecycleRegistry = LifecycleRegistry(),
     ): Setup {
-        val lifecycle = LifecycleRegistry()
         val backDispatcher = BackDispatcher()
         val secondPlugin = RecordingPlugin(SECOND_ID)
         val registry = RecordingRegistry(firstPlugin, secondPlugin)
@@ -471,6 +516,7 @@ class DefaultRootComponentTest {
         var createCount = 0
         var destroyCount = 0
         val visibility = mutableListOf<MiniAppVisibilitySource>()
+        val initialVisibilities = mutableListOf<MiniAppVisibility>()
         val hosts = mutableListOf<MiniAppSessionHost>()
         override fun createSession(
             componentContext: ComponentContext,
@@ -479,6 +525,7 @@ class DefaultRootComponentTest {
         ): MiniAppSession {
             createCount += 1
             this.visibility += visibility
+            initialVisibilities += visibility.visibility.value
             hosts += host
             componentContext.lifecycle.doOnDestroy { destroyCount += 1 }
             failure?.let { throw it }

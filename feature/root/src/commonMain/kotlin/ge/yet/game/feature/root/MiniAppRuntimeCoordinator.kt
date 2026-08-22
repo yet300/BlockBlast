@@ -239,9 +239,9 @@ internal class MiniAppRuntimeCoordinator(
         }
 
         override fun close() {
-            if (!armed) return
             scope.launch {
-                if (!isActive(key) || closeDelivered) return@launch
+                // MiniApp hosts have no caller-thread contract; the child scope is the actor boundary.
+                if (!armed || !isActive(key) || closeDelivered) return@launch
                 closeDelivered = true
                 val visibility = activeVisibilitySource?.current ?: currentVisibility()
                 crash {
@@ -256,9 +256,9 @@ internal class MiniAppRuntimeCoordinator(
         }
 
         override fun requestReview(opportunity: MiniAppReviewOpportunity) {
-            if (!armed) return
             scope.launch {
-                if (!canRequestReview(key)) return@launch
+                // Read mutable host and coordinator state only after entering the child scope.
+                if (!armed || !canRequestReview(key)) return@launch
                 var acquired = false
                 var committed = false
                 try {

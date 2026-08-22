@@ -142,6 +142,39 @@ class MiniAppRuntimeCoordinatorTest {
     }
 
     @Test
+    fun host_callbacks_are_marshaled_before_armed_state_is_read() = runTest {
+        val opportunity = MiniAppReviewOpportunity("queued")
+        val plugin = RecordingPlugin(
+            id = FIRST_ID,
+            onCreate = { host ->
+                host.close()
+                host.requestReview(opportunity)
+            },
+        )
+        val setup = build(firstPlugin = plugin)
+        var state: RootComponent.MiniAppState? = null
+
+        setup.coordinator.launch(FIRST_ID) { key ->
+            state = setup.coordinator.createSession(
+                id = FIRST_ID,
+                key = key,
+                componentContext = componentContext(),
+                scope = backgroundScope,
+            )
+        }
+
+        assertIs<RootComponent.MiniAppState.Content>(state)
+        assertEquals(0, setup.closeCalls)
+        assertEquals(0, setup.reviewPolicy.acquireCalls)
+
+        runCurrent()
+
+        assertEquals(1, setup.closeCalls)
+        assertEquals(1, setup.reviewPolicy.acquireCalls)
+        assertEquals(listOf(FIRST_ID to opportunity), setup.reviews)
+    }
+
+    @Test
     fun visibility_changes_update_active_source_and_crash_context_without_recreation() {
         val setup = build()
         setup.launchAndCreate(FIRST_ID, componentContext())
@@ -490,6 +523,7 @@ class MiniAppRuntimeCoordinatorTest {
         id: MiniAppId,
         private val failure: Throwable? = null,
         private val closeOnVisibility: MiniAppVisibility? = null,
+        private val onCreate: (MiniAppSessionHost) -> Unit = {},
     ) : MiniAppPlugin {
         override val manifest = manifest(id)
         var createCount = 0
@@ -504,6 +538,7 @@ class MiniAppRuntimeCoordinatorTest {
             createCount += 1
             this.visibility += visibility
             hosts += host
+            onCreate(host)
             closeOnVisibility?.let { target ->
                 componentContext.coroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
                     visibility.visibility.first { it == target }
