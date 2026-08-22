@@ -16,6 +16,7 @@ import dev.zacsweers.metro.Multibinds
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.CrashlyticsRepository
 import ge.yet.game.feature.catalog.CatalogComponent
 import ge.yet.game.feature.root.RootComponent
 import ge.yet.game.feature.settings.libraries.LibrariesProvider
@@ -105,6 +106,22 @@ internal object CounterRootHostBindings {
 
         override fun deleteData() = Unit
     }
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun crashlyticsRepository(): CrashlyticsRepository = CounterRootNoOpCrashlyticsRepository
+}
+
+private data object CounterRootNoOpCrashlyticsRepository : CrashlyticsRepository {
+    override fun setUserID(id: String) = Unit
+
+    override fun clearUserID() = Unit
+
+    override fun setCustomValue(key: String, value: Any) = Unit
+
+    override fun logException(throwable: Throwable) = Unit
+
+    override fun logMessage(message: String) = Unit
 }
 
 internal class CounterRootProbe {
