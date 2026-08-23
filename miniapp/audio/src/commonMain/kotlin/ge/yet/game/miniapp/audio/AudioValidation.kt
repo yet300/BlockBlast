@@ -190,6 +190,8 @@ private fun validatePattern(
 }
 
 internal object AudioMobileBudget {
+    const val MAX_VOICES = 32
+    const val SFX_RESERVED_VOICES = 8
     const val MAX_TRACKS = 16
     const val MAX_OSCILLATORS_PER_INSTRUMENT = 8
     const val MAX_EFFECTS = 4
