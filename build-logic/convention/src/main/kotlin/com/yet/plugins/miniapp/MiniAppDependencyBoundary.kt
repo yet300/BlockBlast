@@ -29,6 +29,21 @@ internal object MiniAppDependencyBoundary {
         return violation(projectPath, configuration, dependencyPath, ":miniapp:api or a stable :core contract")
     }
 
+    fun externalViolationFor(
+        projectPath: String,
+        configuration: String,
+        group: String?,
+        name: String,
+    ): MiniAppDependencyViolation? {
+        if (group != "com.russhwolf" || !name.startsWith("multiplatform-settings")) return null
+        val replacement = if (configuration.contains("test", ignoreCase = true)) {
+            "MiniAppStorage test fixtures"
+        } else {
+            "MiniAppStorage"
+        }
+        return violation(projectPath, configuration, "$group:$name", replacement)
+    }
+
     private fun violation(project: String, configuration: String, dependency: String, replacement: String) =
         MiniAppDependencyViolation(project, configuration, dependency, replacement)
 

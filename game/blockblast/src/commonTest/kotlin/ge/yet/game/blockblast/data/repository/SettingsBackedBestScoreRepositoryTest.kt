@@ -1,7 +1,6 @@
 package ge.yet.game.blockblast.data.repository
 
-import com.app.common.AppDispatchers
-import com.russhwolf.settings.MapSettings
+import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,14 +18,10 @@ import kotlin.test.assertEquals
 class SettingsBackedBestScoreRepositoryTest {
 
     private val scope = CoroutineScope(SupervisorJob() + UnconfinedTestDispatcher())
-    private val settings = MapSettings()
+    private val storage = MutableMiniAppStorage()
     private val repository = SettingsBackedBestScoreRepository(
-        settings = settings,
+        storage = BlockBlastStorage(storage),
         scope = scope,
-        dispatchers = AppDispatchers(
-            default = Dispatchers.Unconfined,
-            io = Dispatchers.Unconfined,
-        ),
     )
 
     @AfterTest
@@ -40,8 +35,8 @@ class SettingsBackedBestScoreRepositoryTest {
     }
 
     @Test
-    fun reads_score_written_by_previous_app_version() {
-        settings.putLong("blockblast.best_score", 7_500L)
+    fun observes_score_written_through_the_legacy_local_name() = runTest {
+        storage.putLong("best_score", 7_500L)
 
         assertEquals(7_500L, repository.bestScore.value)
     }

@@ -23,6 +23,8 @@ import blockblast.composeapp.generated.resources.privacy_policy
 import blockblast.composeapp.generated.resources.privacy_policy_subtitle
 import blockblast.composeapp.generated.resources.support_game
 import blockblast.composeapp.generated.resources.support_game_subtitle
+import blockblast.composeapp.generated.resources.delete_game_data
+import blockblast.composeapp.generated.resources.delete_game_data_subtitle
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.app.common.config.AppConfig
 import ge.yet.game.feature.settings.more.MoreSettingsComponent
@@ -108,6 +110,17 @@ fun MoreSettingsContent(component: MoreSettingsComponent) {
             subtitle = stringResource(Res.string.open_source_libraries_subtitle),
             external = false,
             onClick = component::onLibrariesClicked,
+        )
+
+        SettingsDivider()
+
+        SettingsLinkRow(
+            icon = Settings,
+            title = stringResource(Res.string.delete_game_data),
+            subtitle = stringResource(Res.string.delete_game_data_subtitle),
+            external = false,
+            destructive = true,
+            onClick = component::onResetGameDataClicked,
         )
 
         Spacer(Modifier.height(28.dp))

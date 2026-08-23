@@ -24,6 +24,8 @@ import ge.yet.game.feature.review.AppReviewComponent
 import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.miniapp.api.MiniAppCategoryId
+import ge.yet.game.miniapp.api.MiniAppDataResetResult
+import ge.yet.game.miniapp.api.MiniAppDataResetter
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
@@ -308,6 +310,30 @@ class DefaultRootComponentTest {
     }
 
     @Test
+    fun reset_from_running_destroys_session_before_clear_and_keeps_settings_sheet() = runTest {
+        lateinit var setup: Setup
+        val resetter = RecordingDataResetter { ids ->
+            assertEquals(1, setup.firstPlugin.destroyCount)
+            assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
+            assertIs<RootComponent.SheetChild.Settings>(setup.component.sheetSlot.value.child?.instance)
+            assertEquals(setOf(FIRST_ID, SECOND_ID), ids)
+            MiniAppDataResetResult.PartialFailure(setOf(SECOND_ID))
+        }
+        setup = build(dataResetter = resetter)
+        setup.play(FIRST_ID)
+        setup.component.onSettingsClicked()
+
+        val result = setup.settingsFactory.created.single().clearGameData()
+
+        assertEquals(
+            setOf(SECOND_ID),
+            assertIs<MiniAppDataResetResult.PartialFailure>(result).failedMiniAppIds,
+        )
+        assertEquals(1, resetter.calls)
+        assertIs<RootComponent.SheetChild.Settings>(setup.component.sheetSlot.value.child?.instance)
+    }
+
+    @Test
     fun active_obscured_background_active_visibility_does_not_recreate_session() {
         val setup = build()
         setup.lifecycle.resume()
@@ -449,6 +475,7 @@ class DefaultRootComponentTest {
         stateKeeper: StateKeeper? = null,
         firstPlugin: RecordingPlugin = RecordingPlugin(FIRST_ID),
         reviewPolicy: RecordingReviewPolicy = RecordingReviewPolicy(),
+        dataResetter: MiniAppDataResetter = RecordingDataResetter(),
         lifecycle: LifecycleRegistry = LifecycleRegistry(),
     ): Setup {
         val backDispatcher = BackDispatcher()
@@ -473,6 +500,7 @@ class DefaultRootComponentTest {
             analytics = analytics,
             crashlytics = crashlytics,
             storageProvider = MiniAppStorageProvider { NoopMiniAppStorage },
+            dataResetter = dataResetter,
         )
         return Setup(component, lifecycle, backDispatcher, catalogFactory, settingsFactory, registry,
             firstPlugin, secondPlugin, reviewFactory, reviewPolicy, audio, analytics, crashlytics).also(setups::add)
@@ -547,12 +575,20 @@ class DefaultRootComponentTest {
 
     private class RecordingSettingsFactory : SettingsComponent.Factory {
         val created = mutableListOf<RecordingSettingsComponent>()
-        override fun create(componentContext: ComponentContext, onBackClicked: () -> Unit): SettingsComponent =
-            RecordingSettingsComponent(componentContext, onBackClicked).also(created::add)
+        override fun create(
+            componentContext: ComponentContext,
+            clearGameData: suspend () -> MiniAppDataResetResult,
+            onBackClicked: () -> Unit,
+        ): SettingsComponent = RecordingSettingsComponent(
+            componentContext = componentContext,
+            clearGameData = clearGameData,
+            close = onBackClicked,
+        ).also(created::add)
     }
 
     private class RecordingSettingsComponent(
         componentContext: ComponentContext,
+        val clearGameData: suspend () -> MiniAppDataResetResult,
         private val close: () -> Unit,
     ) : SettingsComponent {
         override val backHandler = componentContext.backHandler
@@ -564,6 +600,20 @@ class DefaultRootComponentTest {
         }
         override fun onBackClicked() {
             if (isNested) isNested = false else close()
+        }
+    }
+
+    private class RecordingDataResetter(
+        private val result: suspend (Set<MiniAppId>) -> MiniAppDataResetResult = {
+            MiniAppDataResetResult.Success
+        },
+    ) : MiniAppDataResetter {
+        var calls = 0
+            private set
+
+        override suspend fun clear(miniAppIds: Set<MiniAppId>): MiniAppDataResetResult {
+            calls += 1
+            return result(miniAppIds)
         }
     }
 

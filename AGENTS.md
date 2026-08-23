@@ -53,6 +53,7 @@ BlockBlast/
 │   ├── api/                    Stable, Compose-free MiniApp domain contracts
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
+│   ├── storage/                Namespaced Settings backend and game-data reset coordinator
 │   ├── testkit/                Reusable MiniApp host, visibility, lifecycle and contract fixtures
 │   ├── samples/
 │   │   └── counter/            Discovered, unshipped reference MiniApp plugin
@@ -77,16 +78,17 @@ BlockBlast/
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
-| `:feature:settings` | Settings components and stores | `:core:domain`, `:core:common` |
+| `:feature:settings` | Settings components, stores and the confirmation/progress/result state holder for game-data reset | `:core:domain`, `:core:common`, `:miniapp:api` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
-| `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its internal `MiniAppRuntimeCoordinator` owns registry lookup and session creation, monotonic session keys, active visibility, child-scope-bound host callbacks and stale-callback rejection, review-reservation coordination, and MiniApp Crashlytics context. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
-| `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; core contracts, ConfettiKit, MVIKotlin and multiplatform-settings; no native-ad dependency |
+| `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its runtime coordinator owns session creation, visibility, stale callbacks, reset/launch serialization and teardown-before-clear ordering. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
+| `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; MiniApp/core contracts, ConfettiKit and MVIKotlin; no raw Settings or native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
+| `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
 | `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
@@ -151,6 +153,16 @@ host's full-frame background layer so it also sits behind common chrome, while
 the plugin-local content theme remains confined to the viewport; Root
 transitions must preserve those boundaries.
 
+Every plugin receives one `MiniAppSessionContext`, including its lifecycle,
+visibility, host callbacks and an ID-bound `MiniAppStorage`. MiniApps use local
+snake-case keys and versioned snapshot specs; they must not import
+`com.russhwolf.settings` or construct physical storage keys. The host-side
+`:miniapp:storage` backend owns namespacing and compatibility aliases. When the
+user deletes all game data, Root first navigates to Catalog and awaits active
+session destruction, keeps the Settings flow visible, and only then performs a
+best-effort reset across shipped MiniApp IDs. App preferences, consent,
+entitlement and review-policy data are outside those namespaces and survive.
+
 Block Blast drag, grid and tray hit-testing measurements use window
 coordinates, reflected by `InWindow` names. Convert points and rectangles only
 at viewport-local rendering boundaries through the shared `windowToViewport`
@@ -205,10 +217,11 @@ owns Catalog/Running navigation, Settings/Review, Back, visibility and stale
 callback rejection. Block Blast owns resume/new-game choice,
 Playing/Result/Revive, persistence and any future Replay behavior.
 
-Use `MiniAppId.storageKey(localName)` for every new persistent key. Block
-Blast's existing `blockblast.game_save`, `blockblast.best_score` and
-`blockblast.tutorial_seen` keys are a compatibility exception and must not be
-migrated merely to satisfy the new convention. Plugins cannot provide Catalog
+Use `MiniAppSessionContext.storage` for every new persistent value or versioned
+snapshot. Block Blast's existing `blockblast.game_save`,
+`blockblast.best_score` and `blockblast.tutorial_seen` physical keys are
+declared as compatibility aliases and must not be migrated merely to satisfy
+the new convention. Plugins cannot provide Catalog
 cards, host Back/Settings controls, the host toolbar, ad containers or Replay
 actions. Replay is deliberately absent from the initial public MiniApp API.
 
@@ -327,6 +340,11 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :miniapp:metro:allTests
 ./gradlew :miniapp:metro:compileAndroidMain
 ./gradlew :miniapp:metro:compileKotlinIosSimulatorArm64
+
+# Verify namespaced MiniApp persistence and best-effort reset
+./gradlew :miniapp:storage:allTests
+./gradlew :miniapp:storage:compileAndroidMain
+./gradlew :miniapp:storage:compileKotlinIosSimulatorArm64
 
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain

@@ -90,6 +90,7 @@ internal fun SettingsLinkRow(
     subtitle: String,
     external: Boolean,
     onClick: () -> Unit,
+    destructive: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -104,6 +105,11 @@ internal fun SettingsLinkRow(
             title = title,
             subtitle = subtitle,
             modifier = Modifier.weight(1f),
+            titleColor = if (destructive) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onBackground
+            },
         )
 
         if (external) {
@@ -131,6 +137,7 @@ private fun SettingsRowLabel(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    titleColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onBackground,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -164,7 +171,7 @@ private fun SettingsRowLabel(
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Medium,
                 ),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = titleColor,
             )
             Text(
                 text = subtitle,

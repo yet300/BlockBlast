@@ -6,10 +6,6 @@ import com.app.common.di.CommonBindings
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import com.russhwolf.settings.ExperimentalSettingsApi
-import com.russhwolf.settings.MapSettings
-import com.russhwolf.settings.ObservableSettings
-import com.russhwolf.settings.Settings
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -35,6 +31,9 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.miniapp.api.MiniAppSessionHost
+import ge.yet.game.miniapp.api.MiniAppLegacyStorageKeys
+import ge.yet.game.miniapp.api.MiniAppId
+import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
@@ -46,6 +45,7 @@ import ge.yet.game.miniapp.metro.MiniAppMetroBindings
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
+import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
 import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import kotlinx.coroutines.CoroutineScope
@@ -89,7 +89,8 @@ internal interface BlockBlastPluginTestGraph {
     val saveRepository: GameSaveRepository
     val bestScoreRepository: BestScoreRepository
     val feedbackPreferences: FeedbackPreferences
-    val settings: Settings
+    val miniAppStorage: MutableMiniAppStorage
+    val legacyStorageKeys: Set<MiniAppLegacyStorageKeys>
     val audioRepository: AudioRepository
     val appScope: CoroutineScope
 }
@@ -115,7 +116,6 @@ internal interface InspectableBlockBlastSessionGraph {
     }
 }
 
-@OptIn(ExperimentalSettingsApi::class)
 @ContributesTo(
     scope = AppScope::class,
     replaces = [CommonBindings::class],
@@ -124,13 +124,11 @@ internal interface InspectableBlockBlastSessionGraph {
 internal object BlockBlastGraphTestBindings {
     @Provides
     @SingleIn(AppScope::class)
-    fun provideMapSettings(): MapSettings = MapSettings()
+    fun provideMiniAppStorage(): MutableMiniAppStorage = MutableMiniAppStorage()
 
     @Provides
-    fun provideSettings(settings: MapSettings): Settings = settings
-
-    @Provides
-    fun provideObservableSettings(settings: MapSettings): ObservableSettings = settings
+    fun provideMiniAppStorageProvider(storage: MutableMiniAppStorage): MiniAppStorageProvider =
+        MiniAppStorageProvider { storage }
 
     @Provides
     @SingleIn(AppScope::class)
@@ -351,7 +349,17 @@ class BlockBlastSessionGraphTest {
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
         var createdGraph: BlockBlastSessionGraph? = null
         try {
-            appGraph.settings.putString("blockblast.game_save", CURRENT_SAVE_BYTES)
+            assertEquals(
+                mapOf(
+                    "game_save" to "blockblast.game_save",
+                    "best_score" to "blockblast.best_score",
+                    "tutorial_seen" to "blockblast.tutorial_seen",
+                ),
+                appGraph.legacyStorageKeys
+                    .single { it.miniAppId == MiniAppId("game.blockblast") }
+                    .localToPhysicalKeys,
+            )
+            appGraph.miniAppStorage.putString("game_save", CURRENT_SAVE_BYTES)
             val plugin = BlockBlastPlugin { context ->
                 appGraph.sessionFactory.createGameBlockblastSessionGraph(context).also {
                     createdGraph = it

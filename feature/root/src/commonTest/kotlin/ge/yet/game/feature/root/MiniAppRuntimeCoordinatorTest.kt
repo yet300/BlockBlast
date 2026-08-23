@@ -12,6 +12,8 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.CrashlyticsRepository
 import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.miniapp.api.MiniAppCategoryId
+import ge.yet.game.miniapp.api.MiniAppDataResetResult
+import ge.yet.game.miniapp.api.MiniAppDataResetter
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
@@ -33,6 +35,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -439,11 +442,61 @@ class MiniAppRuntimeCoordinatorTest {
         assertEquals(1, setup.secondPlugin.createCount)
     }
 
+    @Test
+    fun reset_blocks_launch_until_teardown_and_clear_complete() = runTest {
+        val clearStarted = CompletableDeferred<Set<MiniAppId>>()
+        val clearResult = CompletableDeferred<MiniAppDataResetResult>()
+        lateinit var activeLifecycle: LifecycleRegistry
+        val setup = build(
+            dataResetter = dataResetter { ids ->
+                clearStarted.complete(ids)
+                clearResult.await()
+            },
+            afterClose = { activeLifecycle.destroy() },
+        )
+        activeLifecycle = lifecycle().also(LifecycleRegistry::resume)
+        setup.launchAndCreate(FIRST_ID, DefaultComponentContext(activeLifecycle))
+
+        val reset = backgroundScope.launch { setup.coordinator.clearMiniAppData() }
+        assertEquals(setOf(FIRST_ID, SECOND_ID), clearStarted.await())
+        setup.coordinator.launch(SECOND_ID) { error("launch must be ignored during reset") }
+        assertEquals(0, setup.secondPlugin.createCount)
+
+        clearResult.complete(MiniAppDataResetResult.Success)
+        reset.join()
+        setup.coordinator.launch(SECOND_ID) { key ->
+            setup.coordinator.createSessionWithChildScope(SECOND_ID, key, componentContext())
+        }
+        assertEquals(1, setup.secondPlugin.createCount)
+    }
+
+    @Test
+    fun cancelled_reset_clears_guard_and_allows_later_launch() = runTest {
+        val clearStarted = CompletableDeferred<Unit>()
+        val setup = build(
+            dataResetter = dataResetter {
+                clearStarted.complete(Unit)
+                awaitCancellation()
+            },
+        )
+
+        val reset = backgroundScope.launch { setup.coordinator.clearMiniAppData() }
+        clearStarted.await()
+        reset.cancel()
+        reset.join()
+
+        setup.coordinator.launch(SECOND_ID) { key ->
+            setup.coordinator.createSessionWithChildScope(SECOND_ID, key, componentContext())
+        }
+        assertEquals(1, setup.secondPlugin.createCount)
+    }
+
     private fun build(
         firstPlugin: RecordingPlugin = RecordingPlugin(FIRST_ID),
         crashlytics: CrashlyticsRepository = RecordingCrashlytics(),
         reviewPolicy: RecordingReviewPolicy = RecordingReviewPolicy(),
         storageProvider: MiniAppStorageProvider = MiniAppStorageProvider { NoopMiniAppStorage },
+        dataResetter: MiniAppDataResetter = dataResetter { MiniAppDataResetResult.Success },
         afterClose: () -> Unit = {},
     ): Setup {
         val secondPlugin = RecordingPlugin(SECOND_ID)
@@ -457,6 +510,7 @@ class MiniAppRuntimeCoordinatorTest {
             analytics = analytics,
             crashlytics = crashlytics,
             storageProvider = storageProvider,
+            dataResetter = dataResetter,
             initialForeground = true,
             navigateToCatalog = {
                 closeCalls += 1
@@ -481,6 +535,13 @@ class MiniAppRuntimeCoordinatorTest {
     }
 
     private fun componentContext(): ComponentContext = DefaultComponentContext(lifecycle())
+
+    private fun dataResetter(
+        clear: suspend (Set<MiniAppId>) -> MiniAppDataResetResult,
+    ): MiniAppDataResetter = object : MiniAppDataResetter {
+        override suspend fun clear(miniAppIds: Set<MiniAppId>): MiniAppDataResetResult =
+            clear(miniAppIds)
+    }
 
     private fun lifecycle(): LifecycleRegistry = LifecycleRegistry().also(lifecycles::add)
 

@@ -36,4 +36,26 @@ class MiniAppDependencyBoundaryTest {
         assertEquals(null, MiniAppDependencyBoundary.violationFor(":game:snake", "commonTestImplementation", ":miniapp:testkit"))
         assertEquals(":miniapp:api", MiniAppDependencyBoundary.violationFor(":game:snake", "commonMainImplementation", ":miniapp:testkit")?.replacement)
     }
+
+    @Test
+    fun `raw multiplatform settings artifacts are rejected in every configuration`() {
+        assertEquals(
+            ":game:snake: commonMainImplementation may not depend on com.russhwolf:multiplatform-settings; use MiniAppStorage",
+            MiniAppDependencyBoundary.externalViolationFor(
+                projectPath = ":game:snake",
+                configuration = "commonMainImplementation",
+                group = "com.russhwolf",
+                name = "multiplatform-settings",
+            )?.message(),
+        )
+        assertEquals(
+            ":game:snake: commonTestImplementation may not depend on com.russhwolf:multiplatform-settings-test; use MiniAppStorage test fixtures",
+            MiniAppDependencyBoundary.externalViolationFor(
+                projectPath = ":game:snake",
+                configuration = "commonTestImplementation",
+                group = "com.russhwolf",
+                name = "multiplatform-settings-test",
+            )?.message(),
+        )
+    }
 }

@@ -14,6 +14,7 @@ import ge.yet.game.screen.settings.content.LibrariesSettingsContent
 import ge.yet.game.screen.settings.content.MainSettingsContent
 import ge.yet.game.screen.settings.content.MoreSettingsContent
 import ge.yet.game.screen.settings.content.DisableAdsContent
+import ge.yet.game.screen.settings.content.ResetGameDataContent
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -31,6 +32,7 @@ fun SettingsContent(
             is SettingsComponent.Child.More -> MoreSettingsContent(component = instance.component)
             is SettingsComponent.Child.DisableAds -> DisableAdsContent(component = instance.component)
             is SettingsComponent.Child.Libraries -> LibrariesSettingsContent(component = instance.component)
+            is SettingsComponent.Child.ResetGameData -> ResetGameDataContent(component = instance.component)
         }
     }
 }

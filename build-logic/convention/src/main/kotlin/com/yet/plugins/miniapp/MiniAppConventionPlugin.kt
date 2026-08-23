@@ -34,7 +34,7 @@ class MiniAppConventionPlugin : Plugin<Project> {
             val messages = configurationContainer.toList()
                 .filter { it.isCanBeDeclared }
                 .flatMap { configuration ->
-                    configuration.dependencies
+                    val projectViolations = configuration.dependencies
                         .withType(org.gradle.api.artifacts.ProjectDependency::class.java)
                         .mapNotNull { dependency ->
                             MiniAppDependencyBoundary.violationFor(
@@ -43,6 +43,17 @@ class MiniAppConventionPlugin : Plugin<Project> {
                                 dependency.path,
                             )?.message()
                         }
+                    val externalViolations = configuration.dependencies
+                        .withType(org.gradle.api.artifacts.ExternalModuleDependency::class.java)
+                        .mapNotNull { dependency ->
+                            MiniAppDependencyBoundary.externalViolationFor(
+                                projectPath = projectPath,
+                                configuration = configuration.name,
+                                group = dependency.group,
+                                name = dependency.name,
+                            )?.message()
+                        }
+                    projectViolations + externalViolations
                 }
                 .distinct()
                 .sorted()

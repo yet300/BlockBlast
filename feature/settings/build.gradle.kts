@@ -9,6 +9,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.domain)
             implementation(projects.core.common)
+            implementation(projects.miniapp.api)
 
             implementation(libs.bundles.decompose)
             implementation(libs.bundles.mvi)

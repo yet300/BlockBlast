@@ -1,6 +1,5 @@
 package ge.yet.game.blockblast.session
 
-import com.app.common.AppDispatchers
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.value.MutableValue
@@ -8,7 +7,6 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import com.russhwolf.settings.MapSettings
 import ge.yet.game.blockblast.component.game.DefaultGameComponent
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.game.store.GameInitializer
@@ -21,6 +19,7 @@ import ge.yet.game.blockblast.component.tray.PieceTrayComponent
 import ge.yet.game.blockblast.component.tray.TraySelection
 import ge.yet.game.blockblast.component.tray.TraySlotComponent
 import ge.yet.game.blockblast.data.repository.SettingsBackedGameSaveRepository
+import ge.yet.game.blockblast.data.repository.BlockBlastStorage
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.ScoreCalculator
 import ge.yet.game.blockblast.domain.engine.ShapeGenerator
@@ -38,6 +37,7 @@ import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
+import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -397,13 +397,7 @@ class DefaultBlockBlastSessionComponentTest {
     private fun fakeResult(setup: Setup): FakeResult = result(setup) as FakeResult
 
     private fun settingsBackedSaveRepository(): SettingsBackedGameSaveRepository =
-        SettingsBackedGameSaveRepository(
-            settings = MapSettings(),
-            dispatchers = AppDispatchers(
-                default = testDispatcher,
-                io = testDispatcher,
-            ),
-        )
+        SettingsBackedGameSaveRepository(BlockBlastStorage(MutableMiniAppStorage()))
 
     private fun gameInitializer(saveRepository: GameSaveRepository): GameInitializer =
         GameInitializer(

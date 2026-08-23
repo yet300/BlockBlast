@@ -125,6 +125,7 @@ tasks.withType<Test>().configureEach {
             // Compose UI's Android host environment requires a Robolectric runner;
             // this common suite executes on the iOS simulator in allTests.
             excludeTestsMatching("ge.yet.game.screen.root.RootContentTest")
+            excludeTestsMatching("ge.yet.game.screen.settings.SettingsContentTest")
         }
     }
 }

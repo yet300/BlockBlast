@@ -17,6 +17,7 @@ internal class DefaultMoreSettingsComponent(
     private val analytics: AnalyticRepository,
     private val onDisableAdsRequestedCb: () -> Unit,
     private val onLibrariesClickedCb: () -> Unit,
+    private val onResetGameDataRequestedCb: () -> Unit,
     private val onBackClickedCb: () -> Unit,
     private val coroutineScope: CoroutineScope = componentContext.componentCoroutineScope(),
 ) : MoreSettingsComponent, ComponentContext by componentContext {
@@ -60,5 +61,6 @@ internal class DefaultMoreSettingsComponent(
     }
 
     override fun onLibrariesClicked() = onLibrariesClickedCb()
+    override fun onResetGameDataClicked() = onResetGameDataRequestedCb()
     override fun onBackClicked() = onBackClickedCb()
 }

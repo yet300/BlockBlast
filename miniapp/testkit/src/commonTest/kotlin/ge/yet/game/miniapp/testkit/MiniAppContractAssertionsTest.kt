@@ -10,6 +10,7 @@ import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.DefaultMiniAppRegistry
 import ge.yet.game.miniapp.metro.RetainedMiniAppSession
 import org.jetbrains.compose.resources.DrawableResource

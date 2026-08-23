@@ -225,4 +225,37 @@ class ValidateMiniAppDependenciesTaskTest {
         assertContains(first.output, "BUILD SUCCESSFUL")
         assertContains(second.output, "Reusing configuration cache")
     }
+
+    @Test
+    fun `actual validation rejects raw settings artifacts without resolving them`() {
+        val folder = TemporaryFolder().also { it.create() }
+        val project = MiniAppBundleGradleTestProject(folder, useMarker = false)
+        project.write(
+            "game/blockblast/build.gradle.kts",
+            """
+                plugins { id("logica.miniapp") }
+                dependencies {
+                    add("commonMainImplementation", "com.russhwolf:multiplatform-settings:1.3.0")
+                    add("commonTestImplementation", "com.russhwolf:multiplatform-settings-test:1.3.0")
+                }
+                configurations.configureEach {
+                    incoming.beforeResolve { error("validation must not resolve dependencies") }
+                }
+            """,
+        )
+
+        val failure = project.runAndFail(
+            ":game:blockblast:validateMiniAppDependencies",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
+
+        assertContains(
+            failure.output,
+            ":game:blockblast: commonMainImplementation may not depend on com.russhwolf:multiplatform-settings; use MiniAppStorage",
+        )
+        assertContains(
+            failure.output,
+            ":game:blockblast: commonTestImplementation may not depend on com.russhwolf:multiplatform-settings-test; use MiniAppStorage test fixtures",
+        )
+    }
 }

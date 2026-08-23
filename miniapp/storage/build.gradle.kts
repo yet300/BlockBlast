@@ -8,6 +8,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.miniapp.api)
             implementation(projects.core.common)
+            implementation(projects.core.domain)
             implementation(libs.bundles.multiplatform.settings)
         }
 

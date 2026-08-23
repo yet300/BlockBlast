@@ -27,6 +27,7 @@ import ge.yet.game.feature.review.AppReviewComponent
 import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.miniapp.api.MiniAppId
+import ge.yet.game.miniapp.api.MiniAppDataResetter
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +42,7 @@ internal class DefaultRootComponent(
     analytics: AnalyticRepository,
     crashlytics: CrashlyticsRepository,
     storageProvider: MiniAppStorageProvider,
+    dataResetter: MiniAppDataResetter,
     private val catalogFactory: CatalogComponent.Factory,
     private val settingsFactory: SettingsComponent.Factory,
     private val reviewFactory: AppReviewComponent.Factory,
@@ -65,10 +67,11 @@ internal class DefaultRootComponent(
         analytics = analytics,
         crashlytics = crashlytics,
         storageProvider = storageProvider,
+        dataResetter = dataResetter,
         initialForeground = lifecycle.state.isForeground,
-        navigateToCatalog = {
+        navigateToCatalog = { keepSheet ->
             navigation.replaceAll(Config.Catalog)
-            if (sheetSlot.value.child != null) sheetNavigation.dismiss()
+            if (!keepSheet && sheetSlot.value.child != null) sheetNavigation.dismiss()
         },
         showReview = { id, opportunity ->
             if (sheetSlot.value.child != null) {
@@ -183,7 +186,11 @@ internal class DefaultRootComponent(
         componentContext: ComponentContext,
     ): RootComponent.SheetChild = when (config) {
         SheetConfig.Settings -> RootComponent.SheetChild.Settings(
-            settingsFactory.create(componentContext, ::onDismissSheet),
+            settingsFactory.create(
+                componentContext = componentContext,
+                clearGameData = runtimeCoordinator::clearMiniAppData,
+                onBackClicked = ::onDismissSheet,
+            ),
         )
         is SheetConfig.AppReview -> {
             val params = mutableMapOf<String, Any>(
@@ -244,6 +251,7 @@ internal class DefaultRootComponentFactory(
     private val analytics: AnalyticRepository,
     private val crashlytics: CrashlyticsRepository,
     private val storageProvider: MiniAppStorageProvider,
+    private val dataResetter: MiniAppDataResetter,
 ) : RootComponent.Factory {
     override fun create(componentContext: ComponentContext): RootComponent = DefaultRootComponent(
         componentContext = componentContext,
@@ -257,5 +265,6 @@ internal class DefaultRootComponentFactory(
         analytics = analytics,
         crashlytics = crashlytics,
         storageProvider = storageProvider,
+        dataResetter = dataResetter,
     )
 }

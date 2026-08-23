@@ -81,6 +81,7 @@ BlockBlast/
 │   ├── api/         # Stable Compose-free contracts
 │   ├── compose/     # Plugin, manifest, session and frame contracts
 │   ├── metro/       # Registry and retained child-graph foundation
+│   ├── storage/     # Namespaced persistence and safe all-game-data reset
 │   ├── bundle/      # Production allowlisted plugins
 │   ├── testkit/     # Contributor contract fixtures
 │   └── samples/     # Discovered but unshipped examples
@@ -154,8 +155,11 @@ Settings/Review, visibility and stale-callback protection. The common frame
 owns catalog cards, toolbar controls and ad containers; Replay is intentionally
 not part of the initial plugin API.
 
-Use `MiniAppId.storageKey(localName)` for new persistence. Block Blast's legacy
-keys remain unchanged for save compatibility.
+Use the session-bound `MiniAppStorage` from `MiniAppSessionContext` for new
+persistence. Games supply only local snake-case names; the host owns physical
+namespacing, snapshot migrations, legacy aliases and the safe all-game-data
+reset. MiniApp modules must not depend on Multiplatform Settings directly.
+Block Blast's legacy physical keys remain unchanged for save compatibility.
 
 ## Contributing
 

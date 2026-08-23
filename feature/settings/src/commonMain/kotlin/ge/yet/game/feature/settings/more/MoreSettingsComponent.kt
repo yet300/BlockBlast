@@ -9,6 +9,7 @@ interface MoreSettingsComponent {
     fun onAdsToggled(enabled: Boolean)
     fun onSupportClicked()
     fun onLibrariesClicked()
+    fun onResetGameDataClicked()
     fun onBackClicked()
 
     data class Model(

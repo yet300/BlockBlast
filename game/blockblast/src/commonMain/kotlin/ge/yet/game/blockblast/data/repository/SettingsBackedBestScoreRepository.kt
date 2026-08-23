@@ -1,43 +1,39 @@
 package ge.yet.game.blockblast.data.repository
 
-import com.app.common.AppDispatchers
-import com.russhwolf.settings.ExperimentalSettingsApi
-import com.russhwolf.settings.ObservableSettings
-import com.russhwolf.settings.coroutines.getLongStateFlow
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 /** Block Blast-owned best-score storage. Retains the legacy key for upgrades. */
-@OptIn(ExperimentalSettingsApi::class)
 @SingleIn(AppScope::class)
 @Inject
 internal class SettingsBackedBestScoreRepository(
-    private val settings: ObservableSettings,
+    private val storage: BlockBlastStorage,
     scope: CoroutineScope,
-    private val dispatchers: AppDispatchers,
 ) : BestScoreRepository {
 
     private val writeMutex = Mutex()
 
     override val bestScore: StateFlow<Long> =
-        settings.getLongStateFlow(scope, KEY_BEST_SCORE, defaultValue = 0L)
+        storage.observeLong(KEY_BEST_SCORE, defaultValue = 0L)
+            .stateIn(scope, SharingStarted.Eagerly, 0L)
 
-    override suspend fun setBestScore(score: Long) = withContext(dispatchers.io) {
+    override suspend fun setBestScore(score: Long) {
         writeMutex.withLock {
-            if (score > settings.getLong(KEY_BEST_SCORE, 0L)) {
-                settings.putLong(KEY_BEST_SCORE, score)
+            if (score > storage.getLong(KEY_BEST_SCORE, 0L)) {
+                storage.putLong(KEY_BEST_SCORE, score)
             }
         }
     }
 
     private companion object {
-        const val KEY_BEST_SCORE = "blockblast.best_score"
+        const val KEY_BEST_SCORE = "best_score"
     }
 }

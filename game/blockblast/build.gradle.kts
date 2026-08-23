@@ -10,12 +10,9 @@ kotlin {
             implementation(projects.core.uikit)
             implementation(libs.confettikit)
             implementation(libs.bundles.mvi)
-            implementation(libs.multiplatform.settings)
-            implementation(libs.multiplatform.settings.coroutines)
         }
 
         commonTest.dependencies {
-            implementation(libs.multiplatform.settings.test)
             implementation(libs.compose.ui.test)
         }
     }

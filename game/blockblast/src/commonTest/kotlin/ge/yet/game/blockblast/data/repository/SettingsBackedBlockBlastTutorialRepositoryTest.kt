@@ -1,45 +1,42 @@
 package ge.yet.game.blockblast.data.repository
 
-import com.app.common.AppDispatchers
-import com.russhwolf.settings.MapSettings
-import kotlinx.coroutines.Dispatchers
+import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsBackedBlockBlastTutorialRepositoryTest {
 
     @Test
     fun markSeen_persists_existing_key_and_updates_state() = runTest {
-        val settings = MapSettings()
+        val storage = MutableMiniAppStorage()
         val repository = SettingsBackedBlockBlastTutorialRepository(
-            settings = settings,
-            dispatchers = AppDispatchers(
-                default = Dispatchers.Unconfined,
-                io = Dispatchers.Unconfined,
-            ),
+            storage = BlockBlastStorage(storage),
+            scope = backgroundScope,
         )
 
         assertFalse(repository.tutorialSeen.value)
 
         repository.markSeen()
+        runCurrent()
 
         assertTrue(repository.tutorialSeen.value)
-        assertTrue(settings.getBoolean("blockblast.tutorial_seen", false))
+        assertTrue(storage.getBoolean("tutorial_seen", false))
     }
 
     @Test
-    fun existing_seen_value_survives_repository_recreation() {
-        val settings = MapSettings("blockblast.tutorial_seen" to true)
+    fun existing_seen_value_survives_repository_recreation() = runTest {
+        val storage = MutableMiniAppStorage(mapOf("tutorial_seen" to true))
 
         val repository = SettingsBackedBlockBlastTutorialRepository(
-            settings = settings,
-            dispatchers = AppDispatchers(
-                default = Dispatchers.Unconfined,
-                io = Dispatchers.Unconfined,
-            ),
+            storage = BlockBlastStorage(storage),
+            scope = backgroundScope,
         )
+        runCurrent()
 
         assertTrue(repository.tutorialSeen.value)
     }

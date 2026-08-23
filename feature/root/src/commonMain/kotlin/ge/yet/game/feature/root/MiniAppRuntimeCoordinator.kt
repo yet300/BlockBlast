@@ -6,6 +6,8 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.CrashlyticsRepository
 import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.miniapp.api.MiniAppId
+import ge.yet.game.miniapp.api.MiniAppDataResetResult
+import ge.yet.game.miniapp.api.MiniAppDataResetter
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
@@ -15,6 +17,7 @@ import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -22,7 +25,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
@@ -36,22 +42,27 @@ internal class MiniAppRuntimeCoordinator(
     private val analytics: AnalyticRepository,
     private val crashlytics: CrashlyticsRepository,
     private val storageProvider: MiniAppStorageProvider,
+    private val dataResetter: MiniAppDataResetter,
     initialForeground: Boolean,
-    private val navigateToCatalog: () -> Unit,
+    private val navigateToCatalog: (keepSheet: Boolean) -> Unit,
     private val showReview: (MiniAppId, MiniAppReviewOpportunity) -> Boolean,
 ) {
     private var lastSessionKey = 0L
     private var launchInProgress = false
+    private var resetInProgress = false
+    private val resetMutex = Mutex()
+    private val shippedMiniAppIds = registry.manifests.map { it.id }.toSet()
     private var pendingKey: MiniAppSessionKey? = null
     private var pendingPlugin: MiniAppPlugin? = null
     private var activeKey: MiniAppSessionKey? = null
     private var activeId: MiniAppId? = null
     private var activeVisibilitySource: DefaultMiniAppVisibilitySource? = null
+    private var activeDestroyed: CompletableDeferred<Unit>? = null
     private var isForeground = initialForeground
     private var isObscured = false
 
     fun launch(id: MiniAppId, navigate: (MiniAppSessionKey) -> Unit) {
-        if (launchInProgress || activeKey != null) return
+        if (resetInProgress || launchInProgress || activeKey != null) return
         launchInProgress = true
         try {
             val plugin = registry[id]
@@ -83,6 +94,7 @@ internal class MiniAppRuntimeCoordinator(
     ): RootComponent.MiniAppState {
         lastSessionKey = maxOf(lastSessionKey, key.value)
         val visibility = DefaultMiniAppVisibilitySource(currentVisibility())
+        val destroyed = CompletableDeferred<Unit>()
         val host = BoundMiniAppSessionHost(
             key = key,
             id = id,
@@ -92,9 +104,11 @@ internal class MiniAppRuntimeCoordinator(
         activeKey = key
         activeId = id
         activeVisibilitySource = visibility
+        activeDestroyed = destroyed
         publishSessionContext(id, key, visibility.current, state = "creating")
         componentContext.lifecycle.doOnDestroy {
-            clearActiveSession(key, visibility)
+            destroyed.complete(Unit)
+            clearActiveSession(key, visibility, destroyed)
         }
 
         val plugin = pendingPlugin.takeIf { pendingKey == key } ?: registry[id]
@@ -128,7 +142,7 @@ internal class MiniAppRuntimeCoordinator(
             }
             RootComponent.MiniAppState.Content(session)
         } catch (error: CancellationException) {
-            clearActiveSession(key, visibility)
+            clearActiveSession(key, visibility, destroyed)
             scope.cancel()
             throw error
         } catch (error: Throwable) {
@@ -168,7 +182,22 @@ internal class MiniAppRuntimeCoordinator(
             )
         }
         if (!isActive(key)) return
-        navigateToCatalog()
+        navigateToCatalog(false)
+    }
+
+    suspend fun clearMiniAppData(): MiniAppDataResetResult = resetMutex.withLock {
+        resetInProgress = true
+        try {
+            val destroyed = activeDestroyed
+            navigateToCatalog(true)
+            destroyed?.await()
+            // A lifecycle may complete the signal from inside its destroy callback.
+            // Yield once so all sibling destroy callbacks finish before storage deletion.
+            yield()
+            dataResetter.clear(shippedMiniAppIds)
+        } finally {
+            resetInProgress = false
+        }
     }
 
     private fun updateActiveVisibility() {
@@ -192,11 +221,13 @@ internal class MiniAppRuntimeCoordinator(
     private fun clearActiveSession(
         key: MiniAppSessionKey,
         source: DefaultMiniAppVisibilitySource,
+        destroyed: CompletableDeferred<Unit>,
     ) {
-        if (!isActive(key, source)) return
+        if (!isActive(key, source) || activeDestroyed !== destroyed) return
         activeKey = null
         activeId = null
         activeVisibilitySource = null
+        activeDestroyed = null
         crash { setCustomValue(MINI_APP_ID, "") }
         if (activeKey != null) return
         crash { setCustomValue(MINI_APP_SESSION_KEY, "") }

@@ -9,6 +9,7 @@ import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import ge.yet.game.feature.settings.DefaultSettingsComponent
 import ge.yet.game.feature.settings.SettingsComponent
+import ge.yet.game.miniapp.api.MiniAppDataResetResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.test.Test
@@ -32,6 +33,7 @@ class DefaultSettingsComponentTest {
             librariesProvider = LibrariesProvider { emptyList() },
             settingsRepository = settings,
             analytics = analytics,
+            clearGameData = { MiniAppDataResetResult.Success },
             onBackClickedCb = {},
         )
 
@@ -58,6 +60,37 @@ class DefaultSettingsComponentTest {
 
         assertIs<SettingsComponent.Child.More>(component.stack.value.active.instance)
         assertTrue(settings.adsEnabled.value)
+    }
+
+    @Test
+    fun reset_request_pushes_one_child_and_back_before_confirmation_does_not_clear() {
+        val settings = FakeSettings()
+        val analytics = RecordingAnalytics()
+        var clearCalls = 0
+        val component = DefaultSettingsComponent(
+            componentContext = DefaultComponentContext(LifecycleRegistry()),
+            storeFactory = SettingsStoreFactory(DefaultStoreFactory(), settings, analytics),
+            librariesProvider = LibrariesProvider { emptyList() },
+            settingsRepository = settings,
+            analytics = analytics,
+            clearGameData = {
+                clearCalls += 1
+                MiniAppDataResetResult.Success
+            },
+            onBackClickedCb = {},
+        )
+
+        assertIs<SettingsComponent.Child.Main>(component.stack.value.active.instance)
+            .component.onMoreClicked()
+        val more = assertIs<SettingsComponent.Child.More>(component.stack.value.active.instance).component
+        more.onResetGameDataClicked()
+        more.onResetGameDataClicked()
+
+        assertIs<SettingsComponent.Child.ResetGameData>(component.stack.value.active.instance)
+        assertEquals(3, component.stack.value.items.size)
+        component.onBackClicked()
+        assertIs<SettingsComponent.Child.More>(component.stack.value.active.instance)
+        assertEquals(0, clearCalls)
     }
 
     private class FakeSettings : SettingsRepository {
