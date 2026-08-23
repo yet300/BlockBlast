@@ -6,7 +6,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.core.pattern)
+            api(projects.core.pattern)
             implementation(projects.core.common)
             implementation(projects.core.domain)
             implementation(projects.miniapp.api)

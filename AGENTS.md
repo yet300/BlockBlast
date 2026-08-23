@@ -56,7 +56,7 @@ BlockBlast/
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
 │   ├── storage/                Namespaced Settings backend and game-data reset coordinator
 │   ├── audio/                  Procedural-audio declarations and shared offline DSP
-│   ├── audio-presets/          Scaffold for original reusable audio declarations
+│   ├── audio-presets/          Original reusable instruments, SFX and soundscapes
 │   ├── testkit/                Reusable MiniApp host, visibility, lifecycle and contract fixtures
 │   ├── samples/
 │   │   └── counter/            Discovered, unshipped reference MiniApp plugin
@@ -94,7 +94,7 @@ BlockBlast/
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
 | `:miniapp:audio` | Procedural Music/SFX declarations, bounded validation, a deterministic offline graph renderer and the scheduler/voice/command runtime foundation; the app-scoped engine and platform playback are staged | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
-| `:miniapp:audio-presets` | Original reusable instrument and SFX fragments authored only through the public audio API; shared soundscapes are staged | `:miniapp:audio` only |
+| `:miniapp:audio-presets` | Original reusable instrument, SFX and deterministic soundscape fragments authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
 | `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
