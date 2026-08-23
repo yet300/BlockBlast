@@ -68,4 +68,56 @@ class AudioValidationTest {
         assertEquals(program.tempo, success.program.tempo)
         assertEquals(1, success.program.trackCount)
     }
+
+    @Test
+    fun `compiler rejects effect delay and feedback mobile budgets with stable paths`() {
+        val program = audioProgram {
+            instrument("lead") { oscillator(OscillatorShape.SINE) }
+            musicTrack("line") {
+                instrument("lead")
+                notes(MidiNote.of(60))
+                delay(time = 5.0.seconds, feedback = 0.96f)
+                repeat(4) { reverb(send = 0.2f) }
+            }
+            musicBus {
+                repeat(5) { reverb(send = 0.1f) }
+            }
+        }
+
+        val failure = assertIs<AudioCompilationResult.Failure>(program.compile())
+
+        assertEquals(
+            listOf(
+                AudioDiagnosticCode.EFFECT_LIMIT_EXCEEDED to "musicBus.effects",
+                AudioDiagnosticCode.DELAY_LIMIT_EXCEEDED to "musicTrack[line].effect[0].delaySeconds",
+                AudioDiagnosticCode.FEEDBACK_LIMIT_EXCEEDED to "musicTrack[line].effect[0].feedback",
+                AudioDiagnosticCode.EFFECT_LIMIT_EXCEEDED to "musicTrack[line].effects",
+            ),
+            failure.diagnostics.map { it.code to it.path },
+        )
+    }
+
+    @Test
+    fun `compiler bounds every repeatable voice node family`() {
+        val program = audioProgram {
+            instrument("dense") {
+                repeat(5) { noise(NoiseColor.WHITE, seed = it.toLong()) }
+                repeat(33) { partial(ratio = it + 1f) }
+                repeat(5) { lowPass(cutoff = (1_000 + it).hz) }
+                repeat(5) { distortion(amount = 0.1f) }
+            }
+        }
+
+        val failure = assertIs<AudioCompilationResult.Failure>(program.compile())
+
+        assertEquals(
+            listOf(
+                AudioDiagnosticCode.VOICE_EFFECT_LIMIT_EXCEEDED to "instrument[dense].effects",
+                AudioDiagnosticCode.FILTER_LIMIT_EXCEEDED to "instrument[dense].filters",
+                AudioDiagnosticCode.NOISE_LIMIT_EXCEEDED to "instrument[dense].noises",
+                AudioDiagnosticCode.PARTIAL_LIMIT_EXCEEDED to "instrument[dense].partials",
+            ),
+            failure.diagnostics.map { it.code to it.path },
+        )
+    }
 }

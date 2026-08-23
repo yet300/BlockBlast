@@ -6,12 +6,32 @@ class AudioProgram internal constructor(
     instruments: List<InstrumentDeclaration>,
     musicTracks: List<MusicTrackDeclaration>,
     soundEffects: List<SoundEffectDeclaration>,
+    musicBus: AudioBusDeclaration,
+    sfxBus: AudioBusDeclaration,
 ) {
     val controls: List<AudioControlDeclaration> = controls.toList()
-    val instruments: List<InstrumentDeclaration> = instruments.map { it.copy(oscillators = it.oscillators.toList()) }
-    val musicTracks: List<MusicTrackDeclaration> = musicTracks.map { it.copy(notes = it.notes.toList()) }
-    val soundEffects: List<SoundEffectDeclaration> = soundEffects.map { it.copy(oscillators = it.oscillators.toList()) }
+    val instruments: List<InstrumentDeclaration> = instruments.map { it.snapshot() }
+    val musicTracks: List<MusicTrackDeclaration> = musicTracks.map { it.copy(notes = it.notes.toList(), effects = it.effects.toList()) }
+    val soundEffects: List<SoundEffectDeclaration> = soundEffects.map { it.snapshot() }
+    val musicBus: AudioBusDeclaration = musicBus.copy(effects = musicBus.effects.toList())
+    val sfxBus: AudioBusDeclaration = sfxBus.copy(effects = sfxBus.effects.toList())
 }
+
+private fun InstrumentDeclaration.snapshot() = copy(
+    oscillators = oscillators.toList(),
+    noises = noises.toList(),
+    partials = partials.toList(),
+    filters = filters.toList(),
+    effects = effects.toList(),
+)
+
+private fun SoundEffectDeclaration.snapshot() = copy(
+    oscillators = oscillators.toList(),
+    noises = noises.toList(),
+    partials = partials.toList(),
+    filters = filters.toList(),
+    effects = effects.toList(),
+)
 
 sealed interface AudioLookupResult<out T> {
     data class Found<T>(val value: T) : AudioLookupResult<T>

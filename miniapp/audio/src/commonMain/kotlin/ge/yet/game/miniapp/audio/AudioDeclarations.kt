@@ -1,6 +1,7 @@
 package ge.yet.game.miniapp.audio
 
 enum class OscillatorShape { SINE, TRIANGLE, SAW, SQUARE, PULSE }
+enum class NoiseColor { WHITE, PINK, BROWN }
 
 @ConsistentCopyVisibility
 data class AudioControlDeclaration internal constructor(
@@ -14,6 +15,81 @@ data class OscillatorDeclaration internal constructor(
     val shape: OscillatorShape,
     val gain: Gain,
     val detuneCents: Float,
+)
+
+@ConsistentCopyVisibility
+data class NoiseDeclaration internal constructor(
+    val color: NoiseColor,
+    val gain: Gain,
+    val seed: Long,
+)
+
+@ConsistentCopyVisibility
+data class AdditivePartialDeclaration internal constructor(
+    val ratio: Float,
+    val gain: Gain,
+)
+
+@ConsistentCopyVisibility
+data class FrequencyModulationDeclaration internal constructor(
+    val ratio: Float,
+    val index: Float,
+)
+
+@ConsistentCopyVisibility
+data class VibratoDeclaration internal constructor(
+    val rate: Frequency,
+    val depthCents: Float,
+)
+
+sealed interface FilterDeclaration {
+    val frequency: Frequency
+    val resonance: Float
+
+    @ConsistentCopyVisibility
+    data class LowPass internal constructor(
+        override val frequency: Frequency,
+        override val resonance: Float,
+    ) : FilterDeclaration
+
+    @ConsistentCopyVisibility
+    data class HighPass internal constructor(
+        override val frequency: Frequency,
+        override val resonance: Float,
+    ) : FilterDeclaration
+
+    @ConsistentCopyVisibility
+    data class BandPass internal constructor(
+        override val frequency: Frequency,
+        override val resonance: Float,
+    ) : FilterDeclaration
+}
+
+sealed interface VoiceEffectDeclaration {
+    @ConsistentCopyVisibility
+    data class Distortion internal constructor(val amount: Float) : VoiceEffectDeclaration
+
+    @ConsistentCopyVisibility
+    data class BitCrush internal constructor(
+        val bitDepth: Int,
+        val sampleRateReduction: Int,
+    ) : VoiceEffectDeclaration
+}
+
+sealed interface SendEffectDeclaration {
+    @ConsistentCopyVisibility
+    data class Delay internal constructor(
+        val time: AudioDuration,
+        val feedback: Float,
+    ) : SendEffectDeclaration
+
+    @ConsistentCopyVisibility
+    data class Reverb internal constructor(val send: Float) : SendEffectDeclaration
+}
+
+@ConsistentCopyVisibility
+data class AudioBusDeclaration internal constructor(
+    val effects: List<SendEffectDeclaration>,
 )
 
 @ConsistentCopyVisibility
@@ -35,7 +111,13 @@ data class PitchDeclaration internal constructor(
 data class InstrumentDeclaration internal constructor(
     val name: InstrumentName,
     val oscillators: List<OscillatorDeclaration>,
+    val noises: List<NoiseDeclaration>,
+    val partials: List<AdditivePartialDeclaration>,
     val envelope: EnvelopeDeclaration?,
+    val frequencyModulation: FrequencyModulationDeclaration?,
+    val vibrato: VibratoDeclaration?,
+    val filters: List<FilterDeclaration>,
+    val effects: List<VoiceEffectDeclaration>,
 )
 
 @ConsistentCopyVisibility
@@ -43,12 +125,19 @@ data class MusicTrackDeclaration internal constructor(
     val name: MusicTrackName,
     val instrument: InstrumentName,
     val notes: List<MidiNote>,
+    val effects: List<SendEffectDeclaration>,
 )
 
 @ConsistentCopyVisibility
 data class SoundEffectDeclaration internal constructor(
     val name: SfxName,
     val oscillators: List<OscillatorDeclaration>,
+    val noises: List<NoiseDeclaration>,
+    val partials: List<AdditivePartialDeclaration>,
     val envelope: EnvelopeDeclaration?,
     val pitch: PitchDeclaration?,
+    val frequencyModulation: FrequencyModulationDeclaration?,
+    val vibrato: VibratoDeclaration?,
+    val filters: List<FilterDeclaration>,
+    val effects: List<VoiceEffectDeclaration>,
 )

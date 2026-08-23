@@ -9,6 +9,8 @@ class AudioProgramBuilder internal constructor() {
     private val instruments = linkedMapOf<InstrumentName, InstrumentDeclaration>()
     private val tracks = linkedMapOf<MusicTrackName, MusicTrackDeclaration>()
     private val effects = linkedMapOf<SfxName, SoundEffectDeclaration>()
+    private var musicBus = AudioBusDeclaration(emptyList())
+    private var sfxBus = AudioBusDeclaration(emptyList())
 
     fun tempo(bpm: Float) { tempo = Tempo.of(bpm) }
 
@@ -38,16 +40,79 @@ class AudioProgramBuilder internal constructor() {
         effects[typedName] = SoundEffectBuilder().apply(block).build(typedName)
     }
 
-    internal fun build() = AudioProgram(tempo, controls.values.toList(), instruments.values.toList(), tracks.values.toList(), effects.values.toList())
+    fun musicBus(block: SendEffectBuilder.() -> Unit) {
+        musicBus = AudioBusDeclaration(SendEffectBuilder().apply(block).effects())
+    }
+
+    fun sfxBus(block: SendEffectBuilder.() -> Unit) {
+        sfxBus = AudioBusDeclaration(SendEffectBuilder().apply(block).effects())
+    }
+
+    internal fun build() = AudioProgram(
+        tempo,
+        controls.values.toList(),
+        instruments.values.toList(),
+        tracks.values.toList(),
+        effects.values.toList(),
+        musicBus,
+        sfxBus,
+    )
 }
 
 open class VoiceBuilder internal constructor() {
     private val oscillators = mutableListOf<OscillatorDeclaration>()
+    private val noises = mutableListOf<NoiseDeclaration>()
+    private val partials = mutableListOf<AdditivePartialDeclaration>()
+    private val filters = mutableListOf<FilterDeclaration>()
+    private val effects = mutableListOf<VoiceEffectDeclaration>()
     private var envelope: EnvelopeDeclaration? = null
+    private var frequencyModulation: FrequencyModulationDeclaration? = null
+    private var vibrato: VibratoDeclaration? = null
 
     fun oscillator(shape: OscillatorShape, gain: Float = 1f, detuneCents: Float = 0f) {
         require(detuneCents.isFinite() && detuneCents in -1_200f..1_200f)
         oscillators += OscillatorDeclaration(shape, Gain.of(gain), detuneCents)
+    }
+
+    fun noise(color: NoiseColor, gain: Float = 1f, seed: Long = 0L) {
+        noises += NoiseDeclaration(color, Gain.of(gain), seed)
+    }
+
+    fun partial(ratio: Float, gain: Float = 1f) {
+        require(ratio.isFinite() && ratio > 0f)
+        partials += AdditivePartialDeclaration(ratio, Gain.of(gain))
+    }
+
+    fun frequencyModulation(ratio: Float, index: Float) {
+        require(ratio.isFinite() && ratio > 0f && index.isFinite() && index >= 0f)
+        frequencyModulation = FrequencyModulationDeclaration(ratio, index)
+    }
+
+    fun vibrato(rate: Frequency, depthCents: Float) {
+        require(depthCents.isFinite() && depthCents in 0f..1_200f)
+        vibrato = VibratoDeclaration(rate, depthCents)
+    }
+
+    fun lowPass(cutoff: Frequency, resonance: Float = 0f) {
+        filters += FilterDeclaration.LowPass(cutoff, resonance.validResonance())
+    }
+
+    fun highPass(cutoff: Frequency, resonance: Float = 0f) {
+        filters += FilterDeclaration.HighPass(cutoff, resonance.validResonance())
+    }
+
+    fun bandPass(center: Frequency, resonance: Float = 0f) {
+        filters += FilterDeclaration.BandPass(center, resonance.validResonance())
+    }
+
+    fun distortion(amount: Float) {
+        require(amount.isFinite() && amount in 0f..1f)
+        effects += VoiceEffectDeclaration.Distortion(amount)
+    }
+
+    fun bitCrush(bitDepth: Int, sampleRateReduction: Int = 1) {
+        require(bitDepth in 2..24 && sampleRateReduction in 1..64)
+        effects += VoiceEffectDeclaration.BitCrush(bitDepth, sampleRateReduction)
     }
 
     fun envelope(attack: AudioDuration, decay: AudioDuration = 0.ms, sustain: Float = 1f, release: AudioDuration) {
@@ -56,20 +121,33 @@ open class VoiceBuilder internal constructor() {
     }
 
     internal fun oscillators() = oscillators.toList()
+    internal fun noises() = noises.toList()
+    internal fun partials() = partials.toList()
     internal fun envelope() = envelope
+    internal fun frequencyModulation() = frequencyModulation
+    internal fun vibrato() = vibrato
+    internal fun filters() = filters.toList()
+    internal fun voiceEffects() = effects.toList()
 }
 
 class InstrumentBuilder internal constructor() : VoiceBuilder() {
-    internal fun build(name: InstrumentName) = InstrumentDeclaration(name, oscillators(), envelope())
+    internal fun build(name: InstrumentName) = InstrumentDeclaration(
+        name, oscillators(), noises(), partials(), envelope(), frequencyModulation(), vibrato(), filters(), voiceEffects(),
+    )
 }
 
-class MusicTrackBuilder internal constructor() {
+class MusicTrackBuilder internal constructor() : SendEffectBuilder() {
     private var instrument: InstrumentName? = null
     private var notes: List<MidiNote> = emptyList()
     fun instrument(name: String) { instrument = InstrumentName(name) }
     fun notes(vararg values: MidiNote) { notes = values.toList() }
     fun notes(values: List<MidiNote>) { notes = values.toList() }
-    internal fun build(name: MusicTrackName) = MusicTrackDeclaration(name, requireNotNull(instrument) { "Track requires an instrument" }, notes)
+    internal fun build(name: MusicTrackName) = MusicTrackDeclaration(
+        name,
+        requireNotNull(instrument) { "Track requires an instrument" },
+        notes,
+        effects(),
+    )
 }
 
 class SoundEffectBuilder internal constructor() : VoiceBuilder() {
@@ -78,5 +156,28 @@ class SoundEffectBuilder internal constructor() : VoiceBuilder() {
         require(duration.seconds > 0.0)
         pitch = PitchDeclaration(from, to, duration)
     }
-    internal fun build(name: SfxName) = SoundEffectDeclaration(name, oscillators(), envelope(), pitch)
+    internal fun build(name: SfxName) = SoundEffectDeclaration(
+        name, oscillators(), noises(), partials(), envelope(), pitch, frequencyModulation(), vibrato(), filters(), voiceEffects(),
+    )
+}
+
+open class SendEffectBuilder internal constructor() {
+    private val sendEffects = mutableListOf<SendEffectDeclaration>()
+
+    fun delay(time: AudioDuration, feedback: Float) {
+        require(time.seconds > 0.0 && feedback.isFinite() && feedback in 0f..<1f)
+        sendEffects += SendEffectDeclaration.Delay(time, feedback)
+    }
+
+    fun reverb(send: Float) {
+        require(send.isFinite() && send in 0f..1f)
+        sendEffects += SendEffectDeclaration.Reverb(send)
+    }
+
+    internal fun effects(): List<SendEffectDeclaration> = sendEffects.toList()
+}
+
+private fun Float.validResonance(): Float {
+    require(isFinite() && this in 0f..1f)
+    return this
 }

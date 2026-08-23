@@ -5,6 +5,13 @@ enum class AudioDiagnosticCode {
     UNRESOLVED_INSTRUMENT,
     TRACK_LIMIT_EXCEEDED,
     OSCILLATOR_LIMIT_EXCEEDED,
+    EFFECT_LIMIT_EXCEEDED,
+    DELAY_LIMIT_EXCEEDED,
+    FEEDBACK_LIMIT_EXCEEDED,
+    NOISE_LIMIT_EXCEEDED,
+    PARTIAL_LIMIT_EXCEEDED,
+    FILTER_LIMIT_EXCEEDED,
+    VOICE_EFFECT_LIMIT_EXCEEDED,
 }
 
 data class AudioDiagnostic(
@@ -31,7 +38,7 @@ internal sealed interface AudioCompilationResult {
 internal fun AudioProgram.compile(): AudioCompilationResult {
     val diagnostics = buildList {
         instruments.forEach { instrument ->
-            if (instrument.oscillators.isEmpty()) {
+            if (!instrument.hasSource()) {
                 add(
                     AudioDiagnostic(
                         code = AudioDiagnosticCode.EMPTY_OSCILLATOR_SOURCE,
@@ -49,6 +56,14 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                     ),
                 )
             }
+            validateVoiceCollections(
+                ownerPath = "instrument[${instrument.name.value}]",
+                noises = instrument.noises.size,
+                partials = instrument.partials.size,
+                filters = instrument.filters.size,
+                effects = instrument.effects.size,
+                diagnostics = this,
+            )
         }
 
         val instrumentNames = instruments.mapTo(mutableSetOf()) { it.name }
@@ -62,10 +77,11 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                     ),
                 )
             }
+            validateEffects("musicTrack[${track.name.value}]", track.effects, this)
         }
 
         soundEffects.forEach { effect ->
-            if (effect.oscillators.isEmpty()) {
+            if (!effect.hasSource()) {
                 add(
                     AudioDiagnostic(
                         code = AudioDiagnosticCode.EMPTY_OSCILLATOR_SOURCE,
@@ -74,7 +90,27 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                     ),
                 )
             }
+            if (effect.oscillators.size > AudioMobileBudget.MAX_OSCILLATORS_PER_INSTRUMENT) {
+                add(
+                    AudioDiagnostic(
+                        code = AudioDiagnosticCode.OSCILLATOR_LIMIT_EXCEEDED,
+                        path = "sfx[${effect.name.value}].oscillators",
+                        message = "SFX '${effect.name.value}' exceeds the mobile oscillator limit",
+                    ),
+                )
+            }
+            validateVoiceCollections(
+                ownerPath = "sfx[${effect.name.value}]",
+                noises = effect.noises.size,
+                partials = effect.partials.size,
+                filters = effect.filters.size,
+                effects = effect.effects.size,
+                diagnostics = this,
+            )
         }
+
+        validateEffects("musicBus", musicBus.effects, this)
+        validateEffects("sfxBus", sfxBus.effects, this)
 
         if (musicTracks.size > AudioMobileBudget.MAX_TRACKS) {
             add(
@@ -97,4 +133,73 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
 internal object AudioMobileBudget {
     const val MAX_TRACKS = 16
     const val MAX_OSCILLATORS_PER_INSTRUMENT = 8
+    const val MAX_EFFECTS = 4
+    const val MAX_DELAY_SECONDS = 4.0
+    const val MAX_DELAY_FEEDBACK = 0.95f
+    const val MAX_NOISE_SOURCES = 4
+    const val MAX_ADDITIVE_PARTIALS = 32
+    const val MAX_FILTERS = 4
+    const val MAX_VOICE_EFFECTS = 4
+}
+
+private fun InstrumentDeclaration.hasSource(): Boolean =
+    oscillators.isNotEmpty() || noises.isNotEmpty() || partials.isNotEmpty()
+
+private fun SoundEffectDeclaration.hasSource(): Boolean =
+    oscillators.isNotEmpty() || noises.isNotEmpty() || partials.isNotEmpty()
+
+private fun validateEffects(
+    ownerPath: String,
+    effects: List<SendEffectDeclaration>,
+    diagnostics: MutableList<AudioDiagnostic>,
+) {
+    effects.forEachIndexed { index, effect ->
+        if (effect is SendEffectDeclaration.Delay) {
+            if (effect.time.seconds > AudioMobileBudget.MAX_DELAY_SECONDS) {
+                diagnostics += AudioDiagnostic(
+                    code = AudioDiagnosticCode.DELAY_LIMIT_EXCEEDED,
+                    path = "$ownerPath.effect[$index].delaySeconds",
+                    message = "Delay exceeds the mobile four-second limit",
+                )
+            }
+            if (effect.feedback > AudioMobileBudget.MAX_DELAY_FEEDBACK) {
+                diagnostics += AudioDiagnostic(
+                    code = AudioDiagnosticCode.FEEDBACK_LIMIT_EXCEEDED,
+                    path = "$ownerPath.effect[$index].feedback",
+                    message = "Delay feedback exceeds the mobile 0.95 limit",
+                )
+            }
+        }
+    }
+    if (effects.size > AudioMobileBudget.MAX_EFFECTS) {
+        diagnostics += AudioDiagnostic(
+            code = AudioDiagnosticCode.EFFECT_LIMIT_EXCEEDED,
+            path = "$ownerPath.effects",
+            message = "Effect chain exceeds the mobile limit",
+        )
+    }
+}
+
+private fun validateVoiceCollections(
+    ownerPath: String,
+    noises: Int,
+    partials: Int,
+    filters: Int,
+    effects: Int,
+    diagnostics: MutableList<AudioDiagnostic>,
+) {
+    fun addIfExceeded(size: Int, limit: Int, code: AudioDiagnosticCode, segment: String) {
+        if (size > limit) {
+            diagnostics += AudioDiagnostic(
+                code = code,
+                path = "$ownerPath.$segment",
+                message = "$segment exceeds the mobile limit of $limit",
+            )
+        }
+    }
+
+    addIfExceeded(noises, AudioMobileBudget.MAX_NOISE_SOURCES, AudioDiagnosticCode.NOISE_LIMIT_EXCEEDED, "noises")
+    addIfExceeded(partials, AudioMobileBudget.MAX_ADDITIVE_PARTIALS, AudioDiagnosticCode.PARTIAL_LIMIT_EXCEEDED, "partials")
+    addIfExceeded(filters, AudioMobileBudget.MAX_FILTERS, AudioDiagnosticCode.FILTER_LIMIT_EXCEEDED, "filters")
+    addIfExceeded(effects, AudioMobileBudget.MAX_VOICE_EFFECTS, AudioDiagnosticCode.VOICE_EFFECT_LIMIT_EXCEEDED, "effects")
 }
