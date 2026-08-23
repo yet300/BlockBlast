@@ -3,6 +3,7 @@ package ge.yet.game.miniapp.audio
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 
 class AudioProgramDslTest {
     @Test
@@ -63,5 +64,20 @@ class AudioProgramDslTest {
                 instrument("lead") { oscillator(OscillatorShape.SAW) }
             }
         }
+    }
+
+    @Test
+    fun `program lookup returns typed found and missing results`() {
+        val program = audioProgram {
+            control("intensity", 0.4f, 0f..1f)
+            sfx("place") { oscillator(OscillatorShape.SINE) }
+        }
+
+        val found = assertIs<AudioLookupResult.Found<SoundEffectDeclaration>>(program.sfx(SfxName("place")))
+        val missing = assertIs<AudioLookupResult.Missing>(program.sfx(SfxName("missing")))
+
+        assertEquals(SfxName("place"), found.value.name)
+        assertEquals("sfx[missing]", missing.path)
+        assertIs<AudioLookupResult.Found<AudioControlDeclaration>>(program.control(AudioControlName("intensity")))
     }
 }

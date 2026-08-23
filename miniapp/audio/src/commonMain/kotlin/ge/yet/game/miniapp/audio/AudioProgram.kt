@@ -12,3 +12,18 @@ class AudioProgram internal constructor(
     val musicTracks: List<MusicTrackDeclaration> = musicTracks.map { it.copy(notes = it.notes.toList()) }
     val soundEffects: List<SoundEffectDeclaration> = soundEffects.map { it.copy(oscillators = it.oscillators.toList()) }
 }
+
+sealed interface AudioLookupResult<out T> {
+    data class Found<T>(val value: T) : AudioLookupResult<T>
+    data class Missing(val path: String) : AudioLookupResult<Nothing>
+}
+
+fun AudioProgram.sfx(name: SfxName): AudioLookupResult<SoundEffectDeclaration> =
+    soundEffects.firstOrNull { it.name == name }
+        ?.let { AudioLookupResult.Found(it) }
+        ?: AudioLookupResult.Missing("sfx[${name.value}]")
+
+fun AudioProgram.control(name: AudioControlName): AudioLookupResult<AudioControlDeclaration> =
+    controls.firstOrNull { it.name == name }
+        ?.let { AudioLookupResult.Found(it) }
+        ?: AudioLookupResult.Missing("control[${name.value}]")

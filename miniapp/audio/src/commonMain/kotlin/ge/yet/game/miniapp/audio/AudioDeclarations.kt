@@ -2,44 +2,51 @@ package ge.yet.game.miniapp.audio
 
 enum class OscillatorShape { SINE, TRIANGLE, SAW, SQUARE, PULSE }
 
-data class AudioControlDeclaration(
+@ConsistentCopyVisibility
+data class AudioControlDeclaration internal constructor(
     val name: AudioControlName,
     val default: Float,
     val range: ClosedFloatingPointRange<Float>,
 )
 
-data class OscillatorDeclaration(
+@ConsistentCopyVisibility
+data class OscillatorDeclaration internal constructor(
     val shape: OscillatorShape,
     val gain: Gain,
     val detuneCents: Float,
 )
 
-data class EnvelopeDeclaration(
+@ConsistentCopyVisibility
+data class EnvelopeDeclaration internal constructor(
     val attack: AudioDuration,
     val decay: AudioDuration,
     val sustain: Float,
     val release: AudioDuration,
 )
 
-data class PitchDeclaration(
+@ConsistentCopyVisibility
+data class PitchDeclaration internal constructor(
     val from: Frequency,
     val to: Frequency,
     val duration: AudioDuration,
 )
 
-data class InstrumentDeclaration(
+@ConsistentCopyVisibility
+data class InstrumentDeclaration internal constructor(
     val name: InstrumentName,
     val oscillators: List<OscillatorDeclaration>,
     val envelope: EnvelopeDeclaration?,
 )
 
-data class MusicTrackDeclaration(
+@ConsistentCopyVisibility
+data class MusicTrackDeclaration internal constructor(
     val name: MusicTrackName,
     val instrument: InstrumentName,
     val notes: List<MidiNote>,
 )
 
-data class SoundEffectDeclaration(
+@ConsistentCopyVisibility
+data class SoundEffectDeclaration internal constructor(
     val name: SfxName,
     val oscillators: List<OscillatorDeclaration>,
     val envelope: EnvelopeDeclaration?,

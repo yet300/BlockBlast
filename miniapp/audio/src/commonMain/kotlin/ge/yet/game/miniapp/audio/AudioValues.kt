@@ -5,6 +5,8 @@ import kotlin.jvm.JvmInline
 @JvmInline
 value class AudioDuration private constructor(val seconds: Double) {
     companion object {
+        val DefaultFade: AudioDuration = seconds(0.08)
+
         fun seconds(value: Double): AudioDuration {
             require(value.isFinite() && value >= 0.0) { "Audio duration must be finite and non-negative" }
             return AudioDuration(value)
