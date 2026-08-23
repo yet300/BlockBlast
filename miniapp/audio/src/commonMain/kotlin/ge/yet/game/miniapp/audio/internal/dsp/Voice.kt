@@ -1,6 +1,7 @@
 package ge.yet.game.miniapp.audio.internal.dsp
 
 import ge.yet.game.miniapp.audio.AudioControlName
+import ge.yet.game.miniapp.audio.AudioMobileBudget
 import ge.yet.game.miniapp.audio.FilterDeclaration
 import ge.yet.game.miniapp.audio.InstrumentDeclaration
 import ge.yet.game.miniapp.audio.MidiNote
@@ -9,32 +10,75 @@ import ge.yet.game.miniapp.audio.VoiceEffectDeclaration
 import kotlin.math.pow
 
 internal class VoiceState(
-    private val instrument: InstrumentDeclaration,
-    note: MidiNote,
     private val sampleRate: Int,
     private val blockCapacity: Int,
-    controlPositions: Map<AudioControlName, Float> = emptyMap(),
-    private val pitch: PitchDeclaration? = null,
+    private val controlPositions: Map<AudioControlName, Float>,
 ) {
-    private val initialBaseFrequency = 440.0 * 2.0.pow((note.value - 69) / 12.0)
+    private lateinit var instrument: InstrumentDeclaration
+    private var pitch: PitchDeclaration? = null
+    private var initialBaseFrequency = 440.0
     private var renderedFrames = 0L
-    private val oscillatorStates = Array(instrument.oscillators.size) { OscillatorState() }
-    private val noiseStates = Array(instrument.noises.size) { NoiseState(instrument.noises[it].seed) }
-    private val partialStates = Array(instrument.partials.size) { OscillatorState() }
+    private val oscillatorStates = Array(AudioMobileBudget.MAX_OSCILLATORS_PER_INSTRUMENT) { OscillatorState() }
+    private val noiseStates = Array(AudioMobileBudget.MAX_NOISE_SOURCES) { NoiseState(1L) }
+    private val partialStates = Array(AudioMobileBudget.MAX_ADDITIVE_PARTIALS) { OscillatorState() }
     private val fmState = OscillatorState()
     private val vibratoState = OscillatorState()
-    private val envelopeState = instrument.envelope?.let {
-        EnvelopeState(sampleRate, it.attack.seconds, it.decay.seconds, it.sustain, it.release.seconds)
-    } ?: EnvelopeState(sampleRate, 0.0, 0.0, 1f, 0.0)
-    private val filterStates = Array(instrument.filters.size) { BiquadState() }
-    private val filterCoefficients = Array(instrument.filters.size) { index ->
-        instrument.filters[index].coefficients(sampleRate, controlPositions)
+    private val envelopeState = EnvelopeState(sampleRate, 0.0, 0.0, 1f, 0.0)
+    private val filterStates = Array(AudioMobileBudget.MAX_FILTERS) { BiquadState() }
+    private val filterCoefficients = Array(AudioMobileBudget.MAX_FILTERS) {
+        BiquadCoefficients(1.0, 0.0, 0.0, 0.0, 0.0)
     }
-    private val crusherStates = Array(instrument.effects.size) { BitCrusherState() }
+    private val crusherStates = Array(AudioMobileBudget.MAX_VOICE_EFFECTS) { BitCrusherState() }
+
+    constructor(
+        instrument: InstrumentDeclaration,
+        note: MidiNote,
+        sampleRate: Int,
+        blockCapacity: Int,
+        controlPositions: Map<AudioControlName, Float> = emptyMap(),
+        pitch: PitchDeclaration? = null,
+    ) : this(sampleRate, blockCapacity, controlPositions) {
+        reset(instrument, note, pitch)
+    }
 
     init {
         require(sampleRate > 0 && blockCapacity > 0)
+    }
+
+    fun reset(instrument: InstrumentDeclaration, note: MidiNote, pitch: PitchDeclaration? = null) {
+        this.instrument = instrument
+        this.pitch = pitch
+        initialBaseFrequency = 440.0 * 2.0.pow((note.value - 69) / 12.0)
+        renderedFrames = 0L
+        oscillatorStates.forEach { it.phase = 0.0 }
+        noiseStates.forEachIndexed { index, state ->
+            state.reset(instrument.noises.getOrNull(index)?.seed ?: 1L)
+        }
+        partialStates.forEach { it.phase = 0.0 }
+        fmState.phase = 0.0
+        vibratoState.phase = 0.0
+        val envelope = instrument.envelope
+        envelopeState.reset(
+            sampleRate = sampleRate,
+            attackSeconds = envelope?.attack?.seconds ?: 0.0,
+            decaySeconds = envelope?.decay?.seconds ?: 0.0,
+            sustain = envelope?.sustain ?: 1f,
+            releaseSeconds = envelope?.release?.seconds ?: 0.0,
+        )
         envelopeState.noteOn()
+        filterStates.forEach { state ->
+            state.x1 = 0.0
+            state.x2 = 0.0
+            state.y1 = 0.0
+            state.y2 = 0.0
+        }
+        for (index in instrument.filters.indices) {
+            filterCoefficients[index] = instrument.filters[index].coefficients(sampleRate, controlPositions)
+        }
+        crusherStates.forEach { state ->
+            state.held = 0f
+            state.remaining = 0
+        }
     }
 
     fun render(output: FloatArray, frameCount: Int, offset: Int = 0) {

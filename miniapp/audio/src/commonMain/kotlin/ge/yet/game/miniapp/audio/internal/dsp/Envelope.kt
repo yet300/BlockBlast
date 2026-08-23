@@ -8,12 +8,13 @@ internal class EnvelopeState(
     sampleRate: Int,
     attackSeconds: Double,
     decaySeconds: Double,
-    private val sustain: Float,
+    sustain: Float,
     releaseSeconds: Double,
 ) {
-    private val attackFrames = durationFrames(sampleRate, attackSeconds)
-    private val decayFrames = durationFrames(sampleRate, decaySeconds)
-    private val releaseFrames = durationFrames(sampleRate, releaseSeconds)
+    private var attackFrames = 0
+    private var decayFrames = 0
+    private var sustain = 0f
+    private var releaseFrames = 0
     private var phaseFrame = 0
     private var current = 0f
     private var releaseStart = 0f
@@ -21,8 +22,26 @@ internal class EnvelopeState(
         private set
 
     init {
+        reset(sampleRate, attackSeconds, decaySeconds, sustain, releaseSeconds)
+    }
+
+    fun reset(
+        sampleRate: Int,
+        attackSeconds: Double,
+        decaySeconds: Double,
+        sustain: Float,
+        releaseSeconds: Double,
+    ) {
         require(sampleRate > 0)
         require(sustain.isFinite() && sustain in 0f..1f)
+        attackFrames = durationFrames(sampleRate, attackSeconds)
+        decayFrames = durationFrames(sampleRate, decaySeconds)
+        this.sustain = sustain
+        releaseFrames = durationFrames(sampleRate, releaseSeconds)
+        phaseFrame = 0
+        current = 0f
+        releaseStart = 0f
+        phase = EnvelopePhase.IDLE
     }
 
     fun noteOn() {

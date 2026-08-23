@@ -3,11 +3,23 @@ package ge.yet.game.miniapp.audio.internal.dsp
 import ge.yet.game.miniapp.audio.NoiseColor
 
 internal class NoiseState(seed: Long) {
-    private var randomState = seed.takeUnless { it == 0L } ?: -7046029254386353131L
+    private var randomState = 0L
     internal var pink0 = 0.0
     internal var pink1 = 0.0
     internal var pink2 = 0.0
     internal var brown = 0.0
+
+    init {
+        reset(seed)
+    }
+
+    internal fun reset(seed: Long) {
+        randomState = seed.takeUnless { it == 0L } ?: -7046029254386353131L
+        pink0 = 0.0
+        pink1 = 0.0
+        pink2 = 0.0
+        brown = 0.0
+    }
 
     internal fun nextWhite(): Double {
         var value = randomState

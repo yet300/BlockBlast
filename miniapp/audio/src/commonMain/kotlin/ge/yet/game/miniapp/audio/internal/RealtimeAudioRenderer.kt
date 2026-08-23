@@ -23,9 +23,14 @@ internal class RealtimeAudioRenderer(
     private val sampleRate: Int,
     private val blockCapacity: Int,
 ) : AudioRuntimeCommandTarget {
-    private val musicVoices = mutableListOf<MusicVoice>()
-    private val sfxVoices = mutableListOf<SfxVoice>()
     private val controlPositions = mutableMapOf<AudioControlName, Float>()
+    private val voiceAllocator = VoiceAllocator()
+    private val voiceSlots = Array(AudioMobileBudget.MAX_VOICES) {
+        RealtimeVoiceSlot(
+            state = VoiceState(sampleRate, blockCapacity, controlPositions),
+            scratch = FloatArray(blockCapacity),
+        )
+    }
     private val leftPolicyGain = SmoothedGainState(1f)
     private val rightPolicyGain = SmoothedGainState(1f)
     private val leftStopGain = SmoothedGainState(1f)
@@ -39,7 +44,18 @@ internal class RealtimeAudioRenderer(
     private var stopAfterFade = false
     private var stopFadeFrames = 0
 
-    val hasActiveAudio: Boolean get() = program != null || sfxVoices.isNotEmpty()
+    val hasActiveAudio: Boolean
+        get() {
+            if (program != null) return true
+            for (index in voiceSlots.indices) {
+                val slot = voiceSlots[index]
+                if (slot.active && slot.kind == VoiceKind.SFX) return true
+            }
+            return false
+        }
+
+    internal val voiceStateAllocationCount: Int get() = voiceSlots.size
+    internal val scratchBufferAllocationCount: Int get() = voiceSlots.size
 
     init {
         require(sampleRate in 8_000..192_000)
@@ -111,12 +127,27 @@ internal class RealtimeAudioRenderer(
     override fun playSfx(program: CompiledAudioProgram, name: SfxName): AudioRuntimeCommandOutcome {
         val declaration = program.source.soundEffects.firstOrNull { it.name == name }
             ?: return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
-        val shed = sfxVoices.size + musicVoices.size >= AudioMobileBudget.MAX_VOICES
-        if (shed) {
-            if (musicVoices.isNotEmpty()) musicVoices.removeAt(0) else sfxVoices.removeAt(0)
+        val allocation = allocateVoice(VoiceKind.SFX) ?: return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
+        val slot = voiceSlots[allocation.slotIndex]
+        val instrument = declaration.toInstrument()
+        val frequency = declaration.pitch?.from?.value ?: DEFAULT_SFX_FREQUENCY
+        val midi = (MIDI_A4 + MIDI_NOTES_PER_OCTAVE * ln(frequency / DEFAULT_SFX_FREQUENCY) / ln(2.0))
+            .roundToInt()
+            .coerceIn(MIDI_MIN, MIDI_MAX)
+        slot.state.reset(instrument, MidiNote.of(midi), declaration.pitch)
+        slot.track = null
+        slot.remainingFrames = 0L
+        slot.blockOffset = 0
+        slot.releaseStartFrame = ((declaration.pitch?.duration?.seconds ?: DEFAULT_SFX_HOLD_SECONDS) * sampleRate)
+            .roundToInt()
+            .coerceAtLeast(1)
+        slot.renderedFrames = 0L
+        slot.releasing = false
+        return if (allocation.stoleVoice) {
+            AudioRuntimeCommandOutcome.FORCED_VOICE_SHEDDING
+        } else {
+            AudioRuntimeCommandOutcome.APPLIED
         }
-        sfxVoices += declaration.toVoice()
-        return if (shed) AudioRuntimeCommandOutcome.FORCED_VOICE_SHEDDING else AudioRuntimeCommandOutcome.APPLIED
     }
 
     override fun setControl(name: AudioControlName, value: Float): AudioRuntimeCommandOutcome {
@@ -129,7 +160,10 @@ internal class RealtimeAudioRenderer(
 
     override fun destroy(): AudioRuntimeCommandOutcome {
         clearMusic()
-        sfxVoices.clear()
+        for (index in voiceSlots.indices) {
+            val slot = voiceSlots[index]
+            if (slot.active) finishVoice(slot)
+        }
         return AudioRuntimeCommandOutcome.APPLIED
     }
 
@@ -138,62 +172,64 @@ internal class RealtimeAudioRenderer(
         for (index in 0 until scheduled.size) {
             val track = program.source.musicTracks[scheduled.trackIndexAt(index)]
             val instrument = program.source.instruments.first { it.name == track.instrument }
-            if (musicVoices.size == AudioMobileBudget.MAX_VOICES) musicVoices.removeAt(0)
-            musicVoices += MusicVoice(
-                state = VoiceState(instrument, scheduled.noteAt(index), sampleRate, blockCapacity, controlPositions),
-                track = track,
-                remainingFrames = scheduled.durationFramesAt(index),
-                blockOffset = scheduled.frameOffsetAt(index),
-                scratch = FloatArray(blockCapacity),
-            )
+            val allocation = allocateVoice(VoiceKind.MUSIC) ?: continue
+            val slot = voiceSlots[allocation.slotIndex]
+            slot.state.reset(instrument, scheduled.noteAt(index))
+            slot.track = track
+            slot.remainingFrames = scheduled.durationFramesAt(index)
+            slot.blockOffset = scheduled.frameOffsetAt(index)
+            slot.releaseStartFrame = 0
+            slot.renderedFrames = 0L
+            slot.releasing = false
         }
     }
 
     private fun renderMusicVoices(left: FloatArray, right: FloatArray, frameCount: Int) {
-        val iterator = musicVoices.iterator()
-        while (iterator.hasNext()) {
-            val voice = iterator.next()
-            val availableFrames = frameCount - voice.blockOffset
-            val renderedFrames = minOf(voice.remainingFrames, availableFrames.toLong()).toInt()
+        for (index in voiceSlots.indices) {
+            val slot = voiceSlots[index]
+            if (!slot.active || slot.kind != VoiceKind.MUSIC) continue
+            val availableFrames = frameCount - slot.blockOffset
+            val renderedFrames = minOf(slot.remainingFrames, availableFrames.toLong()).toInt()
             if (renderedFrames > 0) {
-                voice.scratch.fill(0f, 0, frameCount)
-                voice.state.render(voice.scratch, renderedFrames, voice.blockOffset)
+                slot.scratch.fill(0f, 0, frameCount)
+                slot.state.render(slot.scratch, renderedFrames, slot.blockOffset)
                 mixMonoToStereoAutomated(
-                    mono = voice.scratch,
+                    mono = slot.scratch,
                     left = left,
                     right = right,
                     frameCount = frameCount,
                     sampleRate = sampleRate,
-                    gain = voice.track.gain,
-                    pan = voice.track.pan,
+                    gain = requireNotNull(slot.track).gain,
+                    pan = requireNotNull(slot.track).pan,
                     controlPositions = controlPositions,
                     absoluteStartFrame = framePosition,
                 )
-                voice.remainingFrames -= renderedFrames
+                slot.remainingFrames -= renderedFrames
             }
-            voice.blockOffset = 0
-            if (voice.remainingFrames <= 0) iterator.remove()
+            slot.blockOffset = 0
+            if (slot.remainingFrames <= 0) finishVoice(slot)
         }
     }
 
     private fun renderSfxVoices(left: FloatArray, right: FloatArray, frameCount: Int) {
-        val iterator = sfxVoices.iterator()
-        while (iterator.hasNext()) {
-            val voice = iterator.next()
-            if (!voice.releasing && voice.renderedFrames >= voice.releaseStartFrame) {
-                voice.state.noteOff()
-                voice.releasing = true
+        for (index in voiceSlots.indices) {
+            val slot = voiceSlots[index]
+            if (!slot.active || slot.kind != VoiceKind.SFX) continue
+            if (!slot.releasing && slot.renderedFrames >= slot.releaseStartFrame) {
+                slot.state.noteOff()
+                voiceAllocator.markReleased(slot.voiceId)
+                slot.releasing = true
             }
-            voice.scratch.fill(0f, 0, frameCount)
-            voice.state.render(voice.scratch, frameCount)
-            mixMonoToStereo(voice.scratch, left, right, frameCount, gain = 1f, pan = 0f)
-            voice.renderedFrames += frameCount
-            if (voice.state.isFinished) iterator.remove()
+            slot.scratch.fill(0f, 0, frameCount)
+            slot.state.render(slot.scratch, frameCount)
+            mixMonoToStereo(slot.scratch, left, right, frameCount, gain = 1f, pan = 0f)
+            slot.renderedFrames += frameCount
+            if (slot.state.isFinished) finishVoice(slot)
         }
     }
 
-    private fun SoundEffectDeclaration.toVoice(): SfxVoice {
-        val instrument = InstrumentDeclaration(
+    private fun SoundEffectDeclaration.toInstrument(): InstrumentDeclaration =
+        InstrumentDeclaration(
             name = InstrumentName("runtime_sfx"),
             oscillators = oscillators,
             noises = noises,
@@ -204,51 +240,82 @@ internal class RealtimeAudioRenderer(
             filters = filters,
             effects = effects,
         )
-        val frequency = pitch?.from?.value ?: DEFAULT_SFX_FREQUENCY
-        val midi = (MIDI_A4 + MIDI_NOTES_PER_OCTAVE * ln(frequency / DEFAULT_SFX_FREQUENCY) / ln(2.0))
-            .roundToInt()
-            .coerceIn(MIDI_MIN, MIDI_MAX)
-        val releaseStartFrame = ((pitch?.duration?.seconds ?: DEFAULT_SFX_HOLD_SECONDS) * sampleRate)
-            .roundToInt()
-            .coerceAtLeast(1)
-        return SfxVoice(
-            state = VoiceState(
-                instrument = instrument,
-                note = MidiNote.of(midi),
-                sampleRate = sampleRate,
-                blockCapacity = blockCapacity,
-                controlPositions = controlPositions,
-                pitch = pitch,
-            ),
-            releaseStartFrame = releaseStartFrame,
-            scratch = FloatArray(blockCapacity),
-        )
+
+    private fun allocateVoice(kind: VoiceKind): SlotAllocation? {
+        return when (val result = voiceAllocator.allocate(kind, framePosition)) {
+            is VoiceAllocationResult.Allocated -> {
+                val slotIndex = if (result.stolenVoiceId != null) {
+                    findVoiceSlot(result.stolenVoiceId)
+                } else {
+                    findFreeVoiceSlot()
+                }
+                check(slotIndex >= 0) { "Voice allocator and realtime slots are out of sync" }
+                val slot = voiceSlots[slotIndex]
+                slot.active = true
+                slot.voiceId = result.voiceId
+                slot.kind = kind
+                SlotAllocation(slotIndex, result.stolenVoiceId != null)
+            }
+            VoiceAllocationResult.Rejected -> null
+        }
+    }
+
+    private fun findVoiceSlot(voiceId: Long): Int {
+        for (index in voiceSlots.indices) {
+            val slot = voiceSlots[index]
+            if (slot.active && slot.voiceId == voiceId) return index
+        }
+        return -1
+    }
+
+    private fun findFreeVoiceSlot(): Int {
+        for (index in voiceSlots.indices) if (!voiceSlots[index].active) return index
+        return -1
+    }
+
+    private fun finishVoice(slot: RealtimeVoiceSlot) {
+        check(voiceAllocator.finish(slot.voiceId)) { "Voice allocator and realtime slots are out of sync" }
+        slot.active = false
+        slot.voiceId = 0L
+        slot.kind = null
+        slot.track = null
+        slot.remainingFrames = 0L
+        slot.blockOffset = 0
+        slot.releaseStartFrame = 0
+        slot.renderedFrames = 0L
+        slot.releasing = false
     }
 
     private fun clearMusic() {
         program = null
         scheduler = null
-        musicVoices.clear()
+        for (index in voiceSlots.indices) {
+            val slot = voiceSlots[index]
+            if (slot.active && slot.kind == VoiceKind.MUSIC) finishVoice(slot)
+        }
         controlPositions.clear()
         framePosition = 0L
         stopAfterFade = false
         stopFadeFrames = 0
     }
 
-    private class MusicVoice(
+    private class RealtimeVoiceSlot(
         val state: VoiceState,
-        val track: MusicTrackDeclaration,
-        var remainingFrames: Long,
-        var blockOffset: Int,
         val scratch: FloatArray,
+        var active: Boolean = false,
+        var voiceId: Long = 0L,
+        var kind: VoiceKind? = null,
+        var track: MusicTrackDeclaration? = null,
+        var remainingFrames: Long = 0L,
+        var blockOffset: Int = 0,
+        var releaseStartFrame: Int = 0,
+        var renderedFrames: Long = 0L,
+        var releasing: Boolean = false,
     )
 
-    private class SfxVoice(
-        val state: VoiceState,
-        val releaseStartFrame: Int,
-        val scratch: FloatArray,
-        var renderedFrames: Int = 0,
-        var releasing: Boolean = false,
+    private data class SlotAllocation(
+        val slotIndex: Int,
+        val stoleVoice: Boolean,
     )
 }
 

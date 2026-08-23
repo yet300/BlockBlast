@@ -1,6 +1,7 @@
 package ge.yet.game.miniapp.audio.internal
 
 import ge.yet.game.miniapp.audio.AudioCompilationResult
+import ge.yet.game.miniapp.audio.AudioMobileBudget
 import ge.yet.game.miniapp.audio.MidiNote
 import ge.yet.game.miniapp.audio.OscillatorShape
 import ge.yet.game.miniapp.audio.SfxName
@@ -11,10 +12,46 @@ import ge.yet.game.miniapp.audio.ms
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class RealtimeAudioRendererTest {
+    @Test
+    fun `voice state and scratch storage are preallocated once`() {
+        val renderer = RealtimeAudioRenderer(sampleRate = 8_000, blockCapacity = 128)
+        val compiled = assertIs<AudioCompilationResult.Success>(
+            audioProgram {
+                tempo(240f)
+                instrument("tone") { oscillator(OscillatorShape.SINE, gain = 0.4f) }
+                musicTrack("music") {
+                    instrument("tone")
+                    notes(MidiNote.of(69))
+                }
+                sfx("click") {
+                    oscillator(OscillatorShape.SQUARE, gain = 0.4f)
+                    envelope(attack = 1.ms, release = 10.ms)
+                }
+            }.compile(),
+        ).program
+        val left = FloatArray(128)
+        val right = FloatArray(128)
+
+        assertEquals(AudioMobileBudget.MAX_VOICES, renderer.voiceStateAllocationCount)
+        assertEquals(AudioMobileBudget.MAX_VOICES, renderer.scratchBufferAllocationCount)
+        val initialVoiceStates = renderer.voiceStateAllocationCount
+        val initialScratchBuffers = renderer.scratchBufferAllocationCount
+
+        renderer.playMusic(compiled)
+        repeat(8) {
+            renderer.playSfx(compiled, SfxName("click"))
+            renderer.render(left, right, 128)
+        }
+
+        assertEquals(initialVoiceStates, renderer.voiceStateAllocationCount)
+        assertEquals(initialScratchBuffers, renderer.scratchBufferAllocationCount)
+    }
+
     @Test
     fun `compiled music renders stereo pcm into caller owned buffers`() {
         val renderer = RealtimeAudioRenderer(sampleRate = 8_000, blockCapacity = 128)
