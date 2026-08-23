@@ -23,6 +23,62 @@ sealed interface AudioParameter {
         val name: AudioControlName,
         override val outputRange: ClosedFloatingPointRange<Float>,
     ) : AudioParameter
+
+    @ConsistentCopyVisibility
+    data class SineLfo internal constructor(
+        val rate: Frequency,
+        val phaseCycles: Float,
+        override val outputRange: ClosedFloatingPointRange<Float>,
+    ) : AudioParameter
+
+    @ConsistentCopyVisibility
+    data class SmoothNoise internal constructor(
+        val seed: Long,
+        val rate: Frequency,
+        override val outputRange: ClosedFloatingPointRange<Float>,
+    ) : AudioParameter
+
+    @ConsistentCopyVisibility
+    data class Product internal constructor(
+        val left: AudioParameter,
+        val right: AudioParameter,
+        override val outputRange: ClosedFloatingPointRange<Float>,
+    ) : AudioParameter
+}
+
+fun sineLfo(
+    rate: Frequency,
+    range: ClosedFloatingPointRange<Float>,
+    phaseCycles: Float = 0f,
+): AudioParameter {
+    requireValidParameterRange(range)
+    require(phaseCycles.isFinite())
+    val normalizedPhase = phaseCycles - kotlin.math.floor(phaseCycles)
+    return AudioParameter.SineLfo(rate, normalizedPhase, range.start..range.endInclusive)
+}
+
+fun smoothNoise(
+    seed: Long,
+    rate: Frequency,
+    range: ClosedFloatingPointRange<Float>,
+): AudioParameter {
+    requireValidParameterRange(range)
+    return AudioParameter.SmoothNoise(seed, rate, range.start..range.endInclusive)
+}
+
+operator fun AudioParameter.times(other: AudioParameter): AudioParameter {
+    val products = listOf(
+        outputRange.start * other.outputRange.start,
+        outputRange.start * other.outputRange.endInclusive,
+        outputRange.endInclusive * other.outputRange.start,
+        outputRange.endInclusive * other.outputRange.endInclusive,
+    )
+    require(products.all(Float::isFinite))
+    return AudioParameter.Product(this, other, products.min()..products.max())
+}
+
+private fun requireValidParameterRange(range: ClosedFloatingPointRange<Float>) {
+    require(range.start.isFinite() && range.endInclusive.isFinite() && range.start <= range.endInclusive)
 }
 
 class AudioControlReference internal constructor(private val name: AudioControlName) {
@@ -30,6 +86,11 @@ class AudioControlReference internal constructor(private val name: AudioControlN
         require(outputStart.isFinite() && outputEndInclusive.isFinite() && outputStart <= outputEndInclusive)
         return AudioParameter.Control(name, outputStart..outputEndInclusive)
     }
+}
+
+fun audioParameter(value: Float): AudioParameter {
+    require(value.isFinite())
+    return AudioParameter.Constant(value)
 }
 
 @ConsistentCopyVisibility
@@ -154,6 +215,8 @@ data class MusicTrackDeclaration internal constructor(
     val name: MusicTrackName,
     val instrument: InstrumentName,
     val pattern: Pattern<AudioNote>,
+    val gain: AudioParameter,
+    val pan: AudioParameter,
     val effects: List<SendEffectDeclaration>,
 )
 

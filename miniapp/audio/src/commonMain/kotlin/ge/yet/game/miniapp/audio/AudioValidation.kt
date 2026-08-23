@@ -21,6 +21,7 @@ enum class AudioDiagnosticCode {
     PATTERN_EVENT_LIMIT_EXCEEDED,
     PATTERN_OPERATION_LIMIT_EXCEEDED,
     PARAMETER_RANGE_INVALID,
+    PARAMETER_DEPTH_EXCEEDED,
 }
 
 data class AudioDiagnostic(
@@ -91,6 +92,20 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                 )
             }
             validateEffects("musicTrack[${track.name.value}]", track.effects, this)
+            validateTrackParameter(
+                path = "musicTrack[${track.name.value}].gain",
+                parameter = track.gain,
+                allowedRange = 0f..4f,
+                controls = controlNames,
+                diagnostics = this,
+            )
+            validateTrackParameter(
+                path = "musicTrack[${track.name.value}].pan",
+                parameter = track.pan,
+                allowedRange = -1f..1f,
+                controls = controlNames,
+                diagnostics = this,
+            )
             validatePattern(track, this)
         }
 
@@ -154,11 +169,11 @@ private fun validateControlReferences(
     filters.forEachIndexed { index, filter ->
         val parameter = filter.frequency
         val field = if (filter is FilterDeclaration.BandPass) "centerHz" else "cutoffHz"
-        if (parameter is AudioParameter.Control && parameter.name !in controls) {
+        parameter.controlNames().filterNot { it in controls }.forEach { missing ->
             diagnostics += AudioDiagnostic(
                 code = AudioDiagnosticCode.UNRESOLVED_CONTROL,
                 path = "$ownerPath.filter[$index].$field",
-                message = "Unknown control '${parameter.name.value}'",
+                message = "Unknown control '${missing.value}'",
             )
         }
         if (parameter.outputRange.start <= 0f) {
@@ -168,7 +183,62 @@ private fun validateControlReferences(
                 message = "Filter frequency must remain positive",
             )
         }
+        if (parameter.depth() > AudioMobileBudget.MAX_PARAMETER_DEPTH) {
+            diagnostics += AudioDiagnostic(
+                code = AudioDiagnosticCode.PARAMETER_DEPTH_EXCEEDED,
+                path = "$ownerPath.filter[$index].$field",
+                message = "Parameter expression exceeds the mobile depth limit",
+            )
+        }
     }
+}
+
+private fun validateTrackParameter(
+    path: String,
+    parameter: AudioParameter,
+    allowedRange: ClosedFloatingPointRange<Float>,
+    controls: Set<AudioControlName>,
+    diagnostics: MutableList<AudioDiagnostic>,
+) {
+    parameter.controlNames().filterNot { it in controls }.forEach { missing ->
+        diagnostics += AudioDiagnostic(
+            code = AudioDiagnosticCode.UNRESOLVED_CONTROL,
+            path = path,
+            message = "Unknown control '${missing.value}'",
+        )
+    }
+    if (parameter.outputRange.start < allowedRange.start || parameter.outputRange.endInclusive > allowedRange.endInclusive) {
+        diagnostics += AudioDiagnostic(
+            code = AudioDiagnosticCode.PARAMETER_RANGE_INVALID,
+            path = path,
+            message = "Parameter range must remain inside $allowedRange",
+        )
+    }
+    if (parameter.depth() > AudioMobileBudget.MAX_PARAMETER_DEPTH) {
+        diagnostics += AudioDiagnostic(
+            code = AudioDiagnosticCode.PARAMETER_DEPTH_EXCEEDED,
+            path = path,
+            message = "Parameter expression exceeds the mobile depth limit",
+        )
+    }
+}
+
+private fun AudioParameter.controlNames(): Set<AudioControlName> = when (this) {
+    is AudioParameter.Constant,
+    is AudioParameter.SineLfo,
+    is AudioParameter.SmoothNoise,
+    -> emptySet()
+    is AudioParameter.Control -> setOf(name)
+    is AudioParameter.Product -> left.controlNames() + right.controlNames()
+}
+
+private fun AudioParameter.depth(): Int = when (this) {
+    is AudioParameter.Constant,
+    is AudioParameter.Control,
+    is AudioParameter.SineLfo,
+    is AudioParameter.SmoothNoise,
+    -> 1
+    is AudioParameter.Product -> 1 + maxOf(left.depth(), right.depth())
 }
 
 private fun validatePattern(
@@ -201,6 +271,7 @@ internal object AudioMobileBudget {
     const val MAX_ADDITIVE_PARTIALS = 32
     const val MAX_FILTERS = 4
     const val MAX_VOICE_EFFECTS = 4
+    const val MAX_PARAMETER_DEPTH = 8
 }
 
 private fun InstrumentDeclaration.hasSource(): Boolean =

@@ -1,6 +1,5 @@
 package ge.yet.game.miniapp.audio.internal.dsp
 
-import ge.yet.game.miniapp.audio.AudioParameter
 import ge.yet.game.miniapp.audio.AudioControlName
 import ge.yet.game.miniapp.audio.FilterDeclaration
 import ge.yet.game.miniapp.audio.InstrumentDeclaration
@@ -78,13 +77,7 @@ private fun FilterDeclaration.coefficients(
     sampleRate: Int,
     controlPositions: Map<AudioControlName, Float>,
 ): BiquadCoefficients {
-    val frequency = when (val value = frequency) {
-        is AudioParameter.Constant -> value.value
-        is AudioParameter.Control -> {
-            val position = controlPositions[value.name]?.coerceIn(0f, 1f) ?: 0.5f
-            value.outputRange.start + (value.outputRange.endInclusive - value.outputRange.start) * position
-        }
-    }.toDouble()
+    val frequency = evaluateAudioParameter(frequency, 0, sampleRate, controlPositions).toDouble()
     val q = 0.5 + resonance * 9.5
     return when (this) {
         is FilterDeclaration.LowPass -> BiquadCoefficients.lowPass(sampleRate, frequency, q)

@@ -13,7 +13,7 @@ import ge.yet.game.miniapp.audio.internal.dsp.VoiceState
 import ge.yet.game.miniapp.audio.internal.dsp.applyDelay
 import ge.yet.game.miniapp.audio.internal.dsp.applyReverb
 import ge.yet.game.miniapp.audio.internal.dsp.limitStereo
-import ge.yet.game.miniapp.audio.internal.dsp.mixMonoToStereo
+import ge.yet.game.miniapp.audio.internal.dsp.mixMonoToStereoAutomated
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -107,7 +107,16 @@ private fun renderTrack(
         for (frame in 0 until frames) mono[startFrame + frame] += voiceBuffer[frame]
     }
     applySendEffects(mono, track.effects, request.sampleRate)
-    mixMonoToStereo(mono, left, right, request.frameCount, gain = 1f, pan = 0f)
+    mixMonoToStereoAutomated(
+        mono = mono,
+        left = left,
+        right = right,
+        frameCount = request.frameCount,
+        sampleRate = request.sampleRate,
+        gain = track.gain,
+        pan = track.pan,
+        controlPositions = controlPositions,
+    )
 }
 
 private fun applyBusEffects(buffer: FloatArray, effects: List<SendEffectDeclaration>, sampleRate: Int) =

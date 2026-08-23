@@ -175,6 +175,8 @@ class InstrumentBuilder internal constructor() : VoiceBuilder() {
 class MusicTrackBuilder internal constructor() : SendEffectBuilder() {
     private var instrument: InstrumentName? = null
     private var pattern: Pattern<AudioNote>? = null
+    private var gain: AudioParameter = AudioParameter.Constant(1f)
+    private var pan: AudioParameter = AudioParameter.Constant(0f)
     fun instrument(name: String) { instrument = InstrumentName(name) }
     fun notes(vararg values: MidiNote) { notes(values.toList()) }
     fun notes(values: List<MidiNote>) {
@@ -182,10 +184,22 @@ class MusicTrackBuilder internal constructor() : SendEffectBuilder() {
         pattern = sequence(values.map(AudioNote::Pitched))
     }
     fun notes(value: Pattern<AudioNote>) { pattern = value }
+    fun gain(value: Float) {
+        require(value.isFinite())
+        gain(AudioParameter.Constant(value))
+    }
+    fun gain(value: AudioParameter) { gain = value }
+    fun pan(value: Float) {
+        require(value.isFinite())
+        pan(AudioParameter.Constant(value))
+    }
+    fun pan(value: AudioParameter) { pan = value }
     internal fun build(name: MusicTrackName) = MusicTrackDeclaration(
         name,
         requireNotNull(instrument) { "Track requires an instrument" },
         requireNotNull(pattern) { "Track requires a note pattern" },
+        gain,
+        pan,
         effects(),
     )
 }

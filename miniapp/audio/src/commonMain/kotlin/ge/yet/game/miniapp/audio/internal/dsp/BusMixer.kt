@@ -1,5 +1,7 @@
 package ge.yet.game.miniapp.audio.internal.dsp
 
+import ge.yet.game.miniapp.audio.AudioControlName
+import ge.yet.game.miniapp.audio.AudioParameter
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -25,6 +27,29 @@ internal fun mixMonoToStereo(
         val index = outputOffset + frame
         left[index] += input * leftGain
         right[index] += input * rightGain
+    }
+}
+
+internal fun mixMonoToStereoAutomated(
+    mono: FloatArray,
+    left: FloatArray,
+    right: FloatArray,
+    frameCount: Int,
+    sampleRate: Int,
+    gain: AudioParameter,
+    pan: AudioParameter,
+    controlPositions: Map<AudioControlName, Float>,
+    absoluteStartFrame: Long = 0,
+) {
+    require(frameCount >= 0 && frameCount <= mono.size && frameCount <= left.size && frameCount <= right.size)
+    for (frame in 0 until frameCount) {
+        val absoluteFrame = absoluteStartFrame + frame
+        val frameGain = evaluateAudioParameter(gain, absoluteFrame, sampleRate, controlPositions).coerceIn(0f, 4f)
+        val framePan = evaluateAudioParameter(pan, absoluteFrame, sampleRate, controlPositions).coerceIn(-1f, 1f)
+        val angle = (framePan + 1f) * PI / 4.0
+        val input = mono[frame].takeIf(Float::isFinite) ?: 0f
+        left[frame] += input * (cos(angle) * frameGain).toFloat()
+        right[frame] += input * (sin(angle) * frameGain).toFloat()
     }
 }
 
