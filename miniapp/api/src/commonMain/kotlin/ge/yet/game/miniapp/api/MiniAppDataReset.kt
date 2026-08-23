@@ -32,6 +32,9 @@ class MiniAppLegacyStorageKeys(
         this.localToPhysicalKeys.forEach { (localName, physicalKey) ->
             requireValidMiniAppStorageLocalName(localName)
             require(physicalKey.isNotBlank()) { "A legacy mini-app storage key must not be blank" }
+            require(!physicalKey.startsWith("miniapp.")) {
+                "A legacy key cannot target the framework-owned miniapp namespace"
+            }
         }
         require(this.localToPhysicalKeys.values.toSet().size == this.localToPhysicalKeys.size) {
             "Legacy mini-app storage keys must map to distinct physical keys"

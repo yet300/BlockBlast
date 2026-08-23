@@ -80,5 +80,11 @@ class MiniAppStorageContractTest {
                 localToPhysicalKeys = mapOf("best_score" to ""),
             )
         }
+        assertFailsWith<IllegalArgumentException> {
+            MiniAppLegacyStorageKeys(
+                miniAppId = MiniAppId("game.blockblast"),
+                localToPhysicalKeys = mapOf("best_score" to "miniapp.game.snake.best_score"),
+            )
+        }
     }
 }

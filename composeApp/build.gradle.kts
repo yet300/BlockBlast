@@ -61,6 +61,7 @@ kotlin {
             implementation(projects.core.uikit)
             implementation(projects.monetization.ads)
             implementation(projects.miniapp.compose)
+            implementation(projects.miniapp.storage)
             implementation(projects.miniapp.bundle)
 
             api(projects.feature.root)
