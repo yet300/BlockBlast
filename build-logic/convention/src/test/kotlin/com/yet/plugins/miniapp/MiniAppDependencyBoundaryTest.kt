@@ -9,7 +9,7 @@ class MiniAppDependencyBoundaryTest {
     fun `all inward main contracts and self are allowed`() {
         listOf(
             ":miniapp:api", ":miniapp:compose", ":miniapp:metro", ":core:common", ":core:domain",
-            ":core:uikit", ":monetization:core", ":game:snake",
+            ":core:uikit", ":core:pattern", ":monetization:core", ":game:snake",
         ).forEach { dependency ->
             assertEquals(null, MiniAppDependencyBoundary.violationFor(":game:snake", "commonMainImplementation", dependency))
         }

@@ -12,7 +12,7 @@ internal data class MiniAppDependencyViolation(
 internal object MiniAppDependencyBoundary {
     private val allowedMainProjects = setOf(
         ":miniapp:api", ":miniapp:compose", ":miniapp:metro", ":core:common", ":core:domain",
-        ":core:uikit", ":monetization:core",
+        ":core:uikit", ":core:pattern", ":monetization:core",
     )
     private val forbiddenPrefixes = setOf(":feature:", ":game:", ":miniapp:samples:")
     private val forbiddenExact = setOf(":composeApp", ":androidApp", ":monetization:ads")
