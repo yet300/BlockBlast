@@ -3,7 +3,6 @@ package ge.yet.game.miniapp.audio.internal
 import ge.yet.game.miniapp.audio.AudioCompilationResult
 import ge.yet.game.miniapp.audio.AudioControlName
 import ge.yet.game.miniapp.audio.AudioDiagnostic
-import ge.yet.game.miniapp.audio.AudioNote
 import ge.yet.game.miniapp.audio.AudioProgram
 import ge.yet.game.miniapp.audio.MusicTrackDeclaration
 import ge.yet.game.miniapp.audio.SendEffectDeclaration
@@ -15,11 +14,7 @@ import ge.yet.game.miniapp.audio.internal.dsp.applyDelay
 import ge.yet.game.miniapp.audio.internal.dsp.applyReverb
 import ge.yet.game.miniapp.audio.internal.dsp.limitStereo
 import ge.yet.game.miniapp.audio.internal.dsp.mixMonoToStereo
-import ge.yet.game.pattern.CycleTime
-import ge.yet.game.pattern.PatternQueryBudget
-import ge.yet.game.pattern.TimeArc
 import kotlin.math.abs
-import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
@@ -62,9 +57,9 @@ internal class OfflineAudioResult internal constructor(
 
 internal object OfflineAudioRenderer {
     fun render(program: AudioProgram, request: OfflineAudioRequest): OfflineAudioRenderResult {
-        when (val compilation = program.compile()) {
+        val compiled = when (val compilation = program.compile()) {
             is AudioCompilationResult.Failure -> return OfflineAudioRenderResult.Failure(compilation.diagnostics)
-            is AudioCompilationResult.Success -> Unit
+            is AudioCompilationResult.Success -> compilation.program
         }
 
         val left = FloatArray(request.frameCount)
@@ -73,8 +68,17 @@ internal object OfflineAudioRenderer {
             val width = control.range.endInclusive - control.range.start
             control.name to if (width == 0f) 0f else (control.default - control.range.start) / width
         }
-        program.musicTracks.forEach { track ->
-            renderTrack(program, track, request, controlPositions, left, right)
+        val scheduled = AudioScheduler(compiled, request.sampleRate).scheduleBlock(0, request.frameCount)
+        program.musicTracks.forEachIndexed { trackIndex, track ->
+            renderTrack(
+                program = program,
+                track = track,
+                events = scheduled.filter { it.trackIndex == trackIndex },
+                request = request,
+                controlPositions = controlPositions,
+                left = left,
+                right = right,
+            )
         }
         applyBusEffects(left, program.musicBus.effects, request.sampleRate)
         applyBusEffects(right, program.musicBus.effects, request.sampleRate)
@@ -86,6 +90,7 @@ internal object OfflineAudioRenderer {
 private fun renderTrack(
     program: AudioProgram,
     track: MusicTrackDeclaration,
+    events: List<ScheduledAudioEvent>,
     request: OfflineAudioRequest,
     controlPositions: Map<AudioControlName, Float>,
     left: FloatArray,
@@ -93,24 +98,13 @@ private fun renderTrack(
 ) {
     val instrument = program.instruments.first { it.name == track.instrument }
     val mono = FloatArray(request.frameCount)
-    val bpm = program.tempo.bpm.toDouble()
-    val totalCycles = request.frameCount.toDouble() * bpm / (request.sampleRate * 240.0)
-    val cycleCount = ceil(totalCycles).toInt().coerceAtLeast(1)
-    for (cycle in 0 until cycleCount) {
-        val start = CycleTime.of(cycle.toLong())
-        val end = minOf(CycleTime.of(cycle.toLong() + 1), cycleTime(totalCycles))
-        if (start >= end) continue
-        val events = track.pattern.query(TimeArc(start, end), PatternQueryBudget())
-        events.forEach { event ->
-            val note = event.value as? AudioNote.Pitched ?: return@forEach
-            val startFrame = cycleToFrame(event.active.start, request.sampleRate, bpm).coerceIn(0, request.frameCount)
-            val endFrame = cycleToFrame(event.active.endExclusive, request.sampleRate, bpm).coerceIn(startFrame, request.frameCount)
-            val frames = endFrame - startFrame
-            if (frames == 0) return@forEach
-            val voiceBuffer = FloatArray(frames)
-            VoiceState(instrument, note.midi, request.sampleRate, frames, controlPositions).render(voiceBuffer, frames)
-            for (frame in 0 until frames) mono[startFrame + frame] += voiceBuffer[frame]
-        }
+    events.forEach { event ->
+        val startFrame = event.frameOffset
+        val frames = minOf(event.durationFrames, (request.frameCount - startFrame).toLong()).toInt()
+        if (frames == 0) return@forEach
+        val voiceBuffer = FloatArray(frames)
+        VoiceState(instrument, event.note, request.sampleRate, frames, controlPositions).render(voiceBuffer, frames)
+        for (frame in 0 until frames) mono[startFrame + frame] += voiceBuffer[frame]
     }
     applySendEffects(mono, track.effects, request.sampleRate)
     mixMonoToStereo(mono, left, right, request.frameCount, gain = 1f, pan = 0f)
@@ -133,14 +127,6 @@ private fun applySendEffects(buffer: FloatArray, effects: List<SendEffectDeclara
         }
     }
 }
-
-private fun cycleTime(cycles: Double): CycleTime {
-    val denominator = 1_000_000L
-    return CycleTime.of((cycles * denominator).roundToInt().toLong(), denominator)
-}
-
-private fun cycleToFrame(time: CycleTime, sampleRate: Int, bpm: Double): Int =
-    (time.numerator.toDouble() / time.denominator * sampleRate * 240.0 / bpm).roundToInt()
 
 private fun calculatePeak(left: FloatArray, right: FloatArray): Float {
     var peak = 0f
