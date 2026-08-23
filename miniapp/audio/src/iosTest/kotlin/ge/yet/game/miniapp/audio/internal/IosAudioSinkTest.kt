@@ -14,8 +14,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryPlayback
 
 class IosAudioSinkTest {
+    @Test
+    fun `default platform configures playback that survives silent mode`() {
+        DefaultIosAudioPlatform().configureSession()
+
+        assertEquals(AVAudioSessionCategoryPlayback, AVAudioSession.sharedInstance().category)
+    }
+
     @Test
     fun `opening configures one observed engine without activating playback`() {
         val platform = RecordingIosAudioPlatform()

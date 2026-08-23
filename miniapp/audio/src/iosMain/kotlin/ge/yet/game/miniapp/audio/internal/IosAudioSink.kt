@@ -16,8 +16,8 @@ import kotlinx.cinterop.set
 import platform.AVFAudio.AVAudioEngine
 import platform.AVFAudio.AVAudioFormat
 import platform.AVFAudio.AVAudioSession
-import platform.AVFAudio.AVAudioSessionCategoryAmbient
 import platform.AVFAudio.AVAudioSessionCategoryOptionMixWithOthers
+import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.AVAudioSessionInterruptionNotification
 import platform.AVFAudio.AVAudioSessionInterruptionOptionShouldResume
 import platform.AVFAudio.AVAudioSessionInterruptionOptionKey
@@ -305,7 +305,7 @@ internal class DefaultIosAudioPlatform : IosAudioPlatform {
     override fun configureSession() {
         check(
             audioSession.setCategory(
-                AVAudioSessionCategoryAmbient,
+                AVAudioSessionCategoryPlayback,
                 mode = AVAudioSessionModeDefault,
                 options = AVAudioSessionCategoryOptionMixWithOthers,
                 error = null,
