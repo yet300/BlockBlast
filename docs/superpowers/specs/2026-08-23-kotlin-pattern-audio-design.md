@@ -5,143 +5,337 @@
 ## Goal
 
 Provide a reusable Kotlin Multiplatform pattern engine and a host-managed
-procedural-audio capability that any future game or MiniApp can use without
-shipping an MP3. The temporal pattern layer must also be reusable for visuals,
-enemy waves, haptics and other event streams.
+procedural-audio capability that future games and MiniApps can use without
+shipping an MP3. The pattern layer must remain useful for visuals, enemy waves,
+haptics and other temporal event streams rather than becoming music-specific.
 
-The conceptual model is inspired by Strudel's documented pattern/query model,
-not by copying its implementation. Strudel describes patterns as values queried
-over time arcs, with schedulers repeatedly querying future windows and outputs
-interpreting the resulting events. See the official
-[Patterns documentation](https://strudel.cc/technical-manual/patterns/) and
-[technical manual](https://github.com/tidalcycles/strudel/wiki/Technical-Manual).
-Strudel's implementation is AGPL-3.0, so Logica will use a clean-room native
-Kotlin implementation and its own API, tests and terminology where practical.
+The first release accepts only audio programs compiled from ordinary Kotlin
+source in the MiniApp module. It does not parse or execute Kotlin, JavaScript,
+JSON programs or downloaded code at runtime. A future contribution website may
+generate a `.kt` file and open a pull request, but the reviewed source is still
+compiled into the application through the normal shipping allowlist.
+
+## Clean-Room Boundary
+
+The architecture is informed by public descriptions of query-based pattern
+systems and modular synthesizers, including Strudel and Klangmotör. Klang places
+most of its DSP, voices, scheduler and musical contracts in Kotlin `commonMain`,
+then connects that code to JVM Java Sound and browser Web Audio backends. It has
+no Android AudioTrack or iOS AVAudioEngine backend at the time of this design.
+
+Klang and Strudel are AGPL-3.0 works. Logica must not copy, translate, adapt or
+vendor their production source, DSL declarations, tests, presets or songs. The
+engine is an independent implementation using its own API, terminology, test
+vectors and code. General audio engineering ideas, public specifications,
+standard music theory and established DSP mathematics may inform the design.
+
+References:
+
+- [Klangmotör repository](https://github.com/PeekAndPoke/klang)
+- [Klangmotör license](https://github.com/PeekAndPoke/klang/blob/main/LICENSE)
+- [Strudel patterns documentation](https://strudel.cc/technical-manual/patterns/)
+
+Source compatibility with either project is explicitly not a goal.
 
 ## Module Split
 
 ### `:core:pattern`
 
-A pure, platform-neutral and audio-independent engine:
+A pure, audio-independent temporal engine:
 
 - exact rational cycle time rather than accumulated floating-point clock time;
-- `Pattern<T>` queried with a `TimeArc` to produce `PatternEvent<T>` values;
-- immutable, serializable `PatternDocument` AST;
-- sequence, stack, repeat, shift, slow, fast, every, choose and degrade
-  combinators;
-- deterministic seeded randomness;
-- bounded query evaluation with no Compose, DI, coroutines or audio APIs.
+- `Pattern<T>` queried with a half-open `TimeArc`;
+- immutable `PatternEvent<T>` values;
+- sequence, stack, repeat, shift, slow, fast, every, choose and degrade;
+- Euclidean rhythm and deterministic seeded randomness;
+- bounded query evaluation;
+- no Compose, DI, coroutines, audio or platform dependencies.
+
+The public conceptual contract is:
+
+```kotlin
+interface Pattern<T> {
+    fun query(arc: TimeArc): List<PatternEvent<T>>
+}
+```
+
+Counter or another unshipped reference must demonstrate a non-audio pattern so
+the module cannot accidentally become tied to notes or PCM rendering.
 
 ### `:miniapp:audio`
 
-The MiniApp-facing musical vocabulary and session capability:
+The public MiniApp surface contains:
 
-- note and frequency events;
-- oscillator and bounded noise sources;
-- ADSR envelopes, gain, pan and filters;
-- bounded delay and reverb;
-- tempo and named runtime controls such as `intensity`;
-- optional approved sample events for original/licensed assets;
-- lifecycle-aware play, stop and control APIs.
+- `AudioProgram` and its Kotlin builder DSL;
+- notes, frequencies, instruments and oscillators;
+- envelopes, filters, effects, gain and pan;
+- Music and SFX buses;
+- named, bounded runtime controls;
+- the lifecycle-bound `MiniAppAudio` capability.
 
-### Platform Runtime
+Its internal implementation contains:
 
-- a look-ahead scheduler queries pattern windows;
-- a PCM renderer mixes bounded voices;
-- Android uses `AudioTrack`;
-- iOS uses `AVAudioEngine`;
-- playback follows session lifecycle, visibility and host audio preferences;
-- destroying the child session cancels scheduler and renderer work exactly
-  once.
+- look-ahead scheduling;
+- polyphonic voice allocation;
+- the DSP graph, mixer and limiter;
+- diagnostics and offline rendering;
+- Android and iOS platform sinks.
 
-## Canonical Program Format
+MiniApps never receive PCM buffers, `AudioTrack`, `AVAudioEngine`, platform
+players, app-global repositories or a callback that executes in the realtime
+renderer.
 
-The canonical interchange format is a versioned `PatternDocument` serialized
-as JSON. A Kotlin DSL is a typed builder that produces the same AST:
+## Public Authoring Model
 
-```kotlin
-val soundtrack = audioProgram {
-    tempo(cyclesPerMinute = 120)
-    control("intensity", default = 0.3f)
-    track("bass") {
-        notes("c2 ~ c2 eb2")
-            .sound(Oscillator.Square)
-            .gain(0.3)
-            .cutoff(control("intensity").range(300f, 1_400f))
-            .slow(2)
-    }
-}
+The DSL builds an immutable declaration which is validated and compiled before
+playback:
 
-context.audio.play(soundtrack)
-context.audio.controls.set("intensity", 0.85f)
+```text
+Kotlin DSL -> AudioProgram -> validation -> CompiledAudioGraph -> renderer
 ```
 
-Human contributors may author the Kotlin DSL. The future website and background
-AI pipeline generate validated JSON AST, not arbitrary Kotlin that executes on
-the server or in the app.
+Example:
 
-## Session Capability
+```kotlin
+internal val blockBlastAudio = audioProgram {
+    tempo(bpm = 112)
+    control("intensity", default = 0.25f, range = 0f..1f)
 
-`MiniAppSessionContext` gains a typed `audio: MiniAppAudio` capability. Games
-do not depend on `AudioTrack`, `AVAudioEngine`, an app-global file provider or a
-platform player. The capability is already bound to the active MiniApp/session,
-so ownership, cancellation and telemetry cannot collide between games.
+    instrument("bass") {
+        oscillator(OscillatorShape.Saw, detuneCents = -4f)
+        oscillator(OscillatorShape.Square, gain = 0.35f, detuneCents = 4f)
+        envelope(attack = 8.ms, decay = 140.ms, sustain = 0.45f, release = 180.ms)
+        lowPass {
+            cutoffHz = control("intensity").map(450f, 2_400f)
+            resonance = 0.25f
+        }
+    }
 
-The host applies global music/SFX preferences automatically. MiniApps express
-semantic channels or buses; they do not reimplement Settings integration.
+    musicTrack("bass") {
+        instrument("bass")
+        notes(C2, Rest, C2, Eb2, G2, Rest, Eb2, C2).slow(2)
+    }
 
-## Validation and Resource Budgets
+    sfx("place") {
+        oscillator(OscillatorShape.Sine)
+        pitch(from = 240.hz, to = 120.hz, duration = 55.ms)
+        envelope(attack = 1.ms, release = 60.ms)
+    }
+}
+```
 
-Every document is validated before playback and before a generated PR can pass:
+Games use the session capability rather than implementing Settings or lifecycle
+integration:
 
-- supported schema version and node allowlist;
-- maximum AST depth and serialized size;
-- maximum events per cycle and simultaneous voices;
-- valid tempo, duration, frequency, gain and pan ranges;
-- bounded filter parameters and effect feedback;
-- deterministic seed requirements;
-- per-query operation budget;
-- renderer CPU/underrun and clipping thresholds.
+```kotlin
+context.audio.playMusic(blockBlastAudio)
+context.audio.playSfx(blockBlastAudio.sfx("place"))
+context.audio.setControl(AudioControlName("intensity"), 0.8f)
+```
 
-Invalid programs return structured diagnostics with a document path. They never
-partially start playback.
+The public API is independent of the internal renderer so a future native C or
+C++ DSP implementation would not require contributor modules to change.
 
-## Procedural and Sample Audio
+## DSP Graph
 
-Procedural synthesis is the default because it is compact, adaptive and easy
-to parameterize. Optional samples remain necessary for voice, foley or a sound
-whose identity cannot be synthesized economically. Every sample requires
-provenance, author, source and license metadata, and its license must permit the
-repository and release distribution.
+The first engine supports:
 
-“8-bit” or “16-bit” is normally an aesthetic, not the PCM storage width. The
-runtime can emulate quantization/sample-rate reduction as an effect while using
-an implementation format such as 16-bit integer or 32-bit float PCM internally.
+- sine, triangle, saw, square and variable-width pulse oscillators;
+- white and deterministic seeded noise;
+- multiple oscillators per instrument;
+- local oscillator FM, pitch envelopes and LFO vibrato;
+- ADSR envelopes;
+- low-pass and high-pass filtering;
+- distortion and bit-crush/sample-rate-reduction effects;
+- bounded delay and algorithmic reverb;
+- gain, equal-power pan, bus mixing and a final limiter.
 
-## Failure Semantics
+The fixed voice pipeline is:
 
-- Invalid AST: reject before playback with validation errors.
-- Unsupported optional node: reject the program version, never silently alter
-  the music.
-- Runtime overload: shed voices deterministically within declared priority,
-  record diagnostics and avoid blocking UI threads.
-- Visibility becomes obscured/inactive: apply the host policy (pause, duck or
-  stop) without contributor code.
-- Session destruction: cancel queries, audio writes and control collectors.
-- Audio backend unavailable: expose a silent, diagnosed failure rather than
-  crash the MiniApp.
+```text
+oscillator/noise
+  -> pitch and FM modulation
+  -> ADSR
+  -> low/high-pass filter
+  -> distortion/bit crush
+  -> gain/pan
+  -> Music or SFX bus
+```
+
+The bus pipeline is:
+
+```text
+voices -> bounded delay -> algorithmic reverb -> limiter -> master output
+```
+
+Free-form node graphs, arbitrary feedback, granular synthesis, convolution,
+physical modelling and contributor-defined realtime DSP callbacks are deferred.
+New built-in nodes can be added without changing existing programs.
+
+The renderer uses stereo `Float` samples and the platform's actual sample rate,
+normally 44.1 or 48 kHz. It renders blocks into preallocated buffers. An
+“8-bit” aesthetic is produced by quantization and sample-rate reduction while
+the engine retains a high-quality internal format.
+
+## Music and SFX Buses
+
+Music and SFX share one DSP implementation but have separate ownership and gain
+policies:
+
+- global Music settings affect only the Music bus;
+- global SFX settings affect only the SFX bus;
+- SFX receives reserved voices and is not delayed by the music scheduler;
+- Music can loop, pause, duck and fade;
+- SFX declarations have bounded maximum durations;
+- gain changes are smoothed to avoid clicks.
+
+## Session and Lifecycle Ownership
+
+The application owns one realtime engine. Every active MiniApp receives an
+isolated `MiniAppAudio` facade already bound to its `MiniAppId`, session key,
+lifecycle, visibility and host audio preferences. Handles and commands from a
+destroyed or replaced session are stale and cannot affect a later game.
+
+Default visibility policy:
+
+- `ACTIVE`: Music and SFX operate normally;
+- `OBSCURED`: Music ducks smoothly and new SFX does not start;
+- `INACTIVE`: the session scheduler and output pause;
+- destroyed: commands are rejected, voices enter a bounded release and all
+  remaining handles are then reclaimed.
+
+The host automatically applies Music/SFX enabled state and volume, app
+foreground/background, Android audio focus, iOS interruptions and route
+changes. Games do not import Settings or reproduce this integration.
+
+Runtime controls are declared in the program, validated against their ranges,
+sent through a bounded command queue and smoothed inside the DSP. Updating a
+control does not rebuild the graph.
+
+## Realtime Thread Model
+
+Game and UI code submits bounded commands such as Play, Stop, SetControl,
+SetBusGain, VisibilityChanged and DestroySession. The realtime renderer consumes
+a bounded batch and fills the next PCM block.
+
+The realtime path must not:
+
+- suspend or block;
+- perform DI lookups;
+- access Storage;
+- log or create strings;
+- allocate collections or resize buffers;
+- invoke arbitrary contributor code.
+
+Diagnostics are accumulated in preallocated counters and drained by an ordinary
+application coroutine.
+
+Android initially uses streaming `AudioTrack` from a dedicated audio thread.
+iOS uses `AVAudioSession`, `AVAudioEngine` and `AVAudioSourceNode`. The shared DSP
+does not depend on either platform API. AAudio/Oboe is an internal future option
+only if device profiling proves `AudioTrack` insufficient.
+
+## Validation and Budgets
+
+Programs are rejected before playback if they contain unresolved references,
+duplicate names, invalid values, cycles, unsupported nodes or work exceeding a
+declared budget. Diagnostics contain a stable path such as:
+
+```text
+musicTrack[bass].instrument[analog-bass].filter[0].cutoffHz
+```
+
+Initial conservative mobile profile:
+
+- at most 32 simultaneous voices, with at least 8 reserved for SFX;
+- at most 16 tracks;
+- at most 8 oscillators per instrument;
+- at most 4 effects per track or bus;
+- delay buffers no longer than 4 seconds;
+- feedback no greater than `0.95`;
+- at most 256 events per scheduler query window;
+- bounded graph depth, query operations and command-queue capacity.
+
+These are runtime profile values, not permanent public API guarantees. Device
+benchmarks may safely raise them. When the voice limit is reached, stealing is
+deterministic: released voices, then quietest, oldest and low-priority Music
+voices. Reserved SFX capacity is preserved.
+
+## Failure Semantics and Diagnostics
+
+- Invalid programs return structured diagnostics and never partially start.
+- Unknown instruments, SFX or controls return typed failures.
+- Backend initialization failure produces diagnosed silence rather than a game
+  crash.
+- Intermediate SetControl commands may be coalesced when the command queue is
+  saturated; Stop and Destroy are preserved.
+- Overload sheds voices deterministically and records underruns.
+- No exception may escape a native audio callback.
+
+Outside the callback, repeated underruns, validation rejection, queue overflow,
+forced voice shedding and backend failures are reported through the existing
+`CrashlyticsRepository`. Normal playback, pause, stop and controls are not
+exceptions.
+
+## Documentation and Contributor Skill
+
+Public usage documentation lives under:
+
+```text
+docs/miniapp/audio/
+├── getting-started.md
+├── kotlin-dsl.md
+├── instruments.md
+├── patterns.md
+├── effects.md
+├── adaptive-music.md
+├── sfx-recipes.md
+├── performance-budgets.md
+└── troubleshooting.md
+```
+
+A repo-local `.agents/skills/miniapp-procedural-audio` skill activates only
+when an agent creates, changes, reviews or diagnoses procedural Music or SFX
+inside a game. It is not a guide for modifying the engine, platform sinks or
+the library itself. Its detailed references cover the public DSL, original
+music recipes, SFX recipes and a contributor review checklist. Examples teach
+parameterized building blocks rather than providing songs to reproduce.
+
+Library-maintainer documentation is separate from the contributor skill.
+
+The unshipped `:miniapp:samples:audio-demo` project is the executable reference.
+It demonstrates original procedural Music and SFX, a runtime `intensity`
+control, Settings integration, lifecycle pause/resume, session destruction,
+Android/iOS aggregation and the absence of MP3 assets. Discovery must not add it
+to the production allowlist.
 
 ## Verification
 
-Use golden query tests for rational timing and combinators, property tests for
-determinism/bounds, JSON compatibility tests, validator adversarial cases,
-scheduler clock tests, clipping/polyphony tests and platform runtime tests.
-Counter or another unshipped sample must demonstrate a non-audio
-`Pattern<T>` use so the core cannot accidentally become music-specific.
+`:core:pattern` uses exact-boundary, combinator, deterministic-randomness,
+property and adversarial query-budget tests.
+
+`:miniapp:audio` uses oscillator-frequency, envelope, FM, filter-stability,
+effect-tail, pan/gain, limiter, voice-stealing, bus-isolation, control-smoothing
+and deterministic offline-render tests. Golden tests inspect frame count, peak,
+RMS, dominant frequencies, silence regions and quantized PCM hashes. Operations
+with allowed cross-platform floating-point variance use explicit tolerances.
+
+Platform tests cover configuration, start/stop, focus or interruption,
+preferences, route changes, teardown and backend recovery. Android device and
+iPhone smoke tests remain mandatory because simulator/framework compilation
+cannot prove latency, underrun or click-free output.
+
+Documentation snippets compile in fixtures. The contributor convention rejects
+direct platform audio libraries in MiniApp modules. The skill is validated with
+the repository's skill validator and realistic audio-authoring scenarios. The
+`audio-demo` acceptance suite proves Settings, visibility, controls and stale
+session isolation without entering the production bundle.
 
 ## Non-Goals
 
-- Source compatibility with Strudel JavaScript.
-- Executing user-supplied Kotlin or JavaScript at runtime.
-- A full DAW, tracker editor or network music service.
-- Eliminating support for all audio assets.
+- Source or behavioral compatibility with Klang, Sprudel or Strudel.
+- Runtime parsing or execution of Kotlin, JavaScript or downloaded programs.
+- A live-coding editor, DAW, tracker or network music service.
+- Replacing every sample asset.
+- Arbitrary contributor DSP callbacks.
+- Shipping the `audio-demo` sample.
