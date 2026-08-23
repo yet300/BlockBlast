@@ -134,16 +134,16 @@ internal class RealtimeAudioRenderer(
     }
 
     private fun scheduleNewMusicVoices(program: CompiledAudioProgram, frameCount: Int) {
-        val scheduled = requireNotNull(scheduler).scheduleBlock(framePosition, frameCount)
-        for (event in scheduled) {
-            val track = program.source.musicTracks[event.trackIndex]
+        val scheduled = requireNotNull(scheduler).scheduleBlockInto(framePosition, frameCount)
+        for (index in 0 until scheduled.size) {
+            val track = program.source.musicTracks[scheduled.trackIndexAt(index)]
             val instrument = program.source.instruments.first { it.name == track.instrument }
             if (musicVoices.size == AudioMobileBudget.MAX_VOICES) musicVoices.removeAt(0)
             musicVoices += MusicVoice(
-                state = VoiceState(instrument, event.note, sampleRate, blockCapacity, controlPositions),
+                state = VoiceState(instrument, scheduled.noteAt(index), sampleRate, blockCapacity, controlPositions),
                 track = track,
-                remainingFrames = event.durationFrames,
-                blockOffset = event.frameOffset,
+                remainingFrames = scheduled.durationFramesAt(index),
+                blockOffset = scheduled.frameOffsetAt(index),
                 scratch = FloatArray(blockCapacity),
             )
         }

@@ -10,8 +10,24 @@ import ge.yet.game.pattern.sequence
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertSame
 
 class AudioSchedulerTest {
+    @Test
+    fun `scheduler reuses one bounded event buffer across realtime blocks`() {
+        val scheduler = scheduler(
+            notes = listOf(60, 61, 62, 63),
+            sampleRate = 8_000,
+            tempo = 240f,
+        )
+
+        val first = scheduler.scheduleBlockInto(startFrame = 0, frameCount = 2_000)
+        val second = scheduler.scheduleBlockInto(startFrame = 2_000, frameCount = 2_000)
+
+        assertSame(first, second)
+        assertEquals(listOf(61), second.map { it.note.value })
+    }
+
     @Test
     fun `sequence boundaries map to exact sample offsets`() {
         val scheduler = scheduler(

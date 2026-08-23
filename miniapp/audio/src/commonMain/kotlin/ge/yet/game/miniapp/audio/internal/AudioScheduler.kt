@@ -1,6 +1,7 @@
 package ge.yet.game.miniapp.audio.internal
 
 import ge.yet.game.miniapp.audio.AudioNote
+import ge.yet.game.miniapp.audio.AudioMobileBudget
 import ge.yet.game.miniapp.audio.CompiledAudioProgram
 import ge.yet.game.miniapp.audio.MidiNote
 import ge.yet.game.pattern.CycleTime
@@ -17,22 +18,117 @@ internal data class ScheduledAudioEvent(
     internal val orderInTrack: Int,
 )
 
+/** Fixed-capacity primitive storage reused by the realtime scheduler. */
+internal class ScheduledAudioEventBuffer(
+    private val capacity: Int = AudioMobileBudget.MAX_TRACKS * PatternQueryBudget.DEFAULT_MAX_EVENTS,
+) : AbstractList<ScheduledAudioEvent>() {
+    private val trackIndices = IntArray(capacity)
+    private val notes = IntArray(capacity)
+    private val absoluteStartFrames = LongArray(capacity)
+    private val frameOffsets = IntArray(capacity)
+    private val durationFrames = LongArray(capacity)
+    private val ordersInTrack = IntArray(capacity)
+
+    override var size: Int = 0
+        private set
+
+    override fun get(index: Int): ScheduledAudioEvent {
+        require(index in 0 until size)
+        return ScheduledAudioEvent(
+            trackIndex = trackIndices[index],
+            note = MidiNote.of(notes[index]),
+            absoluteStartFrame = absoluteStartFrames[index],
+            frameOffset = frameOffsets[index],
+            durationFrames = durationFrames[index],
+            orderInTrack = ordersInTrack[index],
+        )
+    }
+
+    fun clear() {
+        size = 0
+    }
+
+    fun add(
+        trackIndex: Int,
+        note: MidiNote,
+        absoluteStartFrame: Long,
+        frameOffset: Int,
+        durationFrames: Long,
+        orderInTrack: Int,
+    ): Boolean {
+        if (size == capacity) return false
+        trackIndices[size] = trackIndex
+        notes[size] = note.value
+        absoluteStartFrames[size] = absoluteStartFrame
+        frameOffsets[size] = frameOffset
+        this.durationFrames[size] = durationFrames
+        ordersInTrack[size] = orderInTrack
+        size += 1
+        return true
+    }
+
+    fun sort() {
+        for (index in 1 until size) {
+            val trackIndex = trackIndices[index]
+            val note = notes[index]
+            val startFrame = absoluteStartFrames[index]
+            val frameOffset = frameOffsets[index]
+            val duration = durationFrames[index]
+            val order = ordersInTrack[index]
+            var insertion = index
+            while (insertion > 0 && comesBefore(startFrame, trackIndex, order, insertion - 1)) {
+                copy(from = insertion - 1, to = insertion)
+                insertion -= 1
+            }
+            trackIndices[insertion] = trackIndex
+            notes[insertion] = note
+            absoluteStartFrames[insertion] = startFrame
+            frameOffsets[insertion] = frameOffset
+            durationFrames[insertion] = duration
+            ordersInTrack[insertion] = order
+        }
+    }
+
+    fun trackIndexAt(index: Int): Int = trackIndices[index]
+    fun noteAt(index: Int): MidiNote = MidiNote.of(notes[index])
+    fun frameOffsetAt(index: Int): Int = frameOffsets[index]
+    fun durationFramesAt(index: Int): Long = durationFrames[index]
+
+    private fun comesBefore(startFrame: Long, trackIndex: Int, order: Int, other: Int): Boolean =
+        startFrame < absoluteStartFrames[other] ||
+            (startFrame == absoluteStartFrames[other] && trackIndex < trackIndices[other]) ||
+            (startFrame == absoluteStartFrames[other] && trackIndex == trackIndices[other] && order < ordersInTrack[other])
+
+    private fun copy(from: Int, to: Int) {
+        trackIndices[to] = trackIndices[from]
+        notes[to] = notes[from]
+        absoluteStartFrames[to] = absoluteStartFrames[from]
+        frameOffsets[to] = frameOffsets[from]
+        durationFrames[to] = durationFrames[from]
+        ordersInTrack[to] = ordersInTrack[from]
+    }
+}
+
 internal class AudioScheduler(
     private val program: CompiledAudioProgram,
     private val sampleRate: Int,
 ) {
     private val tempo = tempoRatio(program.tempo.bpm)
+    private val scheduled = ScheduledAudioEventBuffer()
 
     init {
         require(sampleRate in 8_000..192_000)
     }
 
-    fun scheduleBlock(startFrame: Long, frameCount: Int): List<ScheduledAudioEvent> {
+    fun scheduleBlock(startFrame: Long, frameCount: Int): List<ScheduledAudioEvent> =
+        scheduleBlockInto(startFrame, frameCount).toList()
+
+    fun scheduleBlockInto(startFrame: Long, frameCount: Int): ScheduledAudioEventBuffer {
         require(startFrame >= 0 && frameCount > 0)
         val endFrame = checkedAddPositive(startFrame, frameCount.toLong())
         val scanStartFrame = if (startFrame == 0L) 0L else startFrame - 1L
         val scanArc = TimeArc(frameToCycle(scanStartFrame), frameToCycle(endFrame))
-        val scheduled = mutableListOf<ScheduledAudioEvent>()
+        scheduled.clear()
 
         program.source.musicTracks.forEachIndexed { trackIndex, track ->
             var orderInTrack = 0
@@ -50,7 +146,7 @@ internal class AudioScheduler(
                         val absoluteEnd = cycleToFrame(event.whole.endExclusive)
                         val duration = absoluteEnd - absoluteStart
                         if (duration <= 0) return@forEach
-                        scheduled += ScheduledAudioEvent(
+                        scheduled.add(
                             trackIndex = trackIndex,
                             note = note,
                             absoluteStartFrame = absoluteStart,
@@ -64,11 +160,8 @@ internal class AudioScheduler(
             }
         }
 
-        return scheduled.sortedWith(
-            compareBy<ScheduledAudioEvent>(ScheduledAudioEvent::absoluteStartFrame)
-                .thenBy(ScheduledAudioEvent::trackIndex)
-                .thenBy(ScheduledAudioEvent::orderInTrack),
-        )
+        scheduled.sort()
+        return scheduled
     }
 
     private fun frameToCycle(frame: Long): CycleTime = CycleTime.of(
