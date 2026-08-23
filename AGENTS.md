@@ -93,7 +93,7 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, audio-bound session context, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, `:miniapp:audio`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
-| `:miniapp:audio` | Procedural Music/SFX declarations, validation, shared PCM rendering and platform playback. Android uses an app-scoped streaming `AudioTrack` sink with float PCM and PCM16 fallback; the iOS sink remains staged. | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
+| `:miniapp:audio` | Procedural Music/SFX declarations, validation, shared PCM rendering and platform playback. Android uses an app-scoped streaming `AudioTrack` sink with float PCM and PCM16 fallback; iOS uses `AVAudioEngine` with a playback-category mixed audio session. | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
 | `:miniapp:audio-presets` | Original reusable instrument, SFX and deterministic soundscape fragments authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, no-op audio/storage, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
@@ -237,6 +237,35 @@ declared as compatibility aliases and must not be migrated merely to satisfy
 the new convention. Plugins cannot provide Catalog
 cards, host Back/Settings controls, the host toolbar, ad containers or Replay
 actions. Replay is deliberately absent from the initial public MiniApp API.
+
+## MiniApp Procedural Audio Authoring
+
+When creating, changing, reviewing or diagnosing Music/SFX in a MiniApp, read
+`.agents/skills/miniapp-procedural-audio/SKILL.md` and follow its routed
+references. Human authors start at `docs/miniapp/audio/getting-started.md`.
+The complete public-author documentation is under `docs/miniapp/audio/`.
+
+Follow this order: reuse a declaration from `:miniapp:audio-presets`; tune its
+public name/seed/gain/density/stereo controls; compose renamed presets; create
+an original game-owned declaration only when the required role still cannot be
+expressed. Do not transcribe Klang, Strudel, commercial music, game soundtracks
+or third-party demo compositions. An 8/16/32/64-bit request describes an
+aesthetic implemented with synthesis constraints and bit-crush/sample-rate
+effects; platform output remains high-quality PCM.
+
+Audio programs are immutable game-owned declarations outside Compose UI.
+Receive the session-bound `MiniAppAudio` through `MiniAppSessionContext`/Metro,
+use typed control and SFX names, handle command rejection, and let host
+visibility, settings and lifecycle own suppression and teardown. MiniApps must
+not import audio `internal` packages, `MiniAppAudioEngine`, platform sinks or
+native players. Compile every documented/example declaration in `commonTest`;
+new voices and presets should add deterministic acoustic render assertions.
+
+The maintainer architecture is recorded in
+`docs/superpowers/specs/2026-08-23-kotlin-pattern-audio-design.md`; staged work
+and verification live in
+`docs/superpowers/plans/2026-08-23-miniapp-procedural-audio.md`. These are
+maintainer references, not authorization for contributors to modify the engine.
 
 The catalog uses a centered `Logica` app bar and an adaptive grid: one column
 below 840 dp and two columns at or above it, capped at 1200 dp. Each host-owned

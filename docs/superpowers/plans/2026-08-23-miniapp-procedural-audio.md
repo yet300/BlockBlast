@@ -454,15 +454,15 @@
 - Modify: `README.md`
 - Modify: `AGENTS.md`
 
-- [ ] Before writing the skill, create realistic authoring prompts and verify the existing repository guidance does not already answer them reliably. This is the skill's RED; no subagent is required.
-- [ ] Document only public author behavior. Link to engine-maintainer design rather than teaching game authors to change DSP/backend internals.
-- [ ] Make the skill trigger on creating, changing, reviewing or diagnosing procedural Music/SFX in a game. It must enforce this sequence: reuse preset → adjust controls/seed/gain/density/stereo → compose presets → create game-owned declaration only if necessary.
-- [ ] Include compact, original examples for menu ambience, adaptive intensity, placement/collision/success SFX, deterministic randomness and teardown. Do not include or paraphrase a third-party composition.
-- [ ] Explain that 8/16/32/64-bit aesthetics are bit-crush/sample-rate effects; the platform stream remains high-quality PCM.
-- [ ] Compile every documentation snippet in a dedicated commonTest fixture or generated sample test.
-- [ ] Validate the skill with the repository skill validator (`quick_validate.py` from the installed skill-creator package) and manually apply its checklist to Counter and Block Blast.
-- [ ] Add README/AGENTS links to the author docs, skill, architecture design and this implementation plan.
-- [ ] Commit.
+- [x] Before writing the skill, create realistic authoring prompts and verify the existing repository guidance does not already answer them reliably. This is the skill's RED; no subagent is required.
+- [x] Document only public author behavior. Link to engine-maintainer design rather than teaching game authors to change DSP/backend internals.
+- [x] Make the skill trigger on creating, changing, reviewing or diagnosing procedural Music/SFX in a game. It must enforce this sequence: reuse preset → adjust controls/seed/gain/density/stereo → compose presets → create game-owned declaration only if necessary.
+- [x] Include compact, original examples for menu ambience, adaptive intensity, placement/collision/success SFX, deterministic randomness and teardown. Do not include or paraphrase a third-party composition.
+- [x] Explain that 8/16/32/64-bit aesthetics are bit-crush/sample-rate effects; the platform stream remains high-quality PCM.
+- [x] Compile every documentation snippet in a dedicated commonTest fixture or generated sample test.
+- [x] Validate the skill with the repository skill validator (`quick_validate.py` from the installed skill-creator package) and manually apply its checklist to Counter and Block Blast.
+- [x] Add README/AGENTS links to the author docs, skill, architecture design and this implementation plan.
+- [x] Commit.
 
 ## Task 15: Final integration, realtime audit and release proof
 

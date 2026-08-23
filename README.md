@@ -82,6 +82,8 @@ BlockBlast/
 │   ├── compose/     # Plugin, manifest, session and frame contracts
 │   ├── metro/       # Registry and retained child-graph foundation
 │   ├── storage/     # Namespaced persistence and safe all-game-data reset
+│   ├── audio/       # Portable procedural Music/SFX API and runtime
+│   ├── audio-presets/ # Original reusable instruments, soundscapes and SFX
 │   ├── bundle/      # Production allowlisted plugins
 │   ├── testkit/     # Contributor contract fixtures
 │   └── samples/     # Discovered but unshipped examples
@@ -160,6 +162,24 @@ persistence. Games supply only local snake-case names; the host owns physical
 namespacing, snapshot migrations, legacy aliases and the safe all-game-data
 reset. MiniApp modules must not depend on Multiplatform Settings directly.
 Block Blast's legacy physical keys remain unchanged for save compatibility.
+
+### Create procedural music and SFX
+
+MiniApps can declare original, asset-free Music and SFX in shared Kotlin for
+Android and iOS. Start with the
+[procedural audio getting-started guide](docs/miniapp/audio/getting-started.md),
+then use the [Kotlin DSL reference](docs/miniapp/audio/kotlin-dsl.md),
+[shared presets](docs/miniapp/audio/instruments.md), and
+[mobile budgets](docs/miniapp/audio/performance-budgets.md).
+
+AI agents must use the repo-local
+[MiniApp procedural audio skill](.agents/skills/miniapp-procedural-audio/SKILL.md).
+It prioritizes preset reuse, original declarations, deterministic seeds,
+session lifecycle correctness and compiled examples. Engine maintainers should
+read the approved
+[architecture design](docs/superpowers/specs/2026-08-23-kotlin-pattern-audio-design.md)
+and [implementation plan](docs/superpowers/plans/2026-08-23-miniapp-procedural-audio.md);
+MiniApp authors must not depend on internal DSP or platform sinks.
 
 ## Contributing
 
