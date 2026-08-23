@@ -46,6 +46,27 @@ class AudioProgramBuilder internal constructor() {
         effects[typedName] = SoundEffectBuilder().apply(block).build(typedName)
     }
 
+    fun include(fragment: AudioProgramFragment) {
+        fragment.program.controls.forEach { declaration ->
+            require(declaration.name !in controls) { "Duplicate control '${declaration.name.value}'" }
+        }
+        fragment.program.instruments.forEach { declaration ->
+            require(declaration.name !in instruments) { "Duplicate instrument '${declaration.name.value}'" }
+        }
+        fragment.program.musicTracks.forEach { declaration ->
+            require(declaration.name !in tracks) { "Duplicate music track '${declaration.name.value}'" }
+        }
+        fragment.program.soundEffects.forEach { declaration ->
+            require(declaration.name !in effects) { "Duplicate SFX '${declaration.name.value}'" }
+        }
+        fragment.program.controls.forEach { controls[it.name] = it }
+        fragment.program.instruments.forEach { instruments[it.name] = it }
+        fragment.program.musicTracks.forEach { tracks[it.name] = it }
+        fragment.program.soundEffects.forEach { effects[it.name] = it }
+        musicBus = AudioBusDeclaration(musicBus.effects + fragment.program.musicBus.effects)
+        sfxBus = AudioBusDeclaration(sfxBus.effects + fragment.program.sfxBus.effects)
+    }
+
     fun musicBus(block: SendEffectBuilder.() -> Unit) {
         musicBus = AudioBusDeclaration(SendEffectBuilder().apply(block).effects())
     }
