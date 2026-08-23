@@ -4,6 +4,7 @@ import ge.yet.game.miniapp.audio.AudioControlName
 import ge.yet.game.miniapp.audio.FilterDeclaration
 import ge.yet.game.miniapp.audio.InstrumentDeclaration
 import ge.yet.game.miniapp.audio.MidiNote
+import ge.yet.game.miniapp.audio.PitchDeclaration
 import ge.yet.game.miniapp.audio.VoiceEffectDeclaration
 import kotlin.math.pow
 
@@ -13,8 +14,10 @@ internal class VoiceState(
     private val sampleRate: Int,
     private val blockCapacity: Int,
     controlPositions: Map<AudioControlName, Float> = emptyMap(),
+    private val pitch: PitchDeclaration? = null,
 ) {
-    private val baseFrequency = 440.0 * 2.0.pow((note.value - 69) / 12.0)
+    private val initialBaseFrequency = 440.0 * 2.0.pow((note.value - 69) / 12.0)
+    private var renderedFrames = 0L
     private val oscillatorStates = Array(instrument.oscillators.size) { OscillatorState() }
     private val noiseStates = Array(instrument.noises.size) { NoiseState(instrument.noises[it].seed) }
     private val partialStates = Array(instrument.partials.size) { OscillatorState() }
@@ -37,6 +40,7 @@ internal class VoiceState(
     fun render(output: FloatArray, frameCount: Int, offset: Int = 0) {
         require(frameCount in 0..blockCapacity && offset >= 0 && offset + frameCount <= output.size)
         for (frame in 0 until frameCount) {
+            val baseFrequency = baseFrequency()
             val fm = instrument.frequencyModulation?.let {
                 nextOscillatorSample(ge.yet.game.miniapp.audio.OscillatorShape.SINE, baseFrequency * it.ratio, 0.5, sampleRate, fmState) * it.index
             } ?: 0f
@@ -58,6 +62,7 @@ internal class VoiceState(
                 sample += nextOscillatorSample(ge.yet.game.miniapp.audio.OscillatorShape.SINE, frequency * partial.ratio, 0.5, sampleRate, partialStates[index]) * partial.gain.value
             }
             output[offset + frame] = (sample * envelopeState.nextValue()).takeIf { it.isFinite() } ?: 0f
+            renderedFrames += 1
         }
         for (index in instrument.filters.indices) {
             processBiquad(output, filterCoefficients[index], filterStates[index], frameCount, offset)
@@ -70,6 +75,17 @@ internal class VoiceState(
                 )
             }
         }
+    }
+
+    fun noteOff() = envelopeState.noteOff()
+
+    val isFinished: Boolean get() = envelopeState.phase == EnvelopePhase.DONE
+
+    private fun baseFrequency(): Double {
+        val sweep = pitch ?: return initialBaseFrequency
+        val durationFrames = (sweep.duration.seconds * sampleRate).toLong().coerceAtLeast(1L)
+        val position = (renderedFrames.toDouble() / durationFrames).coerceIn(0.0, 1.0)
+        return sweep.from.value + (sweep.to.value - sweep.from.value) * position
     }
 }
 

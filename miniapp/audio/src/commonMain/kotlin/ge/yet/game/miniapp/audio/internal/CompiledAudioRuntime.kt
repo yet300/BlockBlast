@@ -106,6 +106,10 @@ internal class CompiledAudioRuntime(
         diagnostics.increment(AudioRuntimeDiagnostic.UNDERRUN)
     }
 
+    fun recordCallbackFailure() {
+        diagnostics.increment(AudioRuntimeDiagnostic.CALLBACK_FAILURE)
+    }
+
     fun drainDiagnostics(): AudioRuntimeDiagnosticsSnapshot = diagnostics.drain()
 
     private fun dispatch(command: AudioCommand): AudioRuntimeCommandOutcome = when (command) {

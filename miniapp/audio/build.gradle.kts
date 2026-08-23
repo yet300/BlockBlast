@@ -4,6 +4,10 @@ plugins {
 }
 
 kotlin {
+    android {
+        withHostTest {}
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(projects.core.pattern)
@@ -11,6 +15,13 @@ kotlin {
             implementation(projects.core.domain)
             implementation(projects.miniapp.api)
             api(libs.essenty.lifecycle)
+        }
+        named("androidHostTest") {
+            dependencies {
+                implementation(kotlin("test-junit"))
+                implementation(libs.junit)
+                implementation(libs.robolectric)
+            }
         }
     }
 }

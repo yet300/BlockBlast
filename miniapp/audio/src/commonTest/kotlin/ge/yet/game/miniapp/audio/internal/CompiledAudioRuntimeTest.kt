@@ -81,6 +81,15 @@ class CompiledAudioRuntimeTest {
     }
 
     @Test
+    fun `platform callback failures accumulate outside command dispatch`() {
+        val runtime = CompiledAudioRuntime(RecordingTarget(), queueCapacity = 2, maxCommandsPerBlock = 1)
+
+        runtime.recordCallbackFailure()
+
+        assertEquals(1L, runtime.drainDiagnostics().callbackFailures)
+    }
+
+    @Test
     fun `destroy runs once clears queued tail and rejects later submissions`() {
         val target = RecordingTarget()
         val runtime = CompiledAudioRuntime(target, queueCapacity = 4, maxCommandsPerBlock = 4)

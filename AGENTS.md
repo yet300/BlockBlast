@@ -55,7 +55,7 @@ BlockBlast/
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
 │   ├── storage/                Namespaced Settings backend and game-data reset coordinator
-│   ├── audio/                  Procedural-audio declarations and shared offline DSP
+│   ├── audio/                  Procedural-audio API, shared renderer and platform sinks
 │   ├── audio-presets/          Original reusable instruments, SFX and soundscapes
 │   ├── testkit/                Reusable MiniApp host, visibility, lifecycle and contract fixtures
 │   ├── samples/
@@ -93,7 +93,7 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, audio-bound session context, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, `:miniapp:audio`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
-| `:miniapp:audio` | Procedural Music/SFX declarations, bounded validation, deterministic offline rendering, scheduler/voice/command runtime and an app-scoped stale-safe session engine; Android/iOS sinks are staged | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
+| `:miniapp:audio` | Procedural Music/SFX declarations, validation, shared PCM rendering and platform playback. Android uses an app-scoped streaming `AudioTrack` sink with float PCM and PCM16 fallback; the iOS sink remains staged. | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
 | `:miniapp:audio-presets` | Original reusable instrument, SFX and deterministic soundscape fragments authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, no-op audio/storage, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
@@ -358,6 +358,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :core:pattern:allTests
 ./gradlew :core:pattern:compileAndroidMain :core:pattern:compileKotlinIosSimulatorArm64
 ./gradlew :miniapp:audio:allTests
+./gradlew :miniapp:audio:testAndroidHostTest
 ./gradlew :miniapp:audio:compileAndroidMain :miniapp:audio:compileKotlinIosSimulatorArm64
 ./gradlew :miniapp:audio-presets:allTests
 ./gradlew :miniapp:audio-presets:compileAndroidMain :miniapp:audio-presets:compileKotlinIosSimulatorArm64
