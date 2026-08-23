@@ -258,4 +258,47 @@ class ValidateMiniAppDependenciesTaskTest {
             ":game:blockblast: commonTestImplementation may not depend on com.russhwolf:multiplatform-settings-test; use MiniAppStorage test fixtures",
         )
     }
+
+    @Test
+    fun `actual validation rejects raw platform audio imports under strict configuration cache`() {
+        val folder = TemporaryFolder().also { it.create() }
+        val project = MiniAppBundleGradleTestProject(folder, useMarker = false)
+        project.write(
+            "game/blockblast/src/androidMain/kotlin/game/AndroidAudio.kt",
+            """
+                package game
+                import android.media.AudioTrack
+                internal class AndroidAudio
+            """,
+        )
+        project.write(
+            "game/blockblast/src/iosMain/kotlin/game/IosAudio.kt",
+            """
+                package game
+                import platform.AVFAudio.AVAudioEngine
+                internal class IosAudio
+            """,
+        )
+
+        val first = project.runAndFail(
+            ":game:blockblast:validateMiniAppDependencies",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
+        val second = project.runAndFail(
+            ":game:blockblast:validateMiniAppDependencies",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
+
+        assertContains(
+            first.output,
+            ":game:blockblast: src/androidMain/kotlin/game/AndroidAudio.kt may not import android.media.AudioTrack; " +
+                "use MiniAppSessionContext.audio and :miniapp:audio-presets",
+        )
+        assertContains(
+            first.output,
+            ":game:blockblast: src/iosMain/kotlin/game/IosAudio.kt may not import platform.AVFAudio.AVAudioEngine; " +
+                "use MiniAppSessionContext.audio and :miniapp:audio-presets",
+        )
+        assertContains(second.output, "Reusing configuration cache")
+    }
 }

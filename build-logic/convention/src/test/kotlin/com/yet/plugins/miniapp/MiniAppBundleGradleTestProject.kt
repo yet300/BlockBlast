@@ -41,6 +41,8 @@ internal class MiniAppBundleGradleTestProject(
         write("miniapp/api/build.gradle.kts", kotlinProjectBuildScript())
         write("miniapp/compose/build.gradle.kts", kotlinProjectBuildScript())
         write("miniapp/metro/build.gradle.kts", kotlinProjectBuildScript())
+        write("miniapp/audio/build.gradle.kts", kotlinProjectBuildScript())
+        write("miniapp/audio-presets/build.gradle.kts", kotlinProjectBuildScript())
         write(
             "miniapp/bundle/build.gradle.kts",
             """
@@ -58,6 +60,7 @@ internal class MiniAppBundleGradleTestProject(
         write("core/data/build.gradle.kts", kotlinProjectBuildScript())
         write("core/common/build.gradle.kts", kotlinProjectBuildScript())
         write("core/domain/build.gradle.kts", kotlinProjectBuildScript())
+        write("core/pattern/build.gradle.kts", kotlinProjectBuildScript())
         write("core/uikit/build.gradle.kts", kotlinProjectBuildScript())
         write("core/telemetry/build.gradle.kts", kotlinProjectBuildScript())
         write("feature/root/build.gradle.kts", kotlinProjectBuildScript())
@@ -92,24 +95,34 @@ internal class MiniAppBundleGradleTestProject(
 
     fun copyRealMiniAppContracts() {
         val sourceRoot = Path.of(requireNotNull(System.getProperty("sourceRepositoryRoot")))
-        listOf("miniapp/api", "miniapp/compose", "miniapp/metro", "miniapp/testkit").forEach { module ->
-            val source = sourceRoot.resolve("$module/src/commonMain")
-            val target = root.resolve("$module/src/commonMain")
-            Files.walk(source).use { paths ->
-                paths.forEach { sourcePath ->
-                    val destination = target.resolve(source.relativize(sourcePath).toString())
-                    if (Files.isDirectory(sourcePath)) Files.createDirectories(destination)
-                    else Files.copy(sourcePath, destination, StandardCopyOption.REPLACE_EXISTING)
-                }
-            }
+        listOf(
+            "core/pattern", "miniapp/api", "miniapp/compose", "miniapp/metro", "miniapp/testkit",
+            "miniapp/audio-presets",
+        ).forEach { module -> copyCommonMain(sourceRoot, module) }
+        copyCommonMain(sourceRoot, "miniapp/audio") { relativePath ->
+            "/internal/" !in "/$relativePath" &&
+                "/di/" !in "/$relativePath" &&
+                "/testing/" !in "/$relativePath" &&
+                !relativePath.endsWith("MiniAppAudioEngine.kt")
         }
+        write("core/pattern/build.gradle.kts", """
+            plugins { id("com.plugins.kotlinMultiplatformPlugin") }
+        """)
         write("miniapp/api/build.gradle.kts", """
             plugins { id("com.plugins.kotlinMultiplatformPlugin") }
             kotlin { sourceSets.commonMain.dependencies { implementation(libs.kotlinx.coroutines.core) } }
         """)
         write("miniapp/compose/build.gradle.kts", """
             plugins { id("com.plugins.kotlinMultiplatformPlugin"); id("com.plugins.composeMultiplatform") }
-            kotlin { sourceSets.commonMain.dependencies { api(project(":miniapp:api")); api(libs.decompose); api(libs.compose.components.resources) } }
+            kotlin { sourceSets.commonMain.dependencies { api(project(":miniapp:api")); api(project(":miniapp:audio")); api(libs.decompose); api(libs.compose.components.resources) } }
+        """)
+        write("miniapp/audio/build.gradle.kts", """
+            plugins { id("com.plugins.kotlinMultiplatformPlugin") }
+            kotlin { sourceSets.commonMain.dependencies { api(project(":core:pattern")); implementation(project(":miniapp:api")) } }
+        """)
+        write("miniapp/audio-presets/build.gradle.kts", """
+            plugins { id("com.plugins.kotlinMultiplatformPlugin") }
+            kotlin { sourceSets.commonMain.dependencies { api(project(":miniapp:audio")) } }
         """)
         write("miniapp/metro/build.gradle.kts", """
             plugins { id("com.plugins.kotlinMultiplatformPlugin"); id("com.plugins.composeMultiplatform"); id("dev.zacsweers.metro") }
@@ -120,6 +133,7 @@ internal class MiniAppBundleGradleTestProject(
             kotlin {
                 sourceSets.commonMain.dependencies {
                     api(project(":miniapp:api"))
+                    api(project(":miniapp:audio"))
                     api(project(":miniapp:compose"))
                     api(project(":miniapp:metro"))
                     api(libs.decompose)
@@ -128,6 +142,26 @@ internal class MiniAppBundleGradleTestProject(
                 }
             }
         """)
+    }
+
+    private fun copyCommonMain(
+        sourceRoot: Path,
+        module: String,
+        includeFile: (String) -> Boolean = { true },
+    ) {
+        val source = sourceRoot.resolve("$module/src/commonMain")
+        val target = root.resolve("$module/src/commonMain")
+        Files.walk(source).use { paths ->
+            paths.forEach { sourcePath ->
+                val relativePath = source.relativize(sourcePath).toString().replace(java.io.File.separatorChar, '/')
+                val destination = target.resolve(relativePath)
+                if (Files.isDirectory(sourcePath)) {
+                    Files.createDirectories(destination)
+                } else if (includeFile(relativePath)) {
+                    Files.copy(sourcePath, destination, StandardCopyOption.REPLACE_EXISTING)
+                }
+            }
+        }
     }
 
     fun generatedKotlinFiles(): List<String> {
@@ -192,11 +226,14 @@ internal class MiniAppBundleGradleTestProject(
             include(":miniapp:api")
             include(":miniapp:compose")
             include(":miniapp:metro")
+            include(":miniapp:audio")
+            include(":miniapp:audio-presets")
             include(":miniapp:testkit")
             include(":miniapp:bundle")
             include(":core:common")
             include(":core:data")
             include(":core:domain")
+            include(":core:pattern")
             include(":core:uikit")
             include(":core:telemetry")
             include(":feature:root")

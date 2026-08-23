@@ -8,7 +8,8 @@ class MiniAppDependencyBoundaryTest {
     @Test
     fun `all inward main contracts and self are allowed`() {
         listOf(
-            ":miniapp:api", ":miniapp:compose", ":miniapp:metro", ":core:common", ":core:domain",
+            ":miniapp:api", ":miniapp:compose", ":miniapp:metro", ":miniapp:audio", ":miniapp:audio-presets",
+            ":core:common", ":core:domain",
             ":core:uikit", ":core:pattern", ":monetization:core", ":game:snake",
         ).forEach { dependency ->
             assertEquals(null, MiniAppDependencyBoundary.violationFor(":game:snake", "commonMainImplementation", dependency))
@@ -56,6 +57,70 @@ class MiniAppDependencyBoundaryTest {
                 group = "com.russhwolf",
                 name = "multiplatform-settings-test",
             )?.message(),
+        )
+    }
+
+    @Test
+    fun `direct external audio engines are rejected with the host audio replacement`() {
+        listOf(
+            "androidx.media3" to "media3-exoplayer",
+            "com.google.oboe" to "oboe",
+            "dev.example" to "procedural-audio-engine",
+        ).forEach { (group, name) ->
+            assertEquals(
+                "MiniAppSessionContext.audio and :miniapp:audio-presets",
+                MiniAppDependencyBoundary.externalViolationFor(
+                    projectPath = ":game:snake",
+                    configuration = "commonMainImplementation",
+                    group = group,
+                    name = name,
+                )?.replacement,
+            )
+        }
+        assertEquals(
+            null,
+            MiniAppDependencyBoundary.externalViolationFor(
+                projectPath = ":game:snake",
+                configuration = "commonMainImplementation",
+                group = "org.jetbrains.kotlinx",
+                name = "kotlinx-coroutines-core",
+            ),
+        )
+    }
+
+    @Test
+    fun `raw Android and iOS audio imports are rejected while public miniapp audio is allowed`() {
+        listOf(
+            "android.media.AudioTrack",
+            "android.media.SoundPool",
+            "platform.AVFAudio.AVAudioEngine",
+            "platform.AudioToolbox.AudioBufferList",
+            "platform.CoreAudioTypes.AudioStreamBasicDescription",
+        ).forEach { importPath ->
+            assertEquals(
+                "MiniAppSessionContext.audio and :miniapp:audio-presets",
+                MiniAppDependencyBoundary.sourceImportViolationFor(
+                    projectPath = ":game:snake",
+                    sourcePath = "src/commonMain/kotlin/Snake.kt",
+                    importPath = importPath,
+                )?.replacement,
+            )
+        }
+        assertEquals(
+            null,
+            MiniAppDependencyBoundary.sourceImportViolationFor(
+                projectPath = ":game:snake",
+                sourcePath = "src/commonMain/kotlin/Snake.kt",
+                importPath = "ge.yet.game.miniapp.audio.MiniAppAudio",
+            ),
+        )
+        assertEquals(
+            null,
+            MiniAppDependencyBoundary.sourceImportViolationFor(
+                projectPath = ":game:snake",
+                sourcePath = "src/commonMain/kotlin/Snake.kt",
+                importPath = "ge.yet.game.miniapp.audio.presets.PlacementClick",
+            ),
         )
     }
 }

@@ -20,6 +20,7 @@ class MiniAppConventionPlugin : Plugin<Project> {
         extensions.configure<KotlinMultiplatformExtension> {
             sourceSets.getByName("commonMain").dependencies {
                 api(project(":miniapp:metro"))
+                implementation(project(":miniapp:audio-presets"))
                 implementation(catalog.findLibrary("compose-components-resources").get())
                 implementation(catalog.findLibrary("decompose-compose").get())
             }
@@ -28,6 +29,9 @@ class MiniAppConventionPlugin : Plugin<Project> {
         val projectPath = path
         val validate = tasks.register("validateMiniAppDependencies", ValidateMiniAppDependenciesTask::class.java) {
             violations.empty()
+            sourceFiles.from(fileTree("src") { include("**/*.kt") })
+            sourceRootPath.set(layout.projectDirectory.asFile.absolutePath)
+            miniAppProjectPath.set(projectPath)
         }
         val configurationContainer = configurations
         gradle.projectsEvaluated {

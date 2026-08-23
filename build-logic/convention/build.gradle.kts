@@ -82,6 +82,9 @@ tasks.withType<Test>().configureEach {
     systemProperty("sourceRepositoryRoot", rootProject.projectDir.parentFile.absolutePath)
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/api/src/commonMain"))
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/compose/src/commonMain"))
+    inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/audio/src/commonMain"))
+    inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/audio-presets/src/commonMain"))
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/metro/src/commonMain"))
     inputs.dir(rootProject.projectDir.parentFile.resolve("miniapp/testkit/src/commonMain"))
+    inputs.dir(rootProject.projectDir.parentFile.resolve("core/pattern/src/commonMain"))
 }

@@ -82,6 +82,10 @@ class CreateMiniAppTaskTest {
         assertContains(contract, "MiniAppContractAssertions.assertSinglePlugin")
         assertContains(contract, "MiniAppContractAssertions.assertManifest")
         assertContains(contract, "MiniAppContractAssertions.assertRetainedGraphSession")
+        assertContains(contract, "import ge.yet.game.miniapp.audio.presets.PlacementClick")
+        assertContains(contract, "val sharedSfx = PlacementClick()")
+        assertContains(contract, "assertNotNull(context.audio)")
+        assertEquals(false, contract.contains("playSfx("))
     }
 
     @Test
@@ -134,10 +138,19 @@ class CreateMiniAppTaskTest {
             plugins { id("logica.miniapp.root") }
             allprojects { repositories { google(); mavenCentral() } }
         """)
-        fixture.run("createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake")
-        val compile = fixture.run(":game:snake:compileCommonMainKotlinMetadata")
+        fixture.run(
+            "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
+        val compile = fixture.run(
+            ":game:snake:compileKotlinIosSimulatorArm64",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
         assertContains(compile.output, "BUILD SUCCESSFUL")
-        val tests = fixture.run(":game:snake:compileTestKotlinIosSimulatorArm64")
+        val tests = fixture.run(
+            ":game:snake:compileTestKotlinIosSimulatorArm64",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
         assertContains(tests.output, "BUILD SUCCESSFUL")
     }
 
@@ -149,10 +162,19 @@ class CreateMiniAppTaskTest {
             plugins { id("logica.miniapp.root") }
             allprojects { repositories { google(); mavenCentral() } }
         """)
-        fixture.run("createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake")
+        fixture.run(
+            "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
+            "--configuration-cache", "--configuration-cache-problems=fail",
+        )
 
         try {
-            assertContains(fixture.run(":game:snake:compileAndroidMain").output, "BUILD SUCCESSFUL")
+            assertContains(
+                fixture.run(
+                    ":game:snake:compileAndroidMain",
+                    "--configuration-cache", "--configuration-cache-problems=fail",
+                ).output,
+                "BUILD SUCCESSFUL",
+            )
         } catch (failure: UnexpectedBuildFailure) {
             if (failure.message.orEmpty().contains("Cannot find a Java installation") &&
                 failure.message.orEmpty().contains("languageVersion=17")) {

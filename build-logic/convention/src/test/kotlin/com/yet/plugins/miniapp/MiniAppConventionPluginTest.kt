@@ -37,6 +37,8 @@ class MiniAppConventionPluginTest {
                 val composeResources = compose.extensions.getByName("resources")
                 val dependencies = configurations.getByName("commonMainApi").dependencies
                     .filterIsInstance<org.gradle.api.artifacts.ProjectDependency>().map { it.path }.sorted()
+                val implementationProjects = configurations.getByName("commonMainImplementation").dependencies
+                    .filterIsInstance<org.gradle.api.artifacts.ProjectDependency>().map { it.path }.sorted()
                 val implementationModules = configurations.getByName("commonMainImplementation").dependencies
                     .filterIsInstance<org.gradle.api.artifacts.ExternalModuleDependency>()
                     .map { "${'$'}{it.group}:${'$'}{it.name}" }.sorted()
@@ -53,6 +55,7 @@ class MiniAppConventionPluginTest {
                             composeResources.javaClass.getMethod("getPublicResClass").invoke(composeResources),
                             composeResources.javaClass.getMethod("getPackageOfResClass").invoke(composeResources),
                             dependencies,
+                            implementationProjects,
                             implementationModules.contains("org.jetbrains.compose.components:components-resources"),
                             implementationModules.contains("com.arkivanov.decompose:extensions-compose"),
                             configurations.getByName("commonTestImplementation").dependencies.filterIsInstance<org.gradle.api.artifacts.ProjectDependency>().map { it.path }.sorted(),
@@ -65,7 +68,7 @@ class MiniAppConventionPluginTest {
         val first = project.run(":game:blockblast:probeConvention")
         project.run(":game:blockblast:validateMiniAppDependencies", "--configuration-cache", "--configuration-cache-problems=fail")
         val second = project.run(":game:blockblast:validateMiniAppDependencies", "--configuration-cache", "--configuration-cache-problems=fail")
-        assertContains(first.output, "PROBE=[true, true, true, true, true, true, true, true, true, false, ge.yet.game.blockblast.generated.resources, [:miniapp:metro], true, true, [:miniapp:testkit], true, true]")
+        assertContains(first.output, "PROBE=[true, true, true, true, true, true, true, true, true, false, ge.yet.game.blockblast.generated.resources, [:miniapp:metro], [:miniapp:audio-presets], true, true, [:miniapp:testkit], true, true]")
         assertContains(second.output, "Reusing configuration cache")
     }
 }

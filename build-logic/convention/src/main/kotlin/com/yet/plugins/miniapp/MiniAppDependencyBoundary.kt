@@ -9,13 +9,34 @@ internal data class MiniAppDependencyViolation(
     fun message(): String = "$projectPath: $configuration may not depend on $dependencyPath; use $replacement"
 }
 
+internal data class MiniAppSourceImportViolation(
+    val projectPath: String,
+    val sourcePath: String,
+    val importPath: String,
+    val replacement: String,
+) {
+    fun message(): String = "$projectPath: $sourcePath may not import $importPath; use $replacement"
+}
+
 internal object MiniAppDependencyBoundary {
     private val allowedMainProjects = setOf(
-        ":miniapp:api", ":miniapp:compose", ":miniapp:metro", ":core:common", ":core:domain",
+        ":miniapp:api", ":miniapp:compose", ":miniapp:metro", ":miniapp:audio", ":miniapp:audio-presets",
+        ":core:common", ":core:domain",
         ":core:uikit", ":core:pattern", ":monetization:core",
     )
     private val forbiddenPrefixes = setOf(":feature:", ":game:", ":miniapp:samples:")
     private val forbiddenExact = setOf(":composeApp", ":androidApp", ":monetization:ads")
+    private val forbiddenPlatformAudioImportPrefixes = setOf(
+        "android.media.",
+        "androidx.media3.",
+        "platform.AVFAudio.",
+        "platform.AudioToolbox.",
+        "platform.CoreAudio.",
+        "platform.CoreAudioTypes.",
+        "platform.MediaToolbox.",
+    )
+    private val externalAudioTokens = setOf("audio", "sound", "media3", "oboe", "klang", "korau")
+    private const val AUDIO_REPLACEMENT = "MiniAppSessionContext.audio and :miniapp:audio-presets"
 
     fun violationFor(projectPath: String, configuration: String, dependencyPath: String): MiniAppDependencyViolation? {
         if (dependencyPath == projectPath) return null
@@ -35,13 +56,27 @@ internal object MiniAppDependencyBoundary {
         group: String?,
         name: String,
     ): MiniAppDependencyViolation? {
-        if (group != "com.russhwolf" || !name.startsWith("multiplatform-settings")) return null
-        val replacement = if (configuration.contains("test", ignoreCase = true)) {
-            "MiniAppStorage test fixtures"
-        } else {
-            "MiniAppStorage"
+        if (group == "com.russhwolf" && name.startsWith("multiplatform-settings")) {
+            val replacement = if (configuration.contains("test", ignoreCase = true)) {
+                "MiniAppStorage test fixtures"
+            } else {
+                "MiniAppStorage"
+            }
+            return violation(projectPath, configuration, "$group:$name", replacement)
         }
-        return violation(projectPath, configuration, "$group:$name", replacement)
+        val coordinate = "${group.orEmpty()}:$name"
+        val normalized = coordinate.lowercase()
+        if (externalAudioTokens.none { token -> token in normalized }) return null
+        return violation(projectPath, configuration, coordinate, AUDIO_REPLACEMENT)
+    }
+
+    fun sourceImportViolationFor(
+        projectPath: String,
+        sourcePath: String,
+        importPath: String,
+    ): MiniAppSourceImportViolation? {
+        if (forbiddenPlatformAudioImportPrefixes.none(importPath::startsWith)) return null
+        return MiniAppSourceImportViolation(projectPath, sourcePath, importPath, AUDIO_REPLACEMENT)
     }
 
     private fun violation(project: String, configuration: String, dependency: String, replacement: String) =

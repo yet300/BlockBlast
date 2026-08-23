@@ -84,6 +84,7 @@ internal class MiniAppScaffoldRenderer(
             import dev.zacsweers.metro.DependencyGraph
             import dev.zacsweers.metro.createGraph
             import ge.yet.game.miniapp.api.MiniAppId
+            import ge.yet.game.miniapp.audio.presets.PlacementClick
             import ge.yet.game.miniapp.compose.MiniAppRegistry
             import ge.yet.game.miniapp.metro.MiniAppMetroBindings
             import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
@@ -121,11 +122,15 @@ internal class MiniAppScaffoldRenderer(
                     val lifecycle = MiniAppLifecycleHarness()
                     lifecycle.resume()
 
-                    val session = plugin.createSession(TestMiniAppSessionContext(
+                    val context = TestMiniAppSessionContext(
                         componentContext = lifecycle.componentContext,
                         visibility = MutableMiniAppVisibilitySource(),
                         host = RecordingMiniAppSessionHost(),
-                    ))
+                    )
+                    val sharedSfx = PlacementClick()
+                    assertNotNull(context.audio)
+                    assertNotNull(sharedSfx)
+                    val session = plugin.createSession(context)
 
                     MiniAppContractAssertions.assertRetainedGraphSession(session)
                     lifecycle.destroy()

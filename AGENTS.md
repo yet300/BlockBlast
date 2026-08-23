@@ -203,7 +203,7 @@ through a sibling staging directory. Discovery makes every project under
 invocation. There is no server, runtime catalog download or remote plugin
 loading.
 
-Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, and dependency-boundary validation. Contributors may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, or native-ad modules. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
+Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, reusable `:miniapp:audio-presets` as an implementation dependency, and dependency-boundary validation. Contributors can use `MiniAppSessionContext.audio` and shared audio presets without declaring audio dependencies. They may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, native-ad modules, platform audio APIs or external audio engines. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
 
 Generated `@GraphExtension.Factory` methods are namespaced from the complete
 MiniApp ID (for example, `createGameSnakeSessionGraph`). Preserve that naming:
