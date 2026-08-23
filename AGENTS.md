@@ -55,7 +55,7 @@ BlockBlast/
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
 │   ├── storage/                Namespaced Settings backend and game-data reset coordinator
-│   ├── audio/                  Scaffold for the procedural-audio API and runtime
+│   ├── audio/                  Procedural-audio author declarations; runtime staged
 │   ├── audio-presets/          Scaffold for original reusable audio declarations
 │   ├── testkit/                Reusable MiniApp host, visibility, lifecycle and contract fixtures
 │   ├── samples/
@@ -93,7 +93,7 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
-| `:miniapp:audio` | Scaffold for host-managed procedural Music/SFX declarations and runtime; playback is not implemented yet | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
+| `:miniapp:audio` | Validated procedural Music/SFX author declarations; compiler, DSP and playback are not implemented yet | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
 | `:miniapp:audio-presets` | Scaffold for original reusable declarations authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
