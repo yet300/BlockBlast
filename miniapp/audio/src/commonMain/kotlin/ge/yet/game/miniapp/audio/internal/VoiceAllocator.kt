@@ -42,6 +42,12 @@ internal class VoiceAllocator(
     var musicVoiceCount: Int = 0
         private set
 
+    var lastAllocatedVoiceId: Long = 0L
+        private set
+
+    var lastStolenVoiceId: Long = 0L
+        private set
+
     init {
         require(capacity in 2..AudioMobileBudget.MAX_VOICES)
         require(sfxReserve in 1 until capacity)
@@ -55,7 +61,17 @@ internal class VoiceAllocator(
     }
 
     fun allocate(kind: VoiceKind, startedAtFrame: Long): VoiceAllocationResult {
+        if (!allocateRealtime(kind, startedAtFrame)) return VoiceAllocationResult.Rejected
+        return VoiceAllocationResult.Allocated(
+            voiceId = lastAllocatedVoiceId,
+            stolenVoiceId = lastStolenVoiceId.takeUnless { it == 0L },
+        )
+    }
+
+    fun allocateRealtime(kind: VoiceKind, startedAtFrame: Long): Boolean {
         require(startedAtFrame >= 0)
+        lastAllocatedVoiceId = 0L
+        lastStolenVoiceId = 0L
         val freeSlot = findFreeSlot()
         val target = when (kind) {
             VoiceKind.MUSIC if musicVoiceCount < musicLimit && freeSlot >= 0 -> freeSlot
@@ -63,9 +79,9 @@ internal class VoiceAllocator(
             VoiceKind.SFX if freeSlot >= 0 -> freeSlot
             VoiceKind.SFX -> findVictim(VoiceKind.SFX)
         }
-        if (target < 0) return VoiceAllocationResult.Rejected
+        if (target < 0) return false
 
-        val stolenVoiceId = voiceIds[target].takeIf { occupied[target] }
+        val stolenVoiceId = if (occupied[target]) voiceIds[target] else 0L
         val previousKind = kinds[target]
         if (!occupied[target]) voiceCount += 1
         if (previousKind == VoiceKind.MUSIC && kind != VoiceKind.MUSIC) musicVoiceCount -= 1
@@ -78,7 +94,9 @@ internal class VoiceAllocator(
         lifecycles[target] = VoiceLifecycle.ACTIVE
         levels[target] = 1f
         startedAtFrames[target] = startedAtFrame
-        return VoiceAllocationResult.Allocated(voiceId, stolenVoiceId)
+        lastAllocatedVoiceId = voiceId
+        lastStolenVoiceId = stolenVoiceId
+        return true
     }
 
     fun updateLevel(voiceId: Long, level: Float): Boolean {

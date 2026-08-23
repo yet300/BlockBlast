@@ -8,6 +8,16 @@ import kotlin.test.assertTrue
 
 class FilterTest {
     @Test
+    fun `preallocated coefficients can be reconfigured in place`() {
+        val coefficients = BiquadCoefficients.identity()
+
+        coefficients.resetLowPass(sampleRate = 8_000, frequencyHz = 300.0, q = 0.707)
+
+        assertTrue(coefficients.b0 > 0.0)
+        assertTrue(coefficients.b1 > coefficients.b0)
+    }
+
+    @Test
     fun `low and high pass select opposite sides of a mixed signal`() {
         val sampleRate = 8_000
         val mixed = FloatArray(sampleRate) { index ->

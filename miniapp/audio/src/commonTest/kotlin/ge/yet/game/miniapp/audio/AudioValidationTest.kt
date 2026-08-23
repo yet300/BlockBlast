@@ -3,8 +3,26 @@ package ge.yet.game.miniapp.audio
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertSame
 
 class AudioValidationTest {
+    @Test
+    fun `compiler caches the runtime instrument for each sound effect`() {
+        val success = assertIs<AudioCompilationResult.Success>(
+            audioProgram {
+                sfx("click") { oscillator(OscillatorShape.SQUARE) }
+            }.compile(),
+        )
+
+        val index = success.program.soundEffectIndex(SfxName("click"))
+
+        assertEquals(0, index)
+        assertSame(
+            success.program.soundEffectInstrumentAt(index),
+            success.program.soundEffectInstrumentAt(index),
+        )
+    }
+
     @Test
     fun `compiler returns ordered diagnostics for unresolved and empty voices`() {
         val program = audioProgram {

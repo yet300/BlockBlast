@@ -9,6 +9,20 @@ import kotlin.test.assertTrue
 
 class VoiceAllocatorTest {
     @Test
+    fun `realtime allocation exposes primitive result without a snapshot object`() {
+        val allocator = VoiceAllocator(capacity = 2, sfxReserve = 1)
+
+        assertTrue(allocator.allocateRealtime(VoiceKind.MUSIC, startedAtFrame = 0))
+        val firstVoiceId = allocator.lastAllocatedVoiceId
+        assertEquals(0L, allocator.lastStolenVoiceId)
+        assertTrue(allocator.allocateRealtime(VoiceKind.SFX, startedAtFrame = 1))
+        assertEquals(0L, allocator.lastStolenVoiceId)
+
+        assertTrue(allocator.allocateRealtime(VoiceKind.MUSIC, startedAtFrame = 2))
+        assertEquals(firstVoiceId, allocator.lastStolenVoiceId)
+    }
+
+    @Test
     fun `default mobile pool keeps eight of thirty two slots available for sfx`() {
         val allocator = VoiceAllocator()
         val firstMusic = allocator.allocated(VoiceKind.MUSIC, 0)

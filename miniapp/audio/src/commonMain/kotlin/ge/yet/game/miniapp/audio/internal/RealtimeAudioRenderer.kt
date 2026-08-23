@@ -3,11 +3,8 @@ package ge.yet.game.miniapp.audio.internal
 import ge.yet.game.miniapp.audio.AudioControlName
 import ge.yet.game.miniapp.audio.AudioMobileBudget
 import ge.yet.game.miniapp.audio.CompiledAudioProgram
-import ge.yet.game.miniapp.audio.InstrumentDeclaration
-import ge.yet.game.miniapp.audio.InstrumentName
 import ge.yet.game.miniapp.audio.MidiNote
 import ge.yet.game.miniapp.audio.MusicTrackDeclaration
-import ge.yet.game.miniapp.audio.SoundEffectDeclaration
 import ge.yet.game.miniapp.audio.SfxName
 import ge.yet.game.miniapp.audio.internal.dsp.SmoothedGainState
 import ge.yet.game.miniapp.audio.internal.dsp.VoiceState
@@ -43,6 +40,7 @@ internal class RealtimeAudioRenderer(
     private var policy = AudioSessionPolicy.Active
     private var stopAfterFade = false
     private var stopFadeFrames = 0
+    private var lastVoiceAllocationStole = false
 
     val hasActiveAudio: Boolean
         get() {
@@ -125,11 +123,13 @@ internal class RealtimeAudioRenderer(
     }
 
     override fun playSfx(program: CompiledAudioProgram, name: SfxName): AudioRuntimeCommandOutcome {
-        val declaration = program.source.soundEffects.firstOrNull { it.name == name }
-            ?: return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
-        val allocation = allocateVoice(VoiceKind.SFX) ?: return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
-        val slot = voiceSlots[allocation.slotIndex]
-        val instrument = declaration.toInstrument()
+        val soundEffectIndex = program.soundEffectIndex(name)
+        if (soundEffectIndex < 0) return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
+        val declaration = program.source.soundEffects[soundEffectIndex]
+        val slotIndex = allocateVoice(VoiceKind.SFX)
+        if (slotIndex < 0) return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
+        val slot = voiceSlots[slotIndex]
+        val instrument = program.soundEffectInstrumentAt(soundEffectIndex)
         val frequency = declaration.pitch?.from?.value ?: DEFAULT_SFX_FREQUENCY
         val midi = (MIDI_A4 + MIDI_NOTES_PER_OCTAVE * ln(frequency / DEFAULT_SFX_FREQUENCY) / ln(2.0))
             .roundToInt()
@@ -143,7 +143,7 @@ internal class RealtimeAudioRenderer(
             .coerceAtLeast(1)
         slot.renderedFrames = 0L
         slot.releasing = false
-        return if (allocation.stoleVoice) {
+        return if (lastVoiceAllocationStole) {
             AudioRuntimeCommandOutcome.FORCED_VOICE_SHEDDING
         } else {
             AudioRuntimeCommandOutcome.APPLIED
@@ -172,8 +172,9 @@ internal class RealtimeAudioRenderer(
         for (index in 0 until scheduled.size) {
             val track = program.source.musicTracks[scheduled.trackIndexAt(index)]
             val instrument = program.source.instruments.first { it.name == track.instrument }
-            val allocation = allocateVoice(VoiceKind.MUSIC) ?: continue
-            val slot = voiceSlots[allocation.slotIndex]
+            val slotIndex = allocateVoice(VoiceKind.MUSIC)
+            if (slotIndex < 0) continue
+            val slot = voiceSlots[slotIndex]
             slot.state.reset(instrument, scheduled.noteAt(index))
             slot.track = track
             slot.remainingFrames = scheduled.durationFramesAt(index)
@@ -228,36 +229,17 @@ internal class RealtimeAudioRenderer(
         }
     }
 
-    private fun SoundEffectDeclaration.toInstrument(): InstrumentDeclaration =
-        InstrumentDeclaration(
-            name = InstrumentName("runtime_sfx"),
-            oscillators = oscillators,
-            noises = noises,
-            partials = partials,
-            envelope = envelope,
-            frequencyModulation = frequencyModulation,
-            vibrato = vibrato,
-            filters = filters,
-            effects = effects,
-        )
-
-    private fun allocateVoice(kind: VoiceKind): SlotAllocation? {
-        return when (val result = voiceAllocator.allocate(kind, framePosition)) {
-            is VoiceAllocationResult.Allocated -> {
-                val slotIndex = if (result.stolenVoiceId != null) {
-                    findVoiceSlot(result.stolenVoiceId)
-                } else {
-                    findFreeVoiceSlot()
-                }
-                check(slotIndex >= 0) { "Voice allocator and realtime slots are out of sync" }
-                val slot = voiceSlots[slotIndex]
-                slot.active = true
-                slot.voiceId = result.voiceId
-                slot.kind = kind
-                SlotAllocation(slotIndex, result.stolenVoiceId != null)
-            }
-            VoiceAllocationResult.Rejected -> null
-        }
+    private fun allocateVoice(kind: VoiceKind): Int {
+        if (!voiceAllocator.allocateRealtime(kind, framePosition)) return -1
+        val stolenVoiceId = voiceAllocator.lastStolenVoiceId
+        val slotIndex = if (stolenVoiceId != 0L) findVoiceSlot(stolenVoiceId) else findFreeVoiceSlot()
+        check(slotIndex >= 0) { "Voice allocator and realtime slots are out of sync" }
+        val slot = voiceSlots[slotIndex]
+        slot.active = true
+        slot.voiceId = voiceAllocator.lastAllocatedVoiceId
+        slot.kind = kind
+        lastVoiceAllocationStole = stolenVoiceId != 0L
+        return slotIndex
     }
 
     private fun findVoiceSlot(voiceId: Long): Int {
@@ -313,10 +295,6 @@ internal class RealtimeAudioRenderer(
         var releasing: Boolean = false,
     )
 
-    private data class SlotAllocation(
-        val slotIndex: Int,
-        val stoleVoice: Boolean,
-    )
 }
 
 private fun resetGain(state: SmoothedGainState, value: Float) {

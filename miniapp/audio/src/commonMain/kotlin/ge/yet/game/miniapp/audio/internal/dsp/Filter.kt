@@ -4,38 +4,65 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal data class BiquadCoefficients(
-    val b0: Double,
-    val b1: Double,
-    val b2: Double,
-    val a1: Double,
-    val a2: Double,
+internal class BiquadCoefficients(
+    var b0: Double,
+    var b1: Double,
+    var b2: Double,
+    var a1: Double,
+    var a2: Double,
 ) {
+    fun resetLowPass(sampleRate: Int, frequencyHz: Double, q: Double) {
+        reset(sampleRate, frequencyHz, q, Kind.LOW_PASS)
+    }
+
+    fun resetHighPass(sampleRate: Int, frequencyHz: Double, q: Double) {
+        reset(sampleRate, frequencyHz, q, Kind.HIGH_PASS)
+    }
+
+    fun resetBandPass(sampleRate: Int, frequencyHz: Double, q: Double) {
+        reset(sampleRate, frequencyHz, q, Kind.BAND_PASS)
+    }
+
+    private fun reset(sampleRate: Int, frequencyHz: Double, q: Double, kind: Kind) {
+        require(sampleRate > 0)
+        val frequency = if (frequencyHz.isFinite()) frequencyHz.coerceIn(10.0, sampleRate * 0.45) else 10.0
+        val safeQ = if (q.isFinite()) q.coerceIn(0.1, 20.0) else 0.707
+        val omega = 2.0 * PI * frequency / sampleRate
+        val cosine = cos(omega)
+        val alpha = sin(omega) / (2.0 * safeQ)
+        val a0 = 1.0 + alpha
+        when (kind) {
+            Kind.LOW_PASS -> {
+                b0 = (1.0 - cosine) / 2.0 / a0
+                b1 = (1.0 - cosine) / a0
+                b2 = (1.0 - cosine) / 2.0 / a0
+            }
+            Kind.HIGH_PASS -> {
+                b0 = (1.0 + cosine) / 2.0 / a0
+                b1 = -(1.0 + cosine) / a0
+                b2 = (1.0 + cosine) / 2.0 / a0
+            }
+            Kind.BAND_PASS -> {
+                b0 = alpha / a0
+                b1 = 0.0
+                b2 = -alpha / a0
+            }
+        }
+        a1 = -2.0 * cosine / a0
+        a2 = (1.0 - alpha) / a0
+    }
+
     companion object {
+        fun identity(): BiquadCoefficients = BiquadCoefficients(1.0, 0.0, 0.0, 0.0, 0.0)
+
         fun lowPass(sampleRate: Int, frequencyHz: Double, q: Double): BiquadCoefficients =
-            create(sampleRate, frequencyHz, q, Kind.LOW_PASS)
+            identity().also { it.resetLowPass(sampleRate, frequencyHz, q) }
 
         fun highPass(sampleRate: Int, frequencyHz: Double, q: Double): BiquadCoefficients =
-            create(sampleRate, frequencyHz, q, Kind.HIGH_PASS)
+            identity().also { it.resetHighPass(sampleRate, frequencyHz, q) }
 
         fun bandPass(sampleRate: Int, frequencyHz: Double, q: Double): BiquadCoefficients =
-            create(sampleRate, frequencyHz, q, Kind.BAND_PASS)
-
-        private fun create(sampleRate: Int, frequencyHz: Double, q: Double, kind: Kind): BiquadCoefficients {
-            require(sampleRate > 0)
-            val frequency = frequencyHz.takeIf { it.isFinite() }?.coerceIn(10.0, sampleRate * 0.45) ?: 10.0
-            val safeQ = q.takeIf { it.isFinite() }?.coerceIn(0.1, 20.0) ?: 0.707
-            val omega = 2.0 * PI * frequency / sampleRate
-            val cosine = cos(omega)
-            val alpha = sin(omega) / (2.0 * safeQ)
-            val a0 = 1.0 + alpha
-            val (b0, b1, b2) = when (kind) {
-                Kind.LOW_PASS -> Triple((1.0 - cosine) / 2.0, 1.0 - cosine, (1.0 - cosine) / 2.0)
-                Kind.HIGH_PASS -> Triple((1.0 + cosine) / 2.0, -(1.0 + cosine), (1.0 + cosine) / 2.0)
-                Kind.BAND_PASS -> Triple(alpha, 0.0, -alpha)
-            }
-            return BiquadCoefficients(b0 / a0, b1 / a0, b2 / a0, -2.0 * cosine / a0, (1.0 - alpha) / a0)
-        }
+            identity().also { it.resetBandPass(sampleRate, frequencyHz, q) }
     }
 
     private enum class Kind { LOW_PASS, HIGH_PASS, BAND_PASS }

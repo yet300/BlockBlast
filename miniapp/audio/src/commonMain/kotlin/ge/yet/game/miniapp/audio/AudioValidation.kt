@@ -33,8 +33,31 @@ data class AudioDiagnostic(
 internal class CompiledAudioProgram internal constructor(
     internal val source: AudioProgram,
 ) {
+    private val soundEffectInstruments = source.soundEffects.map { effect ->
+        InstrumentDeclaration(
+            name = InstrumentName("runtime_sfx"),
+            oscillators = effect.oscillators,
+            noises = effect.noises,
+            partials = effect.partials,
+            envelope = effect.envelope,
+            frequencyModulation = effect.frequencyModulation,
+            vibrato = effect.vibrato,
+            filters = effect.filters,
+            effects = effect.effects,
+        )
+    }
+
     val tempo: Tempo get() = source.tempo
     val trackCount: Int get() = source.musicTracks.size
+
+    internal fun soundEffectIndex(name: SfxName): Int {
+        for (index in source.soundEffects.indices) {
+            if (source.soundEffects[index].name == name) return index
+        }
+        return -1
+    }
+
+    internal fun soundEffectInstrumentAt(index: Int): InstrumentDeclaration = soundEffectInstruments[index]
 }
 
 internal sealed interface AudioCompilationResult {

@@ -26,7 +26,7 @@ internal class VoiceState(
     private val envelopeState = EnvelopeState(sampleRate, 0.0, 0.0, 1f, 0.0)
     private val filterStates = Array(AudioMobileBudget.MAX_FILTERS) { BiquadState() }
     private val filterCoefficients = Array(AudioMobileBudget.MAX_FILTERS) {
-        BiquadCoefficients(1.0, 0.0, 0.0, 0.0, 0.0)
+        BiquadCoefficients.identity()
     }
     private val crusherStates = Array(AudioMobileBudget.MAX_VOICE_EFFECTS) { BitCrusherState() }
 
@@ -73,7 +73,7 @@ internal class VoiceState(
             state.y2 = 0.0
         }
         for (index in instrument.filters.indices) {
-            filterCoefficients[index] = instrument.filters[index].coefficients(sampleRate, controlPositions)
+            instrument.filters[index].resetCoefficients(filterCoefficients[index], sampleRate, controlPositions)
         }
         crusherStates.forEach { state ->
             state.held = 0f
@@ -133,15 +133,16 @@ internal class VoiceState(
     }
 }
 
-private fun FilterDeclaration.coefficients(
+private fun FilterDeclaration.resetCoefficients(
+    output: BiquadCoefficients,
     sampleRate: Int,
     controlPositions: Map<AudioControlName, Float>,
-): BiquadCoefficients {
+) {
     val frequency = evaluateAudioParameter(frequency, 0, sampleRate, controlPositions).toDouble()
     val q = 0.5 + resonance * 9.5
-    return when (this) {
-        is FilterDeclaration.LowPass -> BiquadCoefficients.lowPass(sampleRate, frequency, q)
-        is FilterDeclaration.HighPass -> BiquadCoefficients.highPass(sampleRate, frequency, q)
-        is FilterDeclaration.BandPass -> BiquadCoefficients.bandPass(sampleRate, frequency, q)
+    when (this) {
+        is FilterDeclaration.LowPass -> output.resetLowPass(sampleRate, frequency, q)
+        is FilterDeclaration.HighPass -> output.resetHighPass(sampleRate, frequency, q)
+        is FilterDeclaration.BandPass -> output.resetBandPass(sampleRate, frequency, q)
     }
 }
