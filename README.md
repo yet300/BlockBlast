@@ -124,7 +124,12 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run.
 ./gradlew test
 ```
 
-### Add a MiniApp
+### Create a game / MiniApp
+
+If you are a human contributor or an AI agent and the request is to create,
+add or port a game, start with the official scaffold workflow below. Do not
+create an arbitrary Gradle module and do not add the game to the production
+allowlist automatically.
 
 ```bash
 ./gradlew createMiniApp -PminiAppId=game.snake -PminiAppName=Snake
@@ -136,6 +141,12 @@ discovers `game/*` and `miniapp/samples/*`, but discovery does not ship a
 plugin. After review, a maintainer adds exactly one matching entry to the root
 `miniApps` allowlist. The catalog is compiled into the app; there is no server,
 runtime download or remote code loading.
+
+The stable policy and rationale are recorded in
+[ADR-0001: MiniApp Contribution and Shipping Workflow](docs/adr/0001-miniapp-contribution-and-shipping.md).
+The current agent-level architecture and verification rules are in
+[AGENTS.md](AGENTS.md). Detailed human and AI contributor guides will follow
+the approved [contributor pipeline design](docs/superpowers/specs/2026-08-23-miniapp-contributor-pipeline-design.md).
 
 Plugins depend only on MiniApp contracts, approved inward core contracts and
 typed host capabilities. Root owns Catalog/Running navigation, Back,
