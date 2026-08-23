@@ -85,6 +85,21 @@ MiniApps never receive PCM buffers, `AudioTrack`, `AVAudioEngine`, platform
 players, app-global repositories or a callback that executes in the realtime
 renderer.
 
+### `:miniapp:audio-presets`
+
+An optional library of original, reusable Kotlin declarations built only on
+the public `:miniapp:audio` API. It contains parameterized instruments, SFX and
+soundscapes, not PCM samples and not platform code. Initial families include:
+
+- instruments such as SoftPad, ChipLead, AnalogBass and GlassBell;
+- SFX such as PlacementClick, SuccessSweep, Explosion and PowerUp;
+- soundscapes such as OceanBreeze, SoftRain, ForestNight and DeepSpace.
+
+Presets are immutable factories with explicit controls, seed, gain, density
+and stereo parameters. Games compose or parameterize them instead of copying
+their implementation. The module cannot access internal DSP types, session
+ownership, Settings or platform sinks.
+
 ## Public Authoring Model
 
 The DSL builds an immutable declaration which is validated and compiled before
@@ -124,6 +139,22 @@ internal val blockBlastAudio = audioProgram {
 }
 ```
 
+Shared presets are included declaratively:
+
+```kotlin
+internal val calmSoundtrack = audioProgram {
+    include(
+        OceanBreeze(
+            seed = 42,
+            wind = control("wind", default = 0.45f),
+            water = control("water", default = 0.6f),
+            waves = control("waves", default = 0.7f),
+            chimes = control("chimes", default = 0.15f),
+        ),
+    )
+}
+```
+
 Games use the session capability rather than implementing Settings or lifecycle
 integration:
 
@@ -141,13 +172,16 @@ C++ DSP implementation would not require contributor modules to change.
 The first engine supports:
 
 - sine, triangle, saw, square and variable-width pulse oscillators;
-- white and deterministic seeded noise;
+- white, pink and brown deterministic seeded noise;
 - multiple oscillators per instrument;
 - local oscillator FM, pitch envelopes and LFO vibrato;
+- sine LFO, smooth seeded value-noise modulation and stereo auto-pan;
 - ADSR envelopes;
-- low-pass and high-pass filtering;
+- low-pass, high-pass and resonant band-pass filtering;
+- bounded additive partials for instruments such as bells;
 - distortion and bit-crush/sample-rate-reduction effects;
-- bounded delay and algorithmic reverb;
+- bounded delay/reverb sends and algorithmic reverb;
+- scale-constrained deterministic note selection;
 - gain, equal-power pan, bus mixing and a final limiter.
 
 The fixed voice pipeline is:
@@ -156,7 +190,7 @@ The fixed voice pipeline is:
 oscillator/noise
   -> pitch and FM modulation
   -> ADSR
-  -> low/high-pass filter
+  -> low/high/band-pass filter
   -> distortion/bit crush
   -> gain/pan
   -> Music or SFX bus
@@ -171,6 +205,13 @@ voices -> bounded delay -> algorithmic reverb -> limiter -> master output
 Free-form node graphs, arbitrary feedback, granular synthesis, convolution,
 physical modelling and contributor-defined realtime DSP callbacks are deferred.
 New built-in nodes can be added without changing existing programs.
+
+`OceanBreeze` is an original acceptance preset for the shared layer. Its wind,
+water and wave beds use independently seeded colored-noise layers, slow gain
+and band-pass modulation, filter envelopes and stereo drift. Sparse chimes use
+an additive glass-bell instrument constrained to an original pentatonic event
+pattern. It must not translate or reproduce the structure, constants or
+arrangement of a Klang, Sprudel, Strudel or other third-party composition.
 
 The renderer uses stereo `Float` samples and the platform's actual sample rate,
 normally 44.1 or 48 kHz. It renders blocks into preallocated buffers. An
@@ -301,6 +342,18 @@ the library itself. Its detailed references cover the public DSL, original
 music recipes, SFX recipes and a contributor review checklist. Examples teach
 parameterized building blocks rather than providing songs to reproduce.
 
+For game audio authoring, the skill follows this decision order:
+
+1. reuse a suitable `:miniapp:audio-presets` declaration;
+2. adjust only its published controls, seed, gain, density or stereo options;
+3. compose multiple presets through the public DSL;
+4. create a game-owned instrument or program only when the shared vocabulary is
+   insufficient.
+
+The skill does not instruct agents to modify shared preset internals. Changes
+to the engine or shared preset library follow their maintainer documentation
+and ordinary architecture review instead.
+
 Library-maintainer documentation is separate from the contributor skill.
 
 The unshipped `:miniapp:samples:audio-demo` project is the executable reference.
@@ -320,6 +373,12 @@ and deterministic offline-render tests. Golden tests inspect frame count, peak,
 RMS, dominant frequencies, silence regions and quantized PCM hashes. Operations
 with allowed cross-platform floating-point variance use explicit tolerances.
 
+`:miniapp:audio-presets` uses compile tests and golden acoustic-property tests
+for every public preset. Soundscapes additionally prove deterministic seeds,
+bounded event density, bounded tails, absence of clipping and stable control
+response. Tests assert acoustic properties rather than preserving a third-party
+waveform or arrangement.
+
 Platform tests cover configuration, start/stop, focus or interruption,
 preferences, route changes, teardown and backend recovery. Android device and
 iPhone smoke tests remain mandatory because simulator/framework compilation
@@ -338,4 +397,5 @@ session isolation without entering the production bundle.
 - A live-coding editor, DAW, tracker or network music service.
 - Replacing every sample asset.
 - Arbitrary contributor DSP callbacks.
+- Copying shared preset implementations into game modules.
 - Shipping the `audio-demo` sample.
