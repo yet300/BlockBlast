@@ -38,7 +38,8 @@ BlockBlast/
 │   ├── common/                 Reusable shared app utilities and infrastructure
 │   ├── domain/                 Reusable domain contracts and app-level models
 │   ├── data/                   Repository implementations and settings persistence
-│   └── telemetry/              Firebase analytics and Crashlytics abstraction
+│   ├── telemetry/              Firebase analytics and Crashlytics abstraction
+│   └── pattern/                Exact generic temporal patterns and bounded queries
 ├── feature/
 │   ├── root/                   Top-level navigation component
 │   ├── catalog/                Registry-backed MiniApp catalog and host-owned cards
@@ -54,6 +55,8 @@ BlockBlast/
 │   ├── compose/                Compose-facing plugin, session and manifest contracts
 │   ├── metro/                  Immutable Metro registry and session-scope foundation
 │   ├── storage/                Namespaced Settings backend and game-data reset coordinator
+│   ├── audio/                  Scaffold for the procedural-audio API and runtime
+│   ├── audio-presets/          Scaffold for original reusable audio declarations
 │   ├── testkit/                Reusable MiniApp host, visibility, lifecycle and contract fixtures
 │   ├── samples/
 │   │   └── counter/            Discovered, unshipped reference MiniApp plugin
@@ -78,6 +81,7 @@ BlockBlast/
 | `:core:common` | Shared reusable utilities and common infrastructure | no project dependency declared |
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
+| `:core:pattern` | Exact, bounded and audio-independent temporal event patterns | no project dependency declared |
 | `:feature:settings` | Settings components, stores and the confirmation/progress/result state holder for game-data reset | `:core:domain`, `:core:common`, `:miniapp:api` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
@@ -89,6 +93,8 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
+| `:miniapp:audio` | Scaffold for host-managed procedural Music/SFX declarations and runtime; playback is not implemented yet | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
+| `:miniapp:audio-presets` | Scaffold for original reusable declarations authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
 | `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
@@ -345,6 +351,14 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :miniapp:storage:allTests
 ./gradlew :miniapp:storage:compileAndroidMain
 ./gradlew :miniapp:storage:compileKotlinIosSimulatorArm64
+
+# Verify generic temporal patterns and procedural-audio modules
+./gradlew :core:pattern:allTests
+./gradlew :core:pattern:compileAndroidMain :core:pattern:compileKotlinIosSimulatorArm64
+./gradlew :miniapp:audio:allTests
+./gradlew :miniapp:audio:compileAndroidMain :miniapp:audio:compileKotlinIosSimulatorArm64
+./gradlew :miniapp:audio-presets:allTests
+./gradlew :miniapp:audio-presets:compileAndroidMain :miniapp:audio-presets:compileKotlinIosSimulatorArm64
 
 # Verify shared Android compilation and package the Android app
 ./gradlew :composeApp:compileAndroidMain
