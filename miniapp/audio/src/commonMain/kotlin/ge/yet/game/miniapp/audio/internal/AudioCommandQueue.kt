@@ -51,6 +51,12 @@ internal class AudioCommandQueue(
         return command
     }
 
+    fun clear() {
+        for (logicalIndex in 0 until size) commands[physicalIndex(logicalIndex)] = null
+        head = 0
+        size = 0
+    }
+
     private fun coalesce(command: AudioCommand): AudioCommandOfferResult? = when (command) {
         is AudioCommand.SetControl -> coalesceTrailingControl(command)
         is AudioCommand.StopMusic -> coalesceCritical(command) { it is AudioCommand.StopMusic }
