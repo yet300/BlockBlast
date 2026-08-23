@@ -356,11 +356,13 @@ and ordinary architecture review instead.
 
 Library-maintainer documentation is separate from the contributor skill.
 
-The unshipped `:miniapp:samples:audio-demo` project is the executable reference.
-It demonstrates original procedural Music and SFX, a runtime `intensity`
-control, Settings integration, lifecycle pause/resume, session destruction,
-Android/iOS aggregation and the absence of MP3 assets. Discovery must not add it
-to the production allowlist.
+The existing unshipped `:miniapp:samples:counter` project is the executable
+authoring reference. It demonstrates original procedural Music and SFX, a
+runtime `intensity` control, visibility handling, session destruction,
+Android/iOS aggregation and the absence of MP3 assets. Discovery must not add
+it to the production allowlist. The shipped `:game:blockblast` plugin is the
+production integration proof: gameplay addresses typed Music and SFX through a
+game-owned semantic adapter without filenames or direct DSP dependencies.
 
 ## Verification
 
@@ -387,8 +389,9 @@ cannot prove latency, underrun or click-free output.
 Documentation snippets compile in fixtures. The contributor convention rejects
 direct platform audio libraries in MiniApp modules. The skill is validated with
 the repository's skill validator and realistic audio-authoring scenarios. The
-`audio-demo` acceptance suite proves Settings, visibility, controls and stale
-session isolation without entering the production bundle.
+Counter acceptance tests prove visibility, controls and session-scoped audio
+isolation without entering the production bundle. Block Blast tests prove typed
+feedback routing, lifecycle teardown and production aggregation.
 
 ## Non-Goals
 
@@ -398,4 +401,4 @@ session isolation without entering the production bundle.
 - Replacing every sample asset.
 - Arbitrary contributor DSP callbacks.
 - Copying shared preset implementations into game modules.
-- Shipping the `audio-demo` sample.
+- Shipping the Counter sample.

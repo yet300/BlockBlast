@@ -28,7 +28,6 @@ import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.session.BlockBlastSession
 import ge.yet.game.blockblast.session.BlockBlastSessionComponent
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppLegacyStorageKeys
@@ -36,6 +35,12 @@ import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.AudioCommandResult
+import ge.yet.game.miniapp.audio.AudioControlName
+import ge.yet.game.miniapp.audio.AudioDuration
+import ge.yet.game.miniapp.audio.AudioProgram
+import ge.yet.game.miniapp.audio.MiniAppAudio
+import ge.yet.game.miniapp.audio.SfxName
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialGate
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
@@ -53,7 +58,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -91,7 +95,6 @@ internal interface BlockBlastPluginTestGraph {
     val feedbackPreferences: FeedbackPreferences
     val miniAppStorage: MutableMiniAppStorage
     val legacyStorageKeys: Set<MiniAppLegacyStorageKeys>
-    val audioRepository: AudioRepository
     val appScope: CoroutineScope
 }
 
@@ -146,10 +149,6 @@ internal object BlockBlastGraphTestBindings {
     @SingleIn(AppScope::class)
     fun provideAppScope(dispatchers: AppDispatchers): CoroutineScope =
         CoroutineScope(SupervisorJob() + dispatchers.default)
-
-    @Provides
-    @SingleIn(AppScope::class)
-    fun provideAudioRepository(): AudioRepository = RecordingAudioRepository()
 
     @Provides
     @SingleIn(AppScope::class)
@@ -314,9 +313,10 @@ class BlockBlastSessionGraphTest {
     }
 
     @Test
-    fun destroying_the_child_lifecycle_cancels_session_jobs_once() = runTest(dispatcher) {
+    fun destroying_the_child_lifecycle_stops_session_audio_once() = runTest(dispatcher) {
         val appGraph = createGraph<BlockBlastPluginTestGraph>()
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val audio = RecordingMiniAppAudio()
         var appScopeJob: Job? = null
         try {
             appScopeJob = assertNotNull(appGraph.appScope.coroutineContext[Job])
@@ -324,17 +324,17 @@ class BlockBlastSessionGraphTest {
                 lifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
+                audio = audio,
             ))
             graph.playing()
             runCurrent()
-            val audio = assertIs<RecordingAudioRepository>(appGraph.audioRepository)
-            assertEquals(1, audio.musicJobsStarted)
+            assertEquals(1, audio.playMusicCount)
 
             lifecycle.destroy()
             lifecycle.destroy()
             runCurrent()
 
-            assertEquals(1, audio.musicJobsCancelled)
+            assertEquals(1, audio.stopMusicCount)
             assertFalse(appScopeJob.isCancelled)
         } finally {
             appGraph.destroySessionsAndCancelAppScope(lifecycle)
@@ -440,25 +440,23 @@ private fun qualifyingStateOneMoveFromGameOver(): GameState {
     )
 }
 
-private class RecordingAudioRepository : AudioRepository {
-    var musicJobsStarted = 0
+private class RecordingMiniAppAudio : MiniAppAudio {
+    var playMusicCount = 0
         private set
-    var musicJobsCancelled = 0
+    var stopMusicCount = 0
         private set
 
-    override suspend fun playSound(filename: String) = Unit
-    override suspend fun startMusic(tracks: List<String>) {
-        musicJobsStarted += 1
-        try {
-            awaitCancellation()
-        } finally {
-            musicJobsCancelled += 1
-        }
-    }
+    override fun playMusic(program: AudioProgram): AudioCommandResult =
+        AudioCommandResult.Accepted.also { playMusicCount += 1 }
 
-    override suspend fun stopMusic() = Unit
-    override suspend fun onAppBackground() = Unit
-    override suspend fun onAppForeground() = Unit
+    override fun stopMusic(fadeOut: AudioDuration): AudioCommandResult =
+        AudioCommandResult.Accepted.also { stopMusicCount += 1 }
+
+    override fun playSfx(program: AudioProgram, name: SfxName): AudioCommandResult =
+        AudioCommandResult.Accepted
+
+    override fun setControl(name: AudioControlName, value: Float): AudioCommandResult =
+        AudioCommandResult.Accepted
 }
 
 private data object NoOpAnalyticsRepository : AnalyticRepository {

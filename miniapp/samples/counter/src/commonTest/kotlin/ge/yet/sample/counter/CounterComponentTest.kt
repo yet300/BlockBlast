@@ -1,10 +1,18 @@
 package ge.yet.sample.counter
 
 import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.audio.AudioCommandResult
+import ge.yet.game.miniapp.audio.AudioCommandRejection
+import ge.yet.game.miniapp.audio.AudioControlName
+import ge.yet.game.miniapp.audio.AudioDuration
+import ge.yet.game.miniapp.audio.AudioProgram
+import ge.yet.game.miniapp.audio.MiniAppAudio
+import ge.yet.game.miniapp.audio.SfxName
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class CounterComponentTest {
     @Test
@@ -16,7 +24,7 @@ class CounterComponentTest {
         setup.component.onIncrementClicked()
         setup.component.onIncrementClicked()
 
-        assertEquals(CounterComponent.Model(count = 2), setup.component.model.value)
+        assertEquals(2, setup.component.model.value.count)
     }
 
     @Test
@@ -42,16 +50,62 @@ class CounterComponentTest {
         assertEquals(1, setup.component.destroyCount)
     }
 
+    @Test
+    fun `counter audio demonstrates an ocean program and four reusable effects`() {
+        val setup = createComponent()
+
+        setup.component.onPlayMusicClicked()
+        CounterComponent.SoundEffect.entries.forEach(setup.component::onSoundEffectClicked)
+
+        val program = setup.audio.musicPrograms.single()
+        assertEquals(listOf("intensity"), program.controls.map { it.name.value })
+        assertEquals(4, program.musicTracks.size)
+        assertEquals(
+            listOf("placement_click", "success_sweep", "explosion", "power_up"),
+            setup.audio.sfxNames.map(SfxName::value),
+        )
+        assertTrue(setup.component.model.value.musicPlaying)
+    }
+
+    @Test
+    fun `counter forwards stop and accepted intensity changes to session audio`() {
+        val setup = createComponent()
+
+        setup.component.onPlayMusicClicked()
+        setup.component.onIntensityChanged(0.8f)
+        setup.component.onStopMusicClicked()
+
+        assertEquals(listOf(AudioControlName("intensity") to 0.8f), setup.audio.controls)
+        assertEquals(1, setup.audio.stopCount)
+        assertEquals(0.8f, setup.component.model.value.intensity)
+        assertEquals(false, setup.component.model.value.musicPlaying)
+    }
+
+    @Test
+    fun `rejected playback never creates a false playing state`() {
+        val setup = createComponent()
+        setup.audio.musicResult =
+            AudioCommandResult.Rejected(AudioCommandRejection.PLAYBACK_SUPPRESSED)
+
+        setup.component.onPlayMusicClicked()
+
+        assertEquals(false, setup.component.model.value.musicPlaying)
+        assertEquals(setup.audio.musicResult, setup.component.model.value.lastAudioResult)
+    }
+
     private fun createComponent(): Setup {
         val lifecycle = MiniAppLifecycleHarness()
         val visibility = MutableMiniAppVisibilitySource()
+        val audio = RecordingMiniAppAudio()
         return Setup(
             component = DefaultCounterComponent(
                 componentContext = lifecycle.componentContext,
                 visibilitySource = visibility,
+                audio = audio,
             ),
             lifecycle = lifecycle,
             visibility = visibility,
+            audio = audio,
         )
     }
 
@@ -59,5 +113,26 @@ class CounterComponentTest {
         val component: DefaultCounterComponent,
         val lifecycle: MiniAppLifecycleHarness,
         val visibility: MutableMiniAppVisibilitySource,
+        val audio: RecordingMiniAppAudio,
     )
+
+    private class RecordingMiniAppAudio : MiniAppAudio {
+        val musicPrograms = mutableListOf<AudioProgram>()
+        val sfxNames = mutableListOf<SfxName>()
+        val controls = mutableListOf<Pair<AudioControlName, Float>>()
+        var stopCount = 0
+        var musicResult: AudioCommandResult = AudioCommandResult.Accepted
+
+        override fun playMusic(program: AudioProgram): AudioCommandResult =
+            musicResult.also { musicPrograms += program }
+
+        override fun stopMusic(fadeOut: AudioDuration): AudioCommandResult =
+            AudioCommandResult.Accepted.also { stopCount += 1 }
+
+        override fun playSfx(program: AudioProgram, name: SfxName): AudioCommandResult =
+            AudioCommandResult.Accepted.also { sfxNames += name }
+
+        override fun setControl(name: AudioControlName, value: Float): AudioCommandResult =
+            AudioCommandResult.Accepted.also { controls += name to value }
+    }
 }

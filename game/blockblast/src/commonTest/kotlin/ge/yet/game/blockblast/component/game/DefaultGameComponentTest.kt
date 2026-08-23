@@ -7,16 +7,17 @@ import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.blockblast.component.game.store.GameStoreFactory
 import ge.yet.game.blockblast.component.game.store.ReviewOpportunityConfig
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.ScoreCalculator
 import ge.yet.game.blockblast.domain.engine.ShapeGenerator
 import ge.yet.game.blockblast.domain.model.GameState
+import ge.yet.game.blockblast.domain.model.FeedbackType
 import ge.yet.game.blockblast.domain.model.Grid
 import ge.yet.game.blockblast.domain.model.Piece
 import ge.yet.game.blockblast.domain.model.Polyomino
 import ge.yet.game.blockblast.domain.model.Position
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.blockblast.domain.repository.BestScoreRepository
@@ -289,13 +290,11 @@ class DefaultGameComponentTest {
         }
     }
 
-    private class RecordingAudio : AudioRepository {
+    private class RecordingAudio : BlockBlastAudioPlayer {
         var stopMusicCount = 0
-        override suspend fun playSound(filename: String) {}
-        override suspend fun startMusic(tracks: List<String>) {}
-        override suspend fun stopMusic() { stopMusicCount += 1 }
-        override suspend fun onAppBackground() {}
-        override suspend fun onAppForeground() {}
+        override fun playFeedback(type: FeedbackType) = Unit
+        override fun startMusic() = Unit
+        override fun stopMusic() { stopMusicCount += 1 }
     }
 
     private class RecordingAnalytics : AnalyticRepository {

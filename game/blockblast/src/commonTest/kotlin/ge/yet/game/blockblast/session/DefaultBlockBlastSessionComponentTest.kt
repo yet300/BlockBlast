@@ -11,6 +11,7 @@ import ge.yet.game.blockblast.component.game.DefaultGameComponent
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.game.store.GameInitializer
 import ge.yet.game.blockblast.component.game.store.GameStoreFactory
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
 import ge.yet.game.blockblast.component.game.store.ReviewOpportunityConfig
 import ge.yet.game.blockblast.component.result.BlockBlastResultSnapshot
 import ge.yet.game.blockblast.component.result.DefaultGameResultComponentFactory
@@ -24,6 +25,7 @@ import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.ScoreCalculator
 import ge.yet.game.blockblast.domain.engine.ShapeGenerator
 import ge.yet.game.blockblast.domain.model.GameState
+import ge.yet.game.blockblast.domain.model.FeedbackType
 import ge.yet.game.blockblast.domain.model.Grid
 import ge.yet.game.blockblast.domain.model.Piece
 import ge.yet.game.blockblast.domain.model.Polyomino
@@ -32,7 +34,6 @@ import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
@@ -640,12 +641,10 @@ class DefaultBlockBlastSessionComponentTest {
         }
     }
 
-    private class RecordingAudio : AudioRepository {
-        override suspend fun playSound(filename: String) = Unit
-        override suspend fun startMusic(tracks: List<String>) = Unit
-        override suspend fun stopMusic() = Unit
-        override suspend fun onAppBackground() = Unit
-        override suspend fun onAppForeground() = Unit
+    private class RecordingAudio : BlockBlastAudioPlayer {
+        override fun playFeedback(type: FeedbackType) = Unit
+        override fun startMusic() = Unit
+        override fun stopMusic() = Unit
     }
 
     private class RecordingAnalytics : AnalyticRepository {

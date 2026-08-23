@@ -8,6 +8,7 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.MiniAppAudio
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 
@@ -20,7 +21,8 @@ interface CounterSessionGraph {
     fun provideComponent(
         componentContext: ComponentContext,
         visibility: MiniAppVisibilitySource,
-    ): CounterComponent = DefaultCounterComponent(componentContext, visibility)
+        audio: MiniAppAudio,
+    ): CounterComponent = DefaultCounterComponent(componentContext, visibility, audio)
 
     @Provides
     @SingleIn(MiniAppSessionScope::class)

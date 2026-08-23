@@ -8,6 +8,8 @@ import dev.zacsweers.metro.SingleIn
 import ge.yet.game.blockblast.component.game.DefaultGameComponentFactory
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.game.store.GameStoreFactory
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
+import ge.yet.game.blockblast.data.audio.DefaultBlockBlastAudioPlayer
 import ge.yet.game.blockblast.component.result.DefaultGameResultComponentFactory
 import ge.yet.game.blockblast.component.result.GameResultComponent
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
@@ -18,10 +20,10 @@ import ge.yet.game.blockblast.session.BlockBlastSession
 import ge.yet.game.blockblast.session.BlockBlastSessionComponent
 import ge.yet.game.blockblast.session.DefaultBlockBlastSessionComponentFactory
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.MiniAppAudio
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 
@@ -29,6 +31,11 @@ import ge.yet.game.miniapp.metro.MiniAppSessionScope
 @BindingContainer
 abstract class BlockBlastSessionBindings {
     companion object {
+        @Provides
+        @SingleIn(MiniAppSessionScope::class)
+        internal fun provideBlockBlastAudioPlayer(audio: MiniAppAudio): BlockBlastAudioPlayer =
+            DefaultBlockBlastAudioPlayer(audio)
+
         @Provides
         @SingleIn(MiniAppSessionScope::class)
         internal fun provideShapeGenerator(): ShapeGenerator = ShapeGenerator.default()
@@ -48,7 +55,7 @@ abstract class BlockBlastSessionBindings {
         @SingleIn(MiniAppSessionScope::class)
         internal fun provideGameComponentFactory(
             gameStoreFactory: GameStoreFactory,
-            audio: AudioRepository,
+            audio: BlockBlastAudioPlayer,
             tutorial: BlockBlastTutorialRepository,
             analytics: AnalyticRepository,
             visibility: MiniAppVisibilitySource,

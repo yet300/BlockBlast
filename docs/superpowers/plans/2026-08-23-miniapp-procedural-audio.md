@@ -16,7 +16,7 @@
 - Follow RED → GREEN → refactor for every task. A compilation failure counts as RED only when it is caused by the missing production contract under test.
 - Do not copy, translate or adapt Klangmotör, Strudel, Sprudel or third-party songs, presets, declarations, tests or source. Use only standard DSP mathematics, public platform documentation and the approved design.
 - Never run contributor code, DI, storage, logging, suspension or collection allocation from the realtime callback.
-- Keep `AudioRepository` and current asset playback working during this project. Procedural audio is added alongside it; migration/removal is a later decision.
+- Keep the host's legacy `AudioRepository` working during this project. Task 13 migrates Block Blast itself to session-scoped procedural audio; removal of the remaining host compatibility path is a later decision.
 - `MiniAppVisibility.BACKGROUND` is the concrete implementation of the design's inactive state.
 - Run `git diff --check` before every commit and preserve unrelated changes.
 
@@ -417,22 +417,20 @@
 - [ ] Run the full build-logic suite under strict configuration cache and compile a generated game on Android+iOS.
 - [ ] Commit.
 
-## Task 13: Add the unshipped `audio-demo` reference MiniApp
+## Task 13: Prove procedural audio in Counter and Block Blast
 
 **Files:**
 
-- Create: `miniapp/samples/audio-demo/build.gradle.kts`
-- Create: `miniapp/samples/audio-demo/src/commonMain/kotlin/ge/yet/game/sample/audio/...` using the existing generated MiniApp structure
-- Create: `miniapp/samples/audio-demo/src/commonMain/composeResources/...`
-- Create: `miniapp/samples/audio-demo/src/commonTest/kotlin/ge/yet/game/sample/audio/AudioDemoPluginTest.kt`
-- Modify: `miniapp/integration-test/build.gradle.kts`
-- Create/Modify: integration graphs/tests under `miniapp/integration-test/src/...` for Android and iOS aggregation
+- Modify: `miniapp/samples/counter/src/commonMain/kotlin/ge/yet/sample/counter/...`
+- Modify: `miniapp/samples/counter/src/commonTest/kotlin/ge/yet/sample/counter/...`
+- Modify: `game/blockblast/src/commonMain/kotlin/ge/yet/game/blockblast/data/audio/...`
+- Modify: Block Blast Store/component/session bindings and their tests
 
-- [ ] Generate the sample with `createMiniApp -PminiAppId=sample.audiodemo -PminiAppName="Audio Demo" -PminiAppProjectPath=:miniapp:samples:audio-demo` rather than hand-inventing its graph structure; keep it absent from the root `miniApps` allowlist. The ID deliberately contains no hyphen because `MiniAppId` segments are lowercase alphanumeric.
-- [ ] Implement a tiny UI with Play/Stop Music, four original SFX triggers and an `intensity` control. Use `OceanBreeze` plus repository-owned SFX; include no MP3/WAV/audio asset.
-- [ ] Test Settings gates, ACTIVE/OBSCURED/BACKGROUND behavior, control updates, double destroy and stale-session isolation using a recording/fake engine, not actual speakers.
-- [ ] Add non-shipping Android/iOS final-graph aggregation proof alongside Counter and Block Blast. Assert all factories coexist and only Block Blast remains in `ProductionMiniAppExpectation`.
-- [ ] Run sample/integration tests, bundle verification and dependency reports; scan the production APK for audio-demo IDs/classes/resources.
+- [ ] Extend the existing unshipped Counter reference instead of adding a second sample MiniApp. Its UI demonstrates Play/Stop Music, four original SFX triggers and an `intensity` control using `OceanBreeze`, with no audio asset.
+- [ ] Inject `MiniAppAudio` through Counter's existing session graph and test accepted commands, control updates, lifecycle ownership and session isolation with a recording facade.
+- [ ] Migrate Block Blast gameplay from filename/playlist commands to a game-semantic `BlockBlastAudioPlayer` backed by the session's `MiniAppAudio`.
+- [ ] Give Block Blast a game-owned procedural program, shared soundscape/preset reuse and a typed SFX mapping for every `FeedbackType`; keep DSP and host policy out of the Store.
+- [ ] Run Counter and Block Blast tests/Android+iOS compilation, integration tests, bundle verification and the production app build.
 - [ ] Commit.
 
 ## Task 14: Write author documentation and the game-audio skill
@@ -462,7 +460,7 @@
 - [ ] Include compact, original examples for menu ambience, adaptive intensity, placement/collision/success SFX, deterministic randomness and teardown. Do not include or paraphrase a third-party composition.
 - [ ] Explain that 8/16/32/64-bit aesthetics are bit-crush/sample-rate effects; the platform stream remains high-quality PCM.
 - [ ] Compile every documentation snippet in a dedicated commonTest fixture or generated sample test.
-- [ ] Validate the skill with the repository skill validator (`quick_validate.py` from the installed skill-creator package) and manually apply its checklist to `audio-demo`.
+- [ ] Validate the skill with the repository skill validator (`quick_validate.py` from the installed skill-creator package) and manually apply its checklist to Counter and Block Blast.
 - [ ] Add README/AGENTS links to the author docs, skill, architecture design and this implementation plan.
 - [ ] Commit.
 
@@ -478,7 +476,8 @@
   - `core:pattern` has no project edges;
   - `audio-presets` depends only on `audio`;
   - game modules do not depend directly on platform audio;
-  - `audio-demo` is absent from `miniapp:bundle` and production APK.
+  - Counter remains absent from `miniapp:bundle` and the production APK;
+  - Block Blast uses the session-scoped procedural facade rather than direct platform audio.
 - [ ] Run the full gate:
 
   ```bash
@@ -486,7 +485,8 @@
     :core:pattern:allTests \
     :miniapp:audio:allTests \
     :miniapp:audio-presets:allTests \
-    :miniapp:samples:audio-demo:allTests \
+    :miniapp:samples:counter:allTests \
+    :game:blockblast:allTests \
     :miniapp:integration-test:allTests \
     :feature:root:allTests \
     :composeApp:allTests \
@@ -512,6 +512,6 @@
 - A destroyed/replaced MiniApp cannot affect current audio.
 - Music/SFX settings and visibility policies are host-owned and independently enforced.
 - Realtime paths satisfy the no-allocation/no-blocking/no-logging boundary by inspection and tests.
-- `audio-demo` proves the complete feature without shipping.
+- Counter proves the complete authoring surface without shipping, while Block Blast proves the same API in a production game.
 - Documentation and the repo skill teach game authorship, not engine modification.
 - No copied Klang/Strudel code, preset or composition is present.

@@ -5,6 +5,12 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.createGraph
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.compose.MiniAppRegistry
+import ge.yet.game.miniapp.audio.AudioCommandResult
+import ge.yet.game.miniapp.audio.AudioControlName
+import ge.yet.game.miniapp.audio.AudioDuration
+import ge.yet.game.miniapp.audio.AudioProgram
+import ge.yet.game.miniapp.audio.MiniAppAudio
+import ge.yet.game.miniapp.audio.SfxName
 import ge.yet.game.miniapp.metro.MiniAppMetroBindings
 import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
@@ -89,15 +95,19 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val firstAudio = RecordingMiniAppAudio()
+        val secondAudio = RecordingMiniAppAudio()
         val first = appGraph.sessionFactory.createSampleCounterSessionGraph(TestMiniAppSessionContext(
             componentContext = firstLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
+            audio = firstAudio,
         ))
         val second = appGraph.sessionFactory.createSampleCounterSessionGraph(TestMiniAppSessionContext(
             componentContext = secondLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
+            audio = secondAudio,
         ))
 
         val firstSession = first.session
@@ -108,7 +118,20 @@ class CounterPluginContractTest {
         assertNotSame(firstSession.component, secondSession.component)
         assertEquals(1, firstSession.component.model.value.count)
         assertEquals(0, secondSession.component.model.value.count)
+        assertEquals(listOf(SfxName("placement_click")), firstAudio.sfxNames)
+        assertEquals(emptyList(), secondAudio.sfxNames)
         firstLifecycle.destroy()
         secondLifecycle.destroy()
+    }
+
+    private class RecordingMiniAppAudio : MiniAppAudio {
+        val sfxNames = mutableListOf<SfxName>()
+
+        override fun playMusic(program: AudioProgram): AudioCommandResult = AudioCommandResult.Accepted
+        override fun stopMusic(fadeOut: AudioDuration): AudioCommandResult = AudioCommandResult.Accepted
+        override fun playSfx(program: AudioProgram, name: SfxName): AudioCommandResult =
+            AudioCommandResult.Accepted.also { sfxNames += name }
+        override fun setControl(name: AudioControlName, value: Float): AudioCommandResult =
+            AudioCommandResult.Accepted
     }
 }
