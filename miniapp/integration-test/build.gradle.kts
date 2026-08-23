@@ -33,6 +33,7 @@ kotlin {
         implementation(projects.feature.catalog)
         implementation(projects.feature.settings)
         implementation(projects.miniapp.metro)
+        implementation(projects.miniapp.storage)
         implementation(projects.miniapp.testkit)
         implementation(libs.compose.components.resources)
     }

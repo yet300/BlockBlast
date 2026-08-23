@@ -41,11 +41,13 @@ import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialGate
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
 import ge.yet.game.miniapp.compose.MiniAppRegistry
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.MiniAppMetroBindings
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
+import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -108,9 +110,7 @@ internal interface InspectableBlockBlastSessionGraph {
     @GraphExtension.Factory
     fun interface Factory {
         fun createInspectable(
-            @Provides componentContext: ComponentContext,
-            @Provides visibility: MiniAppVisibilitySource,
-            @Provides host: MiniAppSessionHost,
+            @Provides context: MiniAppSessionContext,
         ): InspectableBlockBlastSessionGraph
     }
 }
@@ -186,16 +186,16 @@ class BlockBlastSessionGraphTest {
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         try {
-            val first = appGraph.inspectableSessionFactory.createInspectable(
+            val first = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 firstLifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
-            )
-            val second = appGraph.inspectableSessionFactory.createInspectable(
+            ))
+            val second = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 secondLifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
-            )
+            ))
             runCurrent()
 
             assertNotSame(first.session, second.session)
@@ -214,16 +214,16 @@ class BlockBlastSessionGraphTest {
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         try {
-            val first = appGraph.inspectableSessionFactory.createInspectable(
+            val first = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 firstLifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
-            )
-            val second = appGraph.inspectableSessionFactory.createInspectable(
+            ))
+            val second = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 secondLifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
-            )
+            ))
 
             assertSame(appGraph.saveRepository, first.saveRepository)
             assertSame(first.saveRepository, second.saveRepository)
@@ -239,11 +239,11 @@ class BlockBlastSessionGraphTest {
         val appGraph = createGraph<BlockBlastPluginTestGraph>()
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
         try {
-            val graph = appGraph.inspectableSessionFactory.createInspectable(
+            val graph = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 lifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
-            )
+            ))
 
             assertSame(appGraph.feedbackPreferences, graph.feedbackPreferences)
             assertSame(
@@ -266,16 +266,16 @@ class BlockBlastSessionGraphTest {
         val secondHost = RecordingMiniAppSessionHost()
         try {
             appGraph.saveRepository.save(qualifyingStateOneMoveFromGameOver())
-            val first = appGraph.inspectableSessionFactory.createInspectable(
+            val first = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 firstLifecycle.componentContext,
                 firstVisibility,
                 firstHost,
-            )
-            val second = appGraph.inspectableSessionFactory.createInspectable(
+            ))
+            val second = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 secondLifecycle.componentContext,
                 secondVisibility,
                 secondHost,
-            )
+            ))
             val firstGame = first.playing()
             val secondGame = second.playing()
             runCurrent()
@@ -322,11 +322,11 @@ class BlockBlastSessionGraphTest {
         var appScopeJob: Job? = null
         try {
             appScopeJob = assertNotNull(appGraph.appScope.coroutineContext[Job])
-            val graph = appGraph.inspectableSessionFactory.createInspectable(
+            val graph = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
                 lifecycle.componentContext,
                 MutableMiniAppVisibilitySource(),
                 RecordingMiniAppSessionHost(),
-            )
+            ))
             graph.playing()
             runCurrent()
             val audio = assertIs<RecordingAudioRepository>(appGraph.audioRepository)
@@ -352,21 +352,17 @@ class BlockBlastSessionGraphTest {
         var createdGraph: BlockBlastSessionGraph? = null
         try {
             appGraph.settings.putString("blockblast.game_save", CURRENT_SAVE_BYTES)
-            val plugin = BlockBlastPlugin { componentContext, visibility, host ->
-                appGraph.sessionFactory.createGameBlockblastSessionGraph(
-                    componentContext,
-                    visibility,
-                    host
-                ).also {
+            val plugin = BlockBlastPlugin { context ->
+                appGraph.sessionFactory.createGameBlockblastSessionGraph(context).also {
                     createdGraph = it
                 }
             }
 
-            plugin.createSession(
+            plugin.createSession(TestMiniAppSessionContext(
                 componentContext = lifecycle.componentContext,
                 visibility = MutableMiniAppVisibilitySource(),
                 host = RecordingMiniAppSessionHost(),
-            )
+            ))
             runCurrent()
 
             val session = assertIs<BlockBlastSession>(assertNotNull(createdGraph).session)

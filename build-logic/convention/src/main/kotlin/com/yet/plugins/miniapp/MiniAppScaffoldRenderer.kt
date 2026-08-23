@@ -90,6 +90,7 @@ internal class MiniAppScaffoldRenderer(
             import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
             import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
             import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
+            import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
             import kotlin.test.Test
             import kotlin.test.assertNotNull
 
@@ -120,11 +121,11 @@ internal class MiniAppScaffoldRenderer(
                     val lifecycle = MiniAppLifecycleHarness()
                     lifecycle.resume()
 
-                    val session = plugin.createSession(
+                    val session = plugin.createSession(TestMiniAppSessionContext(
                         componentContext = lifecycle.componentContext,
                         visibility = MutableMiniAppVisibilitySource(),
                         host = RecordingMiniAppSessionHost(),
-                    )
+                    ))
 
                     MiniAppContractAssertions.assertRetainedGraphSession(session)
                     lifecycle.destroy()
@@ -142,8 +143,7 @@ internal class MiniAppScaffoldRenderer(
         import dev.zacsweers.metro.GraphExtension
         import dev.zacsweers.metro.Provides
         import dev.zacsweers.metro.SingleIn
-        import ge.yet.game.miniapp.api.MiniAppSessionHost
-        import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+        import ge.yet.game.miniapp.compose.MiniAppSessionContext
         import ge.yet.game.miniapp.metro.MiniAppSessionScope
 
         @GraphExtension(MiniAppSessionScope::class)
@@ -160,9 +160,7 @@ internal class MiniAppScaffoldRenderer(
             @GraphExtension.Factory
             fun interface Factory {
                 fun $graphFactoryMethod(
-                    @Provides componentContext: ComponentContext,
-                    @Provides visibility: MiniAppVisibilitySource,
-                    @Provides host: MiniAppSessionHost,
+                    @Provides context: MiniAppSessionContext,
                 ): ${classPrefix}SessionGraph
             }
         }
@@ -171,17 +169,15 @@ internal class MiniAppScaffoldRenderer(
     private fun pluginSource() = """
         package $packageName
 
-        import com.arkivanov.decompose.ComponentContext
         import dev.zacsweers.metro.AppScope
         import dev.zacsweers.metro.ContributesIntoSet
         import dev.zacsweers.metro.Inject
         import ge.yet.game.miniapp.api.MiniAppCategoryId
         import ge.yet.game.miniapp.api.MiniAppId
-        import ge.yet.game.miniapp.api.MiniAppSessionHost
-        import ge.yet.game.miniapp.api.MiniAppVisibilitySource
         import ge.yet.game.miniapp.compose.MiniAppManifest
         import ge.yet.game.miniapp.compose.MiniAppPlugin
         import ge.yet.game.miniapp.compose.MiniAppSession
+        import ge.yet.game.miniapp.compose.MiniAppSessionContext
         import ge.yet.game.miniapp.metro.RetainedMiniAppSession
         import $resourcePackage.Res
         import $resourcePackage.miniapp_description
@@ -197,8 +193,8 @@ internal class MiniAppScaffoldRenderer(
                 id = MiniAppId("$id"), title = Res.string.miniapp_title, description = Res.string.miniapp_description,
                 icon = Res.drawable.miniapp_icon, cover = null, category = MiniAppCategoryId("${segments.first()}"), sortPriority = 0,
             )
-            override fun createSession(componentContext: ComponentContext, visibility: MiniAppVisibilitySource, host: MiniAppSessionHost): MiniAppSession {
-                val graph = graphFactory.$graphFactoryMethod(componentContext, visibility, host)
+            override fun createSession(context: MiniAppSessionContext): MiniAppSession {
+                val graph = graphFactory.$graphFactoryMethod(context)
                 return RetainedMiniAppSession(graph, graph.session)
             }
         }

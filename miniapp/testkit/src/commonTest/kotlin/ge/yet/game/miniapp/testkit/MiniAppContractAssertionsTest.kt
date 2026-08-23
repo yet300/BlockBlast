@@ -108,11 +108,7 @@ class MiniAppContractAssertionsTest {
             sortPriority = 0,
         )
 
-        override fun createSession(
-            componentContext: ComponentContext,
-            visibility: MiniAppVisibilitySource,
-            host: MiniAppSessionHost,
-        ): MiniAppSession = BareSession
+        override fun createSession(context: MiniAppSessionContext): MiniAppSession = BareSession
     }
 
     private data object BareSession : MiniAppSession {

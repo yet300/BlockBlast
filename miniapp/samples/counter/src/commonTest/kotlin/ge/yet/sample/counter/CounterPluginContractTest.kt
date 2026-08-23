@@ -10,6 +10,7 @@ import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
+import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -37,7 +38,7 @@ class CounterPluginContractTest {
     @Test
     fun `manifest is available without creating a session graph`() {
         val plugin = CounterPlugin(
-            CounterSessionGraph.Factory { _, _, _ ->
+            CounterSessionGraph.Factory { _ ->
                 error("manifest access must not create a session graph")
             },
         )
@@ -51,11 +52,11 @@ class CounterPluginContractTest {
         val plugin = assertNotNull(graph.registry[MiniAppId("sample.counter")])
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
 
-        val session = plugin.createSession(
+        val session = plugin.createSession(TestMiniAppSessionContext(
             componentContext = lifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
-        )
+        ))
 
         MiniAppContractAssertions.assertRetainedGraphSession(session)
         lifecycle.destroy()
@@ -66,11 +67,11 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val host = RecordingMiniAppSessionHost()
-        val sessionGraph = appGraph.sessionFactory.createSampleCounterSessionGraph(
+        val sessionGraph = appGraph.sessionFactory.createSampleCounterSessionGraph(TestMiniAppSessionContext(
             componentContext = lifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = host,
-        )
+        ))
 
         assertSame(sessionGraph.session, sessionGraph.session)
         val session = sessionGraph.session
@@ -88,16 +89,16 @@ class CounterPluginContractTest {
         val appGraph = createGraph<CounterPluginTestGraph>()
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
-        val first = appGraph.sessionFactory.createSampleCounterSessionGraph(
+        val first = appGraph.sessionFactory.createSampleCounterSessionGraph(TestMiniAppSessionContext(
             componentContext = firstLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
-        )
-        val second = appGraph.sessionFactory.createSampleCounterSessionGraph(
+        ))
+        val second = appGraph.sessionFactory.createSampleCounterSessionGraph(TestMiniAppSessionContext(
             componentContext = secondLifecycle.componentContext,
             visibility = MutableMiniAppVisibilitySource(),
             host = RecordingMiniAppSessionHost(),
-        )
+        ))
 
         val firstSession = first.session
         val secondSession = second.session

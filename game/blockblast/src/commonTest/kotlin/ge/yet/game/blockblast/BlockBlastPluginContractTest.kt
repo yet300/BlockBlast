@@ -10,6 +10,7 @@ import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
+import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -19,7 +20,7 @@ class BlockBlastPluginContractTest {
     fun plugin_manifest_does_not_create_a_session_graph() {
         var graphCreationCount = 0
         val plugin = BlockBlastPlugin(
-            BlockBlastSessionGraph.Factory { _, _, _ ->
+            BlockBlastSessionGraph.Factory { _ ->
                 graphCreationCount += 1
                 error("manifest access must not create a session graph")
             },
@@ -35,11 +36,11 @@ class BlockBlastPluginContractTest {
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
         try {
             val plugin = assertNotNull(appGraph.registry[MiniAppId("game.blockblast")])
-            val session: MiniAppSession = plugin.createSession(
+            val session: MiniAppSession = plugin.createSession(TestMiniAppSessionContext(
                 componentContext = lifecycle.componentContext,
                 visibility = MutableMiniAppVisibilitySource(),
                 host = RecordingMiniAppSessionHost(),
-            )
+            ))
 
             MiniAppContractAssertions.assertRetainedGraphSession(session)
         } finally {

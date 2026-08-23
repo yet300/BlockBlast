@@ -5,6 +5,7 @@ import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
+import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -36,11 +37,11 @@ class CounterRegistryIntegrationTest {
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
 
         try {
-            val session = plugin.createSession(
+            val session = plugin.createSession(TestMiniAppSessionContext(
                 componentContext = lifecycle.componentContext,
                 visibility = MutableMiniAppVisibilitySource(),
                 host = RecordingMiniAppSessionHost(),
-            )
+            ))
 
             MiniAppContractAssertions.assertRetainedGraphSession(session)
         } finally {
@@ -62,16 +63,16 @@ class CounterRegistryIntegrationTest {
             val activeSecondLifecycle = MiniAppLifecycleHarness()
             secondLifecycle = activeSecondLifecycle
             activeSecondLifecycle.resume()
-            val firstSession = plugin.createSession(
+            val firstSession = plugin.createSession(TestMiniAppSessionContext(
                 componentContext = activeFirstLifecycle.componentContext,
                 visibility = MutableMiniAppVisibilitySource(),
                 host = RecordingMiniAppSessionHost(),
-            )
-            val secondSession = plugin.createSession(
+            ))
+            val secondSession = plugin.createSession(TestMiniAppSessionContext(
                 componentContext = activeSecondLifecycle.componentContext,
                 visibility = MutableMiniAppVisibilitySource(),
                 host = RecordingMiniAppSessionHost(),
-            )
+            ))
 
             assertNotSame(firstSession, secondSession)
             MiniAppContractAssertions.assertRetainedGraphSession(firstSession)
@@ -83,11 +84,11 @@ class CounterRegistryIntegrationTest {
             val activeThirdLifecycle = MiniAppLifecycleHarness()
             thirdLifecycle = activeThirdLifecycle
             activeThirdLifecycle.resume()
-            val thirdSession = plugin.createSession(
+            val thirdSession = plugin.createSession(TestMiniAppSessionContext(
                 componentContext = activeThirdLifecycle.componentContext,
                 visibility = MutableMiniAppVisibilitySource(),
                 host = RecordingMiniAppSessionHost(),
-            )
+            ))
             assertNotSame(firstSession, thirdSession)
             assertNotSame(secondSession, thirdSession)
             MiniAppContractAssertions.assertRetainedGraphSession(thirdSession)

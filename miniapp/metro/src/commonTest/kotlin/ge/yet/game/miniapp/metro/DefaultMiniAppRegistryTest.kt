@@ -8,6 +8,7 @@ import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -210,11 +211,8 @@ class DefaultMiniAppRegistryTest {
                     )
                 }
 
-            override fun createSession(
-                componentContext: ComponentContext,
-                visibility: MiniAppVisibilitySource,
-                host: MiniAppSessionHost,
-            ): MiniAppSession = error("Session creation is outside registry assembly")
+            override fun createSession(context: MiniAppSessionContext): MiniAppSession =
+                error("Session creation is outside registry assembly")
         }
 
     private class ClearingOnSizeSet<T>(

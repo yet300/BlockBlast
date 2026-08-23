@@ -65,11 +65,7 @@ class MiniAppContractsTest {
                 )
             }
 
-        override fun createSession(
-            componentContext: ComponentContext,
-            visibility: MiniAppVisibilitySource,
-            host: MiniAppSessionHost,
-        ): MiniAppSession {
+        override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             sessionCreateCount += 1
             error("Session creation is outside metadata access")
         }

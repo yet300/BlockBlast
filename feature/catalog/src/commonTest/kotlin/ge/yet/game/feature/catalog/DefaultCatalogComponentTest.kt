@@ -1,16 +1,14 @@
 package ge.yet.game.feature.catalog
 
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import ge.yet.game.miniapp.api.MiniAppCategoryId
 import ge.yet.game.miniapp.api.MiniAppId
-import ge.yet.game.miniapp.api.MiniAppSessionHost
-import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.jetbrains.compose.resources.DrawableResource
@@ -129,11 +127,7 @@ class DefaultCatalogComponentTest {
         var sessionCreateCount: Int = 0
             private set
 
-        override fun createSession(
-            componentContext: ComponentContext,
-            visibility: MiniAppVisibilitySource,
-            host: MiniAppSessionHost,
-        ): MiniAppSession {
+        override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             sessionCreateCount += 1
             error("Catalog must not create mini-app sessions")
         }

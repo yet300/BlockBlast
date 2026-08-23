@@ -27,6 +27,7 @@ import ge.yet.game.feature.review.AppReviewComponent
 import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.miniapp.api.MiniAppId
+import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ internal class DefaultRootComponent(
     miniAppRegistry: MiniAppRegistry,
     analytics: AnalyticRepository,
     crashlytics: CrashlyticsRepository,
+    storageProvider: MiniAppStorageProvider,
     private val catalogFactory: CatalogComponent.Factory,
     private val settingsFactory: SettingsComponent.Factory,
     private val reviewFactory: AppReviewComponent.Factory,
@@ -62,6 +64,7 @@ internal class DefaultRootComponent(
         reviewPolicy = reviewPolicy,
         analytics = analytics,
         crashlytics = crashlytics,
+        storageProvider = storageProvider,
         initialForeground = lifecycle.state.isForeground,
         navigateToCatalog = {
             navigation.replaceAll(Config.Catalog)
@@ -240,6 +243,7 @@ internal class DefaultRootComponentFactory(
     private val settingsRepository: SettingsRepository,
     private val analytics: AnalyticRepository,
     private val crashlytics: CrashlyticsRepository,
+    private val storageProvider: MiniAppStorageProvider,
 ) : RootComponent.Factory {
     override fun create(componentContext: ComponentContext): RootComponent = DefaultRootComponent(
         componentContext = componentContext,
@@ -252,5 +256,6 @@ internal class DefaultRootComponentFactory(
         settingsRepository = settingsRepository,
         analytics = analytics,
         crashlytics = crashlytics,
+        storageProvider = storageProvider,
     )
 }

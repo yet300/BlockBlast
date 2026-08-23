@@ -30,6 +30,7 @@ import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.DefaultMiniAppRegistry
 import ge.yet.game.telemetry.di.TelemetryBindings
 import kotlinx.coroutines.Dispatchers
@@ -136,16 +137,12 @@ internal class CounterRootProbe {
     fun observe(plugin: MiniAppPlugin): MiniAppPlugin = object : MiniAppPlugin {
         override val manifest = plugin.manifest
 
-        override fun createSession(
-            componentContext: ComponentContext,
-            visibility: MiniAppVisibilitySource,
-            host: MiniAppSessionHost,
-        ): MiniAppSession {
+        override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             createCount += 1
-            visibilitySources += visibility
-            hosts += host
-            componentContext.lifecycle.doOnDestroy { destroyCount += 1 }
-            return plugin.createSession(componentContext, visibility, host).also(sessions::add)
+            visibilitySources += context.visibility
+            hosts += context.host
+            context.componentContext.lifecycle.doOnDestroy { destroyCount += 1 }
+            return plugin.createSession(context).also(sessions::add)
         }
     }
 }

@@ -8,9 +8,11 @@ import ge.yet.game.feature.review.policy.AppReviewPolicy
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
+import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppPlugin
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +35,7 @@ internal class MiniAppRuntimeCoordinator(
     private val reviewPolicy: AppReviewPolicy,
     private val analytics: AnalyticRepository,
     private val crashlytics: CrashlyticsRepository,
+    private val storageProvider: MiniAppStorageProvider,
     initialForeground: Boolean,
     private val navigateToCatalog: () -> Unit,
     private val showReview: (MiniAppId, MiniAppReviewOpportunity) -> Boolean,
@@ -108,7 +111,13 @@ internal class MiniAppRuntimeCoordinator(
         }
 
         return try {
-            val session = plugin.createSession(componentContext, visibility, host)
+            val context = object : MiniAppSessionContext {
+                override val componentContext = componentContext
+                override val visibility = visibility
+                override val host = host
+                override val storage = storageProvider.storageFor(id)
+            }
+            val session = plugin.createSession(context)
             host.arm()
             crash { setCustomValue(MINI_APP_STATE, "active") }
             crash {

@@ -15,12 +15,16 @@ import ge.yet.game.miniapp.api.MiniAppCategoryId
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
+import ge.yet.game.miniapp.api.MiniAppStorage
+import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
+import ge.yet.game.miniapp.testkit.NoopMiniAppStorage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
@@ -173,6 +177,23 @@ class MiniAppRuntimeCoordinatorTest {
         assertEquals(1, setup.closeCalls)
         assertEquals(1, setup.reviewPolicy.acquireCalls)
         assertEquals(listOf(FIRST_ID to opportunity), setup.reviews)
+    }
+
+    @Test
+    fun session_context_uses_storage_for_the_exact_miniapp_id() {
+        val storage = object : MiniAppStorage by NoopMiniAppStorage {}
+        val requestedIds = mutableListOf<MiniAppId>()
+        val setup = build(
+            storageProvider = MiniAppStorageProvider { id ->
+                requestedIds += id
+                storage
+            },
+        )
+
+        setup.launchAndCreate(FIRST_ID, componentContext())
+
+        assertEquals(listOf(FIRST_ID), requestedIds)
+        assertSame(storage, setup.firstPlugin.storages.single())
     }
 
     @Test
@@ -422,6 +443,7 @@ class MiniAppRuntimeCoordinatorTest {
         firstPlugin: RecordingPlugin = RecordingPlugin(FIRST_ID),
         crashlytics: CrashlyticsRepository = RecordingCrashlytics(),
         reviewPolicy: RecordingReviewPolicy = RecordingReviewPolicy(),
+        storageProvider: MiniAppStorageProvider = MiniAppStorageProvider { NoopMiniAppStorage },
         afterClose: () -> Unit = {},
     ): Setup {
         val secondPlugin = RecordingPlugin(SECOND_ID)
@@ -434,6 +456,7 @@ class MiniAppRuntimeCoordinatorTest {
             reviewPolicy = reviewPolicy,
             analytics = analytics,
             crashlytics = crashlytics,
+            storageProvider = storageProvider,
             initialForeground = true,
             navigateToCatalog = {
                 closeCalls += 1
@@ -555,20 +578,18 @@ class MiniAppRuntimeCoordinatorTest {
         var createCount = 0
         val visibility = mutableListOf<MiniAppVisibilitySource>()
         val hosts = mutableListOf<MiniAppSessionHost>()
+        val storages = mutableListOf<MiniAppStorage>()
 
-        override fun createSession(
-            componentContext: ComponentContext,
-            visibility: MiniAppVisibilitySource,
-            host: MiniAppSessionHost,
-        ): MiniAppSession {
+        override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             createCount += 1
-            this.visibility += visibility
-            hosts += host
-            onCreate(host)
+            visibility += context.visibility
+            hosts += context.host
+            storages += context.storage
+            onCreate(context.host)
             closeOnVisibility?.let { target ->
-                componentContext.coroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
-                    visibility.visibility.first { it == target }
-                    host.close()
+                context.componentContext.coroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
+                    context.visibility.visibility.first { it == target }
+                    context.host.close()
                 }
             }
             failure?.let { throw it }

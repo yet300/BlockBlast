@@ -1,6 +1,5 @@
 package ge.yet.game.blockblast
 
-import com.arkivanov.decompose.ComponentContext
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
@@ -11,11 +10,10 @@ import ge.yet.game.blockblast.generated.resources.miniapp_icon
 import ge.yet.game.blockblast.generated.resources.miniapp_title
 import ge.yet.game.miniapp.api.MiniAppCategoryId
 import ge.yet.game.miniapp.api.MiniAppId
-import ge.yet.game.miniapp.api.MiniAppSessionHost
-import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.RetainedMiniAppSession
 
 @Inject
@@ -33,12 +31,8 @@ class BlockBlastPlugin(
         sortPriority = 0,
     )
 
-    override fun createSession(
-        componentContext: ComponentContext,
-        visibility: MiniAppVisibilitySource,
-        host: MiniAppSessionHost,
-    ): MiniAppSession {
-        val graph = graphFactory.createGameBlockblastSessionGraph(componentContext, visibility, host)
+    override fun createSession(context: MiniAppSessionContext): MiniAppSession {
+        val graph = graphFactory.createGameBlockblastSessionGraph(context)
         return RetainedMiniAppSession(graph, graph.session)
     }
 }

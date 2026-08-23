@@ -27,12 +27,15 @@ import ge.yet.game.miniapp.api.MiniAppCategoryId
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
 import ge.yet.game.miniapp.api.MiniAppSessionHost
+import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
+import ge.yet.game.miniapp.compose.MiniAppSessionContext
+import ge.yet.game.miniapp.testkit.NoopMiniAppStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -469,6 +472,7 @@ class DefaultRootComponentTest {
             settingsRepository = settings,
             analytics = analytics,
             crashlytics = crashlytics,
+            storageProvider = MiniAppStorageProvider { NoopMiniAppStorage },
         )
         return Setup(component, lifecycle, backDispatcher, catalogFactory, settingsFactory, registry,
             firstPlugin, secondPlugin, reviewFactory, reviewPolicy, audio, analytics, crashlytics).also(setups::add)
@@ -528,16 +532,12 @@ class DefaultRootComponentTest {
         val visibility = mutableListOf<MiniAppVisibilitySource>()
         val initialVisibilities = mutableListOf<MiniAppVisibility>()
         val hosts = mutableListOf<MiniAppSessionHost>()
-        override fun createSession(
-            componentContext: ComponentContext,
-            visibility: MiniAppVisibilitySource,
-            host: MiniAppSessionHost,
-        ): MiniAppSession {
+        override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             createCount += 1
-            this.visibility += visibility
-            initialVisibilities += visibility.visibility.value
-            hosts += host
-            componentContext.lifecycle.doOnDestroy { destroyCount += 1 }
+            visibility += context.visibility
+            initialVisibilities += context.visibility.visibility.value
+            hosts += context.host
+            context.componentContext.lifecycle.doOnDestroy { destroyCount += 1 }
             failure?.let { throw it }
             return object : MiniAppSession {
                 @Composable override fun Content(modifier: Modifier) = Unit

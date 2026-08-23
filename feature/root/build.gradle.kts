@@ -21,6 +21,7 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.bundles.testing)
+            implementation(projects.miniapp.testkit)
         }
     }
 }
