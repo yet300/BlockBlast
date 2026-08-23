@@ -29,20 +29,24 @@ internal fun renderNoise(
 ) {
     require(frameCount >= 0 && outputOffset >= 0 && outputOffset + frameCount <= output.size)
     for (frame in 0 until frameCount) {
-        val white = state.nextWhite()
-        val sample = when (color) {
-            NoiseColor.WHITE -> white
-            NoiseColor.PINK -> {
-                state.pink0 = 0.99765 * state.pink0 + white * 0.0990460
-                state.pink1 = 0.96300 * state.pink1 + white * 0.2965164
-                state.pink2 = 0.57000 * state.pink2 + white * 1.0526913
-                (state.pink0 + state.pink1 + state.pink2 + white * 0.1848) * 0.2
-            }
-            NoiseColor.BROWN -> {
-                state.brown = (state.brown * 0.995 + white * 0.02).coerceIn(-1.0, 1.0)
-                state.brown
-            }
-        }
-        output[outputOffset + frame] = sample.takeIf { it.isFinite() }?.coerceIn(-1.0, 1.0)?.toFloat() ?: 0f
+        output[outputOffset + frame] = nextNoiseSample(color, state)
     }
+}
+
+internal fun nextNoiseSample(color: NoiseColor, state: NoiseState): Float {
+    val white = state.nextWhite()
+    val sample = when (color) {
+        NoiseColor.WHITE -> white
+        NoiseColor.PINK -> {
+            state.pink0 = 0.99765 * state.pink0 + white * 0.0990460
+            state.pink1 = 0.96300 * state.pink1 + white * 0.2965164
+            state.pink2 = 0.57000 * state.pink2 + white * 1.0526913
+            (state.pink0 + state.pink1 + state.pink2 + white * 0.1848) * 0.2
+        }
+        NoiseColor.BROWN -> {
+            state.brown = (state.brown * 0.995 + white * 0.02).coerceIn(-1.0, 1.0)
+            state.brown
+        }
+    }
+    return sample.takeIf { it.isFinite() }?.coerceIn(-1.0, 1.0)?.toFloat() ?: 0f
 }

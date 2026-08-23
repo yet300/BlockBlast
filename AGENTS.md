@@ -93,7 +93,7 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
-| `:miniapp:audio` | Procedural Music/SFX declarations, bounded validation and deterministic offline DSP primitives; graph rendering and platform playback are staged | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
+| `:miniapp:audio` | Procedural Music/SFX declarations, bounded validation and a deterministic offline graph renderer; realtime scheduling and platform playback are staged | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
 | `:miniapp:audio-presets` | Scaffold for original reusable declarations authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
