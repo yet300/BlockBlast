@@ -1,5 +1,8 @@
 package ge.yet.game.miniapp.audio
 
+import ge.yet.game.pattern.Pattern
+import ge.yet.game.pattern.sequence
+
 fun audioProgram(block: AudioProgramBuilder.() -> Unit): AudioProgram =
     AudioProgramBuilder().apply(block).build()
 
@@ -14,13 +17,16 @@ class AudioProgramBuilder internal constructor() {
 
     fun tempo(bpm: Float) { tempo = Tempo.of(bpm) }
 
-    fun control(name: String, default: Float, range: ClosedFloatingPointRange<Float>) {
+    fun control(name: String, default: Float, range: ClosedFloatingPointRange<Float>): AudioControlReference {
         require(default.isFinite() && range.start.isFinite() && range.endInclusive.isFinite())
         require(range.start <= range.endInclusive && default in range)
         val typedName = AudioControlName(name)
         require(typedName !in controls) { "Duplicate control '$name'" }
         controls[typedName] = AudioControlDeclaration(typedName, default, range.start..range.endInclusive)
+        return AudioControlReference(typedName)
     }
+
+    fun control(name: String): AudioControlReference = AudioControlReference(AudioControlName(name))
 
     fun instrument(name: String, block: InstrumentBuilder.() -> Unit) {
         val typedName = InstrumentName(name)
@@ -93,15 +99,24 @@ open class VoiceBuilder internal constructor() {
         vibrato = VibratoDeclaration(rate, depthCents)
     }
 
-    fun lowPass(cutoff: Frequency, resonance: Float = 0f) {
+    fun lowPass(cutoff: Frequency, resonance: Float = 0f) =
+        lowPass(AudioParameter.Constant(cutoff.value.toFloat()), resonance)
+
+    fun lowPass(cutoff: AudioParameter, resonance: Float = 0f) {
         filters += FilterDeclaration.LowPass(cutoff, resonance.validResonance())
     }
 
-    fun highPass(cutoff: Frequency, resonance: Float = 0f) {
+    fun highPass(cutoff: Frequency, resonance: Float = 0f) =
+        highPass(AudioParameter.Constant(cutoff.value.toFloat()), resonance)
+
+    fun highPass(cutoff: AudioParameter, resonance: Float = 0f) {
         filters += FilterDeclaration.HighPass(cutoff, resonance.validResonance())
     }
 
-    fun bandPass(center: Frequency, resonance: Float = 0f) {
+    fun bandPass(center: Frequency, resonance: Float = 0f) =
+        bandPass(AudioParameter.Constant(center.value.toFloat()), resonance)
+
+    fun bandPass(center: AudioParameter, resonance: Float = 0f) {
         filters += FilterDeclaration.BandPass(center, resonance.validResonance())
     }
 
@@ -138,14 +153,18 @@ class InstrumentBuilder internal constructor() : VoiceBuilder() {
 
 class MusicTrackBuilder internal constructor() : SendEffectBuilder() {
     private var instrument: InstrumentName? = null
-    private var notes: List<MidiNote> = emptyList()
+    private var pattern: Pattern<AudioNote>? = null
     fun instrument(name: String) { instrument = InstrumentName(name) }
-    fun notes(vararg values: MidiNote) { notes = values.toList() }
-    fun notes(values: List<MidiNote>) { notes = values.toList() }
+    fun notes(vararg values: MidiNote) { notes(values.toList()) }
+    fun notes(values: List<MidiNote>) {
+        require(values.isNotEmpty()) { "A music track requires at least one note" }
+        pattern = sequence(values.map(AudioNote::Pitched))
+    }
+    fun notes(value: Pattern<AudioNote>) { pattern = value }
     internal fun build(name: MusicTrackName) = MusicTrackDeclaration(
         name,
         requireNotNull(instrument) { "Track requires an instrument" },
-        notes,
+        requireNotNull(pattern) { "Track requires a note pattern" },
         effects(),
     )
 }

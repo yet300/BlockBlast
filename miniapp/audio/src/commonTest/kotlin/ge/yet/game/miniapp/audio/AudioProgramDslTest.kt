@@ -1,5 +1,7 @@
 package ge.yet.game.miniapp.audio
 
+import ge.yet.game.pattern.PatternQueryBudget
+import ge.yet.game.pattern.TimeArc
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -31,7 +33,10 @@ class AudioProgramDslTest {
         assertEquals(listOf(InstrumentName("bass")), program.instruments.map { it.name })
         assertEquals(listOf(MusicTrackName("bassline")), program.musicTracks.map { it.name })
         assertEquals(listOf(SfxName("place")), program.soundEffects.map { it.name })
-        assertEquals(3, program.musicTracks.single().notes.size)
+        assertEquals(
+            3,
+            program.musicTracks.single().pattern.query(TimeArc.unit, PatternQueryBudget()).size,
+        )
     }
 
     @Test
@@ -47,7 +52,10 @@ class AudioProgramDslTest {
 
         notes += MidiNote.of(48)
 
-        assertEquals(listOf(MidiNote.of(36)), program.musicTracks.single().notes)
+        assertEquals(
+            listOf(AudioNote.Pitched(MidiNote.of(36))),
+            program.musicTracks.single().pattern.query(TimeArc.unit, PatternQueryBudget()).map { it.value },
+        )
     }
 
     @Test

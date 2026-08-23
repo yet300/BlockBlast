@@ -1,7 +1,7 @@
 package ge.yet.game.pattern
 
 /** A pure temporal value queried over an exact half-open [TimeArc]. */
-sealed interface Pattern<T> {
+sealed interface Pattern<out T> {
     fun query(arc: TimeArc, budget: PatternQueryBudget): List<PatternEvent<T>>
 }
 

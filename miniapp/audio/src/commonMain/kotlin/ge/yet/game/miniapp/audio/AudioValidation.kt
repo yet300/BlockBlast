@@ -1,5 +1,10 @@
 package ge.yet.game.miniapp.audio
 
+import ge.yet.game.pattern.PatternQueryBudget
+import ge.yet.game.pattern.PatternQueryException
+import ge.yet.game.pattern.PatternQueryLimit
+import ge.yet.game.pattern.TimeArc
+
 enum class AudioDiagnosticCode {
     EMPTY_OSCILLATOR_SOURCE,
     UNRESOLVED_INSTRUMENT,
@@ -12,6 +17,10 @@ enum class AudioDiagnosticCode {
     PARTIAL_LIMIT_EXCEEDED,
     FILTER_LIMIT_EXCEEDED,
     VOICE_EFFECT_LIMIT_EXCEEDED,
+    UNRESOLVED_CONTROL,
+    PATTERN_EVENT_LIMIT_EXCEEDED,
+    PATTERN_OPERATION_LIMIT_EXCEEDED,
+    PARAMETER_RANGE_INVALID,
 }
 
 data class AudioDiagnostic(
@@ -67,6 +76,10 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
         }
 
         val instrumentNames = instruments.mapTo(mutableSetOf()) { it.name }
+        val controlNames = controls.mapTo(mutableSetOf()) { it.name }
+        instruments.forEach { instrument ->
+            validateControlReferences("instrument[${instrument.name.value}]", instrument.filters, controlNames, this)
+        }
         musicTracks.forEach { track ->
             if (track.instrument !in instrumentNames) {
                 add(
@@ -78,6 +91,7 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                 )
             }
             validateEffects("musicTrack[${track.name.value}]", track.effects, this)
+            validatePattern(track, this)
         }
 
         soundEffects.forEach { effect ->
@@ -107,6 +121,7 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                 effects = effect.effects.size,
                 diagnostics = this,
             )
+            validateControlReferences("sfx[${effect.name.value}]", effect.filters, controlNames, this)
         }
 
         validateEffects("musicBus", musicBus.effects, this)
@@ -127,6 +142,50 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
         AudioCompilationResult.Success(CompiledAudioProgram(this))
     } else {
         AudioCompilationResult.Failure(diagnostics)
+    }
+}
+
+private fun validateControlReferences(
+    ownerPath: String,
+    filters: List<FilterDeclaration>,
+    controls: Set<AudioControlName>,
+    diagnostics: MutableList<AudioDiagnostic>,
+) {
+    filters.forEachIndexed { index, filter ->
+        val parameter = filter.frequency
+        val field = if (filter is FilterDeclaration.BandPass) "centerHz" else "cutoffHz"
+        if (parameter is AudioParameter.Control && parameter.name !in controls) {
+            diagnostics += AudioDiagnostic(
+                code = AudioDiagnosticCode.UNRESOLVED_CONTROL,
+                path = "$ownerPath.filter[$index].$field",
+                message = "Unknown control '${parameter.name.value}'",
+            )
+        }
+        if (parameter.outputRange.start <= 0f) {
+            diagnostics += AudioDiagnostic(
+                code = AudioDiagnosticCode.PARAMETER_RANGE_INVALID,
+                path = "$ownerPath.filter[$index].$field",
+                message = "Filter frequency must remain positive",
+            )
+        }
+    }
+}
+
+private fun validatePattern(
+    track: MusicTrackDeclaration,
+    diagnostics: MutableList<AudioDiagnostic>,
+) {
+    try {
+        track.pattern.query(TimeArc.unit, PatternQueryBudget())
+    } catch (failure: PatternQueryException) {
+        diagnostics += AudioDiagnostic(
+            code = when (failure.limit) {
+                PatternQueryLimit.EVENTS -> AudioDiagnosticCode.PATTERN_EVENT_LIMIT_EXCEEDED
+                PatternQueryLimit.OPERATIONS -> AudioDiagnosticCode.PATTERN_OPERATION_LIMIT_EXCEEDED
+            },
+            path = "musicTrack[${track.name.value}].pattern",
+            message = failure.message ?: "Pattern query exceeded its mobile budget",
+        )
     }
 }
 

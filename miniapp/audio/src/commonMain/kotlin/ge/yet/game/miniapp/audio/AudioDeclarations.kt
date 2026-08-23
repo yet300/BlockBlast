@@ -1,7 +1,36 @@
 package ge.yet.game.miniapp.audio
 
+import ge.yet.game.pattern.Pattern
+
 enum class OscillatorShape { SINE, TRIANGLE, SAW, SQUARE, PULSE }
 enum class NoiseColor { WHITE, PINK, BROWN }
+
+sealed interface AudioNote {
+    data class Pitched(val midi: MidiNote) : AudioNote
+    data object Rest : AudioNote
+}
+
+sealed interface AudioParameter {
+    val outputRange: ClosedFloatingPointRange<Float>
+
+    @ConsistentCopyVisibility
+    data class Constant internal constructor(val value: Float) : AudioParameter {
+        override val outputRange: ClosedFloatingPointRange<Float> = value..value
+    }
+
+    @ConsistentCopyVisibility
+    data class Control internal constructor(
+        val name: AudioControlName,
+        override val outputRange: ClosedFloatingPointRange<Float>,
+    ) : AudioParameter
+}
+
+class AudioControlReference internal constructor(private val name: AudioControlName) {
+    fun map(outputStart: Float, outputEndInclusive: Float): AudioParameter {
+        require(outputStart.isFinite() && outputEndInclusive.isFinite() && outputStart <= outputEndInclusive)
+        return AudioParameter.Control(name, outputStart..outputEndInclusive)
+    }
+}
 
 @ConsistentCopyVisibility
 data class AudioControlDeclaration internal constructor(
@@ -43,24 +72,24 @@ data class VibratoDeclaration internal constructor(
 )
 
 sealed interface FilterDeclaration {
-    val frequency: Frequency
+    val frequency: AudioParameter
     val resonance: Float
 
     @ConsistentCopyVisibility
     data class LowPass internal constructor(
-        override val frequency: Frequency,
+        override val frequency: AudioParameter,
         override val resonance: Float,
     ) : FilterDeclaration
 
     @ConsistentCopyVisibility
     data class HighPass internal constructor(
-        override val frequency: Frequency,
+        override val frequency: AudioParameter,
         override val resonance: Float,
     ) : FilterDeclaration
 
     @ConsistentCopyVisibility
     data class BandPass internal constructor(
-        override val frequency: Frequency,
+        override val frequency: AudioParameter,
         override val resonance: Float,
     ) : FilterDeclaration
 }
@@ -124,7 +153,7 @@ data class InstrumentDeclaration internal constructor(
 data class MusicTrackDeclaration internal constructor(
     val name: MusicTrackName,
     val instrument: InstrumentName,
-    val notes: List<MidiNote>,
+    val pattern: Pattern<AudioNote>,
     val effects: List<SendEffectDeclaration>,
 )
 

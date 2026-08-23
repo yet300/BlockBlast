@@ -11,7 +11,7 @@ class AudioProgram internal constructor(
 ) {
     val controls: List<AudioControlDeclaration> = controls.toList()
     val instruments: List<InstrumentDeclaration> = instruments.map { it.snapshot() }
-    val musicTracks: List<MusicTrackDeclaration> = musicTracks.map { it.copy(notes = it.notes.toList(), effects = it.effects.toList()) }
+    val musicTracks: List<MusicTrackDeclaration> = musicTracks.map { it.copy(effects = it.effects.toList()) }
     val soundEffects: List<SoundEffectDeclaration> = soundEffects.map { it.snapshot() }
     val musicBus: AudioBusDeclaration = musicBus.copy(effects = musicBus.effects.toList())
     val sfxBus: AudioBusDeclaration = sfxBus.copy(effects = sfxBus.effects.toList())
