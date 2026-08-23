@@ -9,6 +9,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.resume
@@ -32,12 +33,15 @@ import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.MiniAppAudio
+import ge.yet.game.miniapp.audio.MiniAppAudioEngine
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.testkit.NoopMiniAppStorage
+import ge.yet.game.miniapp.testkit.NoopMiniAppAudio
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -501,6 +505,7 @@ class DefaultRootComponentTest {
             crashlytics = crashlytics,
             storageProvider = MiniAppStorageProvider { NoopMiniAppStorage },
             dataResetter = dataResetter,
+            miniAppAudioEngine = NoopMiniAppAudioEngine,
         )
         return Setup(component, lifecycle, backDispatcher, catalogFactory, settingsFactory, registry,
             firstPlugin, secondPlugin, reviewFactory, reviewPolicy, audio, analytics, crashlytics).also(setups::add)
@@ -530,6 +535,17 @@ class DefaultRootComponentTest {
                 lifecycle.destroy()
             }
         }
+    }
+
+    private object NoopMiniAppAudioEngine : MiniAppAudioEngine {
+        override fun openSession(
+            id: MiniAppId,
+            sessionKey: Long,
+            lifecycle: Lifecycle,
+            visibility: MiniAppVisibilitySource,
+        ): MiniAppAudio = NoopMiniAppAudio
+
+        override fun closeSession(id: MiniAppId, sessionKey: Long) = Unit
     }
 
     private class RecordingCatalogFactory(private val manifests: List<MiniAppManifest>) : CatalogComponent.Factory {

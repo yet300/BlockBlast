@@ -7,6 +7,7 @@ import dev.zacsweers.metro.Provides
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppStorage
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.MiniAppAudio
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 
 @ContributesTo(MiniAppSessionScope::class)
@@ -25,4 +26,7 @@ object MiniAppSessionContextBindings {
 
     @Provides
     fun provideStorage(context: MiniAppSessionContext): MiniAppStorage = context.storage
+
+    @Provides
+    fun provideAudio(context: MiniAppSessionContext): MiniAppAudio = context.audio
 }

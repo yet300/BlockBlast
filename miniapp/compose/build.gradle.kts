@@ -7,6 +7,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.miniapp.api)
+            api(projects.miniapp.audio)
             api(libs.compose.runtime)
             api(libs.compose.ui)
             api(libs.compose.components.resources)

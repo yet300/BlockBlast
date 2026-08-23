@@ -85,18 +85,18 @@ BlockBlast/
 | `:feature:settings` | Settings components, stores and the confirmation/progress/result state holder for game-data reset | `:core:domain`, `:core:common`, `:miniapp:api` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
-| `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its runtime coordinator owns session creation, visibility, stale callbacks, reset/launch serialization and teardown-before-clear ordering. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:compose` |
+| `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its runtime coordinator owns session creation, visibility, stale callbacks, session-bound audio opening/closure, reset/launch serialization and teardown-before-clear ordering. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:audio`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, resources, audio, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; MiniApp/core contracts, ConfettiKit and MVIKotlin; no raw Settings or native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
-| `:miniapp:compose` | Compose-facing MiniApp plugin, session, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, Compose, resources, Decompose |
+| `:miniapp:compose` | Compose-facing MiniApp plugin, session, audio-bound session context, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, `:miniapp:audio`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
-| `:miniapp:audio` | Procedural Music/SFX declarations, bounded validation, a deterministic offline graph renderer and the scheduler/voice/command runtime foundation; the app-scoped engine and platform playback are staged | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`; no Compose or feature dependency |
+| `:miniapp:audio` | Procedural Music/SFX declarations, bounded validation, deterministic offline rendering, scheduler/voice/command runtime and an app-scoped stale-safe session engine; Android/iOS sinks are staged | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
 | `:miniapp:audio-presets` | Original reusable instrument, SFX and deterministic soundscape fragments authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
-| `:miniapp:testkit` | Reusable recording host, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
+| `:miniapp:testkit` | Reusable recording host, no-op audio/storage, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
 | `:miniapp:samples:counter` | Generated reference plugin proving component state, runtime session inputs, child-graph scoping and retained sessions | `logica.miniapp` convention; discovered automatically and intentionally absent from the shipping allowlist |
 | `:miniapp:integration-test` | Non-shipping host proving Counter Metro aggregation, generic Root/session lifecycle, real MiniAppFrame layout and Android/iOS Compose resources | `:miniapp:samples:counter` as `commonMainApi`, `:miniapp:metro`, `:miniapp:testkit`; test-only host composition dependencies |
 | `build-logic:convention` | Shared KMP setup for library modules | included Gradle build, not runtime code |
@@ -160,8 +160,10 @@ the plugin-local content theme remains confined to the viewport; Root
 transitions must preserve those boundaries.
 
 Every plugin receives one `MiniAppSessionContext`, including its lifecycle,
-visibility, host callbacks and an ID-bound `MiniAppStorage`. MiniApps use local
-snake-case keys and versioned snapshot specs; they must not import
+visibility, host callbacks, an ID-bound `MiniAppStorage` and a stale-safe
+`MiniAppAudio` facade. Root opens audio before plugin session creation and
+closes provisional or destroyed sessions with the same ID/key. MiniApps use
+local snake-case keys and versioned snapshot specs; they must not import
 `com.russhwolf.settings` or construct physical storage keys. The host-side
 `:miniapp:storage` backend owns namespacing and compatibility aliases. When the
 user deletes all game data, Root first navigates to Catalog and awaits active

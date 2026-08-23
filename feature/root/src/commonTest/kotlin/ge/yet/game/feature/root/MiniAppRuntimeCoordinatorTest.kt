@@ -21,6 +21,14 @@ import ge.yet.game.miniapp.api.MiniAppStorage
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.AudioCommandRejection
+import ge.yet.game.miniapp.audio.AudioCommandResult
+import ge.yet.game.miniapp.audio.AudioControlName
+import ge.yet.game.miniapp.audio.AudioDuration
+import ge.yet.game.miniapp.audio.AudioProgram
+import ge.yet.game.miniapp.audio.MiniAppAudio
+import ge.yet.game.miniapp.audio.MiniAppAudioEngine
+import ge.yet.game.miniapp.audio.SfxName
 import ge.yet.game.miniapp.compose.MiniAppManifest
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppRegistry
@@ -147,6 +155,7 @@ class MiniAppRuntimeCoordinatorTest {
         runCurrent()
         assertEquals(0, setup.closeCalls)
         assertEquals(0, setup.reviewPolicy.acquireCalls)
+        assertEquals(listOf(FIRST_ID to 1L), setup.audioEngine.closes)
     }
 
     @Test
@@ -197,6 +206,33 @@ class MiniAppRuntimeCoordinatorTest {
 
         assertEquals(listOf(FIRST_ID), requestedIds)
         assertSame(storage, setup.firstPlugin.storages.single())
+    }
+
+    @Test
+    fun session_context_uses_audio_for_the_exact_miniapp_id_and_key() {
+        val audioEngine = RecordingAudioEngine()
+        val setup = build(audioEngine = audioEngine)
+
+        setup.launchAndCreate(FIRST_ID, componentContext())
+
+        assertEquals(listOf(FIRST_ID to 1L), audioEngine.opens)
+        assertSame(audioEngine.handles.single(), setup.firstPlugin.audios.single())
+    }
+
+    @Test
+    fun lifecycle_destroy_closes_audio_before_clearing_active_root_state() {
+        lateinit var setup: Setup
+        val audioEngine = RecordingAudioEngine {
+            assertEquals("active", setup.crashlytics.values["mini_app_state"])
+        }
+        setup = build(audioEngine = audioEngine)
+        val lifecycle = lifecycle().also(LifecycleRegistry::resume)
+        setup.launchAndCreate(FIRST_ID, DefaultComponentContext(lifecycle))
+
+        lifecycle.destroy()
+
+        assertEquals(listOf(FIRST_ID to 1L), audioEngine.closes)
+        assertEquals("closed", setup.crashlytics.values["mini_app_state"])
     }
 
     @Test
@@ -429,6 +465,7 @@ class MiniAppRuntimeCoordinatorTest {
         assertEquals("closed", setup.crashlytics.values["mini_app_state"])
         assertEquals(emptyList(), setup.crashlytics.exceptions)
         assertEquals(emptyList(), setup.analytics.events)
+        assertEquals(listOf(FIRST_ID to 1L), setup.audioEngine.closes)
 
         var replacementState: RootComponent.MiniAppState? = null
         setup.coordinator.launch(SECOND_ID) { key ->
@@ -497,6 +534,7 @@ class MiniAppRuntimeCoordinatorTest {
         reviewPolicy: RecordingReviewPolicy = RecordingReviewPolicy(),
         storageProvider: MiniAppStorageProvider = MiniAppStorageProvider { NoopMiniAppStorage },
         dataResetter: MiniAppDataResetter = dataResetter { MiniAppDataResetResult.Success },
+        audioEngine: RecordingAudioEngine = RecordingAudioEngine(),
         afterClose: () -> Unit = {},
     ): Setup {
         val secondPlugin = RecordingPlugin(SECOND_ID)
@@ -511,6 +549,7 @@ class MiniAppRuntimeCoordinatorTest {
             crashlytics = crashlytics,
             storageProvider = storageProvider,
             dataResetter = dataResetter,
+            audioEngine = audioEngine,
             initialForeground = true,
             navigateToCatalog = {
                 closeCalls += 1
@@ -529,6 +568,7 @@ class MiniAppRuntimeCoordinatorTest {
             reviewPolicy = reviewPolicy,
             analytics = analytics,
             crashlytics = crashlytics as? RecordingCrashlytics ?: RecordingCrashlytics(),
+            audioEngine = audioEngine,
             closeCallsProvider = { closeCalls },
             reviews = reviews,
         )
@@ -553,6 +593,7 @@ class MiniAppRuntimeCoordinatorTest {
         val reviewPolicy: RecordingReviewPolicy,
         val analytics: RecordingAnalytics,
         val crashlytics: RecordingCrashlytics,
+        val audioEngine: RecordingAudioEngine,
         val closeCallsProvider: () -> Int,
         val reviews: List<Pair<MiniAppId, MiniAppReviewOpportunity>>,
     ) {
@@ -640,12 +681,14 @@ class MiniAppRuntimeCoordinatorTest {
         val visibility = mutableListOf<MiniAppVisibilitySource>()
         val hosts = mutableListOf<MiniAppSessionHost>()
         val storages = mutableListOf<MiniAppStorage>()
+        val audios = mutableListOf<MiniAppAudio>()
 
         override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             createCount += 1
             visibility += context.visibility
             hosts += context.host
             storages += context.storage
+            audios += context.audio
             onCreate(context.host)
             closeOnVisibility?.let { target ->
                 context.componentContext.coroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
@@ -686,6 +729,37 @@ class MiniAppRuntimeCoordinatorTest {
         }
 
         override fun deleteData() = Unit
+    }
+
+    private class RecordingAudioEngine(
+        private val onClose: () -> Unit = {},
+    ) : MiniAppAudioEngine {
+        val opens = mutableListOf<Pair<MiniAppId, Long>>()
+        val closes = mutableListOf<Pair<MiniAppId, Long>>()
+        val handles = mutableListOf<MiniAppAudio>()
+
+        override fun openSession(
+            id: MiniAppId,
+            sessionKey: Long,
+            lifecycle: com.arkivanov.essenty.lifecycle.Lifecycle,
+            visibility: MiniAppVisibilitySource,
+        ): MiniAppAudio {
+            opens += id to sessionKey
+            return RecordingMiniAppAudio.also(handles::add)
+        }
+
+        override fun closeSession(id: MiniAppId, sessionKey: Long) {
+            onClose()
+            closes += id to sessionKey
+        }
+    }
+
+    private object RecordingMiniAppAudio : MiniAppAudio {
+        override fun playMusic(program: AudioProgram): AudioCommandResult = unavailable()
+        override fun stopMusic(fadeOut: AudioDuration): AudioCommandResult = unavailable()
+        override fun playSfx(program: AudioProgram, name: SfxName): AudioCommandResult = unavailable()
+        override fun setControl(name: AudioControlName, value: Float): AudioCommandResult = unavailable()
+        private fun unavailable() = AudioCommandResult.Rejected(AudioCommandRejection.BACKEND_UNAVAILABLE)
     }
 
     companion object {

@@ -13,6 +13,7 @@ import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
+import ge.yet.game.miniapp.audio.MiniAppAudioEngine
 import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.compose.MiniAppRegistry
@@ -43,6 +44,7 @@ internal class MiniAppRuntimeCoordinator(
     private val crashlytics: CrashlyticsRepository,
     private val storageProvider: MiniAppStorageProvider,
     private val dataResetter: MiniAppDataResetter,
+    private val audioEngine: MiniAppAudioEngine,
     initialForeground: Boolean,
     private val navigateToCatalog: (keepSheet: Boolean) -> Unit,
     private val showReview: (MiniAppId, MiniAppReviewOpportunity) -> Boolean,
@@ -107,6 +109,7 @@ internal class MiniAppRuntimeCoordinator(
         activeDestroyed = destroyed
         publishSessionContext(id, key, visibility.current, state = "creating")
         componentContext.lifecycle.doOnDestroy {
+            audioEngine.closeSession(id, key.value)
             destroyed.complete(Unit)
             clearActiveSession(key, visibility, destroyed)
         }
@@ -124,12 +127,19 @@ internal class MiniAppRuntimeCoordinator(
             return RootComponent.MiniAppState.Unavailable(id)
         }
 
+        val sessionAudio = audioEngine.openSession(
+            id = id,
+            sessionKey = key.value,
+            lifecycle = componentContext.lifecycle,
+            visibility = visibility,
+        )
         return try {
             val context = object : MiniAppSessionContext {
                 override val componentContext = componentContext
                 override val visibility = visibility
                 override val host = host
                 override val storage = storageProvider.storageFor(id)
+                override val audio = sessionAudio
             }
             val session = plugin.createSession(context)
             host.arm()
@@ -142,10 +152,12 @@ internal class MiniAppRuntimeCoordinator(
             }
             RootComponent.MiniAppState.Content(session)
         } catch (error: CancellationException) {
+            audioEngine.closeSession(id, key.value)
             clearActiveSession(key, visibility, destroyed)
             scope.cancel()
             throw error
         } catch (error: Throwable) {
+            audioEngine.closeSession(id, key.value)
             analytics.logEvent(
                 "miniapp_launch_failed",
                 mapOf(

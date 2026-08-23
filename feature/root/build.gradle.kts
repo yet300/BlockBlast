@@ -14,6 +14,7 @@ kotlin {
             implementation(projects.feature.settings)
             implementation(projects.feature.review)
             implementation(projects.miniapp.api)
+            implementation(projects.miniapp.audio)
             implementation(projects.miniapp.compose)
 
             implementation(libs.bundles.decompose)

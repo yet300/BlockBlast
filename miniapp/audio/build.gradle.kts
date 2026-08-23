@@ -10,6 +10,7 @@ kotlin {
             implementation(projects.core.common)
             implementation(projects.core.domain)
             implementation(projects.miniapp.api)
+            api(libs.essenty.lifecycle)
         }
     }
 }

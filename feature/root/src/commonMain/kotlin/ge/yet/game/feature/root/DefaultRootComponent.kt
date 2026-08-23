@@ -29,6 +29,7 @@ import ge.yet.game.feature.settings.SettingsComponent
 import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppDataResetter
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
+import ge.yet.game.miniapp.audio.MiniAppAudioEngine
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -43,6 +44,7 @@ internal class DefaultRootComponent(
     crashlytics: CrashlyticsRepository,
     storageProvider: MiniAppStorageProvider,
     dataResetter: MiniAppDataResetter,
+    miniAppAudioEngine: MiniAppAudioEngine,
     private val catalogFactory: CatalogComponent.Factory,
     private val settingsFactory: SettingsComponent.Factory,
     private val reviewFactory: AppReviewComponent.Factory,
@@ -68,6 +70,7 @@ internal class DefaultRootComponent(
         crashlytics = crashlytics,
         storageProvider = storageProvider,
         dataResetter = dataResetter,
+        audioEngine = miniAppAudioEngine,
         initialForeground = lifecycle.state.isForeground,
         navigateToCatalog = { keepSheet ->
             navigation.replaceAll(Config.Catalog)
@@ -252,6 +255,7 @@ internal class DefaultRootComponentFactory(
     private val crashlytics: CrashlyticsRepository,
     private val storageProvider: MiniAppStorageProvider,
     private val dataResetter: MiniAppDataResetter,
+    private val miniAppAudioEngine: MiniAppAudioEngine,
 ) : RootComponent.Factory {
     override fun create(componentContext: ComponentContext): RootComponent = DefaultRootComponent(
         componentContext = componentContext,
@@ -266,5 +270,6 @@ internal class DefaultRootComponentFactory(
         crashlytics = crashlytics,
         storageProvider = storageProvider,
         dataResetter = dataResetter,
+        miniAppAudioEngine = miniAppAudioEngine,
     )
 }
