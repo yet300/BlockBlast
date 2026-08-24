@@ -1,10 +1,18 @@
 package ge.yet.game.pattern
 
-fun <T> Pattern<T>.shift(amount: CycleTime): Pattern<T> = pattern { arc, budget ->
+fun <T> Pattern<T>.shift(amount: CycleTime): Pattern<T> = streamingPattern { arc, budget, output ->
     budget.consumeOperation()
     val sourceArc = TimeArc(arc.start - amount, arc.endExclusive - amount)
-    query(sourceArc, budget).map { event ->
-        event.transformTime { it + amount }
+    val first = output.size
+    queryInto(sourceArc, budget, output)
+    for (index in first until output.size) {
+        output.replaceTimes(
+            index = index,
+            wholeStart = output.wholeStartAt(index) + amount,
+            wholeEndExclusive = output.wholeEndExclusiveAt(index) + amount,
+            activeStart = output.activeStartAt(index) + amount,
+            activeEndExclusive = output.activeEndExclusiveAt(index) + amount,
+        )
     }
 }
 
@@ -12,11 +20,19 @@ fun <T> Pattern<T>.slow(factor: Int): Pattern<T> = slow(CycleTime.of(factor.toLo
 
 fun <T> Pattern<T>.slow(factor: CycleTime): Pattern<T> {
     require(factor > CycleTime.ZERO) { "A slow factor must be positive" }
-    return pattern { arc, budget ->
+    return streamingPattern { arc, budget, output ->
         budget.consumeOperation()
         val sourceArc = TimeArc(arc.start / factor, arc.endExclusive / factor)
-        query(sourceArc, budget).map { event ->
-            event.transformTime { it * factor }
+        val first = output.size
+        queryInto(sourceArc, budget, output)
+        for (index in first until output.size) {
+            output.replaceTimes(
+                index = index,
+                wholeStart = output.wholeStartAt(index) * factor,
+                wholeEndExclusive = output.wholeEndExclusiveAt(index) * factor,
+                activeStart = output.activeStartAt(index) * factor,
+                activeEndExclusive = output.activeEndExclusiveAt(index) * factor,
+            )
         }
     }
 }
@@ -25,11 +41,19 @@ fun <T> Pattern<T>.fast(factor: Int): Pattern<T> = fast(CycleTime.of(factor.toLo
 
 fun <T> Pattern<T>.fast(factor: CycleTime): Pattern<T> {
     require(factor > CycleTime.ZERO) { "A fast factor must be positive" }
-    return pattern { arc, budget ->
+    return streamingPattern { arc, budget, output ->
         budget.consumeOperation()
         val sourceArc = TimeArc(arc.start * factor, arc.endExclusive * factor)
-        query(sourceArc, budget).map { event ->
-            event.transformTime { it / factor }
+        val first = output.size
+        queryInto(sourceArc, budget, output)
+        for (index in first until output.size) {
+            output.replaceTimes(
+                index = index,
+                wholeStart = output.wholeStartAt(index) / factor,
+                wholeEndExclusive = output.wholeEndExclusiveAt(index) / factor,
+                activeStart = output.activeStartAt(index) / factor,
+                activeEndExclusive = output.activeEndExclusiveAt(index) / factor,
+            )
         }
     }
 }
@@ -45,24 +69,15 @@ fun <T> Pattern<T>.every(
 ): Pattern<T> {
     require(cycles > 0) { "An every-cycle interval must be positive" }
     val transformed = transform(this)
-    return pattern { arc, budget ->
+    return streamingPattern { arc, budget, output ->
         budget.consumeOperation()
-        val events = mutableListOf<PatternEvent<T>>()
         forEachOverlappingCycle(arc) { cycle ->
             val cycleArc = TimeArc(CycleTime.of(cycle), CycleTime.of(cycle + 1L))
             val selected = if (floorMod(cycle, cycles.toLong()) == cycles.toLong() - 1L) transformed else this
-            cycleArc.intersection(arc)?.let { events += selected.query(it, budget) }
+            cycleArc.intersection(arc)?.let { selected.queryInto(it, budget, output) }
         }
-        events
     }
 }
-
-private fun <T> PatternEvent<T>.transformTime(transform: (CycleTime) -> CycleTime): PatternEvent<T> =
-    PatternEvent(
-        whole = TimeArc(transform(whole.start), transform(whole.endExclusive)),
-        active = TimeArc(transform(active.start), transform(active.endExclusive)),
-        value = value,
-    )
 
 internal fun floorMod(value: Long, divisor: Long): Long {
     val remainder = value % divisor

@@ -6,6 +6,24 @@ import kotlin.test.assertFailsWith
 
 class PatternTransformsTest {
     @Test
+    fun `all built in combinators stream without list fallback`() {
+        val source = stack(
+            pure("pulse").shift(CycleTime.of(1, 4)),
+            sequence("a", "b").fast(2).degrade(probability = 0.25f, seed = 7L),
+            choose(seed = 9L, values = listOf("c", "d")).slow(2),
+            euclidean(value = "hit", pulses = 3, steps = 8)
+                .every(2) { it.shift(CycleTime.of(1, 8)) },
+        )
+        val arc = TimeArc(CycleTime.ZERO, CycleTime.of(2))
+        val output = PatternEventBuffer<String>(capacity = 128)
+
+        source.queryInto(arc, PatternQueryBudget(maxEvents = 128), output)
+
+        assertEquals(0, output.fallbackQueriesUsed)
+        assertEquals(source.query(arc), output.toEventList())
+    }
+
+    @Test
     fun `pure repeats once per cycle and clips only the active arc`() {
         val query = TimeArc(CycleTime.of(1, 2), CycleTime.of(3, 2))
 

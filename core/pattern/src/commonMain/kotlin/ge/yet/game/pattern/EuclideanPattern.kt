@@ -9,12 +9,9 @@ fun <T> euclidean(
     require(steps > 0) { "Euclidean steps must be positive" }
     require(pulses in 0..steps) { "Euclidean pulses must be between zero and steps" }
     val normalizedRotation = floorMod(rotation.toLong(), steps.toLong()).toInt()
-    return pattern { arc, budget ->
+    return streamingPattern { arc, budget, output ->
         budget.consumeOperation()
-        if (arc.isEmpty || pulses == 0) {
-            emptyList()
-        } else {
-            val events = mutableListOf<PatternEvent<T>>()
+        if (!arc.isEmpty && pulses != 0) {
             forEachOverlappingCycle(arc) { cycle ->
                 for (index in 0 until steps) {
                     val rotatedIndex = (index + normalizedRotation) % steps
@@ -25,11 +22,10 @@ fun <T> euclidean(
                     )
                     whole.intersection(arc)?.let { active ->
                         budget.consumeEvents(1)
-                        events += PatternEvent(whole, active, value)
+                        output.append(whole, active, value)
                     }
                 }
             }
-            events
         }
     }
 }

@@ -5,6 +5,7 @@ import ge.yet.game.miniapp.audio.AudioMobileBudget
 import ge.yet.game.miniapp.audio.CompiledAudioProgram
 import ge.yet.game.miniapp.audio.MidiNote
 import ge.yet.game.pattern.CycleTime
+import ge.yet.game.pattern.PatternEventBuffer
 import ge.yet.game.pattern.PatternQueryBudget
 import ge.yet.game.pattern.TimeArc
 import kotlin.math.roundToLong
@@ -115,6 +116,12 @@ internal class AudioScheduler(
 ) {
     private val tempo = tempoRatio(program.tempo.bpm)
     private val scheduled = ScheduledAudioEventBuffer()
+    private val patternEvents = PatternEventBuffer<AudioNote>()
+    private val patternBudget = PatternQueryBudget()
+
+    internal val patternEventBufferAllocationCount: Int get() = 1
+    internal val patternQueryBudgetAllocationCount: Int get() = 1
+    internal val patternListFallbackCount: Int get() = patternEvents.fallbackQueriesUsed
 
     init {
         require(sampleRate in 8_000..192_000)
@@ -130,7 +137,8 @@ internal class AudioScheduler(
         val scanArc = TimeArc(frameToCycle(scanStartFrame), frameToCycle(endFrame))
         scheduled.clear()
 
-        program.source.musicTracks.forEachIndexed { trackIndex, track ->
+        for (trackIndex in program.source.musicTracks.indices) {
+            val track = program.source.musicTracks[trackIndex]
             var orderInTrack = 0
             var cycle = floorCycle(scanArc.start)
             val lastCycleExclusive = ceilCycle(scanArc.endExclusive)
@@ -138,14 +146,18 @@ internal class AudioScheduler(
                 val cycleArc = TimeArc(CycleTime.of(cycle), CycleTime.of(cycle + 1))
                 val chunkArc = cycleArc.intersection(scanArc)
                 if (chunkArc != null) {
-                    track.pattern.query(chunkArc, PatternQueryBudget()).forEach { event ->
-                        if (event.whole.start !in cycleArc) return@forEach
-                        val note = (event.value as? AudioNote.Pitched)?.midi ?: return@forEach
-                        val absoluteStart = cycleToFrame(event.whole.start)
-                        if (absoluteStart !in startFrame until endFrame) return@forEach
-                        val absoluteEnd = cycleToFrame(event.whole.endExclusive)
+                    patternEvents.clear()
+                    patternBudget.reset()
+                    track.pattern.queryInto(chunkArc, patternBudget, patternEvents)
+                    for (eventIndex in 0 until patternEvents.size) {
+                        val wholeStart = patternEvents.wholeStartAt(eventIndex)
+                        if (wholeStart !in cycleArc) continue
+                        val note = (patternEvents.valueAt(eventIndex) as? AudioNote.Pitched)?.midi ?: continue
+                        val absoluteStart = cycleToFrame(wholeStart)
+                        if (absoluteStart !in startFrame until endFrame) continue
+                        val absoluteEnd = cycleToFrame(patternEvents.wholeEndExclusiveAt(eventIndex))
                         val duration = absoluteEnd - absoluteStart
-                        if (duration <= 0) return@forEach
+                        if (duration <= 0) continue
                         scheduled.add(
                             trackIndex = trackIndex,
                             note = note,

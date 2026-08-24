@@ -8,6 +8,21 @@ import kotlin.test.assertTrue
 
 class PatternQueryTest {
     @Test
+    fun `built in patterns append into a reusable bounded event buffer`() {
+        val output = PatternEventBuffer<String>(capacity = 4)
+        val source = sequence("kick", "snare")
+
+        source.queryInto(TimeArc.unit, PatternQueryBudget(), output)
+
+        assertEquals(2, output.size)
+        assertEquals("kick", output.valueAt(0))
+        assertEquals(CycleTime.ZERO, output.wholeStartAt(0))
+        output.clear()
+        source.queryInto(TimeArc.unit, PatternQueryBudget(), output)
+        assertEquals(listOf("kick", "snare"), List(output.size, output::valueAt))
+    }
+
+    @Test
     fun `time arcs are half open and intersect exactly`() {
         val arc = TimeArc(CycleTime.of(1, 4), CycleTime.of(3, 4))
 

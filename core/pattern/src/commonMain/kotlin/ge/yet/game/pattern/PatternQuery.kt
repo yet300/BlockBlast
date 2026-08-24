@@ -39,6 +39,11 @@ class PatternQueryBudget(
         eventsUsed += count
     }
 
+    fun reset() {
+        operationsUsed = 0
+        eventsUsed = 0
+    }
+
     companion object {
         const val DEFAULT_MAX_OPERATIONS: Int = 4_096
         const val DEFAULT_MAX_EVENTS: Int = 256

@@ -1,8 +1,16 @@
 package ge.yet.game.pattern
 
-fun <T> pure(value: T): Pattern<T> = pattern { arc, budget ->
+fun <T> pure(value: T): Pattern<T> = streamingPattern { arc, budget, output ->
     budget.consumeOperation()
-    buildCycleEvents(arc, budget) { whole, active -> PatternEvent(whole, active, value) }
+    if (!arc.isEmpty) {
+        forEachOverlappingCycle(arc) { cycle ->
+            val whole = TimeArc(CycleTime.of(cycle), CycleTime.of(cycle + 1L))
+            whole.intersection(arc)?.let { active ->
+                budget.consumeEvents(1)
+                output.append(whole, active, value)
+            }
+        }
+    }
 }
 
 fun <T> sequence(vararg values: T): Pattern<T> = sequence(values.asList())
@@ -10,12 +18,9 @@ fun <T> sequence(vararg values: T): Pattern<T> = sequence(values.asList())
 fun <T> sequence(values: List<T>): Pattern<T> {
     require(values.isNotEmpty()) { "A sequence pattern requires at least one value" }
     val snapshot = values.toList()
-    return pattern { arc, budget ->
+    return streamingPattern { arc, budget, output ->
         budget.consumeOperation()
-        if (arc.isEmpty) {
-            emptyList()
-        } else {
-            val events = mutableListOf<PatternEvent<T>>()
+        if (!arc.isEmpty) {
             forEachOverlappingCycle(arc) { cycle ->
                 snapshot.forEachIndexed { index, value ->
                     val whole = TimeArc(
@@ -24,11 +29,10 @@ fun <T> sequence(values: List<T>): Pattern<T> {
                     )
                     whole.intersection(arc)?.let { active ->
                         budget.consumeEvents(1)
-                        events += PatternEvent(whole, active, value)
+                        output.append(whole, active, value)
                     }
                 }
             }
-            events
         }
     }
 }
@@ -36,19 +40,11 @@ fun <T> sequence(values: List<T>): Pattern<T> {
 fun <T> stack(vararg patterns: Pattern<T>): Pattern<T> {
     require(patterns.isNotEmpty()) { "A stack pattern requires at least one child" }
     val snapshot = patterns.toList()
-    return pattern { arc, budget ->
+    return streamingPattern { arc, budget, output ->
         budget.consumeOperation()
-        snapshot.flatMapIndexed { patternIndex, child ->
-            child.query(arc, budget).mapIndexed { eventIndex, event ->
-                OrderedPatternEvent(event, patternIndex, eventIndex)
-            }
-        }.sortedWith(
-            compareBy<OrderedPatternEvent<T>>(
-                { it.event.active.start },
-                { it.patternIndex },
-                { it.eventIndex },
-            ),
-        ).map(OrderedPatternEvent<T>::event)
+        val first = output.size
+        for (index in snapshot.indices) snapshot[index].queryInto(arc, budget, output)
+        output.stableSortByActiveStart(first)
     }
 }
 
@@ -67,26 +63,3 @@ internal inline fun forEachOverlappingCycle(arc: TimeArc, block: (Long) -> Unit)
         cycle += 1L
     }
 }
-
-private inline fun <T> buildCycleEvents(
-    arc: TimeArc,
-    budget: PatternQueryBudget,
-    event: (whole: TimeArc, active: TimeArc) -> PatternEvent<T>,
-): List<PatternEvent<T>> {
-    if (arc.isEmpty) return emptyList()
-    val events = mutableListOf<PatternEvent<T>>()
-    forEachOverlappingCycle(arc) { cycle ->
-        val whole = TimeArc(CycleTime.of(cycle), CycleTime.of(cycle + 1L))
-        whole.intersection(arc)?.let { active ->
-            budget.consumeEvents(1)
-            events += event(whole, active)
-        }
-    }
-    return events
-}
-
-private data class OrderedPatternEvent<T>(
-    val event: PatternEvent<T>,
-    val patternIndex: Int,
-    val eventIndex: Int,
-)

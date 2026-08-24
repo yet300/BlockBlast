@@ -25,6 +25,9 @@ class AudioSchedulerTest {
         val second = scheduler.scheduleBlockInto(startFrame = 2_000, frameCount = 2_000)
 
         assertSame(first, second)
+        assertEquals(1, scheduler.patternEventBufferAllocationCount)
+        assertEquals(1, scheduler.patternQueryBudgetAllocationCount)
+        assertEquals(0, scheduler.patternListFallbackCount)
         assertEquals(listOf(61), second.map { it.note.value })
     }
 
