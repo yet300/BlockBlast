@@ -475,13 +475,13 @@ The iOS absolute realtime boundary is implemented and verified through
 - Update: `AGENTS.md` verification commands and module table if the final implementation differs from the plan.
 
 - [x] Run source scans proving realtime code contains no `launch`, suspension, logging, storage, DI, string formatting, mutable collection growth or contributor callback invocation.
-- [ ] Run dependency reports proving:
+- [x] Run dependency reports proving:
   - `core:pattern` has no project edges;
   - `audio-presets` depends only on `audio`;
   - game modules do not depend directly on platform audio;
   - Counter remains absent from `miniapp:bundle` and the production APK;
   - Block Blast uses the session-scoped procedural facade rather than direct platform audio.
-- [ ] Run the full gate:
+- [x] Run the full gate:
 
   ```bash
   ./gradlew \
@@ -500,12 +500,15 @@ The iOS absolute realtime boundary is implemented and verified through
     --rerun-tasks
   ```
 
-- [ ] Run the convention tests and strict configuration-cache reuse gate.
+- [x] Run the convention tests and strict configuration-cache reuse gate.
 - [x] Run deterministic offline renders twice on Android/JVM and iOS simulator; compare quantized hashes where exact and acoustic tolerances where floating-point variance is allowed.
 - [ ] Execute physical Android/iPhone audio smoke checks if devices are available. Report unverified device behavior explicitly; simulator/framework success is not a substitute.
+  2026-08-24: the paired iPhone 13 Pro and Apple Watch were offline; no
+  Android device/`adb` executable was available. The physical audible-output
+  and Instruments allocation checks remain manual.
 - [x] Refresh the codebase-memory index after the structural change.
-- [ ] Review the full branch diff for accidental third-party code/text, public API leakage, dependency cycles, stale-session holes and misleading documentation.
-- [ ] Commit any final scoped fixes, then hand off exact commands, test counts, manual gaps and commit SHAs.
+- [x] Review the full branch diff for accidental third-party code/text, public API leakage, dependency cycles, stale-session holes and misleading documentation.
+- [x] Commit any final scoped fixes, then hand off exact commands, test counts, manual gaps and commit SHAs.
 
 ## Definition of done
 

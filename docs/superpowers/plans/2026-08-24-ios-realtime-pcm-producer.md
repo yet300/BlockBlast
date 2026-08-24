@@ -904,6 +904,10 @@ git commit -m "docs: record iOS PCM producer boundary"
 
 - [ ] **Step 8: Report the physical-device gate honestly**
 
+The paired iPhone 13 Pro was offline on 2026-08-24. Simulator tests and the
+consuming framework gate passed, but audible device playback and Instruments
+Allocations remain intentionally unverified.
+
 If an unlocked iPhone is available, run Music/SFX, rapid SFX,
 background/foreground, interruption and reopen smoke tests plus Instruments
 Allocations. Otherwise report the device and absolute-allocation proof as the
