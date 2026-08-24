@@ -7,11 +7,38 @@ import ge.yet.game.miniapp.audio.AudioDuration
 import ge.yet.game.miniapp.audio.AudioProgram
 import ge.yet.game.miniapp.audio.MiniAppAudio
 import ge.yet.game.miniapp.audio.SfxName
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class BlockBlastAudioTest {
+
+    @Test
+    fun playlist_contains_the_three_existing_tracks() {
+        assertEquals(
+            listOf("block.mp3", "feltwood.mp3", "mossy.mp3"),
+            BlockBlastAudioAssets.music,
+        )
+    }
+
+    @Test
+    fun every_feedback_type_maps_to_its_existing_voice_asset() {
+        assertEquals("voice_good.mp3", BlockBlastAudioAssets.voice(FeedbackType.GOOD))
+        assertEquals("voice_great.mp3", BlockBlastAudioAssets.voice(FeedbackType.GREAT))
+        assertEquals("voice_amazing.mp3", BlockBlastAudioAssets.voice(FeedbackType.AMAZING))
+        assertEquals("voice_excellent.mp3", BlockBlastAudioAssets.voice(FeedbackType.EXCELLENT))
+        assertEquals("voice_unbelievable.mp3", BlockBlastAudioAssets.voice(FeedbackType.UNBELIEVABLE))
+    }
+
+    @Test
+    fun next_track_does_not_repeat_when_playlist_has_multiple_tracks() {
+        val next = nextTrackIndex(trackCount = 3, previous = 1, random = Random(7))
+
+        assertNotEquals(1, next)
+        assertTrue(next in 0..2)
+    }
 
     @Test
     fun feedback_types_map_to_typed_procedural_effects() {
