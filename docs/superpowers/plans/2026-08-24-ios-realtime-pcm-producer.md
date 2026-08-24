@@ -610,7 +610,7 @@ git commit -m "feat: run iOS PCM producer on a session thread"
 - Modify: `miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSink.kt`
 - Modify: `miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSinkTest.kt`
 
-- [ ] **Step 1: Replace renderer-based sink fakes with a recording producer**
+- [x] **Step 1: Replace renderer-based sink fakes with a recording producer**
 
 Create `RecordingIosPcmProducer` implementing `IosPcmProducerSession`. It records
 this ordered event vocabulary:
@@ -629,7 +629,7 @@ enum class ProducerEvent {
 The fake exposes its own `IosPcmCallbackSource` backed by a small ring and lets
 tests choose whether prefill succeeds.
 
-- [ ] **Step 2: Write RED lifecycle-order tests**
+- [x] **Step 2: Write RED lifecycle-order tests**
 
 Update/add assertions proving:
 
@@ -644,7 +644,7 @@ Update/add assertions proving:
 - release order is `engine pause/stop -> producer terminate -> engine release -> observation remove -> session inactive`;
 - release remains idempotent and later commands return `RejectedDestroyed`.
 
-- [ ] **Step 3: Run sink tests and verify RED**
+- [x] **Step 3: Run sink tests and verify RED**
 
 Run:
 
@@ -655,7 +655,7 @@ Run:
 Expected: existing implementation starts the engine before producer prefill and
 does not expose the required producer lifecycle events.
 
-- [ ] **Step 4: Refactor sink construction and ownership**
+- [x] **Step 4: Refactor sink construction and ownership**
 
 Change the sink constructor to inject a producer factory:
 
@@ -680,7 +680,7 @@ and callback-underrun ownership from the session. Retain one session-owned
 `backendFailures` atomic for audio-session and engine lifecycle failures; these
 calls are outside the callback but must remain diagnosable.
 
-- [ ] **Step 5: Implement generation-checked reconciliation**
+- [x] **Step 5: Implement generation-checked reconciliation**
 
 Keep desired state under the session `NSLock`, but never hold it while waiting
 for producer prefill/termination or invoking engine lifecycle operations.
@@ -702,7 +702,7 @@ again immediately. `release` invalidates the generation, waits for any active
 reconciler through a session `NSCondition`, then performs the required teardown
 order exactly once.
 
-- [ ] **Step 6: Aggregate producer and callback diagnostics outside callback**
+- [x] **Step 6: Aggregate producer and callback diagnostics outside callback**
 
 `drainDiagnostics` combines:
 
@@ -729,7 +729,7 @@ Drain producer-only wakeup/render/peak details internally without expanding the
 public snapshot. Producer render failures contribute to callback-failure
 aggregation because that is the existing compatible failure bucket.
 
-- [ ] **Step 7: Run the iOS sink suite and compilation**
+- [x] **Step 7: Run the iOS sink suite and compilation**
 
 Run:
 

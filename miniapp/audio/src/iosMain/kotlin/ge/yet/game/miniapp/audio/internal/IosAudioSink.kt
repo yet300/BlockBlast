@@ -31,6 +31,7 @@ import platform.AVFAudio.sampleRate
 import platform.AVFAudio.setActive
 import platform.CoreAudioTypes.AudioBufferList
 import platform.Foundation.NSLock
+import platform.Foundation.NSCondition
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSNumber
 
@@ -80,32 +81,33 @@ internal fun interface IosAudioRendererFactory {
 internal class IosAudioSink(
     private val platform: IosAudioPlatform,
     private val rendererFactory: IosAudioRendererFactory = IosAudioRendererFactory(::DefaultIosAudioRenderer),
+    private val producerFactory: IosPcmProducerFactory = IosPcmProducerFactory(::createDefaultIosPcmProducer),
 ) : PlatformAudioSink {
     private val lock = NSLock()
     private var activeSession: IosAudioSinkSession? = null
 
     override fun openSession(id: MiniAppId, sessionKey: Long): PlatformAudioSinkSession = lock.withLock {
         activeSession?.release()
-        IosAudioSinkSession(platform, rendererFactory).also { activeSession = it }
+        IosAudioSinkSession(platform, rendererFactory, producerFactory).also { activeSession = it }
     }
 }
+
+private fun createDefaultIosPcmProducer(
+    sampleRate: Int,
+    maximumFramesPerSlice: Int,
+    rendererFactory: IosAudioRendererFactory,
+): IosPcmProducerSession = DefaultIosPcmProducer(sampleRate, maximumFramesPerSlice, rendererFactory)
 
 @OptIn(ExperimentalAtomicApi::class)
 private class IosAudioSinkSession(
     private val platform: IosAudioPlatform,
     rendererFactory: IosAudioRendererFactory,
-) : PlatformAudioSinkSession, IosPcmBlockRenderer {
+    producerFactory: IosPcmProducerFactory,
+) : PlatformAudioSinkSession {
     override val sampleRate: Int = platform.sampleRate
-    private val frameCapacity = platform.maximumFramesPerSlice.coerceAtLeast(MIN_BLOCK_FRAMES)
-    private val renderer = rendererFactory.create(sampleRate, frameCapacity)
-    private val runtime = CompiledAudioRuntime(
-        target = renderer,
-        queueCapacity = COMMAND_QUEUE_CAPACITY,
-        maxCommandsPerBlock = MAX_COMMANDS_PER_BLOCK,
-    )
-    private val lock = NSLock()
-    private val callbackFailures = AtomicLong(0)
-    private val underruns = AtomicLong(0)
+    private val producer = producerFactory.create(sampleRate, platform.maximumFramesPerSlice, rendererFactory)
+    private val transitionCondition = NSCondition()
+    private val backendFailures = AtomicLong(0)
     private var engine: IosAudioEngine
     private var observation: IosAudioObservation
     private var policy = AudioSessionPolicy.Active
@@ -115,18 +117,23 @@ private class IosAudioSinkSession(
     private var sessionActive = false
     private var interrupted = false
     private var resumeBlocked = false
+    private var transitionGeneration = 0L
+    private var transitioning = false
+    private var pendingRouteReset = false
+    private var pendingMediaReset = false
 
     init {
         platform.configureSession()
-        engine = platform.createEngine(sampleRate, this)
+        engine = platform.createEngine(sampleRate, producer.callbackSource)
         observation = platform.observeEvents(::handleEvent)
     }
 
-    override fun updatePolicy(policy: AudioSessionPolicy) = lock.withLock {
-        if (released) return@withLock
-        this.policy = policy
-        renderer.updatePolicy(policy)
-        synchronizeOutput()
+    override fun updatePolicy(policy: AudioSessionPolicy) {
+        if (transitionCondition.withLock { released }) return
+        producer.updatePolicy(policy)
+        requestReconcile {
+            this.policy = policy
+        }
     }
 
     override fun playMusic(program: CompiledAudioProgram): AudioRuntimeSubmitResult =
@@ -141,117 +148,213 @@ private class IosAudioSinkSession(
     override fun setControl(name: AudioControlName, value: Float): AudioRuntimeSubmitResult =
         submit(AudioCommand.SetControl(name, value), requestsOutput = false)
 
-    override fun release() = lock.withLock {
-        if (released) return@withLock
+    override fun release() {
+        transitionCondition.lock()
+        if (released) {
+            transitionCondition.unlock()
+            return
+        }
         released = true
         outputRequested = false
+        transitionGeneration += 1
+        while (transitioning) transitionCondition.wait()
+        transitionCondition.unlock()
+
         if (outputRunning) tryPlatform(engine::pause)
         outputRunning = false
         tryPlatform(engine::stop)
+        producer.terminate()
         tryPlatform(engine::release)
         tryPlatform(observation::remove)
         deactivateSession()
-        tryPlatform(renderer::destroy)
     }
 
-    override fun drainDiagnostics(): AudioRuntimeDiagnosticsSnapshot = lock.withLock {
-        val common = runtime.drainDiagnostics()
-        AudioRuntimeDiagnosticsSnapshot(
+    override fun drainDiagnostics(): AudioRuntimeDiagnosticsSnapshot {
+        val common = producer.drainRuntimeDiagnostics()
+        val callback = producer.callbackSource.drainDiagnostics()
+        val produced = producer.drainProducerDiagnostics()
+        return AudioRuntimeDiagnosticsSnapshot(
             validationRejections = common.validationRejections,
             queueOverflows = common.queueOverflows,
             forcedVoiceShedding = common.forcedVoiceShedding,
-            callbackFailures = saturatedAdd(common.callbackFailures, callbackFailures.exchange(0)),
-            underruns = saturatedAdd(common.underruns, underruns.exchange(0)),
+            callbackFailures = saturatedAdd(
+                saturatedAdd(common.callbackFailures, callback.callbackFailures),
+                saturatedAdd(produced.renderFailures, backendFailures.exchange(0)),
+            ),
+            underruns = saturatedAdd(common.underruns, callback.underrunEvents),
         )
     }
 
-    override fun render(left: FloatArray, right: FloatArray, frameCount: Int) {
-        clear(left, right, frameCount)
-        if (!lock.tryLock()) {
-            incrementSaturated(underruns)
-            return
+    private fun submit(command: AudioCommand, requestsOutput: Boolean): AudioRuntimeSubmitResult {
+        if (transitionCondition.withLock { released }) return AudioRuntimeSubmitResult.RejectedDestroyed
+        val result = producer.submit(command)
+        if (requestsOutput && result.isAcceptedBySink) {
+            requestReconcile {
+                outputRequested = true
+                resumeBlocked = false
+            }
         }
-        try {
-            if (released || !outputRunning || policy.schedulingPaused || interrupted) return
-            runtime.consumeCommandsForBlock()
-            renderer.render(left, right, frameCount)
-        } catch (_: Throwable) {
-            clear(left, right, frameCount)
-            incrementSaturated(callbackFailures)
-        } finally {
-            lock.unlock()
-        }
+        return result
     }
 
-    override fun recordCallbackFailure() {
-        incrementSaturated(callbackFailures)
-    }
-
-    private fun submit(command: AudioCommand, requestsOutput: Boolean): AudioRuntimeSubmitResult = lock.withLock {
-        if (released) return@withLock AudioRuntimeSubmitResult.RejectedDestroyed
-        val result = runtime.submit(command)
-        if (requestsOutput && result == AudioRuntimeSubmitResult.Accepted) {
-            outputRequested = true
-            resumeBlocked = false
-            synchronizeOutput()
-        }
-        result
-    }
-
-    private fun handleEvent(event: IosAudioEvent) = lock.withLock {
-        if (released) return@withLock
-        when (event) {
+    private fun handleEvent(event: IosAudioEvent) {
+        requestReconcile {
+            when (event) {
             IosAudioEvent.InterruptionBegan -> {
                 interrupted = true
-                synchronizeOutput()
             }
             is IosAudioEvent.InterruptionEnded -> {
                 interrupted = false
                 resumeBlocked = !event.shouldResume
-                synchronizeOutput()
             }
-            IosAudioEvent.RouteChanged -> restartAfterRouteChange()
-            IosAudioEvent.MediaServicesReset -> rebuildAfterMediaServicesReset()
+                IosAudioEvent.RouteChanged -> pendingRouteReset = true
+                IosAudioEvent.MediaServicesReset -> pendingMediaReset = true
+            }
         }
     }
 
-    private fun synchronizeOutput() {
-        val shouldRun = outputRequested && !policy.schedulingPaused && !interrupted && !resumeBlocked
-        if (shouldRun == outputRunning) return
-        if (shouldRun) {
-            if (!activateSession()) return
-            if (tryPlatform(engine::start)) {
-                outputRunning = true
-            } else {
-                deactivateSession()
+    private inline fun requestReconcile(mutation: IosAudioSinkSession.() -> Unit) {
+        transitionCondition.lock()
+        if (released) {
+            transitionCondition.unlock()
+            return
+        }
+        mutation()
+        transitionGeneration += 1
+        if (transitioning) {
+            transitionCondition.unlock()
+            return
+        }
+        transitioning = true
+        transitionCondition.unlock()
+        reconcileLoop()
+    }
+
+    private fun reconcileLoop() {
+        while (true) {
+            val snapshot = transitionCondition.withLock {
+                if (released) {
+                    finishTransitionLocked()
+                    return
+                }
+                TransitionSnapshot(
+                    generation = transitionGeneration,
+                    engine = engine,
+                    shouldRun = shouldRunLocked(),
+                    routeReset = pendingRouteReset,
+                    mediaReset = pendingMediaReset,
+                ).also {
+                    pendingRouteReset = false
+                    pendingMediaReset = false
+                }
             }
-        } else {
-            if (outputRunning) tryPlatform(engine::pause)
-            outputRunning = false
+
+            when {
+                snapshot.mediaReset -> {
+                    rebuildEngine(snapshot.engine)
+                    continue
+                }
+                snapshot.routeReset -> {
+                    resetRoute(snapshot.engine)
+                    continue
+                }
+                snapshot.shouldRun -> startOutput(snapshot)
+                else -> stopOutput(snapshot.engine)
+            }
+
+            val finished = transitionCondition.withLock {
+                if (released || snapshot.generation == transitionGeneration) {
+                    finishTransitionLocked()
+                    true
+                } else {
+                    false
+                }
+            }
+            if (finished) return
+        }
+    }
+
+    private fun startOutput(snapshot: TransitionSnapshot) {
+        if (outputRunning) return
+        if (!activateSession()) return
+        val prefilled = producer.resumeAndAwaitPrefill()
+        val stillCurrent = transitionCondition.withLock {
+            !released && snapshot.generation == transitionGeneration && engine === snapshot.engine && shouldRunLocked()
+        }
+        if (!prefilled || !stillCurrent) {
+            producer.pauseAndReset()
+            deactivateSession()
+            if (!prefilled && stillCurrent) {
+                transitionCondition.withLock { resumeBlocked = true }
+            }
+            return
+        }
+        if (!tryPlatform(snapshot.engine::start)) {
+            producer.pauseAndReset()
+            deactivateSession()
+            transitionCondition.withLock { resumeBlocked = true }
+            return
+        }
+        val committed = transitionCondition.withLock {
+            if (!released && snapshot.generation == transitionGeneration && engine === snapshot.engine && shouldRunLocked()) {
+                outputRunning = true
+                true
+            } else {
+                false
+            }
+        }
+        if (!committed) {
+            tryPlatform(snapshot.engine::pause)
+            producer.pauseAndReset()
             deactivateSession()
         }
     }
 
-    private fun restartAfterRouteChange() {
-        val shouldRestart = outputRunning
-        if (outputRunning) tryPlatform(engine::pause)
+    private fun stopOutput(target: IosAudioEngine) {
+        if (outputRunning) tryPlatform(target::pause)
         outputRunning = false
-        tryPlatform(engine::reset)
-        if (shouldRestart && tryPlatform(engine::start)) outputRunning = true
+        producer.pauseAndReset()
+        deactivateSession()
     }
 
-    private fun rebuildAfterMediaServicesReset() {
-        val shouldRestart = outputRequested && !policy.schedulingPaused && !interrupted && !resumeBlocked
-        if (outputRunning) tryPlatform(engine::pause)
+    private fun resetRoute(target: IosAudioEngine) {
+        if (outputRunning) tryPlatform(target::pause)
         outputRunning = false
-        tryPlatform(engine::stop)
-        tryPlatform(engine::release)
-        sessionActive = false
-        tryPlatform(platform::configureSession)
-        engine = platform.createEngine(sampleRate, this)
-        if (shouldRestart) {
-            if (activateSession() && tryPlatform(engine::start)) outputRunning = true
+        producer.pauseAndReset()
+        tryPlatform(target::reset)
+    }
+
+    private fun rebuildEngine(target: IosAudioEngine) {
+        if (outputRunning) tryPlatform(target::pause)
+        outputRunning = false
+        producer.pauseAndReset()
+        tryPlatform(target::stop)
+        tryPlatform(target::release)
+        deactivateSession()
+        if (!tryPlatform(platform::configureSession)) return
+        val replacement = try {
+            platform.createEngine(sampleRate, producer.callbackSource)
+        } catch (_: Throwable) {
+            incrementSaturated(backendFailures)
+            return
         }
+        val retained = transitionCondition.withLock {
+            if (!released && engine === target) {
+                engine = replacement
+                true
+            } else {
+                false
+            }
+        }
+        if (!retained) tryPlatform(replacement::release)
+    }
+
+    private fun shouldRunLocked(): Boolean =
+        outputRequested && !policy.schedulingPaused && !interrupted && !resumeBlocked
+
+    private fun finishTransitionLocked() {
+        transitioning = false
+        transitionCondition.broadcast()
     }
 
     private fun activateSession(): Boolean {
@@ -271,9 +374,17 @@ private class IosAudioSinkSession(
         operation()
         true
     } catch (_: Throwable) {
-        incrementSaturated(callbackFailures)
+        incrementSaturated(backendFailures)
         false
     }
+
+    private data class TransitionSnapshot(
+        val generation: Long,
+        val engine: IosAudioEngine,
+        val shouldRun: Boolean,
+        val routeReset: Boolean,
+        val mediaReset: Boolean,
+    )
 }
 
 private class DefaultIosAudioRenderer(
@@ -448,6 +559,26 @@ private inline fun <T> NSLock.withLock(block: () -> T): T {
         unlock()
     }
 }
+
+private inline fun <T> NSCondition.withLock(block: () -> T): T {
+    lock()
+    return try {
+        block()
+    } finally {
+        unlock()
+    }
+}
+
+private val AudioRuntimeSubmitResult.isAcceptedBySink: Boolean
+    get() = when (this) {
+        AudioRuntimeSubmitResult.Accepted,
+        AudioRuntimeSubmitResult.AcceptedAfterEviction,
+        AudioRuntimeSubmitResult.Coalesced,
+        -> true
+        AudioRuntimeSubmitResult.RejectedQueueFull,
+        AudioRuntimeSubmitResult.RejectedDestroyed,
+        -> false
+    }
 
 @OptIn(ExperimentalAtomicApi::class)
 private fun incrementSaturated(counter: AtomicLong) {
