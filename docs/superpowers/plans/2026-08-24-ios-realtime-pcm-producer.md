@@ -739,7 +739,7 @@ Run:
 
 Expected: all lifecycle order and existing platform configuration tests pass.
 
-- [ ] **Step 8: Commit sink integration**
+- [x] **Step 8: Commit sink integration**
 
 ```bash
 git add miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSink.kt miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSinkTest.kt
@@ -753,7 +753,7 @@ git commit -m "refactor: isolate iOS audio callback from DSP"
 - Modify: `miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSink.kt`
 - Modify: `miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSinkTest.kt`
 
-- [ ] **Step 1: Write RED callback adapter tests**
+- [x] **Step 1: Write RED callback adapter tests**
 
 Extend the fake native-engine seam so tests can request zero, partial and
 multi-chunk frame counts. Assert:
@@ -765,7 +765,7 @@ multi-chunk frame counts. Assert:
 - a null `AudioBufferList`, fewer than two buffers or null channel data records
   one callback failure and returns success without throwing.
 
-- [ ] **Step 2: Run the callback tests and verify RED**
+- [x] **Step 2: Run the callback tests and verify RED**
 
 Run:
 
@@ -776,7 +776,7 @@ Run:
 Expected: malformed-buffer cases exercise `check`/`checkNotNull` and the old
 callback path still delegates DSP rendering.
 
-- [ ] **Step 3: Replace throwing validation with explicit branches**
+- [x] **Step 3: Replace throwing validation with explicit branches**
 
 In `FrameworkIosAudioEngine.renderCallback`, use early nullable/size checks and
 `clearOutput`; do not use `check`, `require`, `checkNotNull`, string templates,
@@ -787,7 +787,7 @@ primitive indexed copies from the fixed left/right bridge arrays populated by
 The callback catch remains a final containment boundary for unforeseen native
 interop failures, but expected malformed inputs follow non-throwing branches.
 
-- [ ] **Step 4: Run the source boundary scan**
+- [x] **Step 4: Run the source boundary scan**
 
 Run:
 
@@ -799,7 +799,7 @@ Expected: lifecycle locks and producer-side renderer/runtime calls remain in
 their dedicated files; none of the forbidden operations appears inside
 `FrameworkIosAudioEngine.renderCallback` or `IosPcmCallbackSource.render`.
 
-- [ ] **Step 5: Run all audio tests**
+- [x] **Step 5: Run all audio tests**
 
 Run:
 

@@ -14,8 +14,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.FloatVar
+import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.get
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.pointed
+import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.set
+import kotlinx.cinterop.sizeOf
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
+import platform.CoreAudioTypes.AudioBuffer
+import platform.CoreAudioTypes.AudioBufferList
 
 class IosAudioSinkTest {
     @Test
@@ -259,6 +272,85 @@ class IosAudioSinkTest {
         assertFalse(platform.observing)
         assertEquals(AudioRuntimeSubmitResult.RejectedDestroyed, session.playMusic(compiledIosTone()))
     }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun `native callback copies prepared PCM in bounded chunks and zero fills missing frames`() {
+        val ring = StereoPcmRingBuffer(16)
+        val source = IosPcmCallbackSource(ring)
+        val adapter = IosPcmNativeCallbackAdapter(source, frameCapacity = 4)
+        ring.write(
+            FloatArray(7) { (it + 1).toFloat() },
+            FloatArray(7) { -(it + 1).toFloat() },
+            7,
+        )
+
+        withNativeAudioBufferList(frameCapacity = 10) { output, left, right ->
+            assertEquals(0, adapter.render(10, output))
+            assertEquals((1..7).map(Int::toFloat) + listOf(0f, 0f, 0f), (0 until 10).map { left[it] })
+            assertEquals((1..7).map { -it.toFloat() } + listOf(0f, 0f, 0f), (0 until 10).map { right[it] })
+        }
+        assertEquals(2L, source.drainDiagnostics().underrunEvents)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun `native callback accepts zero frames without touching output`() {
+        val source = IosPcmCallbackSource(StereoPcmRingBuffer(8))
+        val adapter = IosPcmNativeCallbackAdapter(source, frameCapacity = 4)
+
+        withNativeAudioBufferList(frameCapacity = 1) { output, left, right ->
+            left[0] = 3f
+            right[0] = -3f
+            assertEquals(0, adapter.render(0, output))
+            assertEquals(3f, left[0])
+            assertEquals(-3f, right[0])
+        }
+        assertEquals(IosPcmCallbackDiagnostics(), source.drainDiagnostics())
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun `malformed native buffers record failure without throwing`() {
+        val source = IosPcmCallbackSource(StereoPcmRingBuffer(8))
+        val adapter = IosPcmNativeCallbackAdapter(source, frameCapacity = 4)
+
+        assertEquals(0, adapter.render(4, null))
+        withNativeAudioBufferList(frameCapacity = 4, numberBuffers = 1) { output, _, _ ->
+            assertEquals(0, adapter.render(4, output))
+        }
+        withNativeAudioBufferList(frameCapacity = 4, nullChannel = 1) { output, _, _ ->
+            assertEquals(0, adapter.render(4, output))
+        }
+
+        assertEquals(3L, source.drainDiagnostics().callbackFailures)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private inline fun withNativeAudioBufferList(
+    frameCapacity: Int,
+    numberBuffers: Int = 2,
+    nullChannel: Int? = null,
+    block: (CPointer<AudioBufferList>, CPointer<FloatVar>, CPointer<FloatVar>) -> Unit,
+) = memScoped {
+    val allocatedBuffers = maxOf(numberBuffers, 1)
+    val bytes = allocArray<ByteVar>(
+        sizeOf<AudioBufferList>() + sizeOf<AudioBuffer>() * (allocatedBuffers - 1),
+    )
+    val output = bytes.reinterpret<AudioBufferList>()
+    val left = allocArray<FloatVar>(frameCapacity)
+    val right = allocArray<FloatVar>(frameCapacity)
+    output.pointed.mNumberBuffers = numberBuffers.toUInt()
+    output.pointed.mBuffers[0].mNumberChannels = 1u
+    output.pointed.mBuffers[0].mDataByteSize = (frameCapacity * sizeOf<FloatVar>()).toUInt()
+    output.pointed.mBuffers[0].mData = if (nullChannel == 0) null else left
+    if (numberBuffers >= 2) {
+        output.pointed.mBuffers[1].mNumberChannels = 1u
+        output.pointed.mBuffers[1].mDataByteSize = (frameCapacity * sizeOf<FloatVar>()).toUInt()
+        output.pointed.mBuffers[1].mData = if (nullChannel == 1) null else right
+    }
+    block(output, left, right)
 }
 
 private class RecordingIosAudioPlatform : IosAudioPlatform {

@@ -470,10 +470,9 @@ private class FrameworkIosAudioEngine(
     private val format = checkNotNull(
         AVAudioFormat(standardFormatWithSampleRate = sampleRate.toDouble(), channels = STEREO_CHANNEL_COUNT.toUInt()),
     )
-    private val left = FloatArray(frameCapacity)
-    private val right = FloatArray(frameCapacity)
+    private val callbackAdapter = IosPcmNativeCallbackAdapter(renderer, frameCapacity)
     private val source = AVAudioSourceNode(format) { _, _, frameCount, outputData ->
-        renderCallback(frameCount.toInt(), outputData)
+        callbackAdapter.render(frameCount.toInt(), outputData)
     }
     private var released = false
 
@@ -507,36 +506,69 @@ private class FrameworkIosAudioEngine(
         engine.disconnectNodeOutput(source)
         engine.detachNode(source)
     }
+}
 
-    private fun renderCallback(frameCount: Int, outputData: CPointer<AudioBufferList>?): Int = try {
-        val output = checkNotNull(outputData)
-        val buffers = output.pointed.mBuffers
-        check(output.pointed.mNumberBuffers.toInt() >= STEREO_CHANNEL_COUNT)
-        val leftOutput = checkNotNull(buffers[0].mData).reinterpret<FloatVar>()
-        val rightOutput = checkNotNull(buffers[1].mData).reinterpret<FloatVar>()
-        var offset = 0
-        while (offset < frameCount) {
-            val blockFrames = minOf(left.size, frameCount - offset)
-            renderer.render(left, right, blockFrames)
-            for (frame in 0 until blockFrames) {
-                leftOutput[offset + frame] = left[frame]
-                rightOutput[offset + frame] = right[frame]
+@OptIn(ExperimentalForeignApi::class)
+internal class IosPcmNativeCallbackAdapter(
+    private val pcmSource: IosPcmBlockRenderer,
+    frameCapacity: Int,
+) {
+    private val left = FloatArray(frameCapacity)
+    private val right = FloatArray(frameCapacity)
+
+    fun render(frameCount: Int, outputData: CPointer<AudioBufferList>?): Int {
+        if (frameCount <= 0) return 0
+        val output = outputData
+        if (output == null) {
+            recordFailure()
+            return 0
+        }
+        return try {
+            val buffers = output.pointed.mBuffers
+            if (output.pointed.mNumberBuffers.toInt() < STEREO_CHANNEL_COUNT) {
+                clearOutput(output, frameCount)
+                recordFailure()
+                return 0
             }
-            offset += blockFrames
-        }
-        0
-    } catch (_: Throwable) {
-        try {
-            clearOutput(outputData, frameCount)
+            val leftData = buffers[0].mData
+            val rightData = buffers[1].mData
+            if (leftData == null || rightData == null) {
+                clearOutput(output, frameCount)
+                recordFailure()
+                return 0
+            }
+            val leftOutput = leftData.reinterpret<FloatVar>()
+            val rightOutput = rightData.reinterpret<FloatVar>()
+            var offset = 0
+            while (offset < frameCount) {
+                val blockFrames = minOf(left.size, frameCount - offset)
+                pcmSource.render(left, right, blockFrames)
+                var frame = 0
+                while (frame < blockFrames) {
+                    leftOutput[offset + frame] = left[frame]
+                    rightOutput[offset + frame] = right[frame]
+                    frame += 1
+                }
+                offset += blockFrames
+            }
+            0
         } catch (_: Throwable) {
-            // The callback must contain malformed native buffers as well.
+            try {
+                clearOutput(output, frameCount)
+            } catch (_: Throwable) {
+                // Unforeseen native interop failures are contained by the realtime boundary.
+            }
+            recordFailure()
+            0
         }
+    }
+
+    private fun recordFailure() {
         try {
-            renderer.recordCallbackFailure()
+            pcmSource.recordCallbackFailure()
         } catch (_: Throwable) {
             // Diagnostics are best effort and must never escape the callback.
         }
-        0
     }
 }
 
@@ -545,9 +577,17 @@ private fun clearOutput(outputData: CPointer<AudioBufferList>?, frameCount: Int)
     val output = outputData ?: return
     val buffers = output.pointed.mBuffers
     val count = output.pointed.mNumberBuffers.toInt()
-    for (bufferIndex in 0 until count) {
-        val samples = buffers[bufferIndex].mData?.reinterpret<FloatVar>() ?: continue
-        for (frame in 0 until frameCount) samples[frame] = 0f
+    var bufferIndex = 0
+    while (bufferIndex < count) {
+        val samples = buffers[bufferIndex].mData?.reinterpret<FloatVar>()
+        if (samples != null) {
+            var frame = 0
+            while (frame < frameCount) {
+                samples[frame] = 0f
+                frame += 1
+            }
+        }
+        bufferIndex += 1
     }
 }
 
