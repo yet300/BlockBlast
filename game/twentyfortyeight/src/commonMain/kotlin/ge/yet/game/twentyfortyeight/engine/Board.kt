@@ -52,6 +52,7 @@ internal class Board private constructor(
     }
 
     fun withValue(position: Position, value: TileValue): Board {
+        require(cells[position.index] == null) { "Cannot place a value in occupied position $position" }
         val updated = cells.toMutableList()
         updated[position.index] = value.value
         return Board(updated.toList())
@@ -90,9 +91,35 @@ internal class RuntimeBoard private constructor(
         }
     }
 
+    operator fun get(position: Position): RuntimeTile? = tiles[position.index]
+
+    fun values(): List<Long?> = tiles.map { it?.value?.value }
+
     fun valueBoard(): Board = Board.fromValues(tiles.map { it?.value?.value })
 
+    fun withTile(position: Position, tile: RuntimeTile): RuntimeBoard {
+        require(tiles[position.index] == null) { "Cannot place a tile in occupied position $position" }
+        require(tiles.filterNotNull().none { it.id == tile.id }) { "Duplicate tile ID: ${tile.id}" }
+        val updated = tiles.toMutableList()
+        updated[position.index] = tile
+        return RuntimeBoard(updated.toList())
+    }
+
+    override fun equals(other: Any?): Boolean = other is RuntimeBoard && tiles == other.tiles
+
+    override fun hashCode(): Int = tiles.hashCode()
+
+    override fun toString(): String = "RuntimeBoard(tiles=$tiles)"
+
     companion object {
+        fun fromTiles(tiles: List<RuntimeTile?>): RuntimeBoard {
+            val copied = tiles.toList()
+            require(copied.filterNotNull().map { it.id }.toSet().size == copied.count { it != null }) {
+                "Runtime board tile IDs must be unique"
+            }
+            return RuntimeBoard(copied)
+        }
+
         fun restore(board: Board): Pair<RuntimeBoard, Long> {
             var nextId = 1L
             val tiles = board.values.map { value ->
@@ -103,7 +130,7 @@ internal class RuntimeBoard private constructor(
                     )
                 }
             }
-            return RuntimeBoard(tiles) to nextId
+            return fromTiles(tiles) to nextId
         }
     }
 }
