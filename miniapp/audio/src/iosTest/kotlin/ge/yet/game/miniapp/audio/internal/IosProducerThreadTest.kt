@@ -5,10 +5,24 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import platform.Foundation.NSQualityOfServiceUserInitiated
 import platform.Foundation.NSThread
 
 @OptIn(ExperimentalAtomicApi::class)
 class IosProducerThreadTest {
+    @Test
+    fun `foundation worker runs at user initiated quality of service`() {
+        val worker = FoundationIosProducerThread()
+        val observedQualityOfService = AtomicInt(Int.MIN_VALUE)
+
+        worker.start {
+            observedQualityOfService.store(NSThread.currentThread.qualityOfService.toInt())
+        }
+
+        assertTrue(worker.awaitTermination(timeoutSeconds = 1.0))
+        assertEquals(NSQualityOfServiceUserInitiated.toInt(), observedQualityOfService.load())
+    }
+
     @Test
     fun `foundation worker starts wakes and terminates within deadline`() {
         val worker = FoundationIosProducerThread()

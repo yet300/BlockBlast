@@ -2,6 +2,7 @@ package ge.yet.game.miniapp.audio.internal
 
 import platform.Foundation.NSCondition
 import platform.Foundation.NSDate
+import platform.Foundation.NSQualityOfServiceUserInitiated
 import platform.Foundation.NSThread
 
 internal interface IosProducerThread {
@@ -31,12 +32,15 @@ internal class FoundationIosProducerThread : IosProducerThread {
         } finally {
             condition.unlock()
         }
-        NSThread.detachNewThreadWithBlock {
+        NSThread {
             try {
                 block()
             } finally {
                 markTerminated()
             }
+        }.apply {
+            qualityOfService = NSQualityOfServiceUserInitiated
+            start()
         }
     }
 
