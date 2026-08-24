@@ -111,10 +111,11 @@ internal class ScheduledAudioEventBuffer(
 }
 
 internal class AudioScheduler(
-    private val program: CompiledAudioProgram,
     private val sampleRate: Int,
 ) {
-    private val tempo = tempoRatio(program.tempo.bpm)
+    private lateinit var program: CompiledAudioProgram
+    private var tempoNumerator = 1L
+    private var tempoDenominator = 1L
     private val scheduled = ScheduledAudioEventBuffer()
     private val patternEvents = PatternEventBuffer<AudioNote>()
     private val patternBudget = PatternQueryBudget()
@@ -123,8 +124,23 @@ internal class AudioScheduler(
     internal val patternQueryBudgetAllocationCount: Int get() = 1
     internal val patternListFallbackCount: Int get() = patternEvents.fallbackQueriesUsed
 
+    constructor(program: CompiledAudioProgram, sampleRate: Int) : this(sampleRate) {
+        reset(program)
+    }
+
     init {
         require(sampleRate in 8_000..192_000)
+    }
+
+    fun reset(program: CompiledAudioProgram) {
+        this.program = program
+        val scaledTempo = (program.tempo.bpm * TEMPO_PRECISION).roundToLong()
+        val divisor = greatestCommonDivisor(scaledTempo, TEMPO_PRECISION)
+        tempoNumerator = scaledTempo / divisor
+        tempoDenominator = TEMPO_PRECISION / divisor
+        scheduled.clear()
+        patternEvents.clear()
+        patternBudget.reset()
     }
 
     fun scheduleBlock(startFrame: Long, frameCount: Int): List<ScheduledAudioEvent> =
@@ -177,22 +193,14 @@ internal class AudioScheduler(
     }
 
     private fun frameToCycle(frame: Long): CycleTime = CycleTime.of(
-        numerator = checkedMultiplyPositive(frame, tempo.numerator),
-        denominator = checkedMultiplyPositive(sampleRate.toLong() * BEATS_PER_CYCLE, tempo.denominator),
+        numerator = checkedMultiplyPositive(frame, tempoNumerator),
+        denominator = checkedMultiplyPositive(sampleRate.toLong() * BEATS_PER_CYCLE, tempoDenominator),
     )
 
     private fun cycleToFrame(time: CycleTime): Long = (
-        time.numerator.toDouble() * sampleRate * BEATS_PER_CYCLE * tempo.denominator /
-            (time.denominator.toDouble() * tempo.numerator)
+        time.numerator.toDouble() * sampleRate * BEATS_PER_CYCLE * tempoDenominator /
+            (time.denominator.toDouble() * tempoNumerator)
         ).roundToLong()
-}
-
-private data class TempoRatio(val numerator: Long, val denominator: Long)
-
-private fun tempoRatio(bpm: Float): TempoRatio {
-    val scaled = (bpm * TEMPO_PRECISION).roundToLong()
-    val divisor = greatestCommonDivisor(scaled, TEMPO_PRECISION)
-    return TempoRatio(scaled / divisor, TEMPO_PRECISION / divisor)
 }
 
 private fun greatestCommonDivisor(first: Long, second: Long): Long {

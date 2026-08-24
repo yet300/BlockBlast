@@ -7,6 +7,22 @@ import kotlin.test.assertSame
 
 class AudioValidationTest {
     @Test
+    fun `compiler rejects controls beyond the fixed realtime capacity`() {
+        val program = audioProgram {
+            repeat(AudioMobileBudget.MAX_CONTROLS + 1) { index ->
+                control("control_$index", default = 0.5f, range = 0f..1f)
+            }
+        }
+
+        val failure = assertIs<AudioCompilationResult.Failure>(program.compile())
+
+        assertEquals(
+            listOf(AudioDiagnosticCode.CONTROL_LIMIT_EXCEEDED to "controls"),
+            failure.diagnostics.map { it.code to it.path },
+        )
+    }
+
+    @Test
     fun `compiler caches the runtime instrument for each sound effect`() {
         val success = assertIs<AudioCompilationResult.Success>(
             audioProgram {

@@ -20,7 +20,7 @@ internal class RealtimeAudioRenderer(
     private val sampleRate: Int,
     private val blockCapacity: Int,
 ) : AudioRuntimeCommandTarget {
-    private val controlPositions = mutableMapOf<AudioControlName, Float>()
+    private val controlPositions = RealtimeControlPositions(AudioMobileBudget.MAX_CONTROLS)
     private val voiceAllocator = VoiceAllocator()
     private val voiceSlots = Array(AudioMobileBudget.MAX_VOICES) {
         RealtimeVoiceSlot(
@@ -34,8 +34,8 @@ internal class RealtimeAudioRenderer(
     private val rightStopGain = SmoothedGainState(1f)
     private val musicLeft = FloatArray(blockCapacity)
     private val musicRight = FloatArray(blockCapacity)
+    private val scheduler = AudioScheduler(sampleRate)
     private var program: CompiledAudioProgram? = null
-    private var scheduler: AudioScheduler? = null
     private var framePosition = 0L
     private var policy = AudioSessionPolicy.Active
     private var stopAfterFade = false
@@ -54,6 +54,7 @@ internal class RealtimeAudioRenderer(
 
     internal val voiceStateAllocationCount: Int get() = voiceSlots.size
     internal val scratchBufferAllocationCount: Int get() = voiceSlots.size
+    internal val schedulerAllocationCount: Int get() = 1
 
     init {
         require(sampleRate in 8_000..192_000)
@@ -96,15 +97,8 @@ internal class RealtimeAudioRenderer(
     override fun playMusic(program: CompiledAudioProgram): AudioRuntimeCommandOutcome {
         clearMusic()
         this.program = program
-        scheduler = AudioScheduler(program, sampleRate)
-        program.source.controls.forEach { declaration ->
-            val width = declaration.range.endInclusive - declaration.range.start
-            controlPositions[declaration.name] = if (width == 0f) {
-                0f
-            } else {
-                (declaration.default - declaration.range.start) / width
-            }
-        }
+        scheduler.reset(program)
+        check(controlPositions.reset(program.source.controls))
         resetGain(leftPolicyGain, policy.musicGain)
         resetGain(rightPolicyGain, policy.musicGain)
         resetGain(leftStopGain, 1f)
@@ -154,7 +148,7 @@ internal class RealtimeAudioRenderer(
         val declaration = program?.source?.controls?.firstOrNull { it.name == name }
             ?: return AudioRuntimeCommandOutcome.VALIDATION_REJECTED
         val width = declaration.range.endInclusive - declaration.range.start
-        controlPositions[name] = if (width == 0f) 0f else (value - declaration.range.start) / width
+        check(controlPositions.set(name, if (width == 0f) 0f else (value - declaration.range.start) / width))
         return AudioRuntimeCommandOutcome.APPLIED
     }
 
@@ -168,7 +162,7 @@ internal class RealtimeAudioRenderer(
     }
 
     private fun scheduleNewMusicVoices(program: CompiledAudioProgram, frameCount: Int) {
-        val scheduled = requireNotNull(scheduler).scheduleBlockInto(framePosition, frameCount)
+        val scheduled = scheduler.scheduleBlockInto(framePosition, frameCount)
         for (index in 0 until scheduled.size) {
             val track = program.source.musicTracks[scheduled.trackIndexAt(index)]
             val instrument = program.source.instruments.first { it.name == track.instrument }
@@ -270,7 +264,6 @@ internal class RealtimeAudioRenderer(
 
     private fun clearMusic() {
         program = null
-        scheduler = null
         for (index in voiceSlots.indices) {
             val slot = voiceSlots[index]
             if (slot.active && slot.kind == VoiceKind.MUSIC) finishVoice(slot)

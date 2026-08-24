@@ -18,6 +18,17 @@ import kotlin.test.assertTrue
 
 class RealtimeAudioRendererTest {
     @Test
+    fun `music commands reset one preallocated scheduler`() {
+        val renderer = RealtimeAudioRenderer(sampleRate = 8_000, blockCapacity = 128)
+        val compiled = compiledTone()
+
+        renderer.playMusic(compiled)
+        renderer.playMusic(compiled)
+
+        assertEquals(1, renderer.schedulerAllocationCount)
+    }
+
+    @Test
     fun `voice state and scratch storage are preallocated once`() {
         val renderer = RealtimeAudioRenderer(sampleRate = 8_000, blockCapacity = 128)
         val compiled = assertIs<AudioCompilationResult.Success>(

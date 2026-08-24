@@ -7,6 +7,7 @@ import ge.yet.game.pattern.TimeArc
 
 enum class AudioDiagnosticCode {
     EMPTY_OSCILLATOR_SOURCE,
+    CONTROL_LIMIT_EXCEEDED,
     UNRESOLVED_INSTRUMENT,
     TRACK_LIMIT_EXCEEDED,
     OSCILLATOR_LIMIT_EXCEEDED,
@@ -174,6 +175,15 @@ internal fun AudioProgram.compile(): AudioCompilationResult {
                 ),
             )
         }
+        if (controls.size > AudioMobileBudget.MAX_CONTROLS) {
+            add(
+                AudioDiagnostic(
+                    code = AudioDiagnosticCode.CONTROL_LIMIT_EXCEEDED,
+                    path = "controls",
+                    message = "Program exceeds the mobile control limit",
+                ),
+            )
+        }
     }.sortedWith(compareBy(AudioDiagnostic::path, AudioDiagnostic::code))
 
     return if (diagnostics.isEmpty()) {
@@ -286,6 +296,7 @@ internal object AudioMobileBudget {
     const val MAX_VOICES = 32
     const val SFX_RESERVED_VOICES = 8
     const val MAX_TRACKS = 16
+    const val MAX_CONTROLS = 32
     const val MAX_OSCILLATORS_PER_INSTRUMENT = 8
     const val MAX_EFFECTS = 4
     const val MAX_DELAY_SECONDS = 4.0
