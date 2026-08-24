@@ -314,7 +314,7 @@ git commit -m "feat: add allocation-free iOS PCM callback source"
 - Modify: `miniapp/audio/src/commonMain/kotlin/ge/yet/game/miniapp/audio/internal/CompiledAudioRuntime.kt`
 - Modify: `miniapp/audio/src/commonTest/kotlin/ge/yet/game/miniapp/audio/internal/CompiledAudioRuntimeTest.kt`
 
-- [ ] **Step 1: RED-test the buffer policy independently**
+- [x] **Step 1: RED-test the buffer policy independently**
 
 Define expected selections:
 
@@ -339,7 +339,7 @@ assertEquals(
 )
 ```
 
-- [ ] **Step 2: Add RED producer tests with a recording renderer**
+- [x] **Step 2: Add RED producer tests with a recording renderer**
 
 Use a deterministic `pumpOnce()` seam and assert:
 
@@ -355,7 +355,7 @@ Use a deterministic `pumpOnce()` seam and assert:
 The recording renderer fills complete blocks with a monotonically increasing
 sample value so publication boundaries are observable.
 
-- [ ] **Step 3: Run producer tests and verify RED**
+- [x] **Step 3: Run producer tests and verify RED**
 
 Run:
 
@@ -365,7 +365,7 @@ Run:
 
 Expected: compilation fails because producer types do not exist.
 
-- [ ] **Step 4: Implement producer contracts and buffer policy**
+- [x] **Step 4: Implement producer contracts and buffer policy**
 
 Use these internal types:
 
@@ -423,7 +423,7 @@ The shown integer-shift loop is the complete `nextPowerOfTwo` operation. Define
 `MAXIMUM_SAFE_RING_FRAMES = 1 shl 29`, so it cannot overflow `Int` before
 allocation.
 
-- [ ] **Step 5: RED-test producer-only command failure propagation**
+- [x] **Step 5: RED-test producer-only command failure propagation**
 
 In `CompiledAudioRuntimeTest`, use a target whose `playMusic` throws. Assert the
 existing `consumeCommandsForBlock()` still contains the failure and increments
@@ -431,7 +431,7 @@ existing `consumeCommandsForBlock()` still contains the failure and increments
 the same exception. This preserves Android behavior while allowing the iOS
 producer to enter its terminal failure state.
 
-- [ ] **Step 6: Implement producer-only command failure propagation**
+- [x] **Step 6: Implement producer-only command failure propagation**
 
 Refactor the current consume loop behind a private boolean policy:
 
@@ -467,7 +467,7 @@ private fun consumeCommandsForBlock(propagateTargetFailure: Boolean): Int {
 }
 ```
 
-- [ ] **Step 7: Implement the deterministic producer core**
+- [x] **Step 7: Implement the deterministic producer core**
 
 The concrete producer owns:
 
@@ -495,7 +495,7 @@ producer command lock. `pumpOnce()` must:
 Catch failures around command consumption/render in the producer boundary,
 clear the work arrays, record one producer failure and enter terminal failure.
 
-- [ ] **Step 8: Run producer tests and the complete iOS test target**
+- [x] **Step 8: Run producer tests and the complete iOS test target**
 
 Run:
 
@@ -505,7 +505,7 @@ Run:
 
 Expected: all existing and new iOS tests pass.
 
-- [ ] **Step 9: Commit deterministic producer behavior**
+- [x] **Step 9: Commit deterministic producer behavior**
 
 ```bash
 git add miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmProducer.kt miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmProducerTest.kt miniapp/audio/src/commonMain/kotlin/ge/yet/game/miniapp/audio/internal/CompiledAudioRuntime.kt miniapp/audio/src/commonTest/kotlin/ge/yet/game/miniapp/audio/internal/CompiledAudioRuntimeTest.kt

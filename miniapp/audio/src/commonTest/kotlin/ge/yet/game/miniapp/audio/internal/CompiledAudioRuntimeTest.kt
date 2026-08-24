@@ -5,6 +5,7 @@ import ge.yet.game.miniapp.audio.CompiledAudioProgram
 import ge.yet.game.miniapp.audio.SfxName
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class CompiledAudioRuntimeTest {
@@ -67,6 +68,23 @@ class CompiledAudioRuntimeTest {
 
         assertEquals(listOf("survives"), target.controls)
         assertEquals(1L, runtime.drainDiagnostics().callbackFailures)
+    }
+
+    @Test
+    fun `producer consume path propagates target failure`() {
+        val runtime = CompiledAudioRuntime(
+            target = RecordingTarget(throwOnCall = 1),
+            queueCapacity = 2,
+            maxCommandsPerBlock = 1,
+        )
+        runtime.submit(control("fails", 0.1f))
+
+        val failure = assertFailsWith<IllegalStateException> {
+            runtime.consumeCommandsForBlockOrThrow()
+        }
+
+        assertEquals("synthetic callback failure", failure.message)
+        assertEquals(0L, runtime.drainDiagnostics().callbackFailures)
     }
 
     @Test

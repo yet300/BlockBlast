@@ -80,17 +80,25 @@ internal class CompiledAudioRuntime(
         }
     }
 
-    fun consumeCommandsForBlock(): Int {
+    fun consumeCommandsForBlock(): Int = consumeCommandsForBlock(propagateTargetFailure = false)
+
+    fun consumeCommandsForBlockOrThrow(): Int = consumeCommandsForBlock(propagateTargetFailure = true)
+
+    private fun consumeCommandsForBlock(propagateTargetFailure: Boolean): Int {
         if (isDestroyed) return 0
         var consumed = 0
         while (consumed < maxCommandsPerBlock) {
             val command = queue.poll() ?: break
             consumed += 1
-            val outcome = try {
+            val outcome = if (propagateTargetFailure) {
                 dispatch(command)
-            } catch (_: Throwable) {
-                diagnostics.increment(AudioRuntimeDiagnostic.CALLBACK_FAILURE)
-                null
+            } else {
+                try {
+                    dispatch(command)
+                } catch (_: Throwable) {
+                    diagnostics.increment(AudioRuntimeDiagnostic.CALLBACK_FAILURE)
+                    null
+                }
             }
             if (outcome != null) diagnostics.record(outcome)
             if (command === AudioCommand.Destroy) {
