@@ -47,7 +47,7 @@
 - Create: `miniapp/audio/src/commonMain/kotlin/ge/yet/game/miniapp/audio/internal/StereoPcmRingBuffer.kt`
 - Create: `miniapp/audio/src/commonTest/kotlin/ge/yet/game/miniapp/audio/internal/StereoPcmRingBufferTest.kt`
 
-- [ ] **Step 1: Write RED tests for construction and contiguous transfer**
+- [x] **Step 1: Write RED tests for construction and contiguous transfer**
 
 Create tests that establish the primitive contract:
 
@@ -77,7 +77,7 @@ class StereoPcmRingBufferTest {
 }
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run:
 
@@ -87,7 +87,7 @@ Run:
 
 Expected: Kotlin compilation fails because `StereoPcmRingBuffer` does not exist.
 
-- [ ] **Step 3: Implement construction and contiguous transfer**
+- [x] **Step 3: Implement construction and contiguous transfer**
 
 Add an internal class with this exact surface:
 
@@ -163,7 +163,7 @@ frames. `readOrSilence` returns missing frames, not a result object. Publish the
 write position only after both channels have been copied and the read position
 only after the output has been filled.
 
-- [ ] **Step 4: Add RED tests for wrap, full buffer and underrun silence**
+- [x] **Step 4: Add RED tests for wrap, full buffer and underrun silence**
 
 Add cases that:
 
@@ -176,7 +176,7 @@ Add cases that:
 Use distinct values per channel and assert complete arrays with
 `assertContentEquals`; do not inspect private arrays or use reflection.
 
-- [ ] **Step 5: Run the ring tests and verify GREEN**
+- [x] **Step 5: Run the ring tests and verify GREEN**
 
 Run:
 
@@ -186,7 +186,7 @@ Run:
 
 Expected: all `StereoPcmRingBufferTest` cases pass on configured common targets.
 
-- [ ] **Step 6: Commit the ring**
+- [x] **Step 6: Commit the ring**
 
 ```bash
 git add miniapp/audio/src/commonMain/kotlin/ge/yet/game/miniapp/audio/internal/StereoPcmRingBuffer.kt miniapp/audio/src/commonTest/kotlin/ge/yet/game/miniapp/audio/internal/StereoPcmRingBufferTest.kt
