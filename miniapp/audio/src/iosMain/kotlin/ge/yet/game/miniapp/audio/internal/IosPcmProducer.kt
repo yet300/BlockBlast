@@ -1,6 +1,9 @@
 package ge.yet.game.miniapp.audio.internal
 
+import platform.Foundation.NSCondition
+import platform.Foundation.NSDate
 import platform.Foundation.NSLock
+import platform.Foundation.NSThread
 
 internal data class IosPcmBufferConfiguration(
     val producerQuantum: Int,
@@ -54,6 +57,7 @@ internal class DefaultIosPcmProducer(
     private val sampleRate: Int,
     maximumFramesPerSlice: Int,
     rendererFactory: IosAudioRendererFactory,
+    threadFactory: IosProducerThreadFactory? = IosProducerThreadFactory(::FoundationIosProducerThread),
 ) : IosPcmProducerSession {
     private val configuration = IosPcmBufferConfiguration.select(maximumFramesPerSlice)
     private val ring = StereoPcmRingBuffer(configuration.ringCapacity)
@@ -68,6 +72,8 @@ internal class DefaultIosPcmProducer(
     private val right = FloatArray(configuration.producerQuantum)
     private val commandLock = NSLock()
     private val stateLock = NSLock()
+    private val progressCondition = NSCondition()
+    private val worker = threadFactory?.create()
     private var state = ProducerState.Paused
     private var desiredPolicy = AudioSessionPolicy.Active
     private var appliedPolicy: AudioSessionPolicy? = null
@@ -75,29 +81,34 @@ internal class DefaultIosPcmProducer(
     private var producerWakeups = 0L
     private var renderFailures = 0L
     private var peakBufferedFrames = 0L
+    private var pumpInFlight = false
 
     internal val bufferedFrames: Int
         get() = ring.availableFrames
 
     init {
         require(sampleRate > 0)
+        worker?.start(::runLoop)
     }
 
     override fun submit(command: AudioCommand): AudioRuntimeSubmitResult {
         if (stateLock.withLock { state.isTerminal }) return AudioRuntimeSubmitResult.RejectedDestroyed
-        return commandLock.withLock {
+        val result = commandLock.withLock {
             if (stateLock.withLock { state.isTerminal }) {
                 AudioRuntimeSubmitResult.RejectedDestroyed
             } else {
                 runtime.submit(command)
             }
         }
+        if (result.accepted) worker?.signal()
+        return result
     }
 
     override fun updatePolicy(policy: AudioSessionPolicy) {
         stateLock.withLock {
             if (!state.isTerminal) desiredPolicy = policy
         }
+        worker?.signal()
     }
 
     override fun resumeAndAwaitPrefill(): Boolean {
@@ -108,8 +119,14 @@ internal class DefaultIosPcmProducer(
             }
         }
         if (!resumed) return false
-        while (ring.availableFrames < configuration.startWatermark) {
-            if (!pumpOnce()) break
+        val currentWorker = worker
+        if (currentWorker == null) {
+            while (ring.availableFrames < configuration.startWatermark) {
+                if (!pumpOnce()) break
+            }
+        } else {
+            currentWorker.signal()
+            if (!awaitPrefill()) return false
         }
         return stateLock.withLock {
             state == ProducerState.Running && ring.availableFrames >= configuration.startWatermark
@@ -119,6 +136,11 @@ internal class DefaultIosPcmProducer(
     override fun pauseAndReset() {
         stateLock.withLock {
             if (!state.isTerminal) state = ProducerState.Paused
+        }
+        worker?.signal()
+        awaitProducerQuiescence()
+        while (callbackSource.hasCallbackInFlight()) {
+            NSThread.sleepForTimeInterval(QUIESCENCE_POLL_SECONDS)
         }
         ring.reset()
     }
@@ -134,6 +156,12 @@ internal class DefaultIosPcmProducer(
             }
         }
         if (!shouldDestroy) return
+        worker?.let { currentWorker ->
+            currentWorker.signal()
+            while (!currentWorker.awaitTermination(TERMINATION_WAIT_SECONDS)) {
+                // Renderer state must outlive its producer thread.
+            }
+        }
         try {
             renderer.destroy()
         } catch (_: Throwable) {
@@ -162,6 +190,7 @@ internal class DefaultIosPcmProducer(
             if (state != ProducerState.Running || ring.availableFrames >= configuration.targetWatermark) {
                 return false
             }
+            pumpInFlight = true
             producerWakeups = incrementSaturated(producerWakeups)
             desiredPolicy
         }
@@ -196,6 +225,51 @@ internal class DefaultIosPcmProducer(
                 renderFailures = incrementSaturated(renderFailures)
             }
             false
+        } finally {
+            stateLock.withLock { pumpInFlight = false }
+            signalProgress()
+        }
+    }
+
+    private fun runLoop() {
+        while (stateLock.withLock { state != ProducerState.Terminated }) {
+            if (!pumpOnce()) {
+                worker?.awaitSignal(nextWaitSeconds())
+            }
+        }
+    }
+
+    private fun awaitPrefill(): Boolean {
+        val deadline = deadlineAfter(PREFILL_TIMEOUT_SECONDS)
+        progressCondition.lock()
+        return try {
+            while (ring.availableFrames < configuration.startWatermark) {
+                if (stateLock.withLock { state != ProducerState.Running }) return false
+                if (!progressCondition.waitUntilDate(deadline)) return false
+            }
+            true
+        } finally {
+            progressCondition.unlock()
+        }
+    }
+
+    private fun awaitProducerQuiescence() {
+        while (stateLock.withLock { pumpInFlight }) {
+            NSThread.sleepForTimeInterval(QUIESCENCE_POLL_SECONDS)
+        }
+    }
+
+    private fun nextWaitSeconds(): Double {
+        val bufferedSeconds = ring.availableFrames.toDouble() / sampleRate.toDouble()
+        return (bufferedSeconds / 2.0).coerceIn(MIN_WORKER_WAIT_SECONDS, MAX_WORKER_WAIT_SECONDS)
+    }
+
+    private fun signalProgress() {
+        progressCondition.lock()
+        try {
+            progressCondition.broadcast()
+        } finally {
+            progressCondition.unlock()
         }
     }
 
@@ -221,6 +295,21 @@ private inline fun <T> NSLock.withLock(block: () -> T): T {
 
 private fun incrementSaturated(value: Long): Long = if (value == Long.MAX_VALUE) value else value + 1
 
+private val AudioRuntimeSubmitResult.accepted: Boolean
+    get() = when (this) {
+        AudioRuntimeSubmitResult.Accepted,
+        AudioRuntimeSubmitResult.Coalesced,
+        AudioRuntimeSubmitResult.AcceptedAfterEviction,
+        -> true
+        AudioRuntimeSubmitResult.RejectedQueueFull,
+        AudioRuntimeSubmitResult.RejectedDestroyed,
+        -> false
+    }
+
+private fun deadlineAfter(timeoutSeconds: Double): NSDate = NSDate(
+    timeIntervalSinceReferenceDate = NSDate().timeIntervalSinceReferenceDate + timeoutSeconds,
+)
+
 private const val MIN_PRODUCER_QUANTUM = 64
 private const val MAX_PRODUCER_QUANTUM = 512
 private const val BUFFERED_QUANTUM_COUNT = 8
@@ -229,3 +318,8 @@ private const val TARGET_QUANTUM_COUNT = 6
 private const val MAXIMUM_SAFE_RING_FRAMES = 1 shl 29
 private const val COMMAND_QUEUE_CAPACITY = 64
 private const val MAX_COMMANDS_PER_BLOCK = 8
+private const val PREFILL_TIMEOUT_SECONDS = 2.0
+private const val TERMINATION_WAIT_SECONDS = 1.0
+private const val QUIESCENCE_POLL_SECONDS = 0.001
+private const val MIN_WORKER_WAIT_SECONDS = 0.001
+private const val MAX_WORKER_WAIT_SECONDS = 0.010

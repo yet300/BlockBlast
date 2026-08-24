@@ -521,13 +521,13 @@ git commit -m "feat: render iOS PCM through a bounded producer"
 - Modify: `miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmProducer.kt`
 - Modify: `miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmProducerTest.kt`
 
-- [ ] **Step 1: Write the Foundation compile/lifecycle RED test**
+- [x] **Step 1: Write the Foundation compile/lifecycle RED test**
 
 Create a bounded test that starts a worker, increments an atomic value inside
 its block, requests termination and waits for completion. Every wait must use a
 one-second deadline and fail rather than hang the simulator test process.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run:
 
@@ -537,7 +537,7 @@ Run:
 
 Expected: compilation fails because `FoundationIosProducerThread` does not exist.
 
-- [ ] **Step 3: Implement the narrow thread boundary**
+- [x] **Step 3: Implement the narrow thread boundary**
 
 Use an interface so all producer state tests remain deterministic:
 
@@ -560,7 +560,7 @@ internal fun interface IosProducerThreadFactory {
 signals/broadcasts while holding the condition and records terminal state before
 broadcast. It contains no audio runtime or callback logic.
 
-- [ ] **Step 4: Connect the worker loop to the producer**
+- [x] **Step 4: Connect the worker loop to the producer**
 
 Start the producer thread once during producer construction. The loop repeatedly
 calls `pumpOnce()`. When no block can be produced, call `awaitSignal` with a
@@ -580,13 +580,13 @@ this barrier, so no new callback can enter. Use a bounded timed wait rather than
 having the callback signal a condition. `terminate` wakes the loop and waits for
 its terminal broadcast before destroying the renderer.
 
-- [ ] **Step 5: Add real-thread producer integration assertions**
+- [x] **Step 5: Add real-thread producer integration assertions**
 
 Using the real thread factory, verify accepted Play reaches the start watermark,
 pause clears it, resume prefills again and termination completes within one
 second. Do not assert exact wakeup counts because native scheduling is nondeterministic.
 
-- [ ] **Step 6: Run iOS tests and compile the iOS source set**
+- [x] **Step 6: Run iOS tests and compile the iOS source set**
 
 Run:
 
@@ -596,7 +596,7 @@ Run:
 
 Expected: tests pass and Kotlin/Native accepts all Foundation signatures.
 
-- [ ] **Step 7: Commit the worker boundary**
+- [x] **Step 7: Commit the worker boundary**
 
 ```bash
 git add miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosProducerThread.kt miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosProducerThreadTest.kt miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmProducer.kt miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmProducerTest.kt

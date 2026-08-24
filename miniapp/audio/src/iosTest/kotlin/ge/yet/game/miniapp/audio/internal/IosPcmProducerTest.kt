@@ -14,6 +14,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import platform.posix.pthread_mach_thread_np
+import platform.posix.pthread_self
 
 class IosPcmProducerTest {
     @Test
@@ -116,6 +118,31 @@ class IosPcmProducerTest {
         assertEquals(8, renderer.renderCount)
     }
 
+    @Test
+    fun `default producer prefills pauses resumes and terminates on its worker thread`() {
+        val callerThreadId = currentThreadId()
+        val renderer = ProducerRecordingRenderer()
+        val producer = DefaultIosPcmProducer(
+            sampleRate = 48_000,
+            maximumFramesPerSlice = 64,
+            rendererFactory = IosAudioRendererFactory { _, frameCapacity ->
+                renderer.also { it.frameCapacity = frameCapacity }
+            },
+        )
+        producer.submit(AudioCommand.PlayMusic(compiledProducerTone()))
+
+        assertTrue(producer.resumeAndAwaitPrefill())
+        assertFalse(renderer.renderThreadId == callerThreadId)
+        assertTrue(producer.bufferedFrames >= 192)
+
+        producer.pauseAndReset()
+        assertEquals(0, producer.bufferedFrames)
+        assertTrue(producer.resumeAndAwaitPrefill())
+
+        producer.terminate()
+        assertEquals(1, renderer.destroyCount)
+    }
+
     private fun producer(
         renderer: ProducerRecordingRenderer,
         maximumFramesPerSlice: Int,
@@ -125,6 +152,7 @@ class IosPcmProducerTest {
         rendererFactory = IosAudioRendererFactory { _, frameCapacity ->
             renderer.also { it.frameCapacity = frameCapacity }
         },
+        threadFactory = null,
     )
 }
 
@@ -135,6 +163,7 @@ private class ProducerRecordingRenderer(
     var playMusicCount: Int = 0
     var renderCount: Int = 0
     var destroyCount: Int = 0
+    var renderThreadId: UInt? = null
     val policies = mutableListOf<AudioSessionPolicy>()
 
     override fun updatePolicy(policy: AudioSessionPolicy) {
@@ -143,6 +172,7 @@ private class ProducerRecordingRenderer(
 
     override fun render(left: FloatArray, right: FloatArray, frameCount: Int) {
         check(frameCount <= frameCapacity)
+        renderThreadId = currentThreadId()
         renderCount += 1
         left.fill(renderCount.toFloat(), 0, frameCount)
         right.fill(-renderCount.toFloat(), 0, frameCount)
@@ -178,3 +208,5 @@ private fun compiledProducerTone() = assertIs<AudioCompilationResult.Success>(
         }
     }.compile(),
 ).program
+
+private fun currentThreadId(): UInt = pthread_mach_thread_np(pthread_self())
