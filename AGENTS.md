@@ -86,7 +86,7 @@ BlockBlast/
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its runtime coordinator owns session creation, visibility, stale callbacks, session-bound audio opening/closure, reset/launch serialization and teardown-before-clear ordering. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:audio`, `:miniapp:compose` |
-| `:game:blockblast` | Block Blast rules, models, persistence, game-owned procedural program/SFX mapping, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; MiniApp/core contracts, ConfettiKit and MVIKotlin; no raw Settings or native-ad dependency |
+| `:game:blockblast` | Block Blast rules, models, persistence, bundled-audio filename mapping, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; MiniApp/core contracts, ConfettiKit and MVIKotlin; no raw Settings, platform-audio or native-ad dependency |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
@@ -164,9 +164,11 @@ visibility, host callbacks, an ID-bound `MiniAppStorage` and a stale-safe
 `MiniAppAudio` facade. Root opens audio before plugin session creation and
 closes provisional or destroyed sessions with the same ID/key. MiniApps use
 that facade for procedural playback rather than importing platform audio or
-reading Settings. Counter is the copyable authoring example; Block Blast keeps
-game events behind `BlockBlastAudioPlayer` and maps them to its typed program
-inside the game module, so its Store never handles filenames or DSP commands.
+reading Settings. Counter is the copyable authoring example. Block Blast is a
+legacy exception: its semantic `BlockBlastAudioPlayer` maps game events to its
+existing bundled filenames and delegates to the app-owned `AudioRepository`;
+its Store still handles neither filenames nor DSP commands. The shared
+file-audio pipeline is not a public MiniApp authoring capability.
 Persistent values use local snake-case keys and versioned snapshot specs;
 MiniApps must not import
 `com.russhwolf.settings` or construct physical storage keys. The host-side
@@ -209,6 +211,10 @@ invocation. There is no server, runtime catalog download or remote plugin
 loading.
 
 Generated projects apply only `logica.miniapp`. That convention supplies KMP, Compose resources, Metro, one direct `:miniapp:metro` framework edge, reusable `:miniapp:audio-presets` as an implementation dependency, and dependency-boundary validation. Contributors can use `MiniAppSessionContext.audio` and shared audio presets without declaring audio dependencies. They may use stable `:miniapp:*` contracts and the allowed inward core contracts, but must not depend on feature, application, concrete game/sample, data/telemetry, native-ad modules, platform audio APIs or external audio engines. Use `:miniapp:compose MiniAppInterstitialCapability` rather than `:monetization:ads`.
+
+Do not inject or call the legacy `AudioRepository` from a generated MiniApp.
+Its bundled-file path is retained only for Block Blast and is not part of the
+contributor contract.
 
 Generated `@GraphExtension.Factory` methods are namespaced from the complete
 MiniApp ID (for example, `createGameSnakeSessionGraph`). Preserve that naming:

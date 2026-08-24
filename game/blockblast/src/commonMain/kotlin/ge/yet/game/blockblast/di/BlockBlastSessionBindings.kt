@@ -20,10 +20,10 @@ import ge.yet.game.blockblast.session.BlockBlastSession
 import ge.yet.game.blockblast.session.BlockBlastSessionComponent
 import ge.yet.game.blockblast.session.DefaultBlockBlastSessionComponentFactory
 import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
-import ge.yet.game.miniapp.audio.MiniAppAudio
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.metro.MiniAppSessionScope
 
@@ -33,7 +33,7 @@ abstract class BlockBlastSessionBindings {
     companion object {
         @Provides
         @SingleIn(MiniAppSessionScope::class)
-        internal fun provideBlockBlastAudioPlayer(audio: MiniAppAudio): BlockBlastAudioPlayer =
+        internal fun provideBlockBlastAudioPlayer(audio: AudioRepository): BlockBlastAudioPlayer =
             DefaultBlockBlastAudioPlayer(audio)
 
         @Provides

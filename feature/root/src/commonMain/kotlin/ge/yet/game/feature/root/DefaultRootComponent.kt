@@ -51,7 +51,6 @@ internal class DefaultRootComponent(
     private val audio: AudioRepository,
 ) : RootComponent, ComponentContext by componentContext {
 
-    private val rootScope = coroutineScope()
     private val navigation = StackNavigation<Config>()
     private val sheetNavigation = SlotNavigation<SheetConfig>()
 
@@ -122,11 +121,11 @@ internal class DefaultRootComponent(
         }
         lifecycle.doOnStart {
             runtimeCoordinator.setForeground(true)
-            rootScope.launch { audio.onAppForeground() }
+            audio.onAppForeground()
         }
         lifecycle.doOnStop {
             runtimeCoordinator.setForeground(false)
-            rootScope.launch { audio.onAppBackground() }
+            audio.onAppBackground()
         }
         lifecycle.doOnDestroy {
             stackSubscription.cancel()

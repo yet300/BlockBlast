@@ -17,6 +17,8 @@ import dev.zacsweers.metro.createGraph
 import ge.yet.game.blockblast.BlockBlastPlugin
 import ge.yet.game.blockblast.component.game.GameComponent
 import ge.yet.game.blockblast.component.game.store.ReviewOpportunityConfig
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioAssets
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.model.Grid
@@ -28,6 +30,7 @@ import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.session.BlockBlastSession
 import ge.yet.game.blockblast.session.BlockBlastSessionComponent
 import ge.yet.game.domain.repository.AnalyticRepository
+import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.FeedbackPreferences
 import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppLegacyStorageKeys
@@ -35,12 +38,6 @@ import ge.yet.game.miniapp.api.MiniAppId
 import ge.yet.game.miniapp.api.MiniAppStorageProvider
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
-import ge.yet.game.miniapp.audio.AudioCommandResult
-import ge.yet.game.miniapp.audio.AudioControlName
-import ge.yet.game.miniapp.audio.AudioDuration
-import ge.yet.game.miniapp.audio.AudioProgram
-import ge.yet.game.miniapp.audio.MiniAppAudio
-import ge.yet.game.miniapp.audio.SfxName
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialGate
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
@@ -93,6 +90,7 @@ internal interface BlockBlastPluginTestGraph {
     val saveRepository: GameSaveRepository
     val bestScoreRepository: BestScoreRepository
     val feedbackPreferences: FeedbackPreferences
+    val recordingAudioRepository: RecordingAudioRepository
     val miniAppStorage: MutableMiniAppStorage
     val legacyStorageKeys: Set<MiniAppLegacyStorageKeys>
     val appScope: CoroutineScope
@@ -106,6 +104,7 @@ internal interface InspectableBlockBlastSessionGraph {
     val saveRepository: GameSaveRepository
     val bestScoreRepository: BestScoreRepository
     val feedbackPreferences: FeedbackPreferences
+    val audioPlayer: BlockBlastAudioPlayer
     val componentContext: ComponentContext
     val visibility: MiniAppVisibilitySource
     val host: MiniAppSessionHost
@@ -157,6 +156,13 @@ internal object BlockBlastGraphTestBindings {
     @Provides
     @SingleIn(AppScope::class)
     fun provideFeedbackPreferences(): FeedbackPreferences = TestFeedbackPreferences()
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideRecordingAudioRepository(): RecordingAudioRepository = RecordingAudioRepository()
+
+    @Provides
+    fun provideAudioRepository(repository: RecordingAudioRepository): AudioRepository = repository
 
     @Provides
     @SingleIn(AppScope::class)
@@ -313,35 +319,42 @@ class BlockBlastSessionGraphTest {
     }
 
     @Test
-    fun destroying_the_child_lifecycle_stops_session_audio_once() = runTest(dispatcher) {
-        val appGraph = createGraph<BlockBlastPluginTestGraph>()
-        val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
-        val audio = RecordingMiniAppAudio()
-        var appScopeJob: Job? = null
-        try {
-            appScopeJob = assertNotNull(appGraph.appScope.coroutineContext[Job])
-            val graph = appGraph.inspectableSessionFactory.createInspectable(TestMiniAppSessionContext(
-                lifecycle.componentContext,
-                MutableMiniAppVisibilitySource(),
-                RecordingMiniAppSessionHost(),
-                audio = audio,
-            ))
-            graph.playing()
-            runCurrent()
-            assertEquals(1, audio.playMusicCount)
+    fun session_audio_adapter_uses_the_app_scoped_file_audio_repository() =
+        runTest(dispatcher) {
+            val appGraph = createGraph<BlockBlastPluginTestGraph>()
+            val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+            var appScopeJob: Job? = null
+            try {
+                appScopeJob = assertNotNull(appGraph.appScope.coroutineContext[Job])
+                val graph = appGraph.inspectableSessionFactory.createInspectable(
+                    TestMiniAppSessionContext(
+                        lifecycle.componentContext,
+                        MutableMiniAppVisibilitySource(),
+                        RecordingMiniAppSessionHost(),
+                    ),
+                )
+                val audioPlayer = graph.audioPlayer
+                assertSame(audioPlayer, graph.audioPlayer)
+                graph.playing()
+                runCurrent()
 
-            lifecycle.destroy()
-            lifecycle.destroy()
-            runCurrent()
+                assertEquals(
+                    listOf(BlockBlastAudioAssets.music),
+                    appGraph.recordingAudioRepository.musicStarts,
+                )
 
-            assertEquals(1, audio.stopMusicCount)
-            assertFalse(appScopeJob.isCancelled)
-        } finally {
-            appGraph.destroySessionsAndCancelAppScope(lifecycle)
-            runCurrent()
+                lifecycle.destroy()
+                lifecycle.destroy()
+                runCurrent()
+
+                assertEquals(1, appGraph.recordingAudioRepository.stopCount)
+                assertFalse(appScopeJob.isCancelled)
+            } finally {
+                appGraph.destroySessionsAndCancelAppScope(lifecycle)
+                runCurrent()
+            }
+            assertTrue(assertNotNull(appScopeJob).isCancelled)
         }
-        assertTrue(assertNotNull(appScopeJob).isCancelled)
-    }
 
     @Test
     fun existing_save_bytes_are_read_without_key_or_serializer_migration() = runTest(dispatcher) {
@@ -440,23 +453,25 @@ private fun qualifyingStateOneMoveFromGameOver(): GameState {
     )
 }
 
-private class RecordingMiniAppAudio : MiniAppAudio {
-    var playMusicCount = 0
-        private set
-    var stopMusicCount = 0
-        private set
+internal class RecordingAudioRepository : AudioRepository {
+    val sounds = mutableListOf<String>()
+    val musicStarts = mutableListOf<List<String>>()
+    var stopCount = 0
 
-    override fun playMusic(program: AudioProgram): AudioCommandResult =
-        AudioCommandResult.Accepted.also { playMusicCount += 1 }
+    override fun playSound(filename: String) {
+        sounds += filename
+    }
 
-    override fun stopMusic(fadeOut: AudioDuration): AudioCommandResult =
-        AudioCommandResult.Accepted.also { stopMusicCount += 1 }
+    override fun startMusic(tracks: List<String>) {
+        musicStarts += tracks.toList()
+    }
 
-    override fun playSfx(program: AudioProgram, name: SfxName): AudioCommandResult =
-        AudioCommandResult.Accepted
+    override fun stopMusic() {
+        stopCount += 1
+    }
 
-    override fun setControl(name: AudioControlName, value: Float): AudioCommandResult =
-        AudioCommandResult.Accepted
+    override fun onAppBackground() = Unit
+    override fun onAppForeground() = Unit
 }
 
 private data object NoOpAnalyticsRepository : AnalyticRepository {

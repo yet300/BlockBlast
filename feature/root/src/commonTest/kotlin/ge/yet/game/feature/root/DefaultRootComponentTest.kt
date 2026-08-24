@@ -665,11 +665,11 @@ class DefaultRootComponentTest {
     private class RecordingAudio : AudioRepository {
         var foregroundCount = 0
         var backgroundCount = 0
-        override suspend fun onAppForeground() { foregroundCount += 1 }
-        override suspend fun onAppBackground() { backgroundCount += 1 }
-        override suspend fun playSound(filename: String) = Unit
-        override suspend fun startMusic(tracks: List<String>) = Unit
-        override suspend fun stopMusic() = Unit
+        override fun onAppForeground() { foregroundCount += 1 }
+        override fun onAppBackground() { backgroundCount += 1 }
+        override fun playSound(filename: String) = Unit
+        override fun startMusic(tracks: List<String>) = Unit
+        override fun stopMusic() = Unit
     }
 
     private class FakeSettings : SettingsRepository {

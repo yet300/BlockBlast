@@ -7,7 +7,6 @@ import ge.yet.game.data.platform.PlatformSoundPlayer
 import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,15 +25,9 @@ import kotlinx.coroutines.launch
  *   - [SettingsRepository.musicEnabled]: user preference (music-only).
  *
  * Music plays iff *all three* are true. A single coroutine collects the
- * combine of those flows and serializes start/stop calls to the platform
- * player — that prevents the start/stop ping-pong race that previously
- * occurred when the OS rapidly toggled foreground/background (fingerprint
- * prompt, ad close) and the two `scope.launch { ... }`-ed lifecycle handlers
- * raced.
- *
- * Lifecycle hooks now post events to a [Channel] consumed by that single
- * coroutine, so the order of fg/bg events is preserved regardless of how
- * many coroutines fire simultaneously.
+ * combined state and serializes start/stop calls to the platform player.
+ * Lifecycle commands update [appForeground] synchronously, so a rapid bg→fg
+ * cycle cannot be reordered by separate fire-and-forget coroutines.
  *
  * `internal` — only the [AudioRepository] interface is exposed via DI.
  */
@@ -51,14 +44,6 @@ internal class DefaultAudioRepository(
 
     /** True while the app is in the foreground (UI visible). */
     private val appForeground = MutableStateFlow(true)
-
-    /**
-     * Serialized lifecycle event stream — both foreground and background
-     * transitions go through here so a rapid bg→fg cycle can never reorder.
-     * Capacity = 1 with overflow = DROP_OLDEST: only the most recent state
-     * matters for the player.
-     */
-    private val lifecycleEvents = Channel<Boolean>(capacity = Channel.CONFLATED)
 
     init {
         // Single source of truth: combine all three signals; whenever they
@@ -83,35 +68,28 @@ internal class DefaultAudioRepository(
                     if (tracks.isNotEmpty()) player.startMusic(tracks) else player.stopMusic()
                 }
         }
-        // Drain lifecycle events into appForeground in the order received.
-        scope.launch {
-            for (foreground in lifecycleEvents) {
-                appForeground.value = foreground
-            }
-        }
     }
 
     private inline fun ifSfxEnabled(block: () -> Unit) {
         if (settings.sfxEnabled.value) block()
     }
 
-    override suspend fun playSound(filename: String) =
+    override fun playSound(filename: String) =
         ifSfxEnabled { player.playSound(filename) }
 
-    override suspend fun startMusic(tracks: List<String>) {
+    override fun startMusic(tracks: List<String>) {
         requestedTracks.value = tracks.toList()
     }
 
-    override suspend fun stopMusic() {
+    override fun stopMusic() {
         requestedTracks.value = emptyList()
     }
 
-    override suspend fun onAppBackground() {
-        // Send through the channel so this is ordered with onAppForeground.
-        lifecycleEvents.trySend(false)
+    override fun onAppBackground() {
+        appForeground.value = false
     }
 
-    override suspend fun onAppForeground() {
-        lifecycleEvents.trySend(true)
+    override fun onAppForeground() {
+        appForeground.value = true
     }
 }
