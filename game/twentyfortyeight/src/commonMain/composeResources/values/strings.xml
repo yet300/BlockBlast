@@ -1,0 +1,4 @@
+<resources>
+    <string name="miniapp_title">2048</string>
+    <string name="miniapp_description">2048 mini-app</string>
+</resources>
