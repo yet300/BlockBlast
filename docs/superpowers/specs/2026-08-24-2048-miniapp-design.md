@@ -2,7 +2,7 @@
 
 ## 1. Status and date
 
-- **Status:** Proposed for maintainer review; implementation is not started.
+- **Status:** Revised after architectural review; implementation is not started.
 - **Date:** 2026-08-24.
 - **Confidence:** High for product, engine, MiniApp integration, persistence, and test boundaries; moderate for final audio mix and motion constants until they are measured on Android and iOS hardware.
 - **Decision scope:** architecture and product design only. This document does not authorize scaffolding, source creation, dependency changes, production allowlisting, or shipping.
@@ -29,8 +29,9 @@ These decisions are the baseline submitted for approval with this document:
 
 - One classic 4×4 board, swipe and Arrow/WASD input, score, monotonic best score, one-step Undo, guarded Restart, incomplete-game restore, first-2048 victory, Continue, values above 2048, game over, statistics, and a first-run overlay.
 - A pure deterministic engine with injected RNG state; MVIKotlin owns asynchronous orchestration; Decompose owns internal navigation and modal ownership; Compose only renders immutable models and forwards intents.
-- The first direction entered while a move transition is active is retained in a one-slot pending queue. Further directions are ignored until the active transition is released.
+- The first direction entered while a visual move transition is active is retained in a one-slot pending queue. Further directions are ignored until the matching animation completes; persistence latency never extends that input gate.
 - Victory is a modal state over the live Playing child. Game Over is a separate Result child. Both Playing and Result use `MiniAppFrameMode.Standard`, retaining host Back, Settings, safe-area, and banner ownership.
+- Toolbar, system, and predictive Back all enter Root's single Back path. Root first invokes the active session's optional `handleBack(): Boolean`; 2048 consumes it only to dismiss Victory, Statistics, or Restart confirmation, while the safe default `false` preserves host-owned exit for Block Blast, Counter, Playing without an overlay, Result, and unavailable content.
 - Undo state is persisted. It is small, deterministic, and required for an honest restore.
 - Best/Crown opens a game-owned statistics sheet. Result also shows a compact statistics subset.
 - The visual direction is warm editorial, not a replica of any existing 2048 product. Music is an original warm evolving synth score.
@@ -79,7 +80,7 @@ Before any scaffold or implementation, the contributor/maintainer must complete 
 
 The module must not depend on a feature, `composeApp`, a native app, raw Multiplatform Settings, `AudioRepository`, Firebase SDK, advertising SDK, native navigation, native audio/haptic APIs, or a MiniApp host implementation. Engine packages have no knowledge of Compose, coroutines, MVIKotlin, Decompose, Metro, storage, audio, analytics, wall-clock time, or platforms.
 
-Host ownership remains unchanged: Back, Settings, common toolbar, safe areas, banner, review policy, lifecycle/visibility, audio suppression and teardown, catalog cards, reset orchestration, and production allowlisting.
+Host ownership remains unchanged for Back dispatch and final session exit, Settings, common toolbar, safe areas, banner, review policy, lifecycle/visibility, audio suppression and teardown, catalog cards, reset orchestration, and production allowlisting. A session may synchronously consume Back through the generic optional `MiniAppSession.handleBack()` contract before Root performs its normal exit; Root never learns a game-specific navigation type.
 
 ## 8. Dependency direction
 
@@ -179,14 +180,15 @@ flowchart LR
     Engine -->|Unchanged| Idle[No side effects]
     Engine -->|Changed + MoveResult| Store[Authoritative Store state]
     Store --> UI[Visual transition]
-    Store --> Save[Serialized checkpoint]
-    Store --> Audio[Typed audio mapping]
-    Store --> Facts[Analytics/review facts]
+    Store --> Save[Bounded checkpoint coordinator]
+    Store --> Labels[Typed Labels]
+    Labels --> Adapter[Lifecycle-bound session adapter]
+    Adapter --> Effects[Navigation/audio/analytics/review/a11y/focus/error]
 ```
 
-The Store updates authoritative board/score/RNG/statistics immediately when it accepts `Changed`. The UI receives that immutable result as the active transition. Input is locked for the transition, with the first subsequent direction retained in a one-slot queue and all later directions ignored. The gate releases only after both the matching animation completion and that transition's persistence attempt complete. Storage latency therefore cannot reorder saves.
+The Store updates authoritative board/score/RNG/statistics immediately when it accepts `Changed`. The UI receives that immutable result as the active transition. Input is locked only while that visual transition is active, with the first subsequent direction retained in a one-slot queue and all later directions ignored. `AnimationCompleted(transitionId)` clears the matching transition and immediately consumes the queued direction regardless of checkpoint state; stale animation IDs are ignored.
 
-Animation completion carries `transitionId`; stale IDs are ignored. After visual completion the UI shows the authoritative final board statically even if persistence is still pending. When both halves complete, the Store clears the transition and consumes the pending direction. Destruction cancels session work and discards presentation transition state; restore displays the persisted authoritative board without replay. Activity recreation keeps the retained session and current transition; idempotent event gates prevent duplicate effects.
+Checkpoint work is independent of the visual gate. The lifecycle-owned persistence coordinator accepts complete immutable checkpoints tagged with monotonic revisions, runs at most one write, retains at most one latest-wins pending checkpoint, and replaces an older pending checkpoint with a newer complete one. Completion updates durability/dirty state only when its revision is current; it never releases input or replays a move. Destruction cancels session work and discards presentation transition state; restore displays the latest durable authoritative board without replay. Activity recreation keeps the retained session and current transition; idempotent event gates prevent duplicate effects.
 
 ## 13. Undo
 
@@ -198,11 +200,11 @@ Undo is persisted inside `current_game`. The payload is bounded to one additiona
 
 ## 14. Victory and Game Over
 
-Victory occurs only on the first merge that creates a 2048 tile in a run. `victoryReached` and `victoryAcknowledged` are distinct monotonic per-run flags. The first transition increments `gamesWon`, emits one analytics fact and one review opportunity, and presents the Victory overlay. Continue persists acknowledgement and resumes the unchanged Playing child. Values above 2048 are normal. Undo may restore the visual acknowledgement state captured before the move, but monotonic `victoryFactEmitted`, `reviewFactEmitted`, and `gamesWonRecorded` remain true, so facts never repeat.
+Victory occurs only on the first merge that creates a 2048 tile in a run. `victoryReached` and `victoryAcknowledged` are distinct monotonic per-run flags. The first transition increments `gamesWon`, reserves one analytics fact and one review opportunity, and presents the Victory overlay. Continue optimistically acknowledges victory, dismisses the overlay, and submits the resulting complete checkpoint without blocking the UI. Values above 2048 are normal. Undo may restore the visual acknowledgement state captured before the move, but monotonic `victoryFactEmitted`, `reviewFactEmitted`, and `gamesWonRecorded` remain true, so facts never repeat.
 
-Restart from Victory or Playing requires confirmation whenever score is non-zero or a successful move has occurred. A pristine two-tile board restarts directly. Because Restart is destructive, it differs from an ordinary move: the Store prepares the candidate two-spawn run, commits its checkpoint, and only then replaces the visible run. A failed/cancelled commit leaves the old run visible. A successful Restart clears Undo, preserves best/statistics/tutorial/global settings, and increments games started. New Game from Result uses the same commit-before-navigation rule. Continue and tutorial completion similarly persist before dismissing their overlays, preventing them from reappearing after a failed write.
+Restart from Victory or Playing requires confirmation whenever score is non-zero or a successful move has occurred. A pristine two-tile board restarts directly. Because Restart is destructive, it differs from an ordinary move: the Store prepares the candidate two-spawn run, performs an explicit commit that cannot be coalesced away, and only then replaces the visible run. A failed/cancelled commit leaves the old run visible. A successful Restart clears Undo, preserves best/statistics/tutorial/global settings, and increments games started. New Game from Result uses the same commit-before-visible rule. Continue and tutorial completion are non-destructive optimistic state changes submitted through the ordinary checkpoint coordinator; a storage failure marks persistence dirty but does not reopen their overlays in the retained session.
 
-Game Over is true exactly when there is no empty cell and no horizontally or vertically adjacent equal pair under the checked-merge rule. It is evaluated after the move's spawn. Entry is monotonic per run, increments `gamesEndedByGameOver` once, commits the terminal checkpoint, then navigates to Result. A board with any legal direction cannot enter Result.
+Game Over is true exactly when there is no empty cell and no horizontally or vertically adjacent equal pair under the checked-merge rule. It is evaluated after the move's spawn. Entry is monotonic per run, increments `gamesEndedByGameOver` once, submits the terminal full checkpoint, and navigates to Result without waiting for ordinary storage completion. A board with any legal direction cannot enter Result.
 
 ## 15. Statistics
 
@@ -236,21 +238,29 @@ Only the session's `MiniAppStorage` is used. The four local names are `current_g
 
 Enums serialize with stable wire names. Board payload must contain exactly 16 entries, every value must be null or a representable power of two, counters must be non-negative, RNG algorithm must be recognized, and Undo must satisfy the same invariants. Runtime tile IDs and active animation IDs are deliberately absent.
 
-One Store-owned persistence coordinator serializes commits; it creates no independent `CoroutineScope`. A commit increments a logical revision, builds one complete `current_game` recovery checkpoint, writes that key first, then writes changed dedicated metadata snapshots. The current-game mirror makes the first successful single-key write a coherent recovery point despite the API having no cross-key transaction. On restore, the highest valid revision per metadata record wins; all monotonic values are reconciled by maximum, and a newer current-game mirror repairs lagging dedicated keys.
+One session-lifecycle-owned persistence coordinator serializes checkpoints and creates no independent `CoroutineScope`. Each meaningful transition increments a monotonic revision and builds a complete immutable `GameCommit`: `current_game`, best, cumulative statistics, tutorial state, and pending fact reservations. The coordinator runs at most one checkpoint write and retains at most one pending checkpoint; a newer pending revision replaces the older pending value because every checkpoint is a full recovery image. When the in-flight write finishes, the latest pending checkpoint starts. There is no unbounded channel, list, retry loop, or per-write scope.
 
-The existing backend gives atomicity only at one serialized key: a reader should see the old or new string, not a game-defined partial object. It does not promise an ACID transaction across keys. A failed/cancelled first write leaves the previous checkpoint authoritative; later metadata failure is repaired from the mirror. The in-memory state remains playable, marks persistence dirty, emits one bounded diagnostic, and retries only on the next meaningful transition—never in a tight loop.
+Every checkpoint writes `current_game` first, then changed dedicated metadata snapshots. The current-game mirror makes the first successful single-key write a coherent recovery point despite the API having no cross-key transaction. On restore, the highest valid revision per metadata record wins; all monotonic values are reconciled by maximum, and a newer current-game mirror repairs lagging dedicated keys. Completion includes its revision: an older completion may advance the durable-revision floor but cannot clear dirty state or overwrite reconciliation state belonging to a newer requested revision.
+
+The existing backend gives atomicity only at one serialized key: a reader should see the old or new string, not a game-defined partial object. It does not promise an ACID transaction across keys. A failed/cancelled first write leaves the previous checkpoint authoritative; later metadata failure is repaired from the mirror. An ordinary move, Undo, Continue, tutorial dismissal, or terminal entry remains playable and responsive while its checkpoint is pending. A failed ordinary write returns a typed failure to the Store, marks `persistenceDirty`, and publishes one bounded transient-error Label plus one enum-coded diagnostic Label. It is retried only when the next meaningful transition submits a newer full checkpoint.
+
+Restart and New Game are the only commit-before-visible operations because they destroy the current run. They use the same serializer but enter a bounded barrier mode: no new run is shown until that exact candidate revision is durable, and failure retains the old run. Continue and tutorial dismissal are deliberately optimistic because they do not destroy the run; no storage latency is allowed to trap the user in an overlay.
 
 Cancellation propagates; `CancellationException` is not swallowed and no orphan save scope is created. Because a settings write is a single backend operation, cancellation can yield only the previous or complete new envelope under the existing contract. The host currently has no suspendable pre-destroy flush hook, so durability of the final in-flight move when the user exits at the exact write boundary cannot be guaranteed; this is an explicit API gap, not a reason to violate structured concurrency.
 
-Unknown future version, malformed JSON, invalid board/RNG, or missing required fields is treated as no valid snapshot. The storage implementation already removes unreadable/unsupported snapshots and returns `null`; bootstrap starts a fresh two-tile game without crashing. Valid metadata keys are still recovered. Because `null` does not distinguish missing from corrupt/unsupported data, precise corruption telemetry is another explicit API gap. Thrown read/write exceptions are recorded best-effort through the existing Crashlytics abstraction with no board, RNG, serialized bytes, or personal data.
+Unknown future version, malformed JSON, invalid board/RNG, or missing required fields is treated as no valid snapshot. The storage implementation already removes unreadable/unsupported snapshots and returns `null`; bootstrap starts a fresh two-tile game without crashing. Valid metadata keys are still recovered. Because `null` does not distinguish missing from corrupt/unsupported data, precise corruption telemetry is another explicit API gap. Thrown read/write and caught contract/invariant failures go through the game-owned `TwentyFortyEightDiagnostics` contract described in section 35; no board, RNG, serialized bytes, input sequence, personal data, or free text is attached.
 
-Restore completes all four reads and reconciliation before exposing Playing/tutorial state, eliminating the default-false tutorial race. A terminal checkpoint restores Result; an unfinished checkpoint restores Playing. Save occurs after successful move, Undo, Continue, Restart, Game Over entry, and tutorial completion. Reset All Game Data already removes the entire `game.twentyfortyeight` namespace, including all four keys, without touching global preferences, review, consent, or entitlement.
+Restore completes all four reads and reconciliation before exposing Playing/tutorial state, eliminating the default-false tutorial race. A terminal checkpoint restores Result; an unfinished checkpoint restores Playing. An ordinary full checkpoint is submitted after successful move, Undo, Continue, Game Over entry, and tutorial completion; Restart and New Game use the strict barrier described above. Reset All Game Data already removes the entire `game.twentyfortyeight` namespace, including all four keys, without touching global preferences, review, consent, or entitlement.
 
 ## 17. MVIKotlin ownership
 
-`TwentyFortyEightStore` is the sole mutable game-state authority. Its State contains bootstrap status, authoritative game, best/statistics/tutorial, active transition and its animation/save completion flags, one pending direction, modal eligibility, persistence health, and bounded one-shot ordinals. Intents represent direction, Undo, Restart request/confirm/cancel, Continue, New Game, tutorial Skip, modal actions, and transition completion. Labels carry navigation, audio, analytics/review, accessibility announcement, focus, and transient error facts.
+`TwentyFortyEightStore` is the sole mutable game-state authority. Its State contains bootstrap status, authoritative game, best/statistics/tutorial, the optional visual `ActiveTransition`, one pending direction, modal eligibility, requested/durable persistence revisions, `persistenceDirty`, and bounded one-shot ordinals. `ActiveTransition` contains only `transitionId` plus the immutable visual result; it has no persistence-completion field. Intents represent direction, Undo, Restart request/confirm/cancel, Continue, New Game, tutorial Skip, modal actions, and animation completion.
 
-The Bootstrapper loads and validates snapshots. A coroutine Executor calls the pure engine, serialized persistence service, `MiniAppAudio`, analytics facade, and host review callback. It does not own an ad or platform service. The Reducer is synchronous and pure. Long-lived objects use the component/session lifecycle; there is no manually stored `CoroutineScope`, `GlobalScope`, or swallowed cancellation.
+The Bootstrapper loads and validates snapshots. A coroutine Executor performs only pure engine operations and persistence orchestration. It never calls `MiniAppAudio`, `AnalyticRepository`, `CrashlyticsRepository`, `MiniAppSessionHost`, Decompose navigation, or Compose. The Reducer is synchronous and pure. The Store publishes typed Labels for Decompose navigation, audio commands, bounded analytics, review opportunity, accessibility announcement, focus transfer, transient UI error, and enum-coded diagnostics.
+
+A single lifecycle-bound `TwentyFortyEightSessionAdapter`, scoped to `MiniAppSessionScope`, collects Labels exactly once. It delegates navigation Labels to the session/Playing components, audio Labels to a session-scoped `TwentyFortyEightAudioAdapter` using the context's `MiniAppAudio`, analytics Labels to an app-scoped stateless `TwentyFortyEightAnalytics` using `AnalyticRepository`, review Labels to `MiniAppSessionHost.requestReview`, diagnostic Labels to the app-scoped stateless `TwentyFortyEightDiagnostics`, and UI/accessibility/focus/error Labels to session-scoped component event streams. Persisted analytics/review fact reservation stays in the Store/checkpoint model before the corresponding external Label is published. Compose invokes no repository, host callback, audio facade, diagnostics facade, or navigation object.
+
+The coordinator and Label collector run only in the existing Store/component/session lifecycle scope; neither stores nor creates a `CoroutineScope`, and cancellation is rethrown. Persistence/coordinator code creates only closed `TwentyFortyEightFailure` values; it never invokes diagnostics. The Store carries those values in `Label.Diagnostic`, and the session adapter is the only caller of `TwentyFortyEightDiagnostics`.
 
 The component exposes an immutable UI `Model`/Decompose `Value`, intent methods, and no Store or repository to Compose. Frame-varying animation/gesture values remain local UI state; durable rules and transitions remain in the Store.
 
@@ -275,19 +285,30 @@ stateDiagram-v2
 
 The session component owns a `ChildStack<Playing, Result>` and the Playing component owns one mutually exclusive `ChildSlot` for Victory, Statistics, or Restart confirmation. Victory is not a stack child because it must preserve the active Store, board, transition identities, and Continue path; it is a modal projection of Playing state. Tutorial is an inline overlay because it is presentation over the real board, not navigation.
 
-Back handling is ordered: dismiss active slot, otherwise defer to host Back. No game child draws a Back or Settings control. Both active stack children map declaratively to `MiniAppFrameMode.Standard`; Result intentionally retains host chrome and does not duplicate it. No imperative visibility flag is introduced.
+Back handling is a deliberate generic MiniApp API extension:
+
+```kotlin
+interface MiniAppSession {
+    fun handleBack(): Boolean = false
+    // Existing frameMode/TopBarContent/Background/Content members remain unchanged.
+}
+```
+
+Root owns the `BackCallback(PRIORITY_MAX)` and the toolbar callback. Both system/predictive Back and toolbar Back continue to call the same `RootComponent.onBackClicked()` path. With no host sheet active, Root obtains the active content session and calls `session.handleBack()` first. `true` means the session consumed Back and Root leaves it running; `false`, unavailable content, or the default implementation means Root closes the session and returns to Catalog. Host Settings/AppReview sheets keep their existing higher logical order before the session hook.
+
+`RetainedMiniAppSession.handleBack()` delegates to its retained session. Block Blast and Counter intentionally inherit the safe `false` default, and compatibility tests prove their Back still exits. `TwentyFortyEightSession.handleBack()` synchronously asks its session component to dismiss the active Playing `ChildSlot`; it returns `true` only for Victory, Statistics, or Restart confirmation. Playing without a slot and every Result state return `false`. No local Essenty Back handler is registered by 2048, no game child draws a Back/Settings control, and Root imports no game-specific type. Both active stack children remain `MiniAppFrameMode.Standard`.
 
 ## 19. Metro scopes
 
-The app graph contains the contributed `TwentyFortyEightPlugin`, the namespaced session-graph factory, pure engine/statistics services, seed source, persistence codec/service, StoreFactory, analytics, and other allowed parent contracts. The app-scoped persistence service is stateless: every operation receives the authorized `context.storage` argument, so it never caches a session context or reaches for `MiniAppStorageProvider`.
+The app graph contains the contributed `TwentyFortyEightPlugin`, the namespaced session-graph factory, pure engine/statistics services, seed source, persistence codec/service, stateless analytics logger, and stateless diagnostics adapter. `TwentyFortyEightDiagnostics` is implemented by `CrashlyticsTwentyFortyEightDiagnostics`, contributed to `AppScope`, and receives the allowed `core:domain` `CrashlyticsRepository` binding from the parent graph; the game does not depend on `:core:telemetry` or Firebase. The app-scoped persistence service is stateless: every operation receives the authorized `context.storage` argument, so it never caches a session context or reaches for `MiniAppStorageProvider`.
 
-Each `createSession(context)` creates one `MiniAppSessionScope` child graph and returns `RetainedMiniAppSession(graph, graph.session)`. The child binds that exact context, component context, visibility, host, storage, audio, session persistence adapter, Stores, navigation components, audio adapter, and concrete `TwentyFortyEightSession`. Session-scoped objects cannot leak into AppScope. Reopening the game creates distinct session objects while host-owned namespaced storage preserves data.
+Each `createSession(context)` creates one `MiniAppSessionScope` child graph and returns `RetainedMiniAppSession(graph, graph.session)`. The child binds that exact context, component context, visibility, host, storage, audio, session persistence coordinator, Store, navigation components, Label/session adapter, audio adapter, and concrete `TwentyFortyEightSession`. Session-scoped objects cannot leak into AppScope. Reopening the game creates distinct session objects while host-owned namespaced storage preserves data.
 
-DI tests must prove that app-scoped stateless services are shared, session components/Stores/adapters are distinct, runtime context reaches only its child, retained graph destruction is idempotent, and no forbidden graph edge exists. This satisfies the requested app-scoped repository behavior without illegally retaining runtime storage: the app-scoped persistence service owns repository logic, while its storage handle is always method-scoped from `MiniAppSessionContext.storage`.
+DI tests must prove that app-scoped stateless persistence/analytics/diagnostics services are shared, session coordinator/Store/components/Label/audio adapters are distinct, runtime context reaches only its child, retained graph destruction is idempotent, and no forbidden graph edge exists. This satisfies the requested app-scoped repository behavior without illegally retaining runtime storage: the app-scoped persistence service owns repository logic, while its storage handle is always method-scoped from `MiniAppSessionContext.storage`.
 
 ## 20. MiniApp host integration
 
-The future manifest is exposed through `MiniAppPlugin`; the session implements `Background`, optional `TopBarContent`, `Content`, and `frameMode`. The game background may fill the host background layer, while `LogicaTheme` and host chrome remain outside the game-local content styling boundary.
+The future manifest is exposed through `MiniAppPlugin`; the session implements `Background`, optional `TopBarContent`, `Content`, `frameMode`, and the optional generic `handleBack()` behavior above. The game background may fill the host background layer, while `LogicaTheme` and host chrome remain outside the game-local content styling boundary.
 
 `MiniAppVisibilitySource` gates input and lets the host-owned audio facade duck/suppress/pause correctly. Only an active, unobscured session accepts gesture, keyboard, custom accessibility actions, or modal confirmations. Obscuring does not destroy or mutate the game. Destruction closes the retained graph; the game never closes platform audio itself.
 
@@ -459,7 +480,7 @@ The expected generated files are:
 - `core/uikit/src/commonMain/kotlin/ge/yet/game/uikit/components/icon/Restart.kt`
 - `core/uikit/src/commonMain/kotlin/ge/yet/game/uikit/components/icon/Crown.kt`
 
-Future provenance records provider, family, symbol name, variation settings, source URL, license, acquisition date, Valkyrie version, output package, and generated-file hash. If any symbol/file is absent when implementation begins, work that imports the icons stops: no unresolved import, temporary stand-in, hand-drawn substitute, or mixed icon family is permitted. The user must import the exact symbols through Valkyrie before UI implementation continues.
+Future provenance records provider, family, symbol name, variation settings, source URL, license, acquisition date, Valkyrie version, output package, and generated-file hash. Missing icons do not block scaffold, module boundaries, engine, RNG, persistence, Store, diagnostics/analytics, procedural audio, or non-icon component work. Immediately before the first UI task that imports these ImageVectors, execution checks all three exact files. Only that icon-consuming task stops when a file is absent: no unresolved import, temporary stand-in, hand-drawn substitute, runtime icon pack, or mixed icon family is permitted.
 
 ## 31. Procedural music
 
@@ -503,7 +524,7 @@ Equal adjacent pairs are counted once horizontally and vertically. Weighting sca
 
 `momentumStreak` increments after a successful move containing at least one merge, capped at 6. A successful non-merge move resets it to zero. Unchanged input leaves it unchanged. Undo, Restart, and Game Over reset it to zero; it is not rolled back with Undo and is not cumulative statistics. `momentum = momentumStreak / 6`.
 
-Controls update after bootstrap/new game, successful move, Undo, Continue only if its control state changes, Restart, and terminal entry—not from recomposition or every frame. Audio-engine smoothing handles bucket changes. Each `AudioCommandResult` is consumed: Accepted updates the last-sent bucket; Rejected records one rate-limited diagnostic and is not retried until a later meaningful transition changes the desired bucket.
+Controls update after bootstrap/new game, successful move, Undo, Continue only if its control state changes, Restart, and terminal entry—not from recomposition or every frame. Audio-engine smoothing handles bucket changes. Each `AudioCommandResult` is consumed: Accepted updates the last-sent bucket; Rejected is treated as valid degraded optional output, does not enter Crashlytics/game diagnostics, and is not retried until a later meaningful transition changes the desired bucket.
 
 ## 33. SFX
 
@@ -543,7 +564,24 @@ External analytics/review delivery is deliberately at-most-once across restore: 
 
 The first authoritative victory sends the typed review opportunity described in host integration. `:feature:review` owns global limits, persistence, suppression, analytics, and SDK request. The game never calls a store-review SDK.
 
-Root already installs runtime MiniApp Crashlytics context and breadcrumbs. Normal launch, visibility, Continue, and destruction are not exceptions. Game code records only caught storage/audio contract failures best-effort, without sensitive state, and installs no global handler. Exact corrupt-vs-missing snapshot diagnosis is impossible with today's storage result and is listed as an API gap.
+Root retains ownership of runtime MiniApp context/breadcrumbs and the audio engine retains ownership of its own audio diagnostics. Game-specific caught failures use this narrow contract:
+
+```kotlin
+internal interface TwentyFortyEightDiagnostics {
+    fun record(failure: TwentyFortyEightFailure)
+}
+
+internal sealed interface TwentyFortyEightFailure {
+    data class StorageRead(val operation: StorageOperation) : TwentyFortyEightFailure
+    data class StorageWrite(val operation: StorageOperation) : TwentyFortyEightFailure
+    data class ContractViolation(val contract: ContractCode) : TwentyFortyEightFailure
+    data class InvariantViolation(val invariant: InvariantCode) : TwentyFortyEightFailure
+}
+```
+
+`CrashlyticsTwentyFortyEightDiagnostics` is stateless and `@SingleIn(AppScope::class)`. Metro constructs it from the parent `CrashlyticsRepository` contract supplied by `:core:domain`; the lifecycle-bound session adapter is its sole caller. It calls only fixed bounded messages/custom values and `logException` with sanitized game-owned exception types that contain enum codes, never caught exception messages. It records only caught storage read/write exceptions and caught contract/invariant failures delivered by typed Labels. `CancellationException` is never recorded and is rethrown before a Label exists. Board values, RNG state, serialized snapshots, input sequences, pointer/key data, session history, personal data, and free text never cross the diagnostics contract.
+
+Normal launch, visibility, Continue, destruction, rejected optional audio output, and user actions are not exceptions. Audio engine failures already diagnosed by the host-owned engine are not duplicated. Exact corrupt-vs-missing snapshot diagnosis remains impossible with today's storage result and is listed as an API gap. If the parent graph cannot provide `CrashlyticsRepository` in an isolated contributor test, the test graph supplies a no-op/recording `CrashlyticsRepository`; production never reaches into `:core:telemetry`.
 
 ## 36. Error handling
 
@@ -563,16 +601,17 @@ sequenceDiagram
     participant Engine
     participant UI
     participant Persistence
-    participant AudioFacts
+    participant Adapter
     Input->>Store: Direction
     Store->>Engine: applyMove(state, direction)
     Engine-->>Store: Changed(transitionId, facts)
     Store-->>UI: authoritative state + transition
-    Store->>Persistence: commit revision
-    Store->>AudioFacts: typed labels
+    Store->>Persistence: submit full checkpoint(revision)
+    Store->>Adapter: typed Labels (including diagnostic facts)
     UI-->>Store: AnimationCompleted(transitionId)
-    Persistence-->>Store: SaveCompleted/Failed(transitionId)
-    Store->>Store: release when both match; consume one pending direction
+    Store->>Store: clear visual transition; consume one pending direction
+    Persistence-->>Store: CheckpointResult(revision, typed failure?)
+    Store->>Store: update durable revision/dirty state only
 ```
 
 ## 37. Performance
@@ -587,10 +626,10 @@ Verification must measure rather than assert smoothness:
 - Android system trace/JankStats or available project-equivalent frame traces at 60 and 120 Hz;
 - iOS simulator plus physical-device frame/hitch observation for representative compact and expanded layouts;
 - allocation sampling during repeated swipe/animation loops;
-- persistence latency and input-gate duration under an injected slow store;
+- persistence latency and visual input-gate independence under an injected slow store;
 - offline audio render time, voices, peak, RMS/headroom, and mobile CPU budget using the public audio test renderer.
 
-The engine is independent of refresh rate. Acceptance is no dropped-frame regression attributable to unbounded allocation/work, no storage/audio work on frame callbacks, and responsive input after the bounded gate on representative low/mid devices.
+The engine is independent of refresh rate. With an injected 250 ms write delay, the next queued move must start immediately after the matching animation completes, while the prior checkpoint may still be in flight; the coordinator must expose at most one in-flight plus one latest pending checkpoint. Acceptance is no dropped-frame regression attributable to unbounded allocation/work, no storage/audio work on frame callbacks, and responsive input after the visual-only bounded gate on representative low/mid devices.
 
 ## 38. Testing matrix
 
@@ -602,11 +641,11 @@ Invariants: all values are powers of two; a move before spawn preserves tile sum
 
 ### Store and component
 
-Tests cover every intent/state/label, one-slot first-wins input queue, stale animation/save completions, visibility gating, serialized save order, dirty retry, restore reconciliation, invalid/unknown snapshot fallback, Restart confirmation/failure, persisted Undo/RNG, Victory/Continue, terminal Result restore, tutorial load/completion race, statistics definitions, bounded analytics/review facts, focus/announcement labels, and audio event/control mapping.
+Tests cover every intent/state/Label, one-slot first-wins input queue, stale animation/revision completions, visibility gating, visual-gate independence from a 250 ms write, one-in-flight/one-latest-pending coalescing, serialized write order, dirty retry only on the next meaningful transition, restore reconciliation, invalid/unknown snapshot fallback, strict Restart/New Game barrier, optimistic Continue/tutorial completion, persisted Undo/RNG, Victory, terminal Result restore, statistics definitions, persisted analytics/review reservations, focus/announcement/error Labels, and audio event/control mapping. Adapter tests prove the Executor never owns external side effects and each typed Label reaches exactly one lifecycle-bound owner.
 
 ### DI and plugin
 
-Testkit verifies one isolated manifest/plugin, exact ID/resources, Metro child scope, app-scoped persistence/engine service identity, session-scoped Store/component/adapter identity, retained handle, exact runtime context, namespace-only storage, visibility, multiple independent sessions, repeated destruction, audio closure delegated to host, and dependency-boundary validation.
+MiniApp contract tests add the optional `MiniAppSession.handleBack(): Boolean = false`, verify `RetainedMiniAppSession` delegation, and provide testkit assertions/recording sessions for consumed and unconsumed Back. Root tests prove toolbar and system/predictive Back share the same sheet → session → Catalog order. Block Blast and Counter compatibility tests prove their inherited `false` keeps existing exit behavior. The 2048 testkit matrix verifies one isolated manifest/plugin, exact ID/resources, Metro child scope, app-scoped persistence/engine/analytics/diagnostics identity, session-scoped coordinator/Store/component/Label/audio-adapter identity, retained handle, exact runtime context, namespace-only storage, visibility, multiple independent sessions, repeated destruction, audio closure delegated to host, and dependency-boundary validation.
 
 ### Compose and input
 
@@ -622,22 +661,29 @@ No file below is created by this design. All Kotlin is `internal` unless the Min
 
 | Proposed path/class group | Responsibility; lifetime/scope; dependencies; verification |
 |---|---|
+| `miniapp/compose/src/commonMain/kotlin/ge/yet/game/miniapp/compose/MiniAppSession.kt` | Add optional synchronous `handleBack(): Boolean = false`; public generic contract; compatibility/default tests. |
+| `miniapp/metro/src/commonMain/kotlin/ge/yet/game/miniapp/metro/RetainedMiniAppSession.kt` | Delegate `handleBack()` to the retained concrete session; Metro wrapper; delegation test. |
+| `miniapp/testkit/src/commonMain/kotlin/ge/yet/game/miniapp/testkit/MiniAppContractAssertions.kt` and matching common tests | Reusable consumed/unconsumed Back contract assertions without game-specific types. |
+| `feature/root/src/commonMain/kotlin/ge/yet/game/feature/root/DefaultRootComponent.kt` and `feature/root/src/commonTest/kotlin/ge/yet/game/feature/root/DefaultRootComponentTest.kt` | One sheet → active-session `handleBack()` → close-session order for toolbar and PRIORITY_MAX system/predictive Back. |
+| `game/blockblast/src/commonTest/kotlin/ge/yet/game/blockblast/BlockBlastPluginContractTest.kt`, `miniapp/samples/counter/src/commonTest/kotlin/ge/yet/sample/counter/CounterPluginContractTest.kt`, and `miniapp/integration-test/src/commonTest/kotlin/ge/yet/game/miniapp/integration/CounterRootHarness.kt` | Prove default `false` compatibility and unchanged host exit for existing sessions. |
 | `AGENTS.md` | Module-local boundaries, storage/audio/provenance rules; documentation only; checked in review. |
 | `build.gradle.kts` | Future scaffold's single `logica.miniapp` application; no manual outward edges; dependency-boundary tests. |
 | `src/commonMain/kotlin/ge/yet/game/twentyfortyeight/TwentyFortyEightPlugin.kt` | App-scoped contributed manifest/plugin and graph creation; MiniApp contracts/Metro only; testkit contract test. |
-| `…/session/TwentyFortyEightSession.kt`, `…SessionComponent.kt` | Public concrete session with internal constructor, retained session UI/frame binding, stack/slot owner; session scope; Decompose/MiniApp/Compose contracts; lifecycle/navigation tests. |
-| `…/di/TwentyFortyEightSessionGraph.kt`, `…Bindings.kt` | Collision-safe `createGameTwentyfortyeightSessionGraph`, app stateless services and session bindings; Metro only; scope/identity/destruction tests. |
+| `…/session/TwentyFortyEightSession.kt`, `…SessionComponent.kt` | Public concrete session with internal constructor, retained session UI/frame binding, stack/slot owner and `handleBack()` delegation; session scope; Decompose/MiniApp/Compose contracts; lifecycle/navigation/Back tests. |
+| `…/di/TwentyFortyEightSessionGraph.kt`, `…AppBindings.kt`, `…SessionBindings.kt` | Collision-safe `createGameTwentyfortyeightSessionGraph`; app-scoped stateless engine/persistence/analytics/diagnostics and session-scoped coordinator/Store/component/Label/audio adapters; Metro; scope/identity/destruction tests. |
 | `…/engine/Board.kt`, `Tile.kt`, `Direction.kt` | Fixed domain value types/invariants; pure and internal; kotlin stdlib only; invariant/generated-board tests. |
 | `…/engine/MoveEngine.kt`, `MoveResult.kt`, `LegalMoves.kt` | Pure movement, mapping, merge, score, terminal facts; no framework deps; exhaustive/property tests. |
 | `…/engine/RandomState.kt`, `SpawnPolicy.kt` | SplitMix64 state, unbiased selection, 90/10 spawn; pure; deterministic/boundary tests. |
 | `…/engine/UndoSnapshot.kt`, `Statistics.kt` | Exact restoration and cumulative reducers; pure; Undo/stat definitions tests. |
 | `…/persistence/TwentyFortyEightSchemas.kt` | Version-1 serial forms and validation/migration entry points; app-scoped stateless service; MiniApp API serialization contracts; malformed/version tests. |
-| `…/persistence/TwentyFortyEightPersistence.kt` | Serialized composite commit/reconcile using a method-supplied `MiniAppStorage`; app service plus session coordinator; ordering/cancellation/partial-write tests. |
-| `…/store/TwentyFortyEightStore.kt`, `…StoreFactory.kt` | State/Intent/Label and MVIKotlin bootstrap/executor/reducer; session scope; engine/storage/audio/analytics abstractions; full Store tests. |
+| `…/persistence/TwentyFortyEightPersistence.kt`, `…/persistence/SessionPersistenceCoordinator.kt` | Stateless composite commit/reconcile using method-supplied storage plus lifecycle-owned one-in-flight/one-latest-pending revision coordinator; ordering/coalescing/cancellation/partial-write/strict-barrier tests. |
+| `…/store/TwentyFortyEightStore.kt`, `…StoreFactory.kt` | State/Intent/typed Label and MVIKotlin bootstrap/engine+persistence Executor/pure Reducer; session scope; no external side-effect dependencies; full Store tests. |
+| `…/session/TwentyFortyEightSessionAdapter.kt` | Sole lifecycle-bound Label collector; routes navigation/audio/analytics/review/a11y/focus/error to their typed owners; session scope; exactly-once/cancellation tests. |
 | `…/component/PlayingComponent.kt`, `ResultComponent.kt`, `OverlayComponent.kt` | UI-facing immutable models/actions, ChildStack/ChildSlot, Back/focus mapping; session scope; Decompose tests. |
 | `…/audio/TwentyFortyEightAudio.kt` | Immutable program, typed names, original patterns/voices; app immutable declaration; public audio DSL/presets only; compile/offline acoustic tests. |
 | `…/audio/TwentyFortyEightAudioAdapter.kt`, `AudioControlPolicy.kt` | Session command handling and pure control/event mapping; MiniAppAudio plus engine facts; command/control tests. |
-| `…/analytics/TwentyFortyEightAnalytics.kt` | Bounded facts and allowed parameters; app stateless logger/session mapper; core analytics contract only; privacy/cardinality tests. |
+| `…/analytics/TwentyFortyEightAnalytics.kt` | Bounded facts and allowed parameters; app-scoped stateless logger; `AnalyticRepository` core contract only; privacy/cardinality tests. |
+| `…/diagnostics/TwentyFortyEightDiagnostics.kt`, `CrashlyticsTwentyFortyEightDiagnostics.kt` | Narrow enum-coded failure contract and app-scoped stateless Crashlytics adapter using parent `CrashlyticsRepository`; privacy/cancellation/no-audio-duplication tests. |
 | `…/ui/TwentyFortyEightScreen.kt`, `PlayingContent.kt`, `ResultContent.kt` | Pure model rendering and intent forwarding; Compose/design system; UI tests/previews. |
 | `…/ui/Board.kt`, `Tile.kt`, `MoveTransition.kt` | Square board, stable-key layers, semantics and finite animation; Compose only; tile matrix/motion/semantics tests. |
 | `…/ui/ScoreBestRow.kt`, `GameActions.kt`, `VictoryOverlay.kt`, `StatisticsSheet.kt`, `RestartConfirmation.kt`, `TutorialOverlay.kt` | Focused slot UI with resource copy and accessible actions; Compose only; state/semantics tests. |
@@ -654,7 +700,8 @@ The future scaffold initially emits `Twentyfortyeight…` class names from the s
 | Risk/gap | Consequence | Design response |
 |---|---|---|
 | Storage returns `null` for missing, malformed, and unsupported snapshots. | Precise corrupt-snapshot diagnostics are impossible. | Safe fallback and only thrown-error telemetry now; a future typed read result is a separate MiniApp API proposal. |
-| No suspendable session teardown/flush hook. | The last in-flight write at exact host exit cannot be guaranteed. | Immediate single-key checkpoint, serialized input gate, prior checkpoint safety; do not create orphan scopes. |
+| No suspendable session teardown/flush hook. | The last in-flight write at exact host exit cannot be guaranteed. | Immediate full checkpoint submission, one-in-flight/one-latest-pending coordinator, prior checkpoint safety; do not couple input to storage or create orphan scopes. |
+| `MiniAppSession` currently has no generic nested Back hook. | Root's PRIORITY_MAX callback and toolbar Back close a running session before a game-owned overlay can dismiss. | Add optional `handleBack(): Boolean = false`, delegate through retained wrapper, and test Root/default compatibility without game-specific Root types. |
 | No MiniApp haptic capability. | No merge/new-best/victory vibration. | Ship without haptics; no native or `LocalHapticFeedback` bypass. Separate host capability decision only. |
 | No separating-hinge geometry in MiniApp context. | Size-adaptive layout cannot deliberately avoid an occluding fold. | Constraint-safe layout and foldable profile testing; a generic host posture contract would be separate work. |
 | Required Undo/Restart/Crown ImageVectors do not exist in `core:uikit`. | Icon UI cannot compile legitimately. | User imports exact Material Symbols Rounded assets through Valkyrie before icon-consuming work. |
@@ -662,14 +709,14 @@ The future scaffold initially emits `Twentyfortyeight…` class names from the s
 | `Long` is finite. | The theoretical game can exceed representable powers. | Checked `2^62` ceiling prevents corruption; deterministic visual fallback covers all supported exponents. |
 | Pointer/nested-scroll behavior differs across targets. | Accidental scroll or missed swipe in tight landscape. | Internal detector, non-scrolling board placement, cross-platform gesture tests and manual profiles. |
 
-None of these gaps blocks the architecture. Haptics and exact hinge placement are deliberately omitted; storage diagnostics/flush cannot be promised beyond existing contracts. No MiniApp API change is authorized here.
+None of these gaps blocks the architecture. Haptics and exact hinge placement are deliberately omitted; storage diagnostics/flush cannot be promised beyond existing contracts. The only authorized generic MiniApp API expansion in this design is the optional synchronous `handleBack(): Boolean = false` contract and its retained-wrapper/Root/testkit integration.
 
 ## 41. Implementation prerequisites
 
 Implementation may be planned only after the maintainer approves this written specification. Before source work, all of the following must be true:
 
 - ADR-0001 rights classification and clean-room provenance record are accepted; any maintainer-required proposal issue is approved.
-- The user imports Material Symbols Rounded `undo`, `restart_alt`, and `crown` through Valkyrie into the exact `core:uikit` files, with provenance and license metadata.
+- Before the first icon-consuming UI task—not before scaffold or domain/infrastructure work—the user imports Material Symbols Rounded `undo`, `restart_alt`, and `crown` through Valkyrie into the exact `core:uikit` files, with provenance and license metadata.
 - Product acceptance covers the one-slot input queue, persisted Undo, Standard Result frame, statistics definitions, checked `Long` ceiling, adaptive breakpoints, and absence of haptics/interstitials.
 - Audio authorship constraints, public-preset gaps, control formulas, SFX tiers, and bounded analytics policy are accepted.
 - A separate implementation plan is explicitly requested and reviewed. This document is not that plan.
@@ -682,7 +729,10 @@ The eventual MiniApp is done only when:
 - all product rules, regressions, RNG determinism, score, persisted one-step Undo, victory/Continue, terminal detection, restore, statistics, tutorial, and reset semantics match this design;
 - UI is original, resource-backed, light/dark, contrast-verified, adaptive across the matrix, keyboard/mouse/touch accessible, screen-reader coherent, and reduced-motion safe;
 - transition IDs prevent duplicate/stale animation, audio, analytics, review, focus, and announcement effects;
-- storage uses only the session namespace, survives valid restore, safely rejects invalid versions/data, and demonstrates serialized ordering under failure/cancellation tests;
+- toolbar/system/predictive Back share Root's sheet → optional session → Catalog order; 2048 consumes only its three active slots and Block Blast/Counter keep default exit semantics;
+- storage uses only the session namespace, survives valid restore, safely rejects invalid versions/data, demonstrates one-in-flight/one-latest-pending ordering under failure/cancellation, and never extends the visual input gate;
+- the pure Reducer and engine+persistence Executor perform no external side effects; one lifecycle-bound session adapter owns all typed Label delivery;
+- diagnostics are enum-coded, app-scoped/stateless, cancellation-safe, privacy-bounded, and do not duplicate host audio diagnostics;
 - Metro/testkit prove scopes, retention, context isolation, visibility, destruction, and forbidden-dependency boundaries;
 - procedural declarations compile, pass deterministic/acoustic/headroom/control tests, and complete Android/iOS compile plus manual listening without copied musical material;
 - performance is measured at representative 60/120 Hz configurations with no unbounded queue, frame I/O, frame audio command, or refresh-rate engine dependency;
