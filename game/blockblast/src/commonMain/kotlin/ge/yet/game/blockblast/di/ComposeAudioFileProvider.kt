@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import ge.yet.game.domain.repository.AudioFileProvider
+import kotlinx.coroutines.CancellationException
 
 /**
  * Reads audio files from `composeResources/files/audio/` via CMP's [Res.readBytes].
@@ -17,7 +18,11 @@ internal class ComposeAudioFileProvider : AudioFileProvider {
     override fun path(filename: String): String =
         "composeResources/ge.yet.game.blockblast.generated.resources/files/audio/$filename"
 
-    override suspend fun bytes(filename: String): ByteArray? = runCatching {
+    override suspend fun bytes(filename: String): ByteArray? = try {
         Res.readBytes("files/audio/$filename")
-    }.getOrNull()
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        null
+    }
 }
