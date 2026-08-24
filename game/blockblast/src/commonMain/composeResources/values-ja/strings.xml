@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">ブロックを配置し、ラインを消して、ベストスコアを更新しよう。</string>
     <string name="score">スコア</string>
     <string name="best">ベスト</string>
     <string name="game_over">ゲームオーバー</string>

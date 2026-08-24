@@ -5,7 +5,7 @@ import ge.yet.game.blockblast.domain.model.Grid
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class BlockBlastResultSnapshot(
+internal data class BlockBlastResultSnapshot(
     val score: Long,
     val bestScore: Long,
     val finalGrid: Grid,

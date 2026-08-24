@@ -17,8 +17,10 @@ import ge.yet.game.feature.settings.libraries.LibrariesProvider
 import ge.yet.game.feature.settings.main.DefaultMainSettingsComponent
 import ge.yet.game.feature.settings.main.store.SettingsStoreFactory
 import ge.yet.game.feature.settings.more.DefaultMoreSettingsComponent
+import ge.yet.game.feature.settings.reset.DefaultResetGameDataComponent
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.miniapp.api.MiniAppDataResetResult
 import kotlinx.serialization.Serializable
 
 @OptIn(DelicateDecomposeApi::class)
@@ -28,6 +30,7 @@ internal class DefaultSettingsComponent(
     private val librariesProvider: LibrariesProvider,
     private val settingsRepository: SettingsRepository,
     private val analytics: AnalyticRepository,
+    private val clearGameData: suspend () -> MiniAppDataResetResult,
     private val onBackClickedCb: () -> Unit,
 ) : SettingsComponent, ComponentContext by componentContext {
 
@@ -71,6 +74,7 @@ internal class DefaultSettingsComponent(
                 analytics = analytics,
                 onDisableAdsRequestedCb = ::pushDisableAds,
                 onLibrariesClickedCb = ::pushLibraries,
+                onResetGameDataRequestedCb = ::pushResetGameData,
                 onBackClickedCb = ::onBackClicked,
             )
         )
@@ -91,6 +95,14 @@ internal class DefaultSettingsComponent(
                 onBackClickedCb = ::onBackClicked,
             )
         )
+
+        Config.ResetGameData -> SettingsComponent.Child.ResetGameData(
+            DefaultResetGameDataComponent(
+                componentContext = componentContext,
+                clearGameData = clearGameData,
+                onBackClickedCb = ::onBackClicked,
+            ),
+        )
     }
 
     private fun pushMore() {
@@ -109,6 +121,11 @@ internal class DefaultSettingsComponent(
         navigation.pushNew(Config.DisableAds)
     }
 
+    private fun pushResetGameData() {
+        if (stack.value.active.configuration == Config.ResetGameData) return
+        navigation.pushNew(Config.ResetGameData)
+    }
+
     @Serializable
     private sealed interface Config {
         @Serializable
@@ -122,6 +139,9 @@ internal class DefaultSettingsComponent(
 
         @Serializable
         data object Libraries : Config
+
+        @Serializable
+        data object ResetGameData : Config
     }
 }
 
@@ -134,6 +154,7 @@ internal class DefaultSettingsComponentFactory(
 ) : SettingsComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
+        clearGameData: suspend () -> MiniAppDataResetResult,
         onBackClicked: () -> Unit,
     ): SettingsComponent = DefaultSettingsComponent(
         componentContext = componentContext,
@@ -141,6 +162,7 @@ internal class DefaultSettingsComponentFactory(
         librariesProvider = librariesProvider,
         settingsRepository = settingsRepository,
         analytics = analytics,
+        clearGameData = clearGameData,
         onBackClickedCb = onBackClicked,
     )
 }

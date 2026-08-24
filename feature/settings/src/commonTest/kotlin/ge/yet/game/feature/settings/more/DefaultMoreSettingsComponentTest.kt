@@ -63,16 +63,27 @@ class DefaultMoreSettingsComponentTest {
         assertEquals(listOf("settings_support_clicked"), setup.analytics.events)
     }
 
+    @Test
+    fun reset_game_data_click_requests_the_host_flow() = runTest {
+        val setup = build(adsEnabled = false)
+
+        setup.component.onResetGameDataClicked()
+
+        assertEquals(1, setup.resetGameDataRequests)
+    }
+
     private fun TestScope.build(adsEnabled: Boolean): Setup {
         val settings = FakeSettings(adsEnabled)
         val analytics = RecordingAnalytics()
         var disableAdsRequests = 0
+        var resetGameDataRequests = 0
         val component = DefaultMoreSettingsComponent(
             componentContext = DefaultComponentContext(LifecycleRegistry()),
             settings = settings,
             analytics = analytics,
             onDisableAdsRequestedCb = { disableAdsRequests++ },
             onLibrariesClickedCb = {},
+            onResetGameDataRequestedCb = { resetGameDataRequests++ },
             onBackClickedCb = {},
             coroutineScope = backgroundScope,
         )
@@ -81,6 +92,7 @@ class DefaultMoreSettingsComponentTest {
             settings = settings,
             analytics = analytics,
             disableAdsRequestsProvider = { disableAdsRequests },
+            resetGameDataRequestsProvider = { resetGameDataRequests },
         )
     }
 
@@ -89,8 +101,10 @@ class DefaultMoreSettingsComponentTest {
         val settings: FakeSettings,
         val analytics: RecordingAnalytics,
         val disableAdsRequestsProvider: () -> Int,
+        val resetGameDataRequestsProvider: () -> Int,
     ) {
         val disableAdsRequests: Int get() = disableAdsRequestsProvider()
+        val resetGameDataRequests: Int get() = resetGameDataRequestsProvider()
     }
 
     private class FakeSettings(adsEnabled: Boolean) : SettingsRepository {

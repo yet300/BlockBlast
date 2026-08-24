@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">თამაში</string>
-    <string name="continue_game">გაგრძელება</string>
-    <string name="new_game">ახალი თამაში</string>
-    <string name="home_tagline">პატარა მშვიდი თავსატეხი</string>
     <string name="settings">პარამეტრები</string>
     <string name="sound">ხმა</string>
     <string name="sound_subtitle">თამაშის ხმოვანი ეფექტები</string>

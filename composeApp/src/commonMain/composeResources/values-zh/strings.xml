@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">开始</string>
-    <string name="continue_game">继续</string>
-    <string name="new_game">新游戏</string>
-    <string name="home_tagline">一个安静的小拼图</string>
     <string name="settings">设置</string>
     <string name="sound">声音</string>
     <string name="sound_subtitle">游戏音效</string>

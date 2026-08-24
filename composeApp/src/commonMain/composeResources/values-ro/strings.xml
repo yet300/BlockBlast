@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Joacă</string>
-    <string name="continue_game">Continuă</string>
-    <string name="new_game">Joc nou</string>
-    <string name="home_tagline">Un mic puzzle liniștit</string>
     <string name="settings">Setări</string>
     <string name="sound">Sunet</string>
     <string name="sound_subtitle">Efecte sonore ale jocului</string>

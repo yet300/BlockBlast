@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">განათავსე ბლოკები, გაასუფთავე ხაზები და გააუმჯობესე საუკეთესო ქულა.</string>
     <string name="score">ქულა</string>
     <string name="best">საუკეთესო</string>
     <string name="game_over">თამაში დასრულდა</string>

@@ -74,19 +74,19 @@ private val GHOST_LIFT = 30.dp
  * the gesture themselves. The caller flips [dismissing] on first engagement,
  * which fires a confetti burst and a fade-out before [onExitComplete] runs
  * (where the caller persists the "seen" flag and unmounts this overlay).
- * [trayBounds] and [gridBounds] are in root pixels.
+ * [trayBoundsInViewport] and [gridBoundsInViewport] are viewport-local pixels.
  */
 @Composable
 fun GestureTutorial(
-    trayBounds: Rect,
-    gridBounds: Rect,
+    trayBoundsInViewport: Rect,
+    gridBoundsInViewport: Rect,
     piece: Piece?,
     captionTopPadding: Dp,
     dismissing: Boolean,
     onExitComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (piece == null || trayBounds == Rect.Zero || gridBounds == Rect.Zero) return
+    if (piece == null || trayBoundsInViewport == Rect.Zero || gridBoundsInViewport == Rect.Zero) return
 
     val density = LocalDensity.current
     val cornerPx = with(density) { 16.dp.toPx() }
@@ -94,8 +94,11 @@ fun GestureTutorial(
 
     // Start at the centre of the first tray slot (left third), end near the
     // centre of the board.
-    val trayPoint = Offset(trayBounds.left + trayBounds.width / 6f, trayBounds.center.y)
-    val boardPoint = gridBounds.center
+    val trayPoint = Offset(
+        trayBoundsInViewport.left + trayBoundsInViewport.width / 6f,
+        trayBoundsInViewport.center.y,
+    )
+    val boardPoint = gridBoundsInViewport.center
 
     val cols = piece.shape.width
     val rows = piece.shape.height
@@ -165,8 +168,8 @@ fun GestureTutorial(
             .drawWithCache {
                 onDrawWithContent {
                     drawRect(scrimColor)
-                    drawSpotlight(trayBounds, padPx, cornerPx, ringColor)
-                    drawSpotlight(gridBounds, padPx, cornerPx, ringColor)
+                    drawSpotlight(trayBoundsInViewport, padPx, cornerPx, ringColor)
+                    drawSpotlight(gridBoundsInViewport, padPx, cornerPx, ringColor)
                     drawContent()
                 }
             },

@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.common.utils.formatScore
 import ge.yet.game.blockblast.component.result.GameResultComponent
-import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import ge.yet.game.uikit.components.modifier.ringShadow
 import ge.yet.game.uikit.components.modifier.whisperShadow
 
@@ -41,11 +40,9 @@ internal fun ResultCard(
     newBestLabel: String,
     continueLabel: String,
     newGameLabel: String,
-    homeLabel: String,
     advertisementLabel: String?,
     layoutPolicy: ResultLayoutPolicy,
     onPrimaryClicked: () -> Unit,
-    onHomeClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(
@@ -121,16 +118,6 @@ internal fun ResultCard(
             buttonHeight = layoutPolicy.buttonHeightDp.dp,
             onClick = onPrimaryClicked,
             modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(Modifier.height(layoutPolicy.actionsSpacingDp.dp))
-
-        SecondaryWarmSandButton(
-            text = homeLabel,
-            onClick = onHomeClicked,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(layoutPolicy.buttonHeightDp.dp),
         )
     }
 }

@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Play</string>
-    <string name="continue_game">Continue</string>
-    <string name="new_game">New game</string>
-    <string name="home_tagline">A quiet little puzzle</string>
     <string name="settings">Settings</string>
     <string name="sound">Sound</string>
     <string name="sound_subtitle">Game sound effects</string>
@@ -35,9 +32,24 @@
     <string name="keep_ads">Keep ads</string>
     <string name="disable_ads_anyway">Disable anyway</string>
     <string name="cd_back">Back</string>
+    <string name="cd_settings">Settings</string>
+    <string name="miniapp_unavailable">%1$s is unavailable</string>
+    <string name="back_to_catalog">Back to catalog</string>
     <string name="exit">Exit</string>
     <string name="review_prompt_title">Enjoying Logica?</string>
     <string name="review_prompt_body">Your review helps more puzzle players find the game.</string>
     <string name="review_prompt_leave_feedback">Leave feedback</string>
     <string name="review_prompt_dont_show">Don't show again</string>
+    <string name="delete_game_data">Delete all game data</string>
+    <string name="delete_game_data_subtitle">Remove progress and results from every game</string>
+    <string name="clear_game_data_title">Delete game data?</string>
+    <string name="clear_game_data_body">This permanently deletes saved games, scores, tutorials, and other progress from every installed game.</string>
+    <string name="clear_game_data_preferences_kept">Your app preferences, privacy choices, advertising consent, and review settings will not be deleted.</string>
+    <string name="clear_game_data_action">Delete game data</string>
+    <string name="clearing_game_data">Deleting game data…</string>
+    <string name="game_data_cleared">All game data was deleted.</string>
+    <string name="game_data_clear_failed">Some game data could not be deleted. You can retry the affected games:</string>
+    <string name="retry">Retry</string>
+    <string name="done">Done</string>
+    <string name="cancel">Cancel</string>
 </resources>

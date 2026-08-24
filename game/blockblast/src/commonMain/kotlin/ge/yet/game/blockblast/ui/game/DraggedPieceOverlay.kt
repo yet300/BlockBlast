@@ -39,6 +39,7 @@ fun DraggedPieceOverlay(
     gap: Dp,
     verticalLift: Dp,
     dragDropState: DragDropState,
+    viewportOriginInWindow: Offset,
     reducedMotion: Boolean,
     onReturnFinished: () -> Unit,
     modifier: Modifier = Modifier,
@@ -74,23 +75,27 @@ fun DraggedPieceOverlay(
                 val ghostH = cellSize.toPx() * piece.shape.height +
                     gap.toPx() * (piece.shape.height - 1).coerceAtLeast(0)
                 val progress = returnProgress.value
-                val dragPosition = if (dragDropState.isReturning) {
-                    val start = dragDropState.returnStartPosition
+                val dragPositionInWindow = if (dragDropState.isReturning) {
+                    val start = dragDropState.returnStartPositionInWindow
                     if (reducedMotion) {
                         start
                     } else {
-                        val target = dragDropState.sourcePosition + Offset(
+                        val target = dragDropState.sourcePositionInWindow + Offset(
                             x = 0f,
                             y = ghostH / 2f + verticalLift.toPx(),
                         )
                         start + (target - start) * progress
                     }
                 } else {
-                    dragDropState.dragPosition
+                    dragDropState.dragPositionInWindow
                 }
+                val positionInViewport = windowToViewport(
+                    pointInWindow = dragPositionInWindow,
+                    viewportOriginInWindow = viewportOriginInWindow,
+                )
                 IntOffset(
-                    x = (dragPosition.x - ghostW / 2f).toInt(),
-                    y = (dragPosition.y - ghostH - verticalLift.toPx()).toInt(),
+                    x = (positionInViewport.x - ghostW / 2f).toInt(),
+                    y = (positionInViewport.y - ghostH - verticalLift.toPx()).toInt(),
                 )
             }
             .graphicsLayer {

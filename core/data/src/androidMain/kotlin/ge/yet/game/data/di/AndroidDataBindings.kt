@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.GraphPrivate
 import ge.yet.game.data.platform.AndroidPlatformSoundPlayer
 import ge.yet.game.data.platform.AndroidPlatformVibrator
 import ge.yet.game.data.platform.PlatformSoundPlayer
@@ -27,6 +28,7 @@ abstract class AndroidDataBindings {
     @Binds
     internal abstract val AndroidPlatformVibrator.bindPlatformVibrator: PlatformVibrator
 
+    @GraphPrivate
     @Binds
     internal abstract val AndroidStoreReviewRepository.bindStoreReviewRepository: StoreReviewRepository
 }

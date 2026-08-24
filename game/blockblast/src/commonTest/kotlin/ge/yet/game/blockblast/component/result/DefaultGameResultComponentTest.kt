@@ -6,11 +6,10 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import ge.yet.game.blockblast.domain.model.Grid
-import ge.yet.game.domain.repository.SettingsRepository
+import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -94,12 +93,17 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun disabled_ads_make_continue_free_without_requesting_ad_gate() = runTest(testDispatcher) {
-        val setup = build(canContinue = true, adsEnabled = false)
+    fun free_continue_gate_still_owns_the_continue_boundary() = runTest(testDispatcher) {
+        val setup = build(canContinue = true)
+        var continueGateRequests = 0
 
-        setup.component.onPrimaryClicked(failIfContinueGateRequested)
+        setup.component.onPrimaryClicked { onApproved ->
+            continueGateRequests += 1
+            onApproved()
+        }
         runCurrent()
 
+        assertEquals(1, continueGateRequests)
         assertEquals(1, setup.continueCalls)
         assertEquals(0, setup.newGameCalls)
         setup.lifecycle.destroy()
@@ -163,7 +167,7 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun failed_continue_unlocks_retry_and_home_actions() = runTest(testDispatcher) {
+    fun failed_continue_unlocks_retry_action() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
 
         setup.component.onPrimaryClicked(approveImmediately)
@@ -175,9 +179,6 @@ class DefaultGameResultComponentTest {
         runCurrent()
         assertEquals(2, setup.continueCalls)
 
-        setup.component.onContinueFailed()
-        setup.component.onHomeClicked()
-        assertEquals(1, setup.homeCalls)
         setup.lifecycle.destroy()
     }
 
@@ -254,20 +255,6 @@ class DefaultGameResultComponentTest {
     }
 
     @Test
-    fun home_is_a_single_terminal_action() {
-        val setup = build(canContinue = true)
-
-        setup.component.onHomeClicked()
-        setup.component.onHomeClicked()
-        setup.component.onPrimaryClicked(failIfContinueGateRequested)
-
-        assertEquals(1, setup.homeCalls)
-        assertEquals(0, setup.continueCalls)
-        assertEquals(0, setup.newGameCalls)
-        setup.lifecycle.destroy()
-    }
-
-    @Test
     fun destroy_cancels_the_countdown() = runTest(testDispatcher) {
         val setup = build(canContinue = true)
         advanceTimeBy(1_000)
@@ -281,27 +268,45 @@ class DefaultGameResultComponentTest {
         assertEquals(4, setup.component.model.value.continueSecondsRemaining)
     }
 
+    @Test
+    fun countdown_pauses_while_visibility_is_not_active() = runTest(testDispatcher) {
+        val visibility = MutableMiniAppVisibilitySource()
+        val setup = build(canContinue = true, visibility = visibility)
+
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(4, setup.component.model.value.continueSecondsRemaining)
+
+        visibility.set(MiniAppVisibility.OBSCURED)
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertEquals(4, setup.component.model.value.continueSecondsRemaining)
+
+        visibility.set(MiniAppVisibility.ACTIVE)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(3, setup.component.model.value.continueSecondsRemaining)
+        setup.lifecycle.destroy()
+    }
+
     private fun build(
         canContinue: Boolean,
-        adsEnabled: Boolean = true,
+        visibility: MutableMiniAppVisibilitySource = MutableMiniAppVisibilitySource(),
         onContinueRequested: () -> Unit = {},
     ): Setup {
         val lifecycle = LifecycleRegistry()
-        val settings = FakeSettings(adsEnabled)
         var continueCalls = 0
         var newGameCalls = 0
-        var homeCalls = 0
         val component = DefaultGameResultComponent(
             componentContext = DefaultComponentContext(lifecycle = lifecycle),
             snapshot = snapshot,
             canContinue = canContinue,
-            settings = settings,
+            visibility = visibility,
             onContinueRequested = {
                 continueCalls += 1
                 onContinueRequested()
             },
             onNewGameRequested = { newGameCalls += 1 },
-            onHomeRequested = { homeCalls += 1 },
         )
         lifecycle.resume()
         return Setup(
@@ -309,7 +314,6 @@ class DefaultGameResultComponentTest {
             lifecycle = lifecycle,
             continueCallsProvider = { continueCalls },
             newGameCallsProvider = { newGameCalls },
-            homeCallsProvider = { homeCalls },
         )
     }
 
@@ -318,27 +322,9 @@ class DefaultGameResultComponentTest {
         val lifecycle: LifecycleRegistry,
         val continueCallsProvider: () -> Int,
         val newGameCallsProvider: () -> Int,
-        val homeCallsProvider: () -> Int,
     ) {
         val continueCalls: Int get() = continueCallsProvider()
         val newGameCalls: Int get() = newGameCallsProvider()
-        val homeCalls: Int get() = homeCallsProvider()
-    }
-
-    private class FakeSettings(adsEnabled: Boolean) : SettingsRepository {
-        private val adsFlow = MutableStateFlow(adsEnabled)
-        override val musicEnabled = MutableStateFlow(true).asStateFlow()
-        override val sfxEnabled = MutableStateFlow(true).asStateFlow()
-        override val vibrationEnabled = MutableStateFlow(true).asStateFlow()
-        override val darkTheme = MutableStateFlow(false).asStateFlow()
-        override val adsEnabled = adsFlow.asStateFlow()
-        override suspend fun setMusicEnabled(enabled: Boolean) = Unit
-        override suspend fun setSfxEnabled(enabled: Boolean) = Unit
-        override suspend fun setVibrationEnabled(enabled: Boolean) = Unit
-        override suspend fun setDarkTheme(enabled: Boolean) = Unit
-        override suspend fun setAdsEnabled(enabled: Boolean) {
-            adsFlow.value = enabled
-        }
     }
 
     private companion object {

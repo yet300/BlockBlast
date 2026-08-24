@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -18,7 +19,7 @@ kotlin {
     }
 
     android {
-        namespace = "ge.yet.blokblast.composeApp"
+        namespace = "ge.yet.game.composeApp"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -27,6 +28,9 @@ kotlin {
         }
         androidResources {
             enable = true
+        }
+        withHostTest {
+            isIncludeAndroidResources = true
         }
     }
 
@@ -42,6 +46,7 @@ kotlin {
             export(projects.core.common)
         }
     }
+    applyDefaultHierarchyTemplate()
 
     sourceSets {
         androidMain.dependencies {
@@ -55,10 +60,12 @@ kotlin {
             implementation(projects.core.telemetry)
             implementation(projects.core.uikit)
             implementation(projects.monetization.ads)
-            implementation(projects.game.blockblast)
+            implementation(projects.miniapp.compose)
+            implementation(projects.miniapp.storage)
+            implementation(projects.miniapp.bundle)
 
             api(projects.feature.root)
-            implementation(projects.feature.home)
+            implementation(projects.feature.catalog)
             implementation(projects.feature.settings)
             implementation(projects.feature.review)
 
@@ -80,8 +87,21 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.bundles.testing)
+            implementation(libs.compose.ui.test)
 
             implementation(libs.multiplatform.settings.test)
+        }
+        named("androidHostTest") {
+            dependencies {
+                implementation(projects.miniapp.testkit)
+                implementation(kotlin("test-junit"))
+                implementation(libs.core.ktx)
+                implementation(libs.junit)
+                implementation(libs.robolectric)
+            }
+        }
+        iosTest.dependencies {
+            implementation(projects.miniapp.testkit)
         }
     }
 }
@@ -95,4 +115,17 @@ aboutLibraries {
 
 tasks.named("copyNonXmlValueResourcesForCommonMain") {
     dependsOn("exportLibraryDefinitions")
+}
+
+tasks.withType<Test>().configureEach {
+    if (name == "testAndroidHostTest") {
+        // This common parser test calls Android framework stubs and is covered by native tests.
+        filter {
+            excludeTestsMatching("ge.yet.game.ComposeLibrariesProviderTest")
+            // Compose UI's Android host environment requires a Robolectric runner;
+            // this common suite executes on the iOS simulator in allTests.
+            excludeTestsMatching("ge.yet.game.screen.root.RootContentTest")
+            excludeTestsMatching("ge.yet.game.screen.settings.SettingsContentTest")
+        }
+    }
 }

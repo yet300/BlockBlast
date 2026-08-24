@@ -6,7 +6,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import dev.zacsweers.metro.Inject
-import ge.yet.game.blockblast.data.audio.BlockBlastAudio
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.GameTransition
 import ge.yet.game.blockblast.domain.model.GameEvent
@@ -17,7 +17,6 @@ import ge.yet.game.blockblast.domain.repository.BestScoreRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -25,7 +24,7 @@ import kotlinx.coroutines.launch
 internal class GameStoreFactory(
     private val storeFactory: StoreFactory,
     private val gameReducer: GameSessionReducer,
-    private val audio: AudioRepository,
+    private val audio: BlockBlastAudioPlayer,
     private val saveRepository: GameSaveRepository,
     private val bestScoreRepository: BestScoreRepository,
     private val tutorialRepository: BlockBlastTutorialRepository,
@@ -141,7 +140,7 @@ internal class GameStoreFactory(
             event: GameEvent.MoveResolved,
         ) {
             val moveParams = moveAnalyticsParams(event)
-            event.feedback?.let { audio.playSound(BlockBlastAudio.soundFor(it)) }
+            event.feedback?.let(audio::playFeedback)
             logger.log("piece_place_success", state, moveParams)
             if (event.linesCount > 0) logger.log("lines_cleared", state, moveParams)
             if (event.linesCount > 0 && event.comboLevel >= 2) {
@@ -243,9 +242,9 @@ internal class GameStoreFactory(
             )
         }
 
-        private suspend fun updateMusic(snapshot: GameState) {
+        private fun updateMusic(snapshot: GameState) {
             if (!snapshot.isGameOver && snapshot.currentPieces.isNotEmpty()) {
-                audio.startMusic(BlockBlastAudio.musicTracks)
+                audio.startMusic()
             } else {
                 audio.stopMusic()
             }

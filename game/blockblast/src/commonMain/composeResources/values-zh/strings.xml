@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">放置方块、消除行列，刷新你的最高分。</string>
     <string name="score">分数</string>
     <string name="best">最高</string>
     <string name="game_over">游戏结束</string>

@@ -17,6 +17,14 @@ pluginManagement {
 }
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    id("logica.miniapp.settings")
+}
+
+miniApps {
+    include(
+        projectPath = ":game:blockblast",
+        expectedId = "game.blockblast",
+    )
 }
 
 dependencyResolutionManagement {
@@ -42,6 +50,7 @@ include(":core:domain")
 include(":core:data")
 include(":core:telemetry")
 include(":core:uikit")
+include(":core:pattern")
 
 include(":monetization")
 include(":monetization:core")
@@ -51,7 +60,17 @@ include(":feature")
 include(":feature:root")
 include(":feature:settings")
 include(":feature:review")
-include(":feature:home")
+include(":feature:catalog")
 
 include(":game")
-include(":game:blockblast")
+
+include(":miniapp")
+include(":miniapp:api")
+include(":miniapp:compose")
+include(":miniapp:metro")
+include(":miniapp:storage")
+include(":miniapp:audio")
+include(":miniapp:audio-presets")
+include(":miniapp:testkit")
+include(":miniapp:bundle")
+include(":miniapp:integration-test")

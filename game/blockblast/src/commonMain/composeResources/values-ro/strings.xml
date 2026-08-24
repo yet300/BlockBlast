@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Așază blocuri, elimină linii și depășește-ți recordul.</string>
     <string name="score">Scor</string>
     <string name="best">Record</string>
     <string name="game_over">Joc terminat</string>

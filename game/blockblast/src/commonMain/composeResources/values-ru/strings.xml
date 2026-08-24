@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Размещайте блоки, очищайте линии и побейте свой рекорд.</string>
     <string name="score">Счет</string>
     <string name="best">Рекорд</string>
     <string name="game_over">Игра окончена</string>

@@ -44,9 +44,9 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -63,12 +63,13 @@ import kotlinx.coroutines.launch
 
 private typealias DragStart = (
     piece: Piece,
-    startPosition: Offset,
+    startPositionInWindow: Offset,
     pieceOriginOffset: Offset,
-    sourcePosition: Offset,
+    sourcePositionInWindow: Offset,
 ) -> Unit
-private typealias DragMove = (position: Offset) -> Unit
+private typealias DragMove = (positionInWindow: Offset) -> Unit
 private typealias DragEnd = () -> Unit
+private typealias DragCancel = () -> Unit
 
 private const val SLOT_COUNT = 3
 
@@ -91,6 +92,7 @@ fun PieceTray(
     onDragStart: DragStart? = null,
     onDragMove: DragMove? = null,
     onDragEnd: DragEnd? = null,
+    onDragCancel: DragCancel? = null,
 ) {
     val slots by tray.slots.subscribeAsState()
 
@@ -116,12 +118,18 @@ fun PieceTray(
                     key(slot.piece.pieceId) {
                         TraySlot(
                             slot = slot,
-                            onDragStart = { piece, startPos, originOffset, sourcePosition ->
+                            onDragStart = { piece, startPositionInWindow, originOffset, sourcePositionInWindow ->
                                 tray.clearSelection()
-                                onDragStart?.invoke(piece, startPos, originOffset, sourcePosition)
+                                onDragStart?.invoke(
+                                    piece,
+                                    startPositionInWindow,
+                                    originOffset,
+                                    sourcePositionInWindow,
+                                )
                             },
                             onDragMove = onDragMove,
                             onDragEnd = onDragEnd,
+                            onDragCancel = onDragCancel,
                             dragEnabled = dragEnabled,
                             spatialMotionEnabled = spatialMotionEnabled,
                             modifier = Modifier
@@ -147,6 +155,7 @@ private fun TraySlot(
     onDragStart: DragStart?,
     onDragMove: DragMove?,
     onDragEnd: DragEnd?,
+    onDragCancel: DragCancel?,
     dragEnabled: Boolean,
     spatialMotionEnabled: Boolean,
     modifier: Modifier = Modifier,
@@ -219,6 +228,7 @@ private fun TraySlot(
                 onDragStart = onDragStart,
                 onDragMove = onDragMove,
                 onDragEnd = onDragEnd,
+                onDragCancel = onDragCancel,
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -300,26 +310,23 @@ private fun Modifier.traySlotPointerInput(
     onDragStart: DragStart?,
     onDragMove: DragMove?,
     onDragEnd: DragEnd?,
+    onDragCancel: DragCancel?,
 ): Modifier {
     if (!enabled) return this
 
-    var slotOriginInWindow by remember { mutableStateOf(Offset.Zero) }
-    var slotCenterInWindow by remember { mutableStateOf(Offset.Zero) }
+    var slotCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val touchSlop = LocalViewConfiguration.current.touchSlop
 
     val onDragStartLatest by rememberUpdatedState(onDragStart)
     val onDragMoveLatest by rememberUpdatedState(onDragMove)
     val onDragEndLatest by rememberUpdatedState(onDragEnd)
+    val onDragCancelLatest by rememberUpdatedState(onDragCancel)
     val onTapLatest by rememberUpdatedState(onTap)
     val onPressedChangeLatest by rememberUpdatedState(onPressedChange)
 
     return this
         .onGloballyPositioned { coords ->
-            slotOriginInWindow = coords.positionInWindow()
-            slotCenterInWindow = slotOriginInWindow + Offset(
-                x = coords.size.width / 2f,
-                y = coords.size.height / 2f,
-            )
+            slotCoordinates = coords
         }
         .pointerInput(piece.pieceId, enabled) {
             awaitPointerEventScope {
@@ -327,45 +334,61 @@ private fun Modifier.traySlotPointerInput(
                     val downEvent = awaitPointerEvent()
                     if (downEvent.type != PointerEventType.Press) continue
                     val downChange = downEvent.changes.firstOrNull() ?: continue
+                    if (slotCoordinates?.isAttached != true) continue
 
-                    onPressedChangeLatest(true)
-                    val downPos = downChange.position
-                    var dragging = false
-                    var endedNormally = false
+                    val cleanup = TrayGestureCleanup(
+                        onPressedChange = onPressedChangeLatest,
+                        onDragCommit = { onDragEndLatest?.invoke() },
+                        onDragCancel = { onDragCancelLatest?.invoke() },
+                    )
+                    try {
+                        onPressedChangeLatest(true)
+                        val downPos = downChange.position
 
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.firstOrNull() ?: break
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull() ?: break
 
-                        when (event.type) {
-                            PointerEventType.Move -> {
-                                val delta = change.position - downPos
-                                if (!dragging && delta.getDistance() > touchSlop) {
-                                    dragging = true
-                                    onDragStartLatest?.invoke(
-                                        piece,
-                                        slotOriginInWindow + downPos,
-                                        downPos,
-                                        slotCenterInWindow,
-                                    )
+                            when (event.type) {
+                                PointerEventType.Move -> {
+                                    val delta = change.position - downPos
+                                    val coordinates = slotCoordinates
+                                    if (coordinates == null || !coordinates.isAttached) break
+                                    if (!cleanup.isDragging && delta.getDistance() > touchSlop) {
+                                        cleanup.markDragStarted()
+                                        onDragStartLatest?.invoke(
+                                            piece,
+                                            coordinates.localToWindow(downPos),
+                                            downPos,
+                                            coordinates.localToWindow(
+                                                Offset(
+                                                    x = coordinates.size.width / 2f,
+                                                    y = coordinates.size.height / 2f,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    if (cleanup.isDragging) {
+                                        change.consume()
+                                        onDragMoveLatest?.invoke(
+                                            coordinates.localToWindow(change.position),
+                                        )
+                                    }
                                 }
-                                if (dragging) {
-                                    change.consume()
-                                    onDragMoveLatest?.invoke(slotOriginInWindow + change.position)
+                                PointerEventType.Release -> {
+                                    if (slotCoordinates?.isAttached != true) break
+                                    if (cleanup.isDragging) {
+                                        cleanup.commitDragOnce()
+                                    } else {
+                                        onTapLatest()
+                                    }
+                                    break
                                 }
-                            }
-                            PointerEventType.Release -> {
-                                endedNormally = true
-                                onPressedChangeLatest(false)
-                                if (dragging) onDragEndLatest?.invoke() else onTapLatest()
-                                break
                             }
                         }
+                    } finally {
+                        cleanup.finish()
                     }
-
-                    // Defensive: cancel paths skip the Release branch.
-                    onPressedChangeLatest(false)
-                    if (dragging && !endedNormally) onDragEndLatest?.invoke()
                 }
             }
         }

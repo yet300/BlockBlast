@@ -2,10 +2,12 @@
 
 <img src="picture/app_icon.png" width="180" alt="App icon" />
 
-A modern, cross-platform block puzzle game built with **Kotlin Multiplatform** and **Compose Multiplatform**, sharing code between Android and iOS.
+A Kotlin Multiplatform MiniApp catalog for Android and iOS. The production
+build currently ships Block Blast; additional games and apps are independent
+Gradle modules reviewed and allowlisted at build time.
 
-![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-blue.svg)
-![Compose](https://img.shields.io/badge/Compose-1.10.3-green.svg)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue.svg)
+![Compose](https://img.shields.io/badge/Compose-1.11.1-green.svg)
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-orange.svg)
 
 ## Download
@@ -38,11 +40,13 @@ A modern, cross-platform block puzzle game built with **Kotlin Multiplatform** a
 - 📴 Fully offline — no account required
 - ⭐ In-app review prompts on Android
 - 📊 Firebase Analytics & Crashlytics
+- 🧱 Compile-time MiniApp plugin framework with a uniform catalog and host frame
+- 🔌 Contributor games discovered locally and shipped only through reviewable allowlisting
 
 ## Tech Stack
 
-- **Kotlin Multiplatform** 2.3.21 — shared business logic
-- **Compose Multiplatform** 1.10.3 — declarative UI for Android & iOS
+- **Kotlin Multiplatform** 2.4.10 — shared business logic
+- **Compose Multiplatform** 1.11.1 — declarative UI for Android & iOS
 - **Material 3** — design system
 - **Decompose** + **Essenty** — navigation & lifecycle
 - **MVIKotlin** — predictable state management (MVI)
@@ -60,17 +64,30 @@ A modern, cross-platform block puzzle game built with **Kotlin Multiplatform** a
 BlockBlast/
 ├── androidApp/      # Android entry point (Activity, manifest, ads, Firebase)
 ├── iosApp/          # iOS entry point (SwiftUI host)
-├── composeApp/      # Shared Compose UI (commonMain, androidMain, iosMain)
+├── composeApp/      # Shared host UI, MiniApp frame and platform composition
 ├── core/
-│   ├── common/      # Common utilities
-│   ├── domain/      # Business logic, models, use cases
-│   └── data/        # Repositories, persistence
+│   ├── common/      # Shared utilities
+│   ├── domain/      # Reusable domain contracts
+│   ├── data/        # Settings and shared repositories
+│   └── telemetry/   # Analytics and crash facade
 ├── feature/
-│   ├── root/        # Navigation root
-│   ├── home/        # Home screen
-│   ├── game/        # Game screen and logic
-│   └── settings/    # Settings
-├── build-logic/     # Convention plugins for Gradle
+│   ├── catalog/     # Registry-backed MiniApp catalog
+│   ├── root/        # Catalog/running navigation and host lifecycle
+│   ├── review/      # App review policy
+│   └── settings/    # Host settings
+├── game/
+│   └── blockblast/  # Shipped Block Blast MiniApp
+├── miniapp/
+│   ├── api/         # Stable Compose-free contracts
+│   ├── compose/     # Plugin, manifest, session and frame contracts
+│   ├── metro/       # Registry and retained child-graph foundation
+│   ├── storage/     # Namespaced persistence and safe all-game-data reset
+│   ├── audio/       # Portable procedural Music/SFX API and runtime
+│   ├── audio-presets/ # Original reusable instruments, soundscapes and SFX
+│   ├── bundle/      # Production allowlisted plugins
+│   ├── testkit/     # Contributor contract fixtures
+│   └── samples/     # Discovered but unshipped examples
+├── build-logic/     # MiniApp discovery, scaffold and convention plugins
 └── fastlane/        # Store metadata & changelogs
 ```
 
@@ -110,9 +127,70 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run.
 ./gradlew test
 ```
 
+### Create a game / MiniApp
+
+If you are a human contributor or an AI agent and the request is to create,
+add or port a game, start with the official scaffold workflow below. Do not
+create an arbitrary Gradle module and do not add the game to the production
+allowlist automatically.
+
+```bash
+./gradlew createMiniApp -PminiAppId=game.snake -PminiAppName=Snake
+./gradlew :game:snake:allTests :game:snake:validateMiniAppDependencies
+```
+
+The first command creates reviewable source. The next Gradle invocation
+discovers `game/*` and `miniapp/samples/*`, but discovery does not ship a
+plugin. After review, a maintainer adds exactly one matching entry to the root
+`miniApps` allowlist. The catalog is compiled into the app; there is no server,
+runtime download or remote code loading.
+
+The stable policy and rationale are recorded in
+[ADR-0001: MiniApp Contribution and Shipping Workflow](docs/adr/0001-miniapp-contribution-and-shipping.md).
+The current agent-level architecture and verification rules are in
+[AGENTS.md](AGENTS.md). Detailed human and AI contributor guides will follow
+the approved [contributor pipeline design](docs/superpowers/specs/2026-08-23-miniapp-contributor-pipeline-design.md).
+
+Plugins depend only on MiniApp contracts, approved inward core contracts and
+typed host capabilities. Root owns Catalog/Running navigation, Back,
+Settings/Review, visibility and stale-callback protection. The common frame
+owns catalog cards, toolbar controls and ad containers; Replay is intentionally
+not part of the initial plugin API.
+
+Use the session-bound `MiniAppStorage` from `MiniAppSessionContext` for new
+persistence. Games supply only local snake-case names; the host owns physical
+namespacing, snapshot migrations, legacy aliases and the safe all-game-data
+reset. MiniApp modules must not depend on Multiplatform Settings directly.
+Block Blast's legacy physical keys remain unchanged for save compatibility.
+
+### Create procedural music and SFX
+
+MiniApps can declare original, asset-free Music and SFX in shared Kotlin for
+Android and iOS. Start with the
+[procedural audio getting-started guide](docs/miniapp/audio/getting-started.md),
+then use the [Kotlin DSL reference](docs/miniapp/audio/kotlin-dsl.md),
+[shared presets](docs/miniapp/audio/instruments.md), and
+[mobile budgets](docs/miniapp/audio/performance-budgets.md).
+
+AI agents must use the repo-local
+[MiniApp procedural audio skill](.agents/skills/miniapp-procedural-audio/SKILL.md).
+It prioritizes preset reuse, original declarations, deterministic seeds,
+session lifecycle correctness and compiled examples. Engine maintainers should
+read the approved
+[architecture design](docs/superpowers/specs/2026-08-23-kotlin-pattern-audio-design.md)
+and [implementation plan](docs/superpowers/plans/2026-08-23-miniapp-procedural-audio.md);
+MiniApp authors must not depend on internal DSP or platform sinks.
+
+Block Blast deliberately keeps its original bundled MP3 music and voice clips
+through the app-owned legacy `AudioRepository`. This is not a reusable MiniApp
+capability or a contributor pattern; new MiniApps use the procedural API unless
+a separate architecture decision introduces a general asset-audio contract.
+
 ## Contributing
 
-Contributions are welcome! Feel free to open an issue or submit a PR.
+Contributions are welcome. MiniApps generated by the command above remain
+unshipped until their source, dependency boundary and allowlist change are
+reviewed.
 
 ## Support Me
 - **ton**: UQCi1XMdZP2fBfTK-O6rsAX3fXEm5iBpjO1D6FDekdUDQnaw

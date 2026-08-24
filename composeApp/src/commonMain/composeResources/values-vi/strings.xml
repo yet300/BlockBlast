@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Chơi</string>
-    <string name="continue_game">Tiếp tục</string>
-    <string name="new_game">Trò chơi mới</string>
-    <string name="home_tagline">Một trò chơi giải đố nhẹ nhàng</string>
     <string name="settings">Cài đặt</string>
     <string name="sound">Âm thanh</string>
     <string name="sound_subtitle">Hiệu ứng âm thanh trò chơi</string>

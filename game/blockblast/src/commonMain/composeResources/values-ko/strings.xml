@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">블록을 놓고 줄을 지워 최고 점수를 경신하세요.</string>
     <string name="score">점수</string>
     <string name="best">최고</string>
     <string name="game_over">게임 오버</string>

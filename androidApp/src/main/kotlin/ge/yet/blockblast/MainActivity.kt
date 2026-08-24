@@ -5,12 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.arkivanov.decompose.defaultComponentContext
+import com.arkivanov.decompose.retainedComponent
 import com.google.firebase.Firebase
 import com.google.firebase.initialize
-import ge.yet3.blokblast.screen.App
+import ge.yet.game.feature.root.RootComponent
+import ge.yet.game.screen.App
 
 class MainActivity : ComponentActivity() {
+    private lateinit var rootComponent: RootComponent
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
@@ -19,9 +22,13 @@ class MainActivity : ComponentActivity() {
         Firebase.initialize(this)
 
         val appGraph = (application as BlockBlastApp).appGraph
-        val rootComponent = appGraph.rootFactory.create(
-            componentContext = defaultComponentContext()
-        )
+        rootComponent = retainedComponent(
+            key = "LogicaRoot",
+            handleBackButton = true,
+            isStateSavingAllowed = { true },
+        ) { componentContext ->
+            appGraph.rootFactory.create(componentContext = componentContext)
+        }
 
         setContent {
             App(rootComponent = rootComponent)

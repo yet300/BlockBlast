@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Бозӣ кардан</string>
-    <string name="continue_game">Давом додан</string>
-    <string name="new_game">Бозии нав</string>
-    <string name="home_tagline">Муаммои ороми хурд</string>
     <string name="settings">Танзимот</string>
     <string name="sound">Овоз</string>
     <string name="sound_subtitle">Эффектҳои овозии бозӣ</string>

@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Aseta palikoita, tyhjennä rivejä ja riko ennätyksesi.</string>
     <string name="score">Pisteet</string>
     <string name="best">Paras</string>
     <string name="game_over">Peli ohi</string>

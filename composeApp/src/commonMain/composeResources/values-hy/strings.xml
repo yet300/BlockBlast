@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Խաղալ</string>
-    <string name="continue_game">Շարունակել</string>
-    <string name="new_game">Նոր խաղ</string>
-    <string name="home_tagline">Հանգիստ փոքրիկ գլուխկոտրուկ</string>
     <string name="settings">Կարգավորումներ</string>
     <string name="sound">Ձայն</string>
     <string name="sound_subtitle">Խաղի ձայնային էֆեկտներ</string>

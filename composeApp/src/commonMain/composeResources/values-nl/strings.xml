@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Spelen</string>
-    <string name="continue_game">Doorgaan</string>
-    <string name="new_game">Nieuw spel</string>
-    <string name="home_tagline">Een rustige kleine puzzel</string>
     <string name="settings">Instellingen</string>
     <string name="sound">Geluid</string>
     <string name="sound_subtitle">Geluidseffecten van het spel</string>

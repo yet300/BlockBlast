@@ -7,7 +7,7 @@ import ge.yet.game.blockblast.domain.model.GameState
 import kotlinx.coroutines.flow.StateFlow
 
 
-interface GameComponent {
+internal interface GameComponent {
 
     val model: Value<Model>
 
@@ -21,9 +21,6 @@ interface GameComponent {
 
     fun onCellClicked(pieceId: Long, x: Int, y: Int)
     fun onReviveClicked()
-    fun onRestartClicked()
-    fun onSettingsClicked()
-    fun onExitClicked()
     fun onTutorialSeen()
 
 
@@ -32,8 +29,6 @@ interface GameComponent {
             componentContext: ComponentContext,
             isNewGame: Boolean,
             restoredResultState: GameState?,
-            onSettingsClicked: () -> Unit,
-            onExitClicked: () -> Unit,
             onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
             onReviveCompleted: (GameState) -> Unit,
             onReviveFailed: () -> Unit,

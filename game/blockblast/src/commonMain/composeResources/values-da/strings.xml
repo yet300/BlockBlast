@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Placér blokke, ryd linjer, og slå din bedste score.</string>
     <string name="score">Point</string>
     <string name="best">Bedste</string>
     <string name="game_over">Spillet er slut</string>

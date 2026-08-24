@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Ойноо</string>
-    <string name="continue_game">Улантуу</string>
-    <string name="new_game">Жаңы оюн</string>
-    <string name="home_tagline">Тынч чакан табышмак</string>
     <string name="settings">Орнотуулар</string>
     <string name="sound">Үн</string>
     <string name="sound_subtitle">Оюндун үн эффекттери</string>

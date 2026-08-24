@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Oyna</string>
-    <string name="continue_game">Davam et</string>
-    <string name="new_game">Yeni oyun</string>
-    <string name="home_tagline">Sakit və kiçik bir tapmaca</string>
     <string name="settings">Tənzimləmələr</string>
     <string name="sound">Səs</string>
     <string name="sound_subtitle">Oyunun səs effektləri</string>

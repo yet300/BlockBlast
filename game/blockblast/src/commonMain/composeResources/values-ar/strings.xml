@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">رتّب المكعبات، امسح الصفوف، وتجاوز أفضل نتيجة لك.</string>
     <string name="score">النتيجة</string>
     <string name="best">الأفضل</string>
     <string name="game_over">انتهت اللعبة</string>

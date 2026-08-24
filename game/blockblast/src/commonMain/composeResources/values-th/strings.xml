@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">วางบล็อก เคลียร์แถว และทำลายสถิติสูงสุดของคุณ</string>
     <string name="score">คะแนน</string>
     <string name="best">สูงสุด</string>
     <string name="game_over">จบเกม</string>

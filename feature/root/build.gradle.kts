@@ -10,18 +10,19 @@ kotlin {
             implementation(projects.core.domain)
             implementation(projects.core.common)
 
-            implementation(projects.game.blockblast)
-            implementation(projects.feature.home)
+            implementation(projects.feature.catalog)
             implementation(projects.feature.settings)
             implementation(projects.feature.review)
+            implementation(projects.miniapp.api)
+            implementation(projects.miniapp.audio)
+            implementation(projects.miniapp.compose)
 
             implementation(libs.bundles.decompose)
-            implementation(libs.bundles.mvi)
-
         }
 
         commonTest.dependencies {
             implementation(libs.bundles.testing)
+            implementation(projects.miniapp.testkit)
         }
     }
 }

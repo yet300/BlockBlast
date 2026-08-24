@@ -639,6 +639,56 @@
             ]
         },
         {
+            "uniqueId": "androidx.compose.ui:ui-tooling-android",
+            "artifactVersion": "1.11.2",
+            "name": "Compose Tooling",
+            "description": "Compose tooling library. This library exposes information to our tools for better IDE support.",
+            "website": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.11.2",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.compose.ui:ui-tooling-data-android",
+            "artifactVersion": "1.11.2",
+            "name": "Compose Tooling Data",
+            "description": "Compose tooling library data. This library provides data about compose for different tooling purposes.",
+            "website": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.11.2",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "androidx.compose.ui:ui-tooling-preview-android",
             "artifactVersion": "1.11.2",
             "name": "Compose UI Preview Tooling",
@@ -1938,16 +1988,44 @@
             ]
         },
         {
-            "uniqueId": "androidx.tracing:tracing",
-            "artifactVersion": "1.2.0",
-            "name": "Android Tracing",
+            "uniqueId": "androidx.tracing:tracing-android",
+            "artifactVersion": "1.3.0",
+            "name": "Tracing",
             "description": "Android Tracing",
-            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.2.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.tracing:tracing-ktx",
+            "artifactVersion": "1.3.0",
+            "name": "Tracing Kotlin Extensions",
+            "description": "Android Tracing",
+            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -3098,6 +3176,29 @@
             ]
         },
         {
+            "uniqueId": "dev.chrisbanes.haze:haze-android",
+            "artifactVersion": "1.7.2",
+            "name": "Haze",
+            "description": "Haze",
+            "website": "https://github.com/chrisbanes/haze/",
+            "developers": [
+                {
+                    "name": "Chris Banes"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:git://github.com/chrisbanes/haze.git",
+                "developerConnection": "scm:git:git://github.com/chrisbanes/haze.git",
+                "url": "https://github.com/chrisbanes/haze/"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "dev.gitlive:firebase-analytics-android",
             "artifactVersion": "3.0.0-alpha01",
             "name": "firebase-kotlin-sdk",
@@ -3746,6 +3847,54 @@
             "artifactVersion": "1.11.1",
             "name": "Compose UI Text",
             "description": "Compose Text primitives and utilities",
+            "website": "https://github.com/JetBrains/compose-multiplatform",
+            "developers": [
+                {
+                    "name": "Compose Multiplatform Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/JetBrains/compose-multiplatform.git",
+                "developerConnection": "scm:git:https://github.com/JetBrains/compose-multiplatform.git",
+                "url": "https://github.com/JetBrains/compose-multiplatform"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.jetbrains.compose.ui:ui-tooling",
+            "artifactVersion": "1.11.1",
+            "name": "Compose Tooling",
+            "description": "Compose tooling library. This library exposes information to our tools for better IDE support.",
+            "website": "https://github.com/JetBrains/compose-multiplatform",
+            "developers": [
+                {
+                    "name": "Compose Multiplatform Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/JetBrains/compose-multiplatform.git",
+                "developerConnection": "scm:git:https://github.com/JetBrains/compose-multiplatform.git",
+                "url": "https://github.com/JetBrains/compose-multiplatform"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.jetbrains.compose.ui:ui-tooling-data",
+            "artifactVersion": "1.11.1",
+            "name": "Compose Tooling Data",
+            "description": "Compose tooling library data. This library provides data about compose for different tooling purposes.",
             "website": "https://github.com/JetBrains/compose-multiplatform",
             "developers": [
                 {

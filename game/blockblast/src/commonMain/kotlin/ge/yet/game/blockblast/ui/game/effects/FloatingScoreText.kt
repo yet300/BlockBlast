@@ -28,8 +28,14 @@ class FloatingScoreState {
     val popups: List<ScorePopup>
         field = mutableStateListOf<ScorePopup>()
 
-    fun add(points: Long, origin: Offset) {
-        popups.add(ScorePopup(id = nextId++, points = points, origin = origin))
+    fun add(points: Long, originInViewport: Offset) {
+        popups.add(
+            ScorePopup(
+                id = nextId++,
+                points = points,
+                originInViewport = originInViewport,
+            ),
+        )
     }
 
     fun remove(popup: ScorePopup) {
@@ -37,7 +43,11 @@ class FloatingScoreState {
     }
 }
 
-data class ScorePopup(val id: Long, val points: Long, val origin: Offset)
+data class ScorePopup(
+    val id: Long,
+    val points: Long,
+    val originInViewport: Offset,
+)
 
 @Composable
 fun FloatingScoreOverlay(
@@ -102,8 +112,8 @@ private fun FloatingScoreItem(
     Box(
         modifier = Modifier.offset {
             IntOffset(
-                x = popup.origin.x.roundToInt(),
-                y = popup.origin.y.roundToInt()
+                x = popup.originInViewport.x.roundToInt(),
+                y = popup.originInViewport.y.roundToInt()
             )
         }
     ) {

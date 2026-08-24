@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Jouer</string>
-    <string name="continue_game">Continuer</string>
-    <string name="new_game">Nouveau jeu</string>
-    <string name="home_tagline">Un petit puzzle tranquille</string>
     <string name="settings">Paramètres</string>
     <string name="sound">Son</string>
     <string name="sound_subtitle">Effets sonores du jeu</string>

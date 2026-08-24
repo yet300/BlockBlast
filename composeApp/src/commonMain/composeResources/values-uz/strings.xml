@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">O'ynash</string>
-    <string name="continue_game">Davom etish</string>
-    <string name="new_game">Yangi o'yin</string>
-    <string name="home_tagline">Sokin kichik jumboq</string>
     <string name="settings">Sozlamalar</string>
     <string name="sound">Ovoz</string>
     <string name="sound_subtitle">O'yinning ovoz effektlari</string>

@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">ब्लॉक लगाएँ, लाइनें साफ़ करें और अपना सर्वश्रेष्ठ स्कोर तोड़ें।</string>
     <string name="score">स्कोर</string>
     <string name="best">सर्वश्रेष्ठ</string>
     <string name="game_over">खेल खत्म</string>

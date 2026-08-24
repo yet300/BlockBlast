@@ -66,7 +66,7 @@ fun GameGrid(
     reducedMotion: Boolean = false,
     clearedEvent: ClearEvent = ClearEvent(),
     isGameOver: Boolean = false,
-    onGridMeasured: ((gridOriginX: Float, gridOriginY: Float, cellSizePx: Float, gapPx: Float) -> Unit)? = null,
+    onGridMeasured: ((gridOriginInWindowX: Float, gridOriginInWindowY: Float, cellSizePx: Float, gapPx: Float) -> Unit)? = null,
 ) {
     val surfaceColor = MaterialTheme.colorScheme.surface
     val density = LocalDensity.current

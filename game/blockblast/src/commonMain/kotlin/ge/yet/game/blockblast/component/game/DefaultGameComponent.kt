@@ -16,22 +16,23 @@ import ge.yet.game.blockblast.component.game.store.GameStore
 import ge.yet.game.blockblast.component.game.store.GameStoreFactory
 import ge.yet.game.blockblast.component.tray.DefaultPieceTrayComponent
 import ge.yet.game.blockblast.component.tray.PieceTrayComponent
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
+import ge.yet.game.miniapp.api.MiniAppVisibility
+import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import kotlinx.coroutines.launch
 
 internal class DefaultGameComponent(
     componentContext: ComponentContext,
     analytics: AnalyticRepository,
     private val gameStoreFactory: GameStoreFactory,
-    private val audio: AudioRepository,
+    private val audio: BlockBlastAudioPlayer,
     private val tutorialRepository: BlockBlastTutorialRepository,
+    private val visibility: MiniAppVisibilitySource,
     private val isNewGame: Boolean,
     private val restoredResultState: GameState?,
-    private val onSettingsClick: () -> Unit,
-    private val onExitClickedCb: () -> Unit,
     private val onGameCompletedCb: (GameState, Boolean, Boolean) -> Unit,
     private val onReviveCompletedCb: (GameState) -> Unit,
     private val onReviveFailedCb: () -> Unit,
@@ -57,7 +58,7 @@ internal class DefaultGameComponent(
 
     init {
         // Stop music when the user navigates away (back button or exit)
-        lifecycle.doOnDestroy { lifecycleScope.launch { audio.stopMusic() } }
+        lifecycle.doOnDestroy(audio::stopMusic)
         // One-shot effects from the store. Per the mvikotlin-code skill,
         // navigation/SDK calls live in the component, not the executor.
         lifecycleScope.launch {
@@ -78,23 +79,16 @@ internal class DefaultGameComponent(
     }
 
     override fun onCellClicked(pieceId: Long, x: Int, y: Int) {
-        store.accept(GameStore.Intent.Place(pieceId, x, y))
+        whenActive { store.accept(GameStore.Intent.Place(pieceId, x, y)) }
     }
 
-    override fun onReviveClicked() = store.accept(GameStore.Intent.Revive)
-    override fun onRestartClicked() = store.accept(GameStore.Intent.Restart)
-    override fun onSettingsClicked() {
-        log("settings_opened")
-        onSettingsClick()
-    }
-
-    override fun onExitClicked() {
-        log("exit_clicked")
-        onExitClickedCb()
-    }
-
+    override fun onReviveClicked() = whenActive { store.accept(GameStore.Intent.Revive) }
     override fun onTutorialSeen() {
         lifecycleScope.launch { tutorialRepository.markSeen() }
+    }
+
+    private inline fun whenActive(action: () -> Unit) {
+        if (visibility.visibility.value == MiniAppVisibility.ACTIVE) action()
     }
 
     private fun log(eventName: String) = logger.log(eventName, store.state)
@@ -104,16 +98,15 @@ internal class DefaultGameComponent(
 @Inject
 internal class DefaultGameComponentFactory(
     private val gameStoreFactory: GameStoreFactory,
-    private val audio: AudioRepository,
+    private val audio: BlockBlastAudioPlayer,
     private val tutorialRepository: BlockBlastTutorialRepository,
     private val analytics: AnalyticRepository,
+    private val visibility: MiniAppVisibilitySource,
 ) : GameComponent.Factory {
     override fun create(
         componentContext: ComponentContext,
         isNewGame: Boolean,
         restoredResultState: GameState?,
-        onSettingsClicked: () -> Unit,
-        onExitClicked: () -> Unit,
         onGameCompleted: (GameState, Boolean, Boolean) -> Unit,
         onReviveCompleted: (GameState) -> Unit,
         onReviveFailed: () -> Unit,
@@ -123,10 +116,9 @@ internal class DefaultGameComponentFactory(
         audio = audio,
         tutorialRepository = tutorialRepository,
         analytics = analytics,
+        visibility = visibility,
         isNewGame = isNewGame,
         restoredResultState = restoredResultState,
-        onSettingsClick = onSettingsClicked,
-        onExitClickedCb = onExitClicked,
         onGameCompletedCb = onGameCompleted,
         onReviveCompletedCb = onReviveCompleted,
         onReviveFailedCb = onReviveFailed,

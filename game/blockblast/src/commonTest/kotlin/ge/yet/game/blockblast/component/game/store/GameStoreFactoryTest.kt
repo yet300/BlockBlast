@@ -5,14 +5,14 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.blockblast.domain.engine.GameSessionReducer
 import ge.yet.game.blockblast.domain.engine.ScoreCalculator
 import ge.yet.game.blockblast.domain.engine.ShapeGenerator
-import ge.yet.game.blockblast.data.audio.BlockBlastAudio
+import ge.yet.game.blockblast.data.audio.BlockBlastAudioPlayer
 import ge.yet.game.blockblast.domain.model.GameState
+import ge.yet.game.blockblast.domain.model.FeedbackType
 import ge.yet.game.blockblast.domain.model.Grid
 import ge.yet.game.blockblast.domain.model.Piece
 import ge.yet.game.blockblast.domain.model.Polyomino
 import ge.yet.game.blockblast.domain.model.Position
 import ge.yet.game.domain.repository.AnalyticRepository
-import ge.yet.game.domain.repository.AudioRepository
 import ge.yet.game.blockblast.domain.repository.GameSaveRepository
 import ge.yet.game.blockblast.domain.repository.BlockBlastTutorialRepository
 import ge.yet.game.blockblast.domain.repository.BestScoreRepository
@@ -59,7 +59,6 @@ class GameStoreFactoryTest {
         assertFalse(store.state.isGameOver)
         assertTrue(deps.analytics.has("game_started", "source" to "new"))
         assertEquals(1, deps.audio.startMusicCount)
-        assertEquals(listOf(BlockBlastAudio.musicTracks), deps.audio.playlists)
     }
 
     @Test
@@ -336,19 +335,13 @@ class GameStoreFactoryTest {
         override suspend fun markSeen() = Unit
     }
 
-    private class RecordingAudioRepository : AudioRepository {
-        val sounds = mutableListOf<String>()
-        val playlists = mutableListOf<List<String>>()
+    private class RecordingAudioRepository : BlockBlastAudioPlayer {
+        val feedback = mutableListOf<FeedbackType>()
         var startMusicCount = 0
         var stopMusicCount = 0
-        override suspend fun playSound(filename: String) { sounds += filename }
-        override suspend fun startMusic(tracks: List<String>) {
-            playlists += tracks
-            startMusicCount += 1
-        }
-        override suspend fun stopMusic() { stopMusicCount += 1 }
-        override suspend fun onAppBackground() = Unit
-        override suspend fun onAppForeground() = Unit
+        override fun playFeedback(type: FeedbackType) { feedback += type }
+        override fun startMusic() { startMusicCount += 1 }
+        override fun stopMusic() { stopMusicCount += 1 }
     }
 
     private class RecordingAnalyticsRepository : AnalyticRepository {

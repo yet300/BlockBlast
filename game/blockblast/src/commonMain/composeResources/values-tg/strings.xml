@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Блокҳоро ҷойгир кунед, хатҳоро тоза кунед ва рекорди худро нав кунед.</string>
     <string name="score">Хол</string>
     <string name="best">Рекорд</string>
     <string name="game_over">Бозӣ анҷом ёфт</string>

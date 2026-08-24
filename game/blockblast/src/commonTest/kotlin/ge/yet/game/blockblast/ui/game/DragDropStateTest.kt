@@ -20,20 +20,20 @@ class DragDropStateTest {
 
         state.startDrag(
             piece = piece,
-            startPosition = Offset(80f, 620f),
+            startPositionInWindow = Offset(80f, 620f),
             pieceOriginOffset = Offset(12f, 18f),
-            sourcePosition = sourceCenter,
+            sourcePositionInWindow = sourceCenter,
         )
 
         assertEquals(DragPresentation.Dragging, state.presentation)
-        assertEquals(sourceCenter, state.sourcePosition)
+        assertEquals(sourceCenter, state.sourcePositionInWindow)
         assertTrue(state.isDragging)
 
         state.beginReturn()
 
         assertEquals(DragPresentation.Returning, state.presentation)
         assertEquals(piece, state.draggedPiece)
-        assertEquals(sourceCenter, state.sourcePosition)
+        assertEquals(sourceCenter, state.sourcePositionInWindow)
         assertFalse(state.isDragging)
         assertTrue(state.isReturning)
 
@@ -41,7 +41,7 @@ class DragDropStateTest {
 
         assertEquals(DragPresentation.Idle, state.presentation)
         assertNull(state.draggedPiece)
-        assertEquals(Offset.Zero, state.sourcePosition)
+        assertEquals(Offset.Zero, state.sourcePositionInWindow)
         assertFalse(state.isReturning)
     }
 
@@ -53,14 +53,14 @@ class DragDropStateTest {
 
         state.startDrag(
             piece = piece(),
-            startPosition = start,
+            startPositionInWindow = start,
             pieceOriginOffset = Offset.Zero,
-            sourcePosition = source,
+            sourcePositionInWindow = source,
         )
         state.beginReturn()
 
-        assertEquals(start, state.returnStartPosition)
-        assertEquals(source, state.sourcePosition)
+        assertEquals(start, state.returnStartPositionInWindow)
+        assertEquals(source, state.sourcePositionInWindow)
     }
 
     @Test
@@ -69,9 +69,9 @@ class DragDropStateTest {
 
         state.startDrag(
             piece = piece(),
-            startPosition = Offset(80f, 620f),
+            startPositionInWindow = Offset(80f, 620f),
             pieceOriginOffset = Offset.Zero,
-            sourcePosition = Offset(72f, 640f),
+            sourcePositionInWindow = Offset(72f, 640f),
         )
         state.endDrag()
 

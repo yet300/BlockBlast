@@ -1,18 +1,68 @@
 package ge.yet.game.data.repository
 
 import com.app.common.AppDispatchers
+import com.app.common.di.CommonBindings
 import com.russhwolf.settings.MapSettings
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.BindingContainer
+import dev.zacsweers.metro.DependencyGraph
+import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.createGraph
+import ge.yet.game.data.di.DataBindings
+import ge.yet.game.domain.repository.FeedbackPreferences
+import ge.yet.game.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+
+@DependencyGraph(
+    scope = AppScope::class,
+    bindingContainers = [
+        CommonBindings::class,
+        DataBindings::class,
+        FeedbackProjectionBindings::class,
+    ],
+)
+internal interface FeedbackProjectionTestGraph {
+    val feedbackFlowProjection: FeedbackFlowProjection
+    val coroutineScope: CoroutineScope
+}
+
+internal data class FeedbackFlowProjection(
+    val settingsMusic: StateFlow<Boolean>,
+    val settingsSfx: StateFlow<Boolean>,
+    val settingsVibration: StateFlow<Boolean>,
+    val feedbackMusic: StateFlow<Boolean>,
+    val feedbackSfx: StateFlow<Boolean>,
+    val feedbackVibration: StateFlow<Boolean>,
+)
+
+@BindingContainer
+internal object FeedbackProjectionBindings {
+    @Provides
+    internal fun provideFeedbackFlowProjection(
+        settingsRepository: SettingsRepository,
+        feedbackPreferences: FeedbackPreferences,
+): FeedbackFlowProjection = FeedbackFlowProjection(
+    settingsMusic = settingsRepository.musicEnabled,
+    settingsSfx = settingsRepository.sfxEnabled,
+    settingsVibration = settingsRepository.vibrationEnabled,
+    feedbackMusic = feedbackPreferences.musicEnabled,
+    feedbackSfx = feedbackPreferences.sfxEnabled,
+    feedbackVibration = feedbackPreferences.vibrationEnabled,
+)
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsBackedSettingsRepositoryTest {
@@ -40,6 +90,20 @@ class SettingsBackedSettingsRepositoryTest {
         assertTrue(repo.vibrationEnabled.value)
         assertFalse(repo.darkTheme.value)
         assertTrue(repo.adsEnabled.value)
+    }
+
+    @Test
+    fun settings_repository_and_feedback_preferences_share_the_same_scoped_instance() {
+        val graph = createGraph<FeedbackProjectionTestGraph>()
+
+        try {
+            val projection = graph.feedbackFlowProjection
+            assertSame(projection.settingsMusic, projection.feedbackMusic)
+            assertSame(projection.settingsSfx, projection.feedbackSfx)
+            assertSame(projection.settingsVibration, projection.feedbackVibration)
+        } finally {
+            graph.coroutineScope.cancel()
+        }
     }
 
     @Test

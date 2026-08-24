@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Гуляць</string>
-    <string name="continue_game">Працягнуць</string>
-    <string name="new_game">Новая гульня</string>
-    <string name="home_tagline">Спакойная маленькая галаваломка</string>
     <string name="settings">Налады</string>
     <string name="sound">Гук</string>
     <string name="sound_subtitle">Гукавыя эфекты гульні</string>

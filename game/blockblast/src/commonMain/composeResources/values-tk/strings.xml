@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Bloklary ýerleşdiriň, setirleri arassalaň we rekordyňyzy täzeläň.</string>
     <string name="score">Bal</string>
     <string name="best">Rekord</string>
     <string name="game_over">Oýun gutardy</string>

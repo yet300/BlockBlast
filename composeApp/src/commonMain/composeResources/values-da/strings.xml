@@ -2,9 +2,6 @@
     <!-- Application resources -->
     <string name="app_name">Logica</string>
     <string name="play">Spil</string>
-    <string name="continue_game">Fortsæt</string>
-    <string name="new_game">Nyt spil</string>
-    <string name="home_tagline">Et roligt lille puslespil</string>
     <string name="settings">Indstillinger</string>
     <string name="sound">Lyd</string>
     <string name="sound_subtitle">Lydeffekter i spillet</string>

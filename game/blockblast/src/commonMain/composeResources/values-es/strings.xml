@@ -1,5 +1,7 @@
 <resources>
     <!-- BlockBlast resources -->
+    <string name="miniapp_title">Block Blast</string>
+    <string name="miniapp_description">Coloca bloques, completa líneas y supera tu mejor puntuación.</string>
     <string name="score">Puntuación</string>
     <string name="best">Mejor</string>
     <string name="game_over">Fin del juego</string>

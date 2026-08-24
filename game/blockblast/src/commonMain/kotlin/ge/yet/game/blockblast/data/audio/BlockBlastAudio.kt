@@ -1,13 +1,26 @@
 package ge.yet.game.blockblast.data.audio
 
 import ge.yet.game.blockblast.domain.model.FeedbackType
+import ge.yet.game.domain.repository.AudioRepository
 
-internal object BlockBlastAudio {
-    val musicTracks = listOf(
-        "block.mp3",
-        "feltwood.mp3",
-        "mossy.mp3",
-    )
+internal interface BlockBlastAudioPlayer {
+    fun playFeedback(type: FeedbackType)
+    fun startMusic()
+    fun stopMusic()
+}
 
-    fun soundFor(type: FeedbackType): String = "voice_${type.name.lowercase()}.mp3"
+internal class DefaultBlockBlastAudioPlayer(
+    private val audio: AudioRepository,
+) : BlockBlastAudioPlayer {
+    override fun playFeedback(type: FeedbackType) {
+        audio.playSound(BlockBlastAudioAssets.voice(type))
+    }
+
+    override fun startMusic() {
+        audio.startMusic(BlockBlastAudioAssets.music)
+    }
+
+    override fun stopMusic() {
+        audio.stopMusic()
+    }
 }

@@ -6,60 +6,83 @@ on:
   push:
     branches: [main]
 
-# Cancel previous runs on the same PR/branch when a new commit lands.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # ----------------------------------------------------------------------
-  # Unit tests for all KMP modules (run on macOS — needed for iosSimulator).
-  # ----------------------------------------------------------------------
-  tests:
-    name: Tests (iosSimulatorArm64)
+  framework-tests:
+    name: MiniApp framework and build logic
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-
       - uses: gradle/actions/setup-gradle@v4
-
-      - name: Run all unit tests
-        run: ./gradlew allTests --stacktrace
-
+      - name: Test build logic
+        run: ./gradlew -p build-logic :convention:test --stacktrace
+      - name: Test MiniApp contracts
+        run: ./gradlew :miniapp:api:allTests :miniapp:compose:allTests :miniapp:metro:allTests :miniapp:testkit:allTests --stacktrace
+      - name: Test Counter integration
+        run: ./gradlew :miniapp:samples:counter:allTests :miniapp:integration-test:testAndroidHostTest :miniapp:integration-test:iosSimulatorArm64Test --stacktrace
       - name: Upload test reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
+          name: framework-test-reports
           path: |
             **/build/reports/tests/**
             **/build/test-results/**
           retention-days: 7
 
-  # ----------------------------------------------------------------------
-  # Android build smoke check (Linux is faster and cheaper than macOS).
-  # Catches androidApp + composeApp Android compile regressions without
-  # the cost of a full release pipeline.
-  # ----------------------------------------------------------------------
-  android-build:
-    name: Android assembleDebug
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+  product-tests:
+    name: Product and production registry
+    runs-on: macos-26
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-
       - uses: gradle/actions/setup-gradle@v4
+      - name: Test production features
+        run: ./gradlew :miniapp:bundle:verifyMiniAppBundle :game:blockblast:allTests :feature:catalog:allTests :feature:root:allTests --stacktrace
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          retention-days: 7
 
-      - name: Assemble debug
-        run: ./gradlew :androidApp:assembleDebug --stacktrace
+  app-build:
+    name: Host tests and application builds
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test hosts and build both platforms
+        run: ./gradlew :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test :androidApp:assembleDebug :composeApp:linkDebugFrameworkIosSimulatorArm64 --stacktrace
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          retention-days: 7
+
+  # Device instrumentation belongs in a separate emulator-capable job. Do not
+  # add connectedDebugAndroidTest to these host-only jobs.

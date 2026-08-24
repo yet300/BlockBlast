@@ -8,6 +8,8 @@ import ge.yet.game.feature.settings.disableads.DisableAdsComponent
 import ge.yet.game.feature.settings.libraries.LibrariesSettingsComponent
 import ge.yet.game.feature.settings.main.MainSettingsComponent
 import ge.yet.game.feature.settings.more.MoreSettingsComponent
+import ge.yet.game.feature.settings.reset.ResetGameDataComponent
+import ge.yet.game.miniapp.api.MiniAppDataResetResult
 
 /**
  * Settings screen. Reachable from BOTH Home and Game via Root navigation.
@@ -25,11 +27,13 @@ interface SettingsComponent : BackHandlerOwner {
         class More(val component: MoreSettingsComponent) : Child
         class DisableAds(val component: DisableAdsComponent) : Child
         class Libraries(val component: LibrariesSettingsComponent) : Child
+        class ResetGameData(val component: ResetGameDataComponent) : Child
     }
 
     fun interface Factory {
         fun create(
             componentContext: ComponentContext,
+            clearGameData: suspend () -> MiniAppDataResetResult,
             onBackClicked: () -> Unit,
         ): SettingsComponent
     }

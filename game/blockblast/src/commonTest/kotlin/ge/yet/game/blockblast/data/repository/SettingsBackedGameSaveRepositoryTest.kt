@@ -1,15 +1,13 @@
 package ge.yet.game.blockblast.data.repository
 
-import com.app.common.AppDispatchers
-import com.russhwolf.settings.MapSettings
-import com.russhwolf.settings.Settings
 import ge.yet.game.blockblast.data.repository.SettingsBackedGameSaveRepository
 import ge.yet.game.blockblast.domain.model.GameState
 import ge.yet.game.blockblast.domain.model.Grid
 import ge.yet.game.blockblast.domain.model.Piece
 import ge.yet.game.blockblast.domain.model.Polyomino
 import ge.yet.game.blockblast.domain.model.Position
-import kotlinx.coroutines.Dispatchers
+import ge.yet.game.miniapp.api.MiniAppStorage
+import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -23,14 +21,8 @@ import kotlin.test.assertTrue
 
 class SettingsBackedGameSaveRepositoryTest {
 
-    private fun newRepo(settings: Settings = MapSettings()) =
-        SettingsBackedGameSaveRepository(
-            settings = settings,
-            dispatchers = AppDispatchers(
-                default = Dispatchers.Unconfined,
-                io = Dispatchers.Unconfined,
-            ),
-        )
+    private fun newRepo(storage: MiniAppStorage = MutableMiniAppStorage()) =
+        SettingsBackedGameSaveRepository(BlockBlastStorage(storage))
 
     private val sampleState = GameState(
         grid = Grid().withCell(2, 3, 5),
@@ -92,12 +84,13 @@ class SettingsBackedGameSaveRepositoryTest {
 
     @Test
     fun legacy_save_without_moves_without_clear_defaults_to_zero() = runTest {
-        val settings = MapSettings(
-            "blockblast.game_save" to
+        val storage = MutableMiniAppStorage(
+            mapOf("game_save" to
                 """{"version":1,"state":{"score":1234,"comboLevel":2}}""",
+            ),
         )
 
-        val loaded = assertNotNull(newRepo(settings).load())
+        val loaded = assertNotNull(newRepo(storage).load())
 
         assertEquals(2, loaded.comboLevel)
         assertEquals(0, loaded.movesWithoutClear)
@@ -105,63 +98,54 @@ class SettingsBackedGameSaveRepositoryTest {
 
     @Test
     fun load_returns_null_for_corrupt_json() = runTest {
-        val settings = MapSettings("blockblast.game_save" to "{not valid json")
-        val repo = newRepo(settings)
+        val storage = MutableMiniAppStorage(mapOf("game_save" to "{not valid json"))
+        val repo = newRepo(storage)
         assertNull(repo.load())
     }
 
     @Test
     fun clear_removes_persisted_save() = runTest {
-        val settings = MapSettings()
-        val repo = newRepo(settings)
+        val storage = MutableMiniAppStorage()
+        val repo = newRepo(storage)
         repo.save(sampleState)
         repo.clear()
         assertNull(repo.load())
-        assertNull(newRepo(settings).load())
+        assertNull(newRepo(storage).load())
     }
 
     @Test
-    fun cache_warm_avoids_extra_disk_reads() = runTest {
-        val settings = CountingSettings()
-        val repo = SettingsBackedGameSaveRepository(
-            settings = settings,
-            dispatchers = AppDispatchers(
-                default = Dispatchers.Unconfined,
-                io = Dispatchers.Unconfined,
-            ),
-        )
+    fun warm_repository_observes_external_clear() = runTest {
+        val storage = MutableMiniAppStorage()
+        val repo = newRepo(storage)
         repo.save(sampleState)
-        repo.load()
-        val readsAfterPrime = settings.readCount
-        // Subsequent loads hit the cache.
-        repo.load()
-        repo.load()
-        assertEquals(0, readsAfterPrime)
-        assertEquals(readsAfterPrime, settings.readCount)
-    }
+        assertEquals(sampleState, repo.load())
 
-    @Test
-    fun load_returns_null_consistently_after_first_miss() = runTest {
-        val settings = MapSettings()
-        val repo = newRepo(settings)
-        assertNull(repo.load())
-        // External writes after a miss aren't picked up — cache locked.
-        settings.putString(
-            "blockblast.game_save",
-            """{"score":1}""",
-        )
+        storage.remove("game_save")
+
         assertNull(repo.load())
     }
 
     @Test
-    fun failed_disk_write_does_not_replace_warm_cached_state() = runTest {
-        val settings = FailingPutSettings()
-        val repo = newRepo(settings)
+    fun load_observes_external_write_after_first_miss() = runTest {
+        val storage = MutableMiniAppStorage()
+        val repo = newRepo(storage)
+        assertNull(repo.load())
+
+        val writer = newRepo(storage)
+        writer.save(sampleState)
+
+        assertEquals(sampleState, repo.load())
+    }
+
+    @Test
+    fun failed_write_keeps_previous_persisted_state() = runTest {
+        val storage = FailingPutStorage()
+        val repo = newRepo(storage)
         val terminalState = sampleState.copy(isGameOver = true)
         repo.save(terminalState)
         assertEquals(terminalState, repo.load())
 
-        settings.failWrites = true
+        storage.failWrites = true
         assertFailsWith<IllegalStateException> {
             repo.save(sampleState.copy(score = 9_999L))
         }
@@ -170,15 +154,15 @@ class SettingsBackedGameSaveRepositoryTest {
     }
 
     @Test
-    fun cancellation_after_successful_disk_write_keeps_cache_in_sync() = runTest {
-        val settings = CancellingPutSettings()
-        val repo = newRepo(settings)
+    fun cancellation_after_successful_write_persists_updated_state() = runTest {
+        val storage = CancellingPutStorage()
+        val repo = newRepo(storage)
         val oldState = sampleState.copy(score = 1_111L)
         repo.save(oldState)
         assertEquals(oldState, repo.load())
 
         lateinit var saveJob: Job
-        settings.afterPut = { saveJob.cancel() }
+        storage.afterPut = { saveJob.cancel() }
 
         val updatedState = sampleState.copy(score = 8_888L)
         saveJob = launch { repo.save(updatedState) }
@@ -189,20 +173,20 @@ class SettingsBackedGameSaveRepositoryTest {
     }
 
     @Test
-    fun failed_clear_keeps_warm_cached_state() = runTest {
-        val settings = FailingRemoveSettings()
-        val repo = newRepo(settings)
+    fun failed_clear_keeps_persisted_state() = runTest {
+        val storage = FailingRemoveStorage()
+        val repo = newRepo(storage)
         repo.save(sampleState)
         assertEquals(sampleState, repo.load())
 
-        settings.failRemoves = true
+        storage.failRemoves = true
         assertFailsWith<IllegalStateException> { repo.clear() }
 
         assertEquals(sampleState, repo.load())
     }
 
     @Test
-    fun caller_mutation_after_save_does_not_change_cached_snapshot() = runTest {
+    fun caller_mutation_after_save_does_not_change_persisted_snapshot() = runTest {
         val repo = newRepo()
         val mutablePieces = sampleState.currentPieces.toMutableList()
         val mutableShapeCells = sampleState.currentPieces.single().shape.cells.toMutableList()
@@ -229,7 +213,7 @@ class SettingsBackedGameSaveRepositoryTest {
     }
 
     @Test
-    fun caller_mutation_after_load_does_not_change_future_cached_reads() = runTest {
+    fun caller_mutation_after_load_does_not_change_future_reads() = runTest {
         val repo = newRepo()
         repo.save(
             sampleState.copy(
@@ -255,47 +239,36 @@ class SettingsBackedGameSaveRepositoryTest {
         assertFalse(first.lastClearedCells.cells === second.lastClearedCells.cells)
     }
 
-    /** Wraps MapSettings to count getStringOrNull invocations. */
-    private class CountingSettings(
-        private val delegate: MapSettings = MapSettings(),
-    ) : Settings by delegate {
-        var readCount = 0
-        override fun getStringOrNull(key: String): String? {
-            readCount += 1
-            return delegate.getStringOrNull(key)
-        }
-    }
-
-    private class FailingPutSettings(
-        private val delegate: MapSettings = MapSettings(),
-    ) : Settings by delegate {
+    private class FailingPutStorage(
+        private val delegate: MutableMiniAppStorage = MutableMiniAppStorage(),
+    ) : MiniAppStorage by delegate {
         var failWrites: Boolean = false
 
-        override fun putString(key: String, value: String) {
+        override suspend fun putString(localName: String, value: String) {
             if (failWrites) error("disk write failed")
-            delegate.putString(key, value)
+            delegate.putString(localName, value)
         }
     }
 
-    private class CancellingPutSettings(
-        private val delegate: MapSettings = MapSettings(),
-    ) : Settings by delegate {
+    private class CancellingPutStorage(
+        private val delegate: MutableMiniAppStorage = MutableMiniAppStorage(),
+    ) : MiniAppStorage by delegate {
         var afterPut: () -> Unit = {}
 
-        override fun putString(key: String, value: String) {
-            delegate.putString(key, value)
+        override suspend fun putString(localName: String, value: String) {
+            delegate.putString(localName, value)
             afterPut()
         }
     }
 
-    private class FailingRemoveSettings(
-        private val delegate: MapSettings = MapSettings(),
-    ) : Settings by delegate {
+    private class FailingRemoveStorage(
+        private val delegate: MutableMiniAppStorage = MutableMiniAppStorage(),
+    ) : MiniAppStorage by delegate {
         var failRemoves: Boolean = false
 
-        override fun remove(key: String) {
+        override suspend fun remove(localName: String) {
             if (failRemoves) error("disk remove failed")
-            delegate.remove(key)
+            delegate.remove(localName)
         }
     }
 }
