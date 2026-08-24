@@ -809,7 +809,7 @@ Run:
 
 Expected: Android/JVM and iOS audio tests pass.
 
-- [ ] **Step 6: Commit callback hardening**
+- [x] **Step 6: Commit callback hardening**
 
 ```bash
 git add miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSink.kt miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosAudioSinkTest.kt
@@ -824,7 +824,7 @@ git commit -m "perf: harden iOS realtime callback boundary"
 - Modify: `docs/superpowers/plans/2026-08-23-miniapp-procedural-audio.md`
 - Modify only source/tests required by failures exposed in this task.
 
-- [ ] **Step 1: Update repository guidance**
+- [x] **Step 1: Update repository guidance**
 
 Change the `:miniapp:audio` row to state that iOS uses a session-owned producer
 thread and fixed SPSC PCM ring, while `AVAudioSourceNode` only drains prepared
@@ -832,7 +832,7 @@ PCM. Add one procedural-audio paragraph stating that scheduling/DSP allocations
 are permitted only on the producer side, never in the native callback. Do not
 change contributor-facing authoring instructions.
 
-- [ ] **Step 2: Link the sub-plan from the parent Task 15**
+- [x] **Step 2: Link the sub-plan from the parent Task 15**
 
 Add this sentence under Task 15:
 
@@ -844,7 +844,7 @@ The iOS absolute realtime boundary is implemented and verified through
 Mark only the realtime source-audit checkbox complete after the scan and tests
 actually pass. Leave physical-device Instruments work unchecked unless it was run.
 
-- [ ] **Step 3: Run narrow platform gates**
+- [x] **Step 3: Run narrow platform gates**
 
 Run:
 
@@ -864,7 +864,7 @@ Run:
 
 Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 4: Run the consuming iOS framework gate**
+- [x] **Step 4: Run the consuming iOS framework gate**
 
 Run:
 
@@ -875,7 +875,7 @@ Run:
 Expected: the ComposeApp simulator framework links successfully with the new
 Foundation and AVFAudio implementation.
 
-- [ ] **Step 5: Run deterministic render regression checks**
+- [x] **Step 5: Run deterministic render regression checks**
 
 Run the existing offline-render tests twice on JVM and iOS:
 
@@ -887,7 +887,7 @@ Run the existing offline-render tests twice on JVM and iOS:
 Expected: both runs pass with the existing exact hashes/acoustic tolerances;
 the iOS buffering refactor must not change shared renderer output.
 
-- [ ] **Step 6: Re-index and inspect the structural diff**
+- [x] **Step 6: Re-index and inspect the structural diff**
 
 Refresh the codebase-memory index for
 `/Users/yet/development/Multiplatform/BlockBlast`, then use graph search/trace to
@@ -895,7 +895,7 @@ verify that `FrameworkIosAudioEngine` reaches `IosPcmCallbackSource` and the
 ring but has no path to `CompiledAudioRuntime` or `RealtimeAudioRenderer`.
 Review `git diff` for accidental Android/public API/dependency changes.
 
-- [ ] **Step 7: Commit documentation and any verified scoped fixes**
+- [x] **Step 7: Commit documentation and any verified scoped fixes**
 
 ```bash
 git add AGENTS.md docs/superpowers/plans/2026-08-23-miniapp-procedural-audio.md

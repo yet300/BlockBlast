@@ -93,7 +93,7 @@ BlockBlast/
 | `:miniapp:compose` | Compose-facing MiniApp plugin, session, audio-bound session context, optional host-toolbar content, manifest, registry and interstitial-capability contracts | `:miniapp:api`, `:miniapp:audio`, Compose, resources, Decompose |
 | `:miniapp:metro` | Immutable app-scoped MiniApp registry, empty-capable Metro set bindings, session-scope marker and retained graph handle | `:miniapp:compose`, Metro |
 | `:miniapp:storage` | App infrastructure for namespace-bound storage, legacy aliases and best-effort all-game-data reset | `:miniapp:api`, `:core:common`, `:core:domain`, Multiplatform Settings |
-| `:miniapp:audio` | Procedural Music/SFX declarations, validation, shared PCM rendering and platform playback. Android uses an app-scoped streaming `AudioTrack` sink with float PCM and PCM16 fallback; iOS uses `AVAudioEngine` with a playback-category mixed audio session. | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
+| `:miniapp:audio` | Procedural Music/SFX declarations, validation, shared PCM rendering and platform playback. Android uses an app-scoped streaming `AudioTrack` sink with float PCM and PCM16 fallback. iOS renders on a session-owned producer thread into a fixed SPSC stereo PCM ring; `AVAudioSourceNode` only drains prepared PCM through preallocated bridge buffers. | `:core:pattern`, `:miniapp:api`, `:core:common`, `:core:domain`, Essenty lifecycle; no Compose or feature dependency |
 | `:miniapp:audio-presets` | Original reusable instrument, SFX and deterministic soundscape fragments authored only through the public audio API | `:miniapp:audio` only |
 | `:miniapp:bundle` | Production MiniApp bundle with the generated registry expectation and allowlist verification | `:miniapp:metro`, allowlisted MiniApp projects only |
 | `:miniapp:testkit` | Reusable recording host, no-op audio/storage, mutable visibility source, lifecycle harness and plugin-contract assertions | MiniApp API, Compose and Metro contracts, Decompose, Compose resources, kotlin-test |
@@ -260,6 +260,12 @@ visibility, settings and lifecycle own suppression and teardown. MiniApps must
 not import audio `internal` packages, `MiniAppAudioEngine`, platform sinks or
 native players. Compile every documented/example declaration in `commonTest`;
 new voices and presets should add deterministic acoustic render assertions.
+
+On iOS, scheduling, command consumption, DSP work and any associated allocation
+belong exclusively to the session producer side. The native audio callback must
+only drain the fixed PCM ring, copy through preallocated channel buffers and
+update atomic diagnostics; it must never acquire lifecycle locks or reach the
+runtime, scheduler or renderer directly.
 
 The maintainer architecture is recorded in
 `docs/superpowers/specs/2026-08-23-kotlin-pattern-audio-design.md`; staged work

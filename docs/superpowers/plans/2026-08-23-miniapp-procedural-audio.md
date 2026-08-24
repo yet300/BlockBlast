@@ -466,12 +466,15 @@
 
 ## Task 15: Final integration, realtime audit and release proof
 
+The iOS absolute realtime boundary is implemented and verified through
+`docs/superpowers/plans/2026-08-24-ios-realtime-pcm-producer.md`.
+
 **Files:**
 
 - Modify only files required by failures found in this task.
 - Update: `AGENTS.md` verification commands and module table if the final implementation differs from the plan.
 
-- [ ] Run source scans proving realtime code contains no `launch`, suspension, logging, storage, DI, string formatting, mutable collection growth or contributor callback invocation.
+- [x] Run source scans proving realtime code contains no `launch`, suspension, logging, storage, DI, string formatting, mutable collection growth or contributor callback invocation.
 - [ ] Run dependency reports proving:
   - `core:pattern` has no project edges;
   - `audio-presets` depends only on `audio`;
@@ -498,9 +501,9 @@
   ```
 
 - [ ] Run the convention tests and strict configuration-cache reuse gate.
-- [ ] Run deterministic offline renders twice on Android/JVM and iOS simulator; compare quantized hashes where exact and acoustic tolerances where floating-point variance is allowed.
+- [x] Run deterministic offline renders twice on Android/JVM and iOS simulator; compare quantized hashes where exact and acoustic tolerances where floating-point variance is allowed.
 - [ ] Execute physical Android/iPhone audio smoke checks if devices are available. Report unverified device behavior explicitly; simulator/framework success is not a substitute.
-- [ ] Refresh the codebase-memory index after the structural change.
+- [x] Refresh the codebase-memory index after the structural change.
 - [ ] Review the full branch diff for accidental third-party code/text, public API leakage, dependency cycles, stale-session holes and misleading documentation.
 - [ ] Commit any final scoped fixes, then hand off exact commands, test counts, manual gaps and commit SHAs.
 
