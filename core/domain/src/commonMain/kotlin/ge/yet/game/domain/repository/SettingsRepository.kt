@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface SettingsRepository : FeedbackPreferences {
     /** Background music gate. Independent of [sfxEnabled] since v1.5.0. */
-    val musicEnabled: StateFlow<Boolean>
+    override val musicEnabled: StateFlow<Boolean>
 
     /** Sound-effects and voice-line gate, independent of [musicEnabled]. */
     override val sfxEnabled: StateFlow<Boolean>

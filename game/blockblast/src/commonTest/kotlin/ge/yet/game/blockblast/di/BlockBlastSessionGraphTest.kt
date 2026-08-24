@@ -465,8 +465,10 @@ private data object NoOpAnalyticsRepository : AnalyticRepository {
 }
 
 private class TestFeedbackPreferences : FeedbackPreferences {
+    private val music = MutableStateFlow(true)
     private val sfx = MutableStateFlow(true)
     private val vibration = MutableStateFlow(true)
+    override val musicEnabled: StateFlow<Boolean> = music.asStateFlow()
     override val sfxEnabled: StateFlow<Boolean> = sfx.asStateFlow()
     override val vibrationEnabled: StateFlow<Boolean> = vibration.asStateFlow()
 }

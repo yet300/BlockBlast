@@ -40,8 +40,12 @@ internal interface FeedbackProjectionTestGraph {
 }
 
 internal data class FeedbackFlowProjection(
-    val settingsRepository: Pair<StateFlow<Boolean>, StateFlow<Boolean>>,
-    val feedbackPreferences: Pair<StateFlow<Boolean>, StateFlow<Boolean>>,
+    val settingsMusic: StateFlow<Boolean>,
+    val settingsSfx: StateFlow<Boolean>,
+    val settingsVibration: StateFlow<Boolean>,
+    val feedbackMusic: StateFlow<Boolean>,
+    val feedbackSfx: StateFlow<Boolean>,
+    val feedbackVibration: StateFlow<Boolean>,
 )
 
 @BindingContainer
@@ -50,10 +54,14 @@ internal object FeedbackProjectionBindings {
     internal fun provideFeedbackFlowProjection(
         settingsRepository: SettingsRepository,
         feedbackPreferences: FeedbackPreferences,
-    ): FeedbackFlowProjection = FeedbackFlowProjection(
-        settingsRepository = settingsRepository.sfxEnabled to settingsRepository.vibrationEnabled,
-        feedbackPreferences = feedbackPreferences.sfxEnabled to feedbackPreferences.vibrationEnabled,
-    )
+): FeedbackFlowProjection = FeedbackFlowProjection(
+    settingsMusic = settingsRepository.musicEnabled,
+    settingsSfx = settingsRepository.sfxEnabled,
+    settingsVibration = settingsRepository.vibrationEnabled,
+    feedbackMusic = feedbackPreferences.musicEnabled,
+    feedbackSfx = feedbackPreferences.sfxEnabled,
+    feedbackVibration = feedbackPreferences.vibrationEnabled,
+)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -90,8 +98,9 @@ class SettingsBackedSettingsRepositoryTest {
 
         try {
             val projection = graph.feedbackFlowProjection
-            assertSame(projection.settingsRepository.first, projection.feedbackPreferences.first)
-            assertSame(projection.settingsRepository.second, projection.feedbackPreferences.second)
+            assertSame(projection.settingsMusic, projection.feedbackMusic)
+            assertSame(projection.settingsSfx, projection.feedbackSfx)
+            assertSame(projection.settingsVibration, projection.feedbackVibration)
         } finally {
             graph.coroutineScope.cancel()
         }
