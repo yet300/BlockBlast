@@ -200,7 +200,7 @@ git commit -m "feat: add fixed stereo PCM ring"
 - Create: `miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmCallbackSource.kt`
 - Create: `miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmCallbackSourceTest.kt`
 
-- [ ] **Step 1: Write RED tests for prepared PCM and partial underrun**
+- [x] **Step 1: Write RED tests for prepared PCM and partial underrun**
 
 Use a ring of eight frames, write known stereo samples, then invoke the source
 twice. Assert that the first call returns prepared PCM and the second call
@@ -221,7 +221,7 @@ assertEquals(
 Invoke `source.render` directly; do not involve the runtime or renderer in this
 test.
 
-- [ ] **Step 2: Run the iOS test and verify RED**
+- [x] **Step 2: Run the iOS test and verify RED**
 
 Run:
 
@@ -231,7 +231,7 @@ Run:
 
 Expected: compilation fails because the callback source and diagnostics do not exist.
 
-- [ ] **Step 3: Implement the callback source**
+- [x] **Step 3: Implement the callback source**
 
 Keep the callback surface primitive:
 
@@ -279,7 +279,7 @@ internal class IosPcmCallbackSource(
 `drainDiagnostics` uses `exchange(0)` for each diagnostic counter. It must not
 reset `callbacksInFlight`.
 
-- [ ] **Step 4: Add barrier and reuse tests**
+- [x] **Step 4: Add barrier and reuse tests**
 
 Add a test-only ring/source sequence proving:
 
@@ -288,7 +288,7 @@ Add a test-only ring/source sequence proving:
 - `hasCallbackInFlight()` is false after normal and zero-frame renders, proving
   the callback closes its in-flight barrier on every valid exit.
 
-- [ ] **Step 5: Run iOS tests and verify GREEN**
+- [x] **Step 5: Run iOS tests and verify GREEN**
 
 Run:
 
@@ -298,7 +298,7 @@ Run:
 
 Expected: all callback-source tests pass.
 
-- [ ] **Step 6: Commit the callback source**
+- [x] **Step 6: Commit the callback source**
 
 ```bash
 git add miniapp/audio/src/iosMain/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmCallbackSource.kt miniapp/audio/src/iosTest/kotlin/ge/yet/game/miniapp/audio/internal/IosPcmCallbackSourceTest.kt
