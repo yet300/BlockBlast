@@ -32,6 +32,7 @@ import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.compose.MiniAppSession
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.DefaultMiniAppRegistry
+import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
 import ge.yet.game.telemetry.di.TelemetryBindings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -236,6 +237,7 @@ internal class CounterRootContract(
 
     fun back_returns_catalog_and_destroys_counter_lifecycle_once() = withHarness { harness ->
         harness.play()
+        MiniAppContractAssertions.assertBackNotConsumed(harness.session())
 
         harness.root.onBackClicked()
         harness.root.onBackClicked()

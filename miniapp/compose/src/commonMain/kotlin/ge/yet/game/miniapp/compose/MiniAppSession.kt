@@ -24,6 +24,8 @@ interface MiniAppSession {
     val frameMode: Value<MiniAppFrameMode>
         get() = StandardMiniAppFrameMode
 
+    fun handleBack(): Boolean = false
+
     @Composable
     fun TopBarContent() = Unit
 

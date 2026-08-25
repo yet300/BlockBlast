@@ -17,6 +17,7 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.InternalResourceApi
 import org.jetbrains.compose.resources.StringResource
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 @OptIn(InternalResourceApi::class)
@@ -96,6 +97,28 @@ class MiniAppContractAssertionsTest {
         MiniAppContractAssertions.assertRetainedGraphSession(
             RetainedMiniAppSession(graph = Any(), delegate = BareSession),
         )
+    }
+
+    @Test
+    fun `Back assertions call the session exactly once`() {
+        val consumed = RecordingBackSession(true)
+        val notConsumed = RecordingBackSession(false)
+
+        MiniAppContractAssertions.assertBackConsumed(consumed)
+        MiniAppContractAssertions.assertBackNotConsumed(notConsumed)
+
+        assertEquals(1, consumed.calls)
+        assertEquals(1, notConsumed.calls)
+    }
+
+    private class RecordingBackSession(private val response: Boolean) : MiniAppSession {
+        var calls = 0
+            private set
+
+        override fun handleBack(): Boolean = response.also { calls += 1 }
+
+        @Composable
+        override fun Content(modifier: Modifier) = Unit
     }
 
     private class FakePlugin(id: MiniAppId) : MiniAppPlugin {

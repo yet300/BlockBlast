@@ -220,6 +220,21 @@ class DefaultRootComponentTest {
     }
 
     @Test
+    fun toolbar_back_offers_each_press_to_the_running_session_before_closing() {
+        val plugin = RecordingPlugin(FIRST_ID, backResponses = ArrayDeque(listOf(true, false)))
+        val setup = build(firstPlugin = plugin)
+        setup.play(FIRST_ID)
+
+        setup.component.onBackClicked()
+        assertIs<RootComponent.Child.RunningMiniApp>(setup.component.stack.value.active.instance)
+        assertEquals(1, plugin.handleBackCount)
+
+        setup.component.onBackClicked()
+        assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
+        assertEquals(2, plugin.handleBackCount)
+    }
+
+    @Test
     fun system_back_matches_toolbar_back_when_no_sheet_is_open() {
         val setup = build()
         setup.lifecycle.resume()
@@ -231,6 +246,21 @@ class DefaultRootComponentTest {
             listOf("miniapp_session_closed id=game.alpha key=1 visibility=ACTIVE"),
             setup.crashlytics.closeBreadcrumbs(),
         )
+    }
+
+    @Test
+    fun system_back_offers_each_press_to_the_running_session_before_closing() {
+        val plugin = RecordingPlugin(FIRST_ID, backResponses = ArrayDeque(listOf(true, false)))
+        val setup = build(firstPlugin = plugin)
+        setup.play(FIRST_ID)
+
+        assertTrue(setup.backDispatcher.back())
+        assertIs<RootComponent.Child.RunningMiniApp>(setup.component.stack.value.active.instance)
+        assertEquals(1, plugin.handleBackCount)
+
+        assertTrue(setup.backDispatcher.back())
+        assertIs<RootComponent.Child.Catalog>(setup.component.stack.value.active.instance)
+        assertEquals(2, plugin.handleBackCount)
     }
 
     @Test
@@ -569,13 +599,19 @@ class DefaultRootComponentTest {
         }
     }
 
-    private class RecordingPlugin(id: MiniAppId, private val failure: Throwable? = null) : MiniAppPlugin {
+    private class RecordingPlugin(
+        id: MiniAppId,
+        private val failure: Throwable? = null,
+        private val backResponses: ArrayDeque<Boolean> = ArrayDeque(),
+    ) : MiniAppPlugin {
         override val manifest = manifest(id)
         var createCount = 0
         var destroyCount = 0
         val visibility = mutableListOf<MiniAppVisibilitySource>()
         val initialVisibilities = mutableListOf<MiniAppVisibility>()
         val hosts = mutableListOf<MiniAppSessionHost>()
+        var handleBackCount = 0
+            private set
         override fun createSession(context: MiniAppSessionContext): MiniAppSession {
             createCount += 1
             visibility += context.visibility
@@ -584,6 +620,11 @@ class DefaultRootComponentTest {
             context.componentContext.lifecycle.doOnDestroy { destroyCount += 1 }
             failure?.let { throw it }
             return object : MiniAppSession {
+                override fun handleBack(): Boolean {
+                    handleBackCount += 1
+                    return backResponses.removeFirstOrNull() ?: false
+                }
+
                 @Composable override fun Content(modifier: Modifier) = Unit
             }
         }

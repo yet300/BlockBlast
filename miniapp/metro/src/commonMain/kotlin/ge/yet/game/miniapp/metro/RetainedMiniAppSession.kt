@@ -12,6 +12,8 @@ class RetainedMiniAppSession<G : Any>(
 ) : MiniAppSession {
     override val frameMode: Value<MiniAppFrameMode> = delegate.frameMode
 
+    override fun handleBack(): Boolean = delegate.handleBack()
+
     @Composable
     override fun TopBarContent() = delegate.TopBarContent()
 

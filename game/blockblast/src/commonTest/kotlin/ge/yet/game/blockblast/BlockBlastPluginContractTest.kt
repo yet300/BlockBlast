@@ -43,6 +43,7 @@ class BlockBlastPluginContractTest {
             ))
 
             MiniAppContractAssertions.assertRetainedGraphSession(session)
+            MiniAppContractAssertions.assertBackNotConsumed(session)
         } finally {
             appGraph.destroySessionsAndCancelAppScope(lifecycle)
         }

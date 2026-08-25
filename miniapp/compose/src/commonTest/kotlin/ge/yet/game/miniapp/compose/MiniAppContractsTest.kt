@@ -9,6 +9,7 @@ import ge.yet.game.miniapp.api.MiniAppSessionHost
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.InternalResourceApi
@@ -25,6 +26,16 @@ class MiniAppContractsTest {
         }
 
         assertEquals(MiniAppFrameMode.Standard, session.frameMode.value)
+    }
+
+    @Test
+    fun `sessions do not consume Back by default`() {
+        val session = object : MiniAppSession {
+            @Composable
+            override fun Content(modifier: Modifier) = Unit
+        }
+
+        assertFalse(session.handleBack())
     }
 
     @Test
