@@ -10,6 +10,7 @@ import ge.yet.game.miniapp.compose.MiniAppPlugin
 import ge.yet.game.miniapp.compose.MiniAppSession
 import ge.yet.game.miniapp.compose.MiniAppSessionContext
 import ge.yet.game.miniapp.metro.RetainedMiniAppSession
+import ge.yet.game.twentyfortyeight.di.TwentyFortyEightSessionGraph
 import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.miniapp_description
 import ge.yet.game.twentyfortyeight.generated.resources.miniapp_icon

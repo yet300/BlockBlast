@@ -30,7 +30,6 @@ import ge.yet.game.twentyfortyeight.engine.MoveResult
 import ge.yet.game.twentyfortyeight.engine.ResultSnapshot
 import ge.yet.game.twentyfortyeight.engine.RngState
 import ge.yet.game.twentyfortyeight.engine.RulesState
-import ge.yet.game.twentyfortyeight.engine.SplitMix64
 import ge.yet.game.twentyfortyeight.engine.TutorialCompletionReason
 import ge.yet.game.twentyfortyeight.engine.UndoResult
 import ge.yet.game.twentyfortyeight.persistence.CheckpointResult
@@ -47,6 +46,7 @@ internal class TwentyFortyEightStoreFactory(
     private val engine: MoveEngine,
     private val coordinator: SessionPersistenceCoordinator,
     private val visibility: MiniAppVisibilitySource,
+    private val seedSource: NewGameSeedSource,
 ) {
     fun create(): TwentyFortyEightStore =
         object :
@@ -270,7 +270,7 @@ internal class TwentyFortyEightStoreFactory(
         }
 
         private fun freshRules(data: RestoredGameData): RulesState {
-            val fresh = GameRules.newGame(previous = null, seed = FRESH_SEED)
+            val fresh = GameRules.newGame(previous = null, seed = nextSeed())
             val gamesStarted = if (data.statistics.gamesStarted == Long.MAX_VALUE) {
                 publishRevisionDiagnostic(InvariantCode.CounterOverflow)
                 Long.MAX_VALUE
@@ -562,7 +562,7 @@ internal class TwentyFortyEightStoreFactory(
             val proposed = try {
                 GameRules.restart(
                     RulesState(game, current.statistics),
-                    seed = SplitMix64.next(game.rng).next,
+                    seed = nextSeed(),
                 )
             } catch (_: CounterOverflowException) {
                 publishRevisionDiagnostic(InvariantCode.CounterOverflow)
@@ -757,6 +757,8 @@ internal class TwentyFortyEightStoreFactory(
             if (nextTransitionId == Long.MAX_VALUE) return null
             return nextTransitionId.also { nextTransitionId += 1L }
         }
+
+        private fun nextSeed(): RngState = RngState.fromBits(seedSource.nextSeed().toULong())
     }
 
     private fun TwentyFortyEightStore.State.acceptsGameInput(): Boolean =
@@ -779,7 +781,6 @@ internal class TwentyFortyEightStoreFactory(
     }
 
     private companion object {
-        val FRESH_SEED: RngState = RngState.fromBits(0x2048uL)
         const val FIRST_VICTORY_TRIGGER: String = "twenty_forty_eight_first_victory"
         const val MAX_PENDING_EXTERNAL_LABELS: Int = 64
     }

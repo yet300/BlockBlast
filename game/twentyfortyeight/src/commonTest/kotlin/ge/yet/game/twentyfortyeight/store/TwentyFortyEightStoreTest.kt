@@ -453,6 +453,7 @@ class TwentyFortyEightStoreTest {
             engine = MoveEngine(SpawnPolicy()),
             coordinator = coordinator,
             visibility = MutableVisibility(),
+            seedSource = NewGameSeedSource { 0x2048L },
         ).create()
         val labels = mutableListOf<TwentyFortyEightStore.Label>()
         val subscription = store.labels(observer(onNext = labels::add))
@@ -467,7 +468,7 @@ class TwentyFortyEightStoreTest {
     }
 
     @Test
-    fun `factory can be constructed from only store engine coordinator and visibility`() {
+    fun `factory is constructed from store engine coordinator visibility and seed source`() {
         val loader = ControlledSnapshotLoader()
         val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, ImmediateCommitWriter(), loader)
 
@@ -476,7 +477,32 @@ class TwentyFortyEightStoreTest {
             engine = MoveEngine(SpawnPolicy()),
             coordinator = coordinator,
             visibility = MutableVisibility(),
+            seedSource = NewGameSeedSource { 0x2048L },
         )
+    }
+
+    @Test
+    fun `fresh and restarted games consume one independent seed each`() = runTest {
+        val seeds = ArrayDeque(listOf(0x11L, 0x22L))
+        val harness = readyStore(
+            loadResult = loaded(game = null),
+            seedSource = NewGameSeedSource { seeds.removeFirst() },
+        )
+        val fresh = GameRules.newGame(previous = null, seed = RngState.fromBits(0x11uL)).game
+
+        assertEquals(fresh.board.values(), harness.store.state.game?.board?.values())
+
+        val beforeRestart = checkNotNull(harness.store.state.game)
+
+        harness.store.accept(TwentyFortyEightStore.Intent.RequestRestart)
+        advanceUntilIdle()
+        val restarted = GameRules.restart(
+            RulesState(beforeRestart, harness.store.state.statistics.copy(gamesStarted = 1L)),
+            seed = RngState.fromBits(0x22uL),
+        ).game
+
+        assertEquals(restarted.board.values(), harness.store.state.game?.board?.values())
+        assertTrue(seeds.isEmpty())
     }
 
     @Test
@@ -536,6 +562,7 @@ internal fun TestScope.createStoreHarness(
     loader: ControlledSnapshotLoader = ControlledSnapshotLoader(),
     writer: StoreCommitWriter = StoreCommitWriter(),
     visibility: MutableVisibility = MutableVisibility(),
+    seedSource: NewGameSeedSource = NewGameSeedSource { 0x2048L },
 ): StoreHarness {
     val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer, loader)
     val store = TwentyFortyEightStoreFactory(
@@ -543,6 +570,7 @@ internal fun TestScope.createStoreHarness(
         engine = MoveEngine(SpawnPolicy()),
         coordinator = coordinator,
         visibility = visibility,
+        seedSource = seedSource,
     ).create()
     val labels = mutableListOf<TwentyFortyEightStore.Label>()
     val labelSubscription = store.labels(observer(onNext = labels::add))
@@ -563,9 +591,10 @@ internal suspend fun TestScope.readyStore(
     loadResult: LoadResult,
     writer: StoreCommitWriter = StoreCommitWriter(),
     visibility: MutableVisibility = MutableVisibility(),
+    seedSource: NewGameSeedSource = NewGameSeedSource { 0x2048L },
 ): StoreHarness {
     val loader = ControlledSnapshotLoader()
-    val harness = createStoreHarness(loader, writer, visibility)
+    val harness = createStoreHarness(loader, writer, visibility, seedSource)
     loader.complete(loadResult)
     advanceUntilIdle()
     return harness
