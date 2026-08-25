@@ -8,13 +8,7 @@ internal class MoveEngine(
         direction: Direction,
         transitionId: Long,
     ): MoveResult {
-        val reducedBoard = reduceBoard(
-            board = input.board,
-            direction = direction,
-            firstMergeId = input.nextTileId,
-        ) ?: return MoveResult.Failed(direction, MoveFailure.ScoreOverflow)
-
-        if (reducedBoard.board.values() == input.board.values()) {
+        if (direction !in GameRules.legalDirections(input.board)) {
             return MoveResult.Unchanged(
                 direction = direction,
                 board = input.board,
@@ -23,10 +17,22 @@ internal class MoveEngine(
             )
         }
 
+        val mergeCount = countMerges(input.board, direction)
+        val requiredIdentityCount = mergeCount.toLong() + 1L
+        if (checkedAdd(input.nextTileId, requiredIdentityCount) == null) {
+            return MoveResult.Failed(direction, MoveFailure.IdentityOverflow)
+        }
+        val reducedBoard = reduceBoard(
+            board = input.board,
+            direction = direction,
+            firstMergeId = input.nextTileId,
+        ) ?: return MoveResult.Failed(direction, MoveFailure.ScoreOverflow)
+
+        check(reducedBoard.merges.size == mergeCount) { "Merge preflight disagrees with reduction" }
+
         val scoreAfter = checkedAdd(input.score, reducedBoard.scoreDelta)
             ?: return MoveResult.Failed(direction, MoveFailure.ScoreOverflow)
-        val spawnIdValue = checkedAdd(input.nextTileId, reducedBoard.merges.size.toLong())
-            ?: return MoveResult.Failed(direction, MoveFailure.ScoreOverflow)
+        val spawnIdValue = input.nextTileId + mergeCount.toLong()
         val spawnResult = checkNotNull(spawnPolicy.spawn(reducedBoard.board.valueBoard(), input.rng)) {
             "A changed 2048 move must leave a free cell for its spawn"
         }
@@ -153,7 +159,7 @@ private fun reduceBoard(
                     resultValue = resultValue,
                 )
                 scoreDelta = checkedAdd(scoreDelta, resultValue.value) ?: return null
-                nextMergeId = checkedAdd(nextMergeId, 1L) ?: return null
+                nextMergeId += 1L
                 sourceIndex += 2
             } else {
                 output[target.index] = current.tile
@@ -174,6 +180,28 @@ private fun reduceBoard(
         merges = merges,
         scoreDelta = scoreDelta,
     )
+}
+
+private fun countMerges(board: RuntimeBoard, direction: Direction): Int {
+    var mergeCount = 0
+    repeat(Board.SIZE) { lineIndex ->
+        val sources = orientedLine(direction, lineIndex).mapNotNull(board::get)
+        var sourceIndex = 0
+        while (sourceIndex < sources.size) {
+            val current = sources[sourceIndex]
+            val next = sources.getOrNull(sourceIndex + 1)
+            if (
+                next?.value == current.value &&
+                current.value.value <= TileValue.MAX_MERGE_INPUT
+            ) {
+                mergeCount += 1
+                sourceIndex += 2
+            } else {
+                sourceIndex += 1
+            }
+        }
+    }
+    return mergeCount
 }
 
 private fun orientedLine(direction: Direction, lineIndex: Int): List<Position> = when (direction) {

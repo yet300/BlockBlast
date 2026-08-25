@@ -2,6 +2,8 @@ package ge.yet.game.twentyfortyeight.engine
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -57,9 +59,12 @@ class GameStateTest {
         )
         val afterMerge = GameRules.acceptChanged(original, changedMove(original, Direction.Left))
         val continued = GameRules.continueAfterVictory(afterMerge)
-        val undone = GameRules.undo(continued)
+        val undoResult = assertIs<UndoResult.Changed>(GameRules.undo(continued))
+        val undone = undoResult.state
+        val transition = assertIs<UndoTransition.Reverse>(undoResult.transition)
 
         assertEquals(original.game.board.valueBoard(), undone.game.board.valueBoard())
+        assertEquals(original.game.board, undone.game.board)
         assertEquals(original.game.score, undone.game.score)
         assertEquals(original.game.rng, undone.game.rng)
         assertEquals(false, undone.game.facts.victoryAcknowledged)
@@ -67,6 +72,135 @@ class GameStateTest {
         assertEquals(afterMerge.statistics.copy(undoUses = afterMerge.statistics.undoUses + 1), undone.statistics)
         assertNull(undone.game.undo)
         assertEquals(0, undone.game.momentumStreak)
+        assertEquals(continued.game.board, transition.beforeBoard)
+        assertEquals(original.game.board, transition.restoredBoard)
+        assertEquals(
+            listOf(
+                UndoTileMotion(
+                    sourceId = TileId(3L),
+                    source = Position(0, 0),
+                    target = Position(0, 0),
+                    restoredId = TileId(1L),
+                ),
+                UndoTileMotion(
+                    sourceId = TileId(3L),
+                    source = Position(0, 0),
+                    target = Position(0, 1),
+                    restoredId = TileId(2L),
+                ),
+            ),
+            transition.motions,
+        )
+    }
+
+    @Test
+    fun `undo after process restore emits typed crossfade without persisted lineage`() {
+        val original = rulesState(
+            board = runtimeBoardOf(
+                2L, 2L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+        )
+        val afterMove = GameRules.acceptChanged(original, changedMove(original, Direction.Left))
+        val processRestored = afterMove.copy(
+            game = afterMove.game.copy(undoLineage = null),
+        )
+
+        val result = assertIs<UndoResult.Changed>(GameRules.undo(processRestored))
+        val transition = assertIs<UndoTransition.Crossfade>(result.transition)
+
+        assertEquals(processRestored.game.board, transition.beforeBoard)
+        assertEquals(original.game.board.valueBoard(), transition.restoredBoard.valueBoard())
+        assertEquals(original.game.board.valueBoard(), result.state.game.board.valueBoard())
+        assertNull(result.state.game.undoLineage)
+    }
+
+    @Test
+    fun `game state rejects next tile ID at or below the board maximum`() {
+        val board = runtimeBoardWithIds(
+            9L to 2L, null, null, null,
+            null, null, null, null,
+            null, null, null, null,
+            null, null, null, null,
+        )
+
+        listOf(9L, 8L).forEach { invalidNextTileId ->
+            assertFailsWith<IllegalArgumentException> {
+                rulesState(board = board, nextTileId = invalidNextTileId)
+            }
+        }
+    }
+
+    @Test
+    fun `accept changed rejects stale board identity without changing authoritative state`() {
+        val moveBoard = runtimeBoardWithIds(
+            1L to 2L, 2L to 2L, null, null,
+            null, null, null, null,
+            null, null, null, null,
+            null, null, null, null,
+        )
+        val authoritativeBoard = runtimeBoardWithIds(
+            10L to 2L, 11L to 2L, null, null,
+            null, null, null, null,
+            null, null, null, null,
+            null, null, null, null,
+        )
+        val moveState = rulesState(moveBoard)
+        val authoritative = rulesState(authoritativeBoard)
+        val staleMove = changedMove(moveState, Direction.Left)
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            GameRules.acceptChanged(authoritative, staleMove)
+        }
+
+        assertEquals("Move input board identity does not match authoritative state", failure.message)
+        assertSame(authoritativeBoard, authoritative.game.board)
+        assertEquals(authoritativeBoard, authoritative.game.board)
+        assertNull(authoritative.game.undo)
+    }
+
+    @Test
+    fun `milestones reserve only the whitelist and never duplicate 2048`() {
+        val sixteenK = rulesState(
+            board = runtimeBoardOf(
+                8192L, 8192L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+        )
+        val thirtyTwoK = rulesState(
+            board = runtimeBoardOf(
+                16384L, 16384L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+        )
+        val repeated2048 = rulesState(
+            board = runtimeBoardOf(
+                1024L, 1024L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            facts = RunFacts(
+                victoryReached = true,
+                victoryAcknowledged = true,
+                gamesWonRecorded = true,
+                milestoneReservations = setOf(2048L),
+            ),
+        )
+
+        val accepted16K = GameRules.acceptChanged(sixteenK, changedMove(sixteenK, Direction.Left))
+        val accepted32K = GameRules.acceptChanged(thirtyTwoK, changedMove(thirtyTwoK, Direction.Left))
+        val accepted2048 = GameRules.acceptChanged(repeated2048, changedMove(repeated2048, Direction.Left))
+
+        assertEquals(setOf(16384L), accepted16K.game.facts.milestoneReservations)
+        assertEquals(emptySet(), accepted32K.game.facts.milestoneReservations)
+        assertEquals(setOf(2048L), accepted2048.game.facts.milestoneReservations)
     }
 
     @Test
@@ -153,6 +287,7 @@ internal fun rulesState(
     statistics: GameStatistics = GameStatistics(),
     phase: GamePhase = GamePhase.Playing,
     momentumStreak: Int = 0,
+    nextTileId: Long = (board.tiles.maxOfOrNull { it?.id?.value ?: 0L } ?: 0L) + 1L,
 ): RulesState = RulesState(
     game = GameState(
         runOrdinal = 1L,
@@ -165,7 +300,7 @@ internal fun rulesState(
         phase = phase,
         successfulMovesInRun = 0L,
         momentumStreak = momentumStreak,
-        nextTileId = board.tiles.count { it != null }.toLong() + 1L,
+        nextTileId = nextTileId,
     ),
     statistics = statistics,
 )

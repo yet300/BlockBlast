@@ -36,6 +36,7 @@ internal sealed interface MoveResult {
 
 internal enum class MoveFailure {
     ScoreOverflow,
+    IdentityOverflow,
 }
 
 internal data class TileMotion(
@@ -67,7 +68,9 @@ internal data class MoveInput(
 ) {
     init {
         require(score >= 0L) { "Score must be non-negative: $score" }
-        require(nextTileId > 0L) { "Next tile ID must be positive: $nextTileId" }
+        require(nextTileId > board.maximumTileId()) {
+            "Next tile ID $nextTileId must be greater than every board tile ID"
+        }
     }
 }
 
@@ -86,3 +89,6 @@ internal enum class GameOverTransition {
     None,
     Entered,
 }
+
+internal fun RuntimeBoard.maximumTileId(): Long =
+    tiles.filterNotNull().maxOfOrNull { it.id.value } ?: 0L

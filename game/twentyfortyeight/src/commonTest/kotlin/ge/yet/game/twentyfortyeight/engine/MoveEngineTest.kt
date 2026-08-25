@@ -2,6 +2,7 @@ package ge.yet.game.twentyfortyeight.engine
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -151,6 +152,61 @@ class MoveEngineTest {
     }
 
     @Test
+    fun `move input rejects next tile ID at or below the board maximum`() {
+        val board = runtimeBoardWithIds(
+            7L to 2L, null, null, null,
+            null, null, null, null,
+            null, null, null, null,
+            null, null, null, null,
+        )
+
+        listOf(7L, 6L).forEach { invalidNextTileId ->
+            assertFailsWith<IllegalArgumentException> {
+                MoveInput(board, 0L, RngState.fromBits(1uL), nextTileId = invalidNextTileId)
+            }
+        }
+    }
+
+    @Test
+    fun `identity range that cannot hold every merge fails before randomness`() {
+        assertIdentityOverflowBeforeRandomness(
+            board = runtimeBoardOf(
+                2L, 2L, 2L, 2L,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            nextTileId = Long.MAX_VALUE,
+        )
+    }
+
+    @Test
+    fun `identity range that cannot hold spawn fails before randomness`() {
+        assertIdentityOverflowBeforeRandomness(
+            board = runtimeBoardOf(
+                2L, 2L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            nextTileId = Long.MAX_VALUE,
+        )
+    }
+
+    @Test
+    fun `spawn at Long max without a following ID is identity overflow`() {
+        assertIdentityOverflowBeforeRandomness(
+            board = runtimeBoardOf(
+                null, 2L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            nextTileId = Long.MAX_VALUE,
+        )
+    }
+
+    @Test
     fun `first 2048 merge emits victory exactly once`() {
         val board = runtimeBoardOf(
             1024L, 1024L, null, null,
@@ -205,11 +261,46 @@ class MoveEngineTest {
         assertEquals(listOf(max, max, null, null), result.values)
         assertEquals(0L, result.scoreDelta)
     }
+
+    private fun assertIdentityOverflowBeforeRandomness(
+        board: RuntimeBoard,
+        nextTileId: Long,
+    ) {
+        var draws = 0
+        val engine = MoveEngine(
+            SpawnPolicy { state, _ ->
+                draws += 1
+                0 to state
+            },
+        )
+        val input = MoveInput(
+            board = board,
+            score = 0L,
+            rng = RngState.fromBits(1uL),
+            nextTileId = nextTileId,
+        )
+
+        val result = engine.apply(input, Direction.Left, transitionId = 1L)
+
+        assertEquals(MoveResult.Failed(Direction.Left, MoveFailure.IdentityOverflow), result)
+        assertEquals(0, draws)
+        assertSame(board, input.board)
+        assertEquals(board, input.board)
+    }
 }
 
 internal fun runtimeBoardOf(vararg values: Long?): RuntimeBoard {
     require(values.size == Board.CELL_COUNT)
     return RuntimeBoard.restore(Board.fromValues(values.toList())).first
+}
+
+internal fun runtimeBoardWithIds(vararg tiles: Pair<Long, Long>?): RuntimeBoard {
+    require(tiles.size == Board.CELL_COUNT)
+    return RuntimeBoard.fromTiles(
+        tiles.map { tile ->
+            tile?.let { (id, value) -> RuntimeTile(TileId(id), TileValue(value)) }
+        },
+    )
 }
 
 internal fun fixedSpawnPolicy(

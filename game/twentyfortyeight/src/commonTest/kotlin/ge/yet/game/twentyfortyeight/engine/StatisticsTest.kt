@@ -3,6 +3,7 @@ package ge.yet.game.twentyfortyeight.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -56,7 +57,14 @@ class StatisticsTest {
             2L, 4L, 2L, 4L,
             4L, 2L, 4L, 2L,
         )
-        val terminalCandidate = continued.copy(game = continued.game.copy(board = terminalBoard))
+        val terminalCandidate = continued.copy(
+            game = continued.game.copy(
+                board = terminalBoard,
+                nextTileId = terminalBoard.maximumTileId() + 1L,
+                undo = null,
+                undoLineage = null,
+            ),
+        )
         val terminal = GameRules.finishIfTerminal(terminalCandidate)
 
         assertEquals(GamePhase.GameOver, terminal.game.phase)
@@ -75,7 +83,7 @@ class StatisticsTest {
         ))
 
         assertSame(state, GameRules.acceptUnchanged(state))
-        assertSame(state, GameRules.undo(state))
+        assertIs<UndoResult.Unavailable>(GameRules.undo(state))
     }
 
     @Test

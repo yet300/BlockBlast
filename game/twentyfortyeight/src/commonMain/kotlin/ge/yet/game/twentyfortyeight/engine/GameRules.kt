@@ -32,8 +32,8 @@ internal object GameRules {
 
     fun acceptChanged(state: RulesState, move: MoveResult.Changed): RulesState {
         require(state.game.phase == GamePhase.Playing) { "Cannot accept a move after Game Over" }
-        require(state.game.board.values() == move.beforeBoard.values()) {
-            "Move input board does not match authoritative state"
+        require(state.game.board == move.beforeBoard) {
+            "Move input board identity does not match authoritative state"
         }
         require(state.game.score == move.scoreBefore) { "Move input score does not match authoritative state" }
         require(state.game.rng == move.rngBefore) { "Move input RNG does not match authoritative state" }
@@ -41,7 +41,7 @@ internal object GameRules {
         val firstVictory = move.victory == VictoryTransition.FirstReached && !state.game.facts.gamesWonRecorded
         val mergeValues = move.merges.map { it.resultValue.value }
         val milestoneReservations = state.game.facts.milestoneReservations +
-            mergeValues.filter { it >= FIRST_MILESTONE }
+            mergeValues.filter { it in MILESTONE_VALUES }
         val facts = state.game.facts.copy(
             victoryReached = state.game.facts.victoryReached || firstVictory,
             gamesWonRecorded = state.game.facts.gamesWonRecorded || firstVictory,
@@ -76,6 +76,12 @@ internal object GameRules {
                     victoryAcknowledged = state.game.facts.victoryAcknowledged,
                     phase = state.game.phase,
                 ),
+                undoLineage = UndoLineage(
+                    beforeBoard = move.beforeBoard,
+                    afterBoard = move.finalBoard,
+                    motions = move.motions,
+                    restoredNextTileId = state.game.nextTileId,
+                ),
                 facts = facts,
                 successfulMovesInRun = checkedCounterAdd(state.game.successfulMovesInRun, 1L),
                 momentumStreak = if (move.merges.isEmpty()) {
@@ -92,15 +98,47 @@ internal object GameRules {
 
     fun acceptUnchanged(state: RulesState): RulesState = state
 
-    fun undo(state: RulesState): RulesState {
-        val snapshot = state.game.undo ?: return state
-        val (board, nextTileId) = RuntimeBoard.restore(snapshot.board)
-        return RulesState(
+    fun undo(state: RulesState): UndoResult {
+        val snapshot = state.game.undo ?: return UndoResult.Unavailable
+        val lineage = state.game.undoLineage?.takeIf {
+            it.afterBoard == state.game.board && it.beforeBoard.valueBoard() == snapshot.board
+        }
+        val (board, nextTileId, transition) = if (lineage != null) {
+            val restoredBoard = lineage.beforeBoard
+            Triple(
+                restoredBoard,
+                lineage.restoredNextTileId,
+                UndoTransition.Reverse(
+                    beforeBoard = state.game.board,
+                    restoredBoard = restoredBoard,
+                    motions = lineage.motions.map { motion ->
+                        UndoTileMotion(
+                            sourceId = motion.outcomeId,
+                            source = motion.target,
+                            target = motion.source,
+                            restoredId = motion.sourceId,
+                        )
+                    },
+                ),
+            )
+        } else {
+            val (restoredBoard, restoredNextTileId) = RuntimeBoard.restore(snapshot.board)
+            Triple(
+                restoredBoard,
+                restoredNextTileId,
+                UndoTransition.Crossfade(
+                    beforeBoard = state.game.board,
+                    restoredBoard = restoredBoard,
+                ),
+            )
+        }
+        val restoredState = RulesState(
             game = state.game.copy(
                 board = board,
                 score = snapshot.score,
                 rng = snapshot.rng,
                 undo = null,
+                undoLineage = null,
                 facts = state.game.facts.copy(
                     victoryAcknowledged = snapshot.victoryAcknowledged,
                 ),
@@ -112,6 +150,7 @@ internal object GameRules {
                 undoUses = checkedCounterAdd(state.statistics.undoUses, 1L),
             ),
         )
+        return UndoResult.Changed(restoredState, transition)
     }
 
     fun continueAfterVictory(state: RulesState): RulesState {
@@ -166,7 +205,16 @@ internal object GameRules {
         checkedAdd(value, delta) ?: throw ArithmeticException("2048 counter overflows Long")
 
     private const val MAX_MOMENTUM: Int = 6
-    private const val FIRST_MILESTONE: Long = 128L
+    private val MILESTONE_VALUES: Set<Long> = setOf(
+        128L,
+        256L,
+        512L,
+        1024L,
+        2048L,
+        4096L,
+        8192L,
+        16384L,
+    )
     private const val VICTORY_ANALYTICS_RESERVATION: String = "victory"
     private const val GAME_OVER_ANALYTICS_RESERVATION: String = "game_over"
 }

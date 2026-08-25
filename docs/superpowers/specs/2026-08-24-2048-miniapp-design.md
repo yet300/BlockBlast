@@ -119,6 +119,20 @@ legalDirections(Board) -> Set<Direction>
 
 Runtime `TileId` is a domain transition identity, not persisted content. Existing non-merged tiles retain IDs during one session, a merge receives one new ID, and a spawn receives one new ID. Restore deterministically assigns fresh IDs in row-major order because no animation spans process destruction. Persisted Undo likewise stores values, not presentation identities; an Undo transition constructs a new explicit visual mapping.
 
+Undo returns a closed `UndoResult`: `Unavailable`, or `Changed` with the restored
+state and a typed `UndoTransition`. When the accepted move's session-only runtime
+lineage is still available and matches the authoritative board, Undo returns
+`Reverse(beforeBoard, restoredBoard, motions)`. Process restore persists no
+runtime IDs or visual lineage, so the same domain Undo snapshot returns
+`Crossfade(beforeBoard, restoredBoard)`. The fallback is typed; the UI never
+infers it from missing IDs or board-value equality.
+
+`MoveInput` and `GameState` require `nextTileId` to exceed every ID on the board.
+Before reduction, the engine checked-reserves IDs for every merge result, the
+spawn, and the next usable identity. An unrepresentable range returns
+`IdentityOverflow` without drawing RNG or changing state; it is not reported as
+`ScoreOverflow`.
+
 The engine returns facts but performs no persistence, logging, command dispatch, delay, announcement, or navigation.
 
 ## 10. Move algorithm
@@ -254,7 +268,7 @@ Restore completes all four reads and reconciliation before exposing Playing/tuto
 
 ## 17. MVIKotlin ownership
 
-`TwentyFortyEightStore` is the sole mutable game-state authority. Its State contains bootstrap status, authoritative game, best/statistics/tutorial, the optional visual `ActiveTransition`, one pending direction, modal eligibility, requested/durable persistence revisions, `persistenceDirty`, and bounded one-shot ordinals. `ActiveTransition` contains only `transitionId` plus the immutable visual result; it has no persistence-completion field. Intents represent direction, Undo, Restart request/confirm/cancel, Continue, New Game, tutorial Skip, modal actions, and animation completion.
+`TwentyFortyEightStore` is the sole mutable game-state authority. Its State contains bootstrap status, authoritative game, best/statistics/tutorial, the optional closed `VisualTransition`, one pending direction, modal eligibility, requested/durable persistence revisions, `persistenceDirty`, and bounded one-shot ordinals. `VisualTransition.Move` contains `transitionId` plus the immutable `MoveResult.Changed`; `VisualTransition.Undo` contains `transitionId` plus the typed `UndoTransition`. Neither variant contains persistence-completion state. Intents represent direction, Undo, Restart request/confirm/cancel, Continue, New Game, tutorial Skip, modal actions, and animation completion.
 
 The Bootstrapper loads and validates snapshots. A coroutine Executor performs only pure engine operations and persistence orchestration. It never calls `MiniAppAudio`, `AnalyticRepository`, `CrashlyticsRepository`, `MiniAppSessionHost`, Decompose navigation, or Compose. The Reducer is synchronous and pure. The Store publishes typed Labels for Decompose navigation, audio commands, bounded analytics, review opportunity, accessibility announcement, focus transfer, transient UI error, and enum-coded diagnostics.
 
