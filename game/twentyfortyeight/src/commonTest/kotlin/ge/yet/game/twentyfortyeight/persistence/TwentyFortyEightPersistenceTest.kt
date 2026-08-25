@@ -3,6 +3,8 @@ package ge.yet.game.twentyfortyeight.persistence
 import ge.yet.game.miniapp.api.MiniAppSnapshotSpec
 import ge.yet.game.miniapp.api.MiniAppStorage
 import ge.yet.game.miniapp.testkit.NoopMiniAppStorage
+import ge.yet.game.twentyfortyeight.diagnostics.ContractCode
+import ge.yet.game.twentyfortyeight.diagnostics.InvariantCode
 import ge.yet.game.twentyfortyeight.diagnostics.StorageOperation
 import ge.yet.game.twentyfortyeight.diagnostics.TwentyFortyEightFailure
 import ge.yet.game.twentyfortyeight.engine.GameStatistics
@@ -91,7 +93,8 @@ class TwentyFortyEightPersistenceTest {
             ),
         )
 
-        val loaded = assertIs<LoadResult.Loaded>(persistence.load(storage)).data
+        val result = assertIs<LoadResult.Loaded>(persistence.load(storage))
+        val loaded = result.data
 
         assertEquals(listOf("current_game", "best_score", "statistics", "tutorial_seen"), storage.reads)
         assertEquals(10L, loaded.revision)
@@ -102,6 +105,7 @@ class TwentyFortyEightPersistenceTest {
         assertEquals(TutorialCompletionReason.Skip, loaded.tutorialReason)
         assertTrue(loaded.terminal)
         assertNull(loaded.game?.undoLineage)
+        assertTrue(result.validationFailures.isEmpty())
     }
 
     @Test
@@ -114,7 +118,8 @@ class TwentyFortyEightPersistenceTest {
             ),
         )
 
-        val loaded = assertIs<LoadResult.Loaded>(persistence.load(storage)).data
+        val result = assertIs<LoadResult.Loaded>(persistence.load(storage))
+        val loaded = result.data
 
         assertNull(loaded.game)
         assertEquals(5L, loaded.revision)
@@ -134,7 +139,8 @@ class TwentyFortyEightPersistenceTest {
             ),
         )
 
-        val loaded = assertIs<LoadResult.Loaded>(persistence.load(storage)).data
+        val result = assertIs<LoadResult.Loaded>(persistence.load(storage))
+        val loaded = result.data
 
         assertNull(loaded.game)
         assertEquals(10L, loaded.revision)
@@ -142,6 +148,10 @@ class TwentyFortyEightPersistenceTest {
         assertEquals(21L, loaded.statistics.successfulMoves)
         assertTrue(loaded.tutorialSeen)
         assertEquals(TutorialCompletionReason.Skip, loaded.tutorialReason)
+        assertEquals(
+            setOf(TwentyFortyEightFailure.ContractViolation(ContractCode.SnapshotShape)),
+            result.validationFailures,
+        )
     }
 
     @Test
@@ -154,7 +164,8 @@ class TwentyFortyEightPersistenceTest {
             ),
         )
 
-        val loaded = assertIs<LoadResult.Loaded>(persistence.load(storage)).data
+        val result = assertIs<LoadResult.Loaded>(persistence.load(storage))
+        val loaded = result.data
 
         assertNull(loaded.game)
         assertEquals(7L, loaded.revision)
@@ -162,6 +173,10 @@ class TwentyFortyEightPersistenceTest {
         assertEquals(GameStatistics(), loaded.statistics)
         assertTrue(loaded.tutorialSeen)
         assertEquals(TutorialCompletionReason.Move, loaded.tutorialReason)
+        assertEquals(
+            setOf(TwentyFortyEightFailure.InvariantViolation(InvariantCode.NegativeCounter)),
+            result.validationFailures,
+        )
     }
 
     @Test

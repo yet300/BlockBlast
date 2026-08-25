@@ -48,7 +48,11 @@ internal data class RestoredGameData(
 )
 
 internal sealed interface LoadResult {
-    data class Loaded(val data: RestoredGameData) : LoadResult
+    data class Loaded(
+        val data: RestoredGameData,
+        val validationFailures: Set<TwentyFortyEightFailure>,
+    ) : LoadResult
+
     data class Failed(val failure: TwentyFortyEightFailure) : LoadResult
 }
 
@@ -64,6 +68,7 @@ internal fun interface GameCommitWriter {
 @SingleIn(AppScope::class)
 internal class TwentyFortyEightPersistence : GameCommitWriter {
     suspend fun load(storage: MiniAppStorage): LoadResult = try {
+        val validationFailures = linkedSetOf<TwentyFortyEightFailure>()
         val currentPayload = read(
             storage,
             TwentyFortyEightSchemas.CurrentGameKey,
@@ -90,30 +95,38 @@ internal class TwentyFortyEightPersistence : GameCommitWriter {
         )
 
         val validCurrent = currentPayload?.let { payload ->
-            TwentyFortyEightSchemas.toDomain(payload).getOrNull()?.let { payload to it }
+            TwentyFortyEightSchemas.toDomain(payload)
+                .recoverValidationFailure(validationFailures)
+                ?.let { payload to it }
         }
         val game = validCurrent?.second
         val mirroredBest = validCurrent?.first?.bestMirror?.bestScore ?: 0L
         val validBest = bestPayload?.let { payload ->
-            TwentyFortyEightSchemas.toBestScore(payload).getOrNull()?.let { payload to it }
+            TwentyFortyEightSchemas.toBestScore(payload)
+                .recoverValidationFailure(validationFailures)
+                ?.let { payload to it }
         }
         val dedicatedBest = validBest?.second ?: 0L
         val bestScore = maxOf(game?.bestScore ?: 0L, mirroredBest, dedicatedBest)
 
         val mirroredStatistics = validCurrent?.first?.statisticsMirror?.let { payload ->
-            TwentyFortyEightSchemas.toStatistics(payload).getOrNull()
+            TwentyFortyEightSchemas.toStatistics(payload).getOrThrow()
         } ?: GameStatistics()
         val validStatistics = statisticsPayload?.let { payload ->
-            TwentyFortyEightSchemas.toStatistics(payload).getOrNull()?.let { payload to it }
+            TwentyFortyEightSchemas.toStatistics(payload)
+                .recoverValidationFailure(validationFailures)
+                ?.let { payload to it }
         }
         val dedicatedStatistics = validStatistics?.second ?: GameStatistics()
         val statistics = reconcileStatistics(mirroredStatistics, dedicatedStatistics)
 
         val mirroredTutorial = validCurrent?.first?.tutorialMirror?.let { payload ->
-            TwentyFortyEightSchemas.toTutorial(payload).getOrNull()?.let { payload to it }
+            payload to TwentyFortyEightSchemas.toTutorial(payload).getOrThrow()
         }
         val validTutorial = tutorialPayload?.let { payload ->
-            TwentyFortyEightSchemas.toTutorial(payload).getOrNull()?.let { payload to it }
+            TwentyFortyEightSchemas.toTutorial(payload)
+                .recoverValidationFailure(validationFailures)
+                ?.let { payload to it }
         }
         val tutorial = reconcileTutorial(mirroredTutorial, validTutorial)
         val revision = listOfNotNull(
@@ -134,12 +147,24 @@ internal class TwentyFortyEightPersistence : GameCommitWriter {
                 tutorialReason = tutorial.reason,
                 terminal = reconciledGame?.phase == GamePhase.GameOver,
             ),
+            validationFailures = validationFailures.toSet(),
         )
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (failure: PersistenceReadException) {
         LoadResult.Failed(failure.failure)
     }
+
+    private fun <T> Result<T>.recoverValidationFailure(
+        failures: MutableSet<TwentyFortyEightFailure>,
+    ): T? = fold(
+        onSuccess = { it },
+        onFailure = { throwable ->
+            val validation = throwable as? SnapshotValidationException ?: throw throwable
+            failures += validation.failure
+            null
+        },
+    )
 
     override suspend fun commit(storage: MiniAppStorage, commit: GameCommit) {
         val current = commit.toCurrentGameV1()
