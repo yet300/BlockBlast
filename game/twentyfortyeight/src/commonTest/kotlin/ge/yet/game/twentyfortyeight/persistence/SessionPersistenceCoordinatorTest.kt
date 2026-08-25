@@ -27,7 +27,7 @@ class SessionPersistenceCoordinatorTest {
     fun `one write runs and pending checkpoint is latest wins`() = runTest {
         val writer = ControlledCommitWriter()
         val results = mutableListOf<CheckpointResult>()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
 
         backgroundScope.launch { coordinator.submit(gameCommit(1L), results::add) }
         writer.awaitStarted(1L)
@@ -53,7 +53,7 @@ class SessionPersistenceCoordinatorTest {
     fun `ordinary failure is reported once and no retry loop starts`() = runTest {
         val writer = ControlledCommitWriter(failRevisions = setOf(4L), initiallyOpen = true)
         val results = mutableListOf<CheckpointResult>()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
 
         coordinator.submit(gameCommit(4L), results::add)
 
@@ -73,7 +73,7 @@ class SessionPersistenceCoordinatorTest {
     @Test
     fun `destructive barrier waits for its exact durable revision`() = runTest {
         val writer = ControlledCommitWriter()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
         backgroundScope.launch { coordinator.submit(gameCommit(5L), onResult = {}) }
         writer.awaitStarted(5L)
 
@@ -94,7 +94,7 @@ class SessionPersistenceCoordinatorTest {
     fun `accepted revisions remain monotonic while a write is in flight`() = runTest {
         val writer = ControlledCommitWriter()
         val results = mutableListOf<CheckpointResult>()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
 
         backgroundScope.launch { coordinator.submit(gameCommit(5L), results::add) }
         writer.awaitStarted(5L)
@@ -123,7 +123,7 @@ class SessionPersistenceCoordinatorTest {
     fun `revision below durable revision is rejected without a write`() = runTest {
         val writer = ControlledCommitWriter(initiallyOpen = true)
         val results = mutableListOf<CheckpointResult>()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
 
         coordinator.submit(gameCommit(7L), results::add)
         coordinator.submit(gameCommit(6L), results::add)
@@ -139,7 +139,7 @@ class SessionPersistenceCoordinatorTest {
     @Test
     fun `cancelling drainer cancels pending barrier instead of leaving it suspended`() = runTest {
         val writer = ControlledCommitWriter()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
         val active = launch { coordinator.submit(gameCommit(5L), onResult = {}) }
         writer.awaitStarted(5L)
         val barrier = async { coordinator.commitBeforeVisible(gameCommit(7L)) }
@@ -156,7 +156,7 @@ class SessionPersistenceCoordinatorTest {
     @Test
     fun `second barrier is rejected without replacing the first`() = runTest {
         val writer = ControlledCommitWriter()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
         backgroundScope.launch { coordinator.submit(gameCommit(5L), onResult = {}) }
         writer.awaitStarted(5L)
         val first = async { coordinator.commitBeforeVisible(gameCommit(7L)) }
@@ -183,7 +183,7 @@ class SessionPersistenceCoordinatorTest {
     fun `ordinary submit during pending barrier receives a defined rejection`() = runTest {
         val writer = ControlledCommitWriter()
         val results = mutableListOf<CheckpointResult>()
-        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val coordinator = coordinator(writer)
         backgroundScope.launch { coordinator.submit(gameCommit(5L), onResult = {}) }
         writer.awaitStarted(5L)
         val barrier = async { coordinator.commitBeforeVisible(gameCommit(7L)) }
@@ -204,7 +204,63 @@ class SessionPersistenceCoordinatorTest {
         assertEquals(CheckpointResult.Stored(7L), barrier.await())
         assertEquals(listOf(5L, 7L), writer.startedRevisions)
     }
+
+    @Test
+    fun `load delegates through coordinator owned storage`() = runTest {
+        val expected = LoadResult.Loaded(
+            data = RestoredGameData(
+                revision = 3L,
+                game = null,
+                bestScore = 10L,
+                statistics = ge.yet.game.twentyfortyeight.engine.GameStatistics(),
+                tutorialSeen = false,
+                tutorialReason = null,
+                terminal = false,
+            ),
+            validationFailures = emptySet(),
+        )
+        var receivedStorage: MiniAppStorage? = null
+        val loader = GameSnapshotLoader { storage ->
+            receivedStorage = storage
+            expected
+        }
+        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, ControlledCommitWriter(), loader)
+
+        assertEquals(expected, coordinator.load())
+        assertTrue(receivedStorage === NoopMiniAppStorage)
+    }
+
+    @Test
+    fun `load translates unexpected reader failure without swallowing cancellation`() = runTest {
+        val failed = SessionPersistenceCoordinator(
+            NoopMiniAppStorage,
+            ControlledCommitWriter(),
+            GameSnapshotLoader { error("reader failed") },
+        )
+
+        assertEquals(
+            LoadResult.Failed(
+                TwentyFortyEightFailure.StorageRead(StorageOperation.CurrentGameRead),
+            ),
+            failed.load(),
+        )
+
+        val cancelled = SessionPersistenceCoordinator(
+            NoopMiniAppStorage,
+            ControlledCommitWriter(),
+            GameSnapshotLoader { throw CancellationException("reader cancelled") },
+        )
+
+        assertFailsWith<CancellationException> { cancelled.load() }
+    }
 }
+
+private fun coordinator(writer: GameCommitWriter): SessionPersistenceCoordinator =
+    SessionPersistenceCoordinator(
+        storage = NoopMiniAppStorage,
+        writer = writer,
+        loader = GameSnapshotLoader { error("load is not used by coordinator writer tests") },
+    )
 
 private class ControlledCommitWriter(
     private val failRevisions: Set<Long> = emptySet(),

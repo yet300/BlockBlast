@@ -51,6 +51,8 @@ private val InvariantCode.fixedCode: String
         InvariantCode.NegativeCounter -> "negative_counter"
         InvariantCode.RevisionRegression -> "revision_regression"
         InvariantCode.BarrierPending -> "barrier_pending"
+        InvariantCode.PendingFactOverflow -> "pending_fact_overflow"
+        InvariantCode.CounterOverflow -> "counter_overflow"
         InvariantCode.ScoreOverflow -> "score_overflow"
         InvariantCode.IdentityOverflow -> "identity_overflow"
     }

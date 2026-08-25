@@ -202,7 +202,7 @@ internal object GameRules {
     }
 
     private fun checkedCounterAdd(value: Long, delta: Long): Long =
-        checkedAdd(value, delta) ?: throw ArithmeticException("2048 counter overflows Long")
+        checkedAdd(value, delta) ?: throw CounterOverflowException()
 
     private const val MAX_MOMENTUM: Int = 6
     private val MILESTONE_VALUES: Set<Long> = setOf(
@@ -218,6 +218,8 @@ internal object GameRules {
     private const val VICTORY_ANALYTICS_RESERVATION: String = "victory"
     private const val GAME_OVER_ANALYTICS_RESERVATION: String = "game_over"
 }
+
+internal class CounterOverflowException : ArithmeticException("2048 counter overflows Long")
 
 private fun Position.next(direction: Direction): Position? {
     val nextRow = when (direction) {

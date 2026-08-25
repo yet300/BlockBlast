@@ -22,6 +22,8 @@ internal enum class InvariantCode {
     NegativeCounter,
     RevisionRegression,
     BarrierPending,
+    PendingFactOverflow,
+    CounterOverflow,
     ScoreOverflow,
     IdentityOverflow,
 }

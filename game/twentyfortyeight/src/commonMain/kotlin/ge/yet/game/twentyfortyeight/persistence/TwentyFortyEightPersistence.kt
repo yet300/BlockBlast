@@ -64,10 +64,14 @@ internal fun interface GameCommitWriter {
     suspend fun commit(storage: MiniAppStorage, commit: GameCommit)
 }
 
+internal fun interface GameSnapshotLoader {
+    suspend fun load(storage: MiniAppStorage): LoadResult
+}
+
 @Inject
 @SingleIn(AppScope::class)
-internal class TwentyFortyEightPersistence : GameCommitWriter {
-    suspend fun load(storage: MiniAppStorage): LoadResult = try {
+internal class TwentyFortyEightPersistence : GameCommitWriter, GameSnapshotLoader {
+    override suspend fun load(storage: MiniAppStorage): LoadResult = try {
         val validationFailures = linkedSetOf<TwentyFortyEightFailure>()
         val currentPayload = read(
             storage,

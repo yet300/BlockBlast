@@ -32,6 +32,7 @@ internal data class CoordinatorSnapshot(
 internal class SessionPersistenceCoordinator(
     private val storage: MiniAppStorage,
     private val writer: GameCommitWriter,
+    private val loader: GameSnapshotLoader,
 ) {
     private data class Request(
         val commit: GameCommit,
@@ -53,6 +54,16 @@ internal class SessionPersistenceCoordinator(
     private var highestAcceptedRevision: Long? = null
 
     fun snapshot(): CoordinatorSnapshot = state.value
+
+    suspend fun load(): LoadResult = try {
+        loader.load(storage)
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Exception) {
+        LoadResult.Failed(
+            TwentyFortyEightFailure.StorageRead(StorageOperation.CurrentGameRead),
+        )
+    }
 
     suspend fun submit(
         commit: GameCommit,

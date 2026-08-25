@@ -46,6 +46,10 @@ class CrashlyticsTwentyFortyEightDiagnosticsTest {
                 "invariant_violation:score_overflow",
             TwentyFortyEightFailure.InvariantViolation(InvariantCode.IdentityOverflow) to
                 "invariant_violation:identity_overflow",
+            TwentyFortyEightFailure.InvariantViolation(InvariantCode.CounterOverflow) to
+                "invariant_violation:counter_overflow",
+            TwentyFortyEightFailure.InvariantViolation(InvariantCode.PendingFactOverflow) to
+                "invariant_violation:pending_fact_overflow",
         )
 
         mappings.forEach { (failure, _) -> diagnostics.record(failure) }
@@ -74,6 +78,30 @@ class CrashlyticsTwentyFortyEightDiagnosticsTest {
             listOf("storage_write:current_game_write", "storage_write:current_game_write"),
             crashlytics.exceptions.map(Throwable::message),
         )
+        crashlytics.assertNoOtherCalls()
+    }
+
+    @Test
+    fun `pending fact overflow has a fixed sanitized diagnostic`() {
+        val crashlytics = RecordingCrashlytics()
+        val diagnostics = CrashlyticsTwentyFortyEightDiagnostics(crashlytics)
+        val code = enumValueOf<InvariantCode>("PendingFactOverflow")
+
+        diagnostics.record(TwentyFortyEightFailure.InvariantViolation(code))
+
+        assertEquals("invariant_violation:pending_fact_overflow", crashlytics.exceptions.single().message)
+        crashlytics.assertNoOtherCalls()
+    }
+
+    @Test
+    fun `counter overflow has a fixed sanitized diagnostic`() {
+        val crashlytics = RecordingCrashlytics()
+        val diagnostics = CrashlyticsTwentyFortyEightDiagnostics(crashlytics)
+        val code = enumValueOf<InvariantCode>("CounterOverflow")
+
+        diagnostics.record(TwentyFortyEightFailure.InvariantViolation(code))
+
+        assertEquals("invariant_violation:counter_overflow", crashlytics.exceptions.single().message)
         crashlytics.assertNoOtherCalls()
     }
 
