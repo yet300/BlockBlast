@@ -2,8 +2,10 @@ package ge.yet.game.twentyfortyeight.persistence
 
 import ge.yet.game.miniapp.api.MiniAppStorage
 import ge.yet.game.miniapp.testkit.NoopMiniAppStorage
+import ge.yet.game.twentyfortyeight.diagnostics.InvariantCode
 import ge.yet.game.twentyfortyeight.diagnostics.StorageOperation
 import ge.yet.game.twentyfortyeight.diagnostics.TwentyFortyEightFailure
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -14,7 +16,9 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -87,19 +91,118 @@ class SessionPersistenceCoordinatorTest {
     }
 
     @Test
-    fun `cancellation escapes and clears pending work`() = runTest {
+    fun `accepted revisions remain monotonic while a write is in flight`() = runTest {
         val writer = ControlledCommitWriter()
         val results = mutableListOf<CheckpointResult>()
         val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
-        val active = launch { coordinator.submit(gameCommit(1L), results::add) }
-        writer.awaitStarted(1L)
-        coordinator.submit(gameCommit(2L), results::add)
+
+        backgroundScope.launch { coordinator.submit(gameCommit(5L), results::add) }
+        writer.awaitStarted(5L)
+        coordinator.submit(gameCommit(7L), results::add)
+        coordinator.submit(gameCommit(6L), results::add)
+        runCurrent()
+
+        assertEquals(
+            CheckpointResult.Failed(
+                revision = 6L,
+                failure = TwentyFortyEightFailure.InvariantViolation(InvariantCode.RevisionRegression),
+            ),
+            results.single(),
+        )
+        assertEquals(7L, coordinator.snapshot().pendingRevision)
+
+        writer.complete(5L)
+        writer.awaitStarted(7L)
+        writer.complete(7L)
+        runCurrent()
+
+        assertEquals(listOf(5L, 7L), writer.startedRevisions)
+    }
+
+    @Test
+    fun `revision below durable revision is rejected without a write`() = runTest {
+        val writer = ControlledCommitWriter(initiallyOpen = true)
+        val results = mutableListOf<CheckpointResult>()
+        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+
+        coordinator.submit(gameCommit(7L), results::add)
+        coordinator.submit(gameCommit(6L), results::add)
+
+        assertEquals(listOf(7L), writer.startedRevisions)
+        assertEquals(CheckpointResult.Stored(7L), results.first())
+        assertEquals(
+            TwentyFortyEightFailure.InvariantViolation(InvariantCode.RevisionRegression),
+            assertIs<CheckpointResult.Failed>(results.last()).failure,
+        )
+    }
+
+    @Test
+    fun `cancelling drainer cancels pending barrier instead of leaving it suspended`() = runTest {
+        val writer = ControlledCommitWriter()
+        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        val active = launch { coordinator.submit(gameCommit(5L), onResult = {}) }
+        writer.awaitStarted(5L)
+        val barrier = async { coordinator.commitBeforeVisible(gameCommit(7L)) }
+        runCurrent()
 
         active.cancelAndJoin()
 
-        assertTrue(results.isEmpty())
+        assertTrue(barrier.isCompleted)
+        assertFailsWith<CancellationException> { barrier.await() }
         assertEquals(CoordinatorSnapshot(null, null), coordinator.snapshot())
-        assertEquals(listOf(1L), writer.startedRevisions)
+        assertEquals(listOf(5L), writer.startedRevisions)
+    }
+
+    @Test
+    fun `second barrier is rejected without replacing the first`() = runTest {
+        val writer = ControlledCommitWriter()
+        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        backgroundScope.launch { coordinator.submit(gameCommit(5L), onResult = {}) }
+        writer.awaitStarted(5L)
+        val first = async { coordinator.commitBeforeVisible(gameCommit(7L)) }
+        runCurrent()
+        val second = async { coordinator.commitBeforeVisible(gameCommit(8L)) }
+        runCurrent()
+
+        assertEquals(
+            TwentyFortyEightFailure.InvariantViolation(InvariantCode.BarrierPending),
+            assertIs<CheckpointResult.Failed>(second.await()).failure,
+        )
+        assertFalse(first.isCompleted)
+        assertEquals(7L, coordinator.snapshot().pendingRevision)
+
+        writer.complete(5L)
+        writer.awaitStarted(7L)
+        writer.complete(7L)
+
+        assertEquals(CheckpointResult.Stored(7L), first.await())
+        assertEquals(listOf(5L, 7L), writer.startedRevisions)
+    }
+
+    @Test
+    fun `ordinary submit during pending barrier receives a defined rejection`() = runTest {
+        val writer = ControlledCommitWriter()
+        val results = mutableListOf<CheckpointResult>()
+        val coordinator = SessionPersistenceCoordinator(NoopMiniAppStorage, writer)
+        backgroundScope.launch { coordinator.submit(gameCommit(5L), onResult = {}) }
+        writer.awaitStarted(5L)
+        val barrier = async { coordinator.commitBeforeVisible(gameCommit(7L)) }
+        runCurrent()
+
+        coordinator.submit(gameCommit(8L), results::add)
+
+        assertEquals(
+            TwentyFortyEightFailure.InvariantViolation(InvariantCode.BarrierPending),
+            assertIs<CheckpointResult.Failed>(results.single()).failure,
+        )
+        assertEquals(7L, coordinator.snapshot().pendingRevision)
+
+        writer.complete(5L)
+        writer.awaitStarted(7L)
+        writer.complete(7L)
+
+        assertEquals(CheckpointResult.Stored(7L), barrier.await())
+        assertEquals(listOf(5L, 7L), writer.startedRevisions)
     }
 }
 

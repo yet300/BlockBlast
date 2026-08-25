@@ -5,6 +5,7 @@ import ge.yet.game.miniapp.api.MiniAppStorage
 import ge.yet.game.miniapp.testkit.NoopMiniAppStorage
 import ge.yet.game.twentyfortyeight.diagnostics.StorageOperation
 import ge.yet.game.twentyfortyeight.diagnostics.TwentyFortyEightFailure
+import ge.yet.game.twentyfortyeight.engine.GameStatistics
 import ge.yet.game.twentyfortyeight.engine.TutorialCompletionReason
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -120,6 +121,47 @@ class TwentyFortyEightPersistenceTest {
         assertEquals(512L, loaded.bestScore)
         assertEquals(statisticsV1().gamesWon, loaded.statistics.gamesWon)
         assertEquals(false, loaded.terminal)
+    }
+
+    @Test
+    fun `invalid current game is absent while valid metadata is restored`() = runTest {
+        val storage = RecordingMiniAppStorage(
+            initialSnapshots = mapOf(
+                "current_game" to currentGameV1(revision = 20L, board = List(16) { 3L }),
+                "best_score" to BestScoreV1(revision = 8L, bestScore = 4096L),
+                "statistics" to statisticsV1(revision = 9L).copy(successfulMoves = 21L),
+                "tutorial_seen" to TutorialV1(10L, seen = true, reason = "SKIP"),
+            ),
+        )
+
+        val loaded = assertIs<LoadResult.Loaded>(persistence.load(storage)).data
+
+        assertNull(loaded.game)
+        assertEquals(10L, loaded.revision)
+        assertEquals(4096L, loaded.bestScore)
+        assertEquals(21L, loaded.statistics.successfulMoves)
+        assertTrue(loaded.tutorialSeen)
+        assertEquals(TutorialCompletionReason.Skip, loaded.tutorialReason)
+    }
+
+    @Test
+    fun `invalid dedicated record is absent while other records are restored`() = runTest {
+        val storage = RecordingMiniAppStorage(
+            initialSnapshots = mapOf(
+                "best_score" to BestScoreV1(revision = 6L, bestScore = 512L),
+                "statistics" to statisticsV1(revision = 99L).copy(totalMerges = -1L),
+                "tutorial_seen" to TutorialV1(7L, seen = true, reason = "MOVE"),
+            ),
+        )
+
+        val loaded = assertIs<LoadResult.Loaded>(persistence.load(storage)).data
+
+        assertNull(loaded.game)
+        assertEquals(7L, loaded.revision)
+        assertEquals(512L, loaded.bestScore)
+        assertEquals(GameStatistics(), loaded.statistics)
+        assertTrue(loaded.tutorialSeen)
+        assertEquals(TutorialCompletionReason.Move, loaded.tutorialReason)
     }
 
     @Test

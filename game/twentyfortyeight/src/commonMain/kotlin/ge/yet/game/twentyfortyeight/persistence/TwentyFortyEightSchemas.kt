@@ -100,10 +100,14 @@ internal object TwentyFortyEightSchemas {
         requirePositiveCounter(payload.runOrdinal)
         requireCounter(payload.score)
         requireCounter(payload.successfulMovesInRun)
-        requireCounter(payload.momentumStreak.toLong())
+        requireSnapshot(payload.momentumStreak in 0..MAX_MOMENTUM)
         requireSameRevision(payload.revision, payload.bestMirror.revision)
         requireSameRevision(payload.revision, payload.statisticsMirror.revision)
         requireSameRevision(payload.revision, payload.tutorialMirror.revision)
+        requireSnapshot(payload.analyticsReservations.all { it in ANALYTICS_RESERVATIONS })
+        requireSnapshot(!payload.victoryAcknowledged || payload.victoryReached)
+        requireSnapshot(payload.gamesWonRecorded == payload.victoryReached)
+        requireSnapshot(payload.reviewReserved == payload.victoryReached)
 
         val valueBoard = decodeBoard(payload.board)
         val (runtimeBoard, nextTileId) = RuntimeBoard.restore(valueBoard)
@@ -271,4 +275,6 @@ internal object TwentyFortyEightSchemas {
     private const val PHASE_GAME_OVER: String = "GAME_OVER"
     private const val TUTORIAL_MOVE: String = "MOVE"
     private const val TUTORIAL_SKIP: String = "SKIP"
+    private const val MAX_MOMENTUM: Int = 6
+    private val ANALYTICS_RESERVATIONS: Set<String> = setOf("victory", "game_over")
 }

@@ -89,37 +89,38 @@ internal class TwentyFortyEightPersistence : GameCommitWriter {
             StorageOperation.TutorialRead,
         )
 
-        val game = currentPayload?.let { payload ->
-            TwentyFortyEightSchemas.toDomain(payload).getOrElse { throw it }
+        val validCurrent = currentPayload?.let { payload ->
+            TwentyFortyEightSchemas.toDomain(payload).getOrNull()?.let { payload to it }
         }
-        val mirroredBest = currentPayload?.bestMirror?.let { payload ->
-            TwentyFortyEightSchemas.toBestScore(payload).getOrElse { throw it }
-        } ?: 0L
-        val dedicatedBest = bestPayload?.let { payload ->
-            TwentyFortyEightSchemas.toBestScore(payload).getOrElse { throw it }
-        } ?: 0L
+        val game = validCurrent?.second
+        val mirroredBest = validCurrent?.first?.bestMirror?.bestScore ?: 0L
+        val validBest = bestPayload?.let { payload ->
+            TwentyFortyEightSchemas.toBestScore(payload).getOrNull()?.let { payload to it }
+        }
+        val dedicatedBest = validBest?.second ?: 0L
         val bestScore = maxOf(game?.bestScore ?: 0L, mirroredBest, dedicatedBest)
 
-        val mirroredStatistics = currentPayload?.statisticsMirror?.let { payload ->
-            TwentyFortyEightSchemas.toStatistics(payload).getOrElse { throw it }
+        val mirroredStatistics = validCurrent?.first?.statisticsMirror?.let { payload ->
+            TwentyFortyEightSchemas.toStatistics(payload).getOrNull()
         } ?: GameStatistics()
-        val dedicatedStatistics = statisticsPayload?.let { payload ->
-            TwentyFortyEightSchemas.toStatistics(payload).getOrElse { throw it }
-        } ?: GameStatistics()
+        val validStatistics = statisticsPayload?.let { payload ->
+            TwentyFortyEightSchemas.toStatistics(payload).getOrNull()?.let { payload to it }
+        }
+        val dedicatedStatistics = validStatistics?.second ?: GameStatistics()
         val statistics = reconcileStatistics(mirroredStatistics, dedicatedStatistics)
 
-        val mirroredTutorial = currentPayload?.tutorialMirror?.let { payload ->
-            payload to TwentyFortyEightSchemas.toTutorial(payload).getOrElse { throw it }
+        val mirroredTutorial = validCurrent?.first?.tutorialMirror?.let { payload ->
+            TwentyFortyEightSchemas.toTutorial(payload).getOrNull()?.let { payload to it }
         }
-        val dedicatedTutorial = tutorialPayload?.let { payload ->
-            payload to TwentyFortyEightSchemas.toTutorial(payload).getOrElse { throw it }
+        val validTutorial = tutorialPayload?.let { payload ->
+            TwentyFortyEightSchemas.toTutorial(payload).getOrNull()?.let { payload to it }
         }
-        val tutorial = reconcileTutorial(mirroredTutorial, dedicatedTutorial)
+        val tutorial = reconcileTutorial(mirroredTutorial, validTutorial)
         val revision = listOfNotNull(
-            currentPayload?.revision,
-            bestPayload?.revision,
-            statisticsPayload?.revision,
-            tutorialPayload?.revision,
+            validCurrent?.first?.revision,
+            validBest?.first?.revision,
+            validStatistics?.first?.revision,
+            validTutorial?.first?.revision,
         ).maxOrNull() ?: 0L
         val reconciledGame = game?.copy(bestScore = maxOf(game.score, bestScore))
 
@@ -137,8 +138,6 @@ internal class TwentyFortyEightPersistence : GameCommitWriter {
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (failure: PersistenceReadException) {
-        LoadResult.Failed(failure.failure)
-    } catch (failure: SnapshotValidationException) {
         LoadResult.Failed(failure.failure)
     }
 

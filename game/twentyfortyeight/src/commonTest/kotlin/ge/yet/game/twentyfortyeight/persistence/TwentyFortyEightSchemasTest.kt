@@ -103,6 +103,40 @@ class TwentyFortyEightSchemasTest {
     }
 
     @Test
+    fun `unknown analytics reservation is rejected`() {
+        assertFailure(
+            ContractCode.SnapshotShape,
+            TwentyFortyEightSchemas.toDomain(
+                currentGameV1().copy(analyticsReservations = setOf("future_event")),
+            ),
+        )
+    }
+
+    @Test
+    fun `victory flags must describe a reachable rules state`() {
+        assertFailure(
+            ContractCode.SnapshotShape,
+            TwentyFortyEightSchemas.toDomain(currentGameV1().copy(victoryReached = false)),
+        )
+        assertFailure(
+            ContractCode.SnapshotShape,
+            TwentyFortyEightSchemas.toDomain(currentGameV1().copy(gamesWonRecorded = false)),
+        )
+        assertFailure(
+            ContractCode.SnapshotShape,
+            TwentyFortyEightSchemas.toDomain(currentGameV1().copy(reviewReserved = false)),
+        )
+    }
+
+    @Test
+    fun `momentum above the engine maximum is rejected`() {
+        assertFailure(
+            ContractCode.SnapshotShape,
+            TwentyFortyEightSchemas.toDomain(currentGameV1().copy(momentumStreak = 7)),
+        )
+    }
+
+    @Test
     fun `tutorial seen and completion reason must agree`() {
         assertFailure(
             ContractCode.SnapshotShape,
