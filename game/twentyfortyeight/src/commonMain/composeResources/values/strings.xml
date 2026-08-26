@@ -1,4 +1,11 @@
 <resources>
     <string name="miniapp_title">2048</string>
     <string name="miniapp_description">2048 mini-app</string>
+    <string name="board_empty_cell">empty</string>
+    <string name="board_row_summary">Row %1$d: %2$s, %3$s, %4$s, %5$s</string>
+    <string name="board_summary">Board. %1$s; %2$s; %3$s; %4$s</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="move_left">Move left</string>
+    <string name="move_right">Move right</string>
 </resources>
