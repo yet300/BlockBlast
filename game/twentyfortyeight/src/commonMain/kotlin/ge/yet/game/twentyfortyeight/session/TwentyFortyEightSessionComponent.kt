@@ -16,9 +16,15 @@ import ge.yet.game.twentyfortyeight.component.DefaultPlayingComponent
 import ge.yet.game.twentyfortyeight.component.DefaultResultComponent
 import ge.yet.game.twentyfortyeight.component.PlayingComponent
 import ge.yet.game.twentyfortyeight.component.ResultComponent
+import ge.yet.game.twentyfortyeight.engine.GamePhase
+import ge.yet.game.twentyfortyeight.engine.GameState
+import ge.yet.game.twentyfortyeight.engine.GameStatistics
 import ge.yet.game.twentyfortyeight.engine.ResultSnapshot
+import ge.yet.game.twentyfortyeight.store.AnnouncementFact
+import ge.yet.game.twentyfortyeight.store.FocusTarget
 import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStore
 import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStoreFactory
+import ge.yet.game.twentyfortyeight.store.UiErrorCode
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -26,7 +32,18 @@ import kotlinx.coroutines.launch
 internal interface TwentyFortyEightSessionComponent {
     val stack: Value<ChildStack<*, Child>>
     val frameMode: Value<MiniAppFrameMode>
+    val effect: Value<EffectState>
     fun handleBack(): Boolean
+
+    data class EffectState(val effect: Effect? = null)
+
+    sealed interface Effect {
+        val id: Long
+
+        data class Announcement(override val id: Long, val fact: AnnouncementFact) : Effect
+        data class Focus(override val id: Long, val target: FocusTarget) : Effect
+        data class Error(override val id: Long, val code: UiErrorCode) : Effect
+    }
 
     sealed interface Child {
         class Playing(val component: PlayingComponent) : Child
@@ -49,12 +66,13 @@ internal class DefaultTwentyFortyEightSessionComponent(
     override val stack: Value<ChildStack<*, TwentyFortyEightSessionComponent.Child>> = childStack(
         source = navigation,
         serializer = null,
-        initialConfiguration = Config.Playing(retainedStore.state.game?.runOrdinal ?: 0L),
+        initialConfiguration = retainedStore.state.toInitialConfig(),
         handleBackButton = false,
         childFactory = ::createChild,
     )
 
     override val frameMode: Value<MiniAppFrameMode> = stack.map { MiniAppFrameMode.Standard }
+    override val effect: Value<TwentyFortyEightSessionComponent.EffectState> = ports.effect
 
     internal val labelCollector: Job
 
@@ -98,3 +116,20 @@ private sealed interface Config {
     data class Playing(val runOrdinal: Long) : Config
     data class Result(val snapshot: ResultSnapshot) : Config
 }
+
+private fun TwentyFortyEightStore.State.toInitialConfig(): Config {
+    val authoritativeGame = game
+    return if (authoritativeGame?.phase == GamePhase.GameOver) {
+        Config.Result(authoritativeGame.toResultSnapshot(statistics))
+    } else {
+        Config.Playing(authoritativeGame?.runOrdinal ?: 0L)
+    }
+}
+
+private fun GameState.toResultSnapshot(statistics: GameStatistics) =
+    ResultSnapshot(
+        score = score,
+        bestScore = bestScore,
+        highestTile = board.values().filterNotNull().maxOrNull() ?: 0L,
+        statistics = statistics,
+    )

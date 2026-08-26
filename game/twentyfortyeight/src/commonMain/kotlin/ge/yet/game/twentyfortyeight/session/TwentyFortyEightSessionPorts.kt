@@ -10,10 +10,10 @@ import ge.yet.game.twentyfortyeight.store.UiErrorCode
 internal class TwentyFortyEightSessionPorts : SessionNavigation, SessionUiEffects {
     private var navigateToResult: ((ResultSnapshot) -> Unit)? = null
     private var onNewGameCommitted: ((Long) -> Unit)? = null
-    private val mutableEffect = MutableValue(EffectState())
+    private val mutableEffect = MutableValue(TwentyFortyEightSessionComponent.EffectState())
     private var nextEffectId = 1L
 
-    val effect: Value<EffectState> = mutableEffect
+    val effect: Value<TwentyFortyEightSessionComponent.EffectState> = mutableEffect
 
     fun bind(
         navigateToResult: (ResultSnapshot) -> Unit,
@@ -31,21 +31,14 @@ internal class TwentyFortyEightSessionPorts : SessionNavigation, SessionUiEffect
         checkNotNull(onNewGameCommitted)(runOrdinal)
     }
 
-    override fun announce(fact: AnnouncementFact) = publish(Effect.Announcement(nextEffectId++, fact))
-    override fun requestFocus(target: FocusTarget) = publish(Effect.Focus(nextEffectId++, target))
-    override fun showError(code: UiErrorCode) = publish(Effect.Error(nextEffectId++, code))
+    override fun announce(fact: AnnouncementFact) =
+        publish(TwentyFortyEightSessionComponent.Effect.Announcement(nextEffectId++, fact))
+    override fun requestFocus(target: FocusTarget) =
+        publish(TwentyFortyEightSessionComponent.Effect.Focus(nextEffectId++, target))
+    override fun showError(code: UiErrorCode) =
+        publish(TwentyFortyEightSessionComponent.Effect.Error(nextEffectId++, code))
 
-    private fun publish(effect: Effect) {
-        mutableEffect.value = EffectState(effect)
-    }
-
-    data class EffectState(val effect: Effect? = null)
-
-    sealed interface Effect {
-        val id: Long
-
-        data class Announcement(override val id: Long, val fact: AnnouncementFact) : Effect
-        data class Focus(override val id: Long, val target: FocusTarget) : Effect
-        data class Error(override val id: Long, val code: UiErrorCode) : Effect
+    private fun publish(effect: TwentyFortyEightSessionComponent.Effect) {
+        mutableEffect.value = TwentyFortyEightSessionComponent.EffectState(effect)
     }
 }

@@ -11,7 +11,9 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.essenty.lifecycle.doOnDestroy
+import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.twentyfortyeight.engine.Direction
+import ge.yet.game.twentyfortyeight.engine.GamePhase
 import ge.yet.game.twentyfortyeight.engine.GameStatistics
 import ge.yet.game.twentyfortyeight.engine.RuntimeBoard
 import ge.yet.game.twentyfortyeight.store.BootstrapState
@@ -61,7 +63,12 @@ internal class DefaultPlayingComponent(
             transition = state.activeTransition,
             score = game?.score ?: 0L,
             bestScore = game?.bestScore ?: 0L,
-            undoEnabled = game?.undo != null && state.activeTransition == null,
+            undoEnabled = state.bootstrap == BootstrapState.Ready &&
+                state.visibility == MiniAppVisibility.ACTIVE &&
+                game?.phase == GamePhase.Playing &&
+                game.undo != null &&
+                state.activeTransition == null &&
+                state.overlay == null,
             tutorialVisible = state.bootstrap == BootstrapState.Ready && !state.tutorialSeen,
             overlay = state.overlay,
             persistenceStatus = when {
