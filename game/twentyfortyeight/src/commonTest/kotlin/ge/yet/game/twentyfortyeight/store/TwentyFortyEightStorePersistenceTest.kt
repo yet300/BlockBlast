@@ -520,4 +520,26 @@ class TwentyFortyEightStorePersistenceTest {
         assertEquals(2L, harness.store.state.requestedRevision)
         assertEquals(1L, writer.commits.single().revision)
     }
+
+    @Test
+    fun `continue after Victory is rejected while RestartConfirmation is authoritative`() = runTest {
+        val writer = StoreCommitWriter()
+        val victorious = playableGame(score = 4L).copy(
+            successfulMovesInRun = 1L,
+            facts = playableGame().facts.copy(victoryReached = true),
+        )
+        val harness = readyStore(loaded(game = victorious), writer)
+        harness.store.accept(TwentyFortyEightStore.Intent.RequestRestart)
+        val before = harness.store.state
+        val labelCount = harness.labels.size
+        val commitCount = writer.commits.size
+
+        harness.store.accept(TwentyFortyEightStore.Intent.ContinueAfterVictory)
+        advanceUntilIdle()
+
+        assertEquals(OverlayState.RestartConfirmation, before.overlay)
+        assertEquals(before, harness.store.state)
+        assertEquals(labelCount, harness.labels.size)
+        assertEquals(commitCount, writer.commits.size)
+    }
 }

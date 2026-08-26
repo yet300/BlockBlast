@@ -603,6 +603,7 @@ internal class TwentyFortyEightStoreFactory(
         private fun continueAfterVictory() {
             val current = state()
             if (!current.acceptsGameInput() || current.activeTransition != null) return
+            if (current.overlay != OverlayState.Victory) return
             val game = current.game ?: return
             val continued = GameRules.continueAfterVictory(RulesState(game, current.statistics))
             if (continued.game == game) return

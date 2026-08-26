@@ -37,6 +37,7 @@ import ge.yet.game.twentyfortyeight.persistence.SessionPersistenceCoordinator
 import ge.yet.game.twentyfortyeight.store.AnnouncementFact
 import ge.yet.game.twentyfortyeight.store.FocusTarget
 import ge.yet.game.twentyfortyeight.store.NewGameSeedSource
+import ge.yet.game.twentyfortyeight.store.OverlayState
 import ge.yet.game.twentyfortyeight.store.StoreCommitWriter
 import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStoreFactory
 import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStore.Label
@@ -55,6 +56,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
@@ -224,6 +226,100 @@ class TwentyFortyEightSessionComponentTest {
     }
 
     @Test
+    fun `Back keeps restart confirmation authoritative while restart barrier is pending`() = runTest(dispatcher) {
+        val writer = StoreCommitWriter(controlled = true)
+        val progressed = playableGame(score = 4L).copy(successfulMovesInRun = 1L)
+        val harness = componentHarness(unfinishedData(progressed), writer)
+        advanceUntilIdle()
+        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+            harness.component.stack.value.active.instance,
+        ).component
+
+        playing.onRestartRequested()
+        val restart = assertIs<OverlayComponent.RestartConfirmation>(playing.overlay.value.child?.instance)
+        restart.onConfirmRequested()
+        runCurrent()
+        writer.awaitStarted(1L)
+
+        assertTrue(harness.component.handleBack())
+        assertEquals(OverlayState.RestartConfirmation, harness.component.retainedStore.state.overlay)
+        assertEquals(OverlayState.RestartConfirmation, playing.model.value.overlay)
+        assertSame(restart, playing.overlay.value.child?.instance)
+
+        writer.complete(1L)
+        advanceUntilIdle()
+        harness.destroy()
+    }
+
+    @Test
+    fun `Back keeps an obscured active overlay coherent`() = runTest(dispatcher) {
+        val harness = componentHarness(unfinishedData())
+        advanceUntilIdle()
+        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+            harness.component.stack.value.active.instance,
+        ).component
+        playing.onStatisticsRequested()
+        val statistics = assertIs<OverlayComponent.Statistics>(playing.overlay.value.child?.instance)
+        harness.visibility.set(MiniAppVisibility.OBSCURED)
+        runCurrent()
+
+        assertTrue(harness.component.handleBack())
+        assertEquals(OverlayState.Statistics, harness.component.retainedStore.state.overlay)
+        assertEquals(OverlayState.Statistics, playing.model.value.overlay)
+        assertSame(statistics, playing.overlay.value.child?.instance)
+        harness.destroy()
+    }
+
+    @Test
+    fun `stale Victory callbacks cannot affect RestartConfirmation`() = runTest(dispatcher) {
+        val victorious = playableGame(score = 4L).copy(
+            successfulMovesInRun = 1L,
+            facts = playableGame().facts.copy(victoryReached = true),
+        )
+        val harness = componentHarness(unfinishedData(victorious))
+        advanceUntilIdle()
+        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+            harness.component.stack.value.active.instance,
+        ).component
+        val victory = assertIs<OverlayComponent.Victory>(playing.overlay.value.child?.instance)
+        victory.onRestartRequested()
+        val restart = assertIs<OverlayComponent.RestartConfirmation>(playing.overlay.value.child?.instance)
+        val before = harness.component.retainedStore.state
+
+        victory.onContinueRequested()
+        victory.onDismissRequested()
+
+        assertEquals(before, harness.component.retainedStore.state)
+        assertSame(restart, playing.overlay.value.child?.instance)
+        harness.destroy()
+    }
+
+    @Test
+    fun `stale RestartConfirmation callbacks cannot affect restored Victory`() = runTest(dispatcher) {
+        val victorious = playableGame(score = 4L).copy(
+            successfulMovesInRun = 1L,
+            facts = playableGame().facts.copy(victoryReached = true),
+        )
+        val harness = componentHarness(unfinishedData(victorious))
+        advanceUntilIdle()
+        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+            harness.component.stack.value.active.instance,
+        ).component
+        assertIs<OverlayComponent.Victory>(playing.overlay.value.child?.instance).onRestartRequested()
+        val restart = assertIs<OverlayComponent.RestartConfirmation>(playing.overlay.value.child?.instance)
+        assertTrue(harness.component.handleBack())
+        val restoredVictory = assertIs<OverlayComponent.Victory>(playing.overlay.value.child?.instance)
+        val before = harness.component.retainedStore.state
+
+        restart.onDismissRequested()
+        restart.onConfirmRequested()
+
+        assertEquals(before, harness.component.retainedStore.state)
+        assertSame(restoredVictory, playing.overlay.value.child?.instance)
+        harness.destroy()
+    }
+
+    @Test
     fun `retained recreation reuses Store and collector cancels idempotently`() = runTest(dispatcher) {
         val keeper = InstanceKeeperDispatcher()
         val first = componentHarness(unfinishedData(), instanceKeeper = keeper)
@@ -285,6 +381,15 @@ class TwentyFortyEightSessionComponentTest {
         )
         cancellation.cancel()
         harness.destroy()
+    }
+
+    @Test
+    fun `effect IDs reach the positive limit once and then fail before wrapping`() {
+        val allocator = EffectIdAllocator(Long.MAX_VALUE - 1L)
+
+        assertEquals(Long.MAX_VALUE - 1L, allocator.next())
+        assertEquals(Long.MAX_VALUE, allocator.next())
+        assertFailsWith<IllegalStateException> { allocator.next() }
     }
 
     @Test

@@ -11,7 +11,7 @@ internal class TwentyFortyEightSessionPorts : SessionNavigation, SessionUiEffect
     private var navigateToResult: ((ResultSnapshot) -> Unit)? = null
     private var onNewGameCommitted: ((Long) -> Unit)? = null
     private val mutableEffect = MutableValue(TwentyFortyEightSessionComponent.EffectState())
-    private var nextEffectId = 1L
+    private val effectIds = EffectIdAllocator()
 
     val effect: Value<TwentyFortyEightSessionComponent.EffectState> = mutableEffect
 
@@ -32,13 +32,29 @@ internal class TwentyFortyEightSessionPorts : SessionNavigation, SessionUiEffect
     }
 
     override fun announce(fact: AnnouncementFact) =
-        publish(TwentyFortyEightSessionComponent.Effect.Announcement(nextEffectId++, fact))
+        publish(TwentyFortyEightSessionComponent.Effect.Announcement(effectIds.next(), fact))
     override fun requestFocus(target: FocusTarget) =
-        publish(TwentyFortyEightSessionComponent.Effect.Focus(nextEffectId++, target))
+        publish(TwentyFortyEightSessionComponent.Effect.Focus(effectIds.next(), target))
     override fun showError(code: UiErrorCode) =
-        publish(TwentyFortyEightSessionComponent.Effect.Error(nextEffectId++, code))
+        publish(TwentyFortyEightSessionComponent.Effect.Error(effectIds.next(), code))
 
     private fun publish(effect: TwentyFortyEightSessionComponent.Effect) {
         mutableEffect.value = TwentyFortyEightSessionComponent.EffectState(effect)
+    }
+}
+
+internal class EffectIdAllocator(initial: Long = 1L) {
+    private var nextId = initial.also { require(it > 0L) }
+    private var exhausted = false
+
+    fun next(): Long {
+        check(!exhausted) { "Effect ID space exhausted" }
+        val allocated = nextId
+        if (allocated == Long.MAX_VALUE) {
+            exhausted = true
+        } else {
+            nextId = allocated + 1L
+        }
+        return allocated
     }
 }

@@ -110,7 +110,6 @@ internal class DefaultPlayingComponent(
 
     override fun handleBack(): Boolean {
         if (overlay.value.child == null) return false
-        overlayNavigation.dismiss()
         store.accept(TwentyFortyEightStore.Intent.CancelOverlay)
         return true
     }
@@ -124,13 +123,15 @@ internal class DefaultPlayingComponent(
         return when (config) {
             OverlayConfig.Victory -> OverlayComponent.Victory(
                 model = MutableValue(OverlayComponent.Model.Victory(game?.score ?: 0L, game?.bestScore ?: 0L)),
-                onContinue = ::onContinueAfterVictory,
-                onRestart = ::onRestartRequested,
-                onDismiss = { handleBack() },
+                onContinue = {
+                    acceptFromOverlay(config, TwentyFortyEightStore.Intent.ContinueAfterVictory)
+                },
+                onRestart = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.RequestRestart) },
+                onDismiss = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.CancelOverlay) },
             )
             OverlayConfig.Statistics -> OverlayComponent.Statistics(
                 model = MutableValue(state.statistics.toOverlayModel()),
-                onDismiss = { handleBack() },
+                onDismiss = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.CancelOverlay) },
             )
             OverlayConfig.RestartConfirmation -> OverlayComponent.RestartConfirmation(
                 model = MutableValue(
@@ -139,10 +140,14 @@ internal class DefaultPlayingComponent(
                         successfulMovesInRun = game?.successfulMovesInRun ?: 0L,
                     ),
                 ),
-                onConfirm = { store.accept(TwentyFortyEightStore.Intent.ConfirmRestart) },
-                onDismiss = { handleBack() },
+                onConfirm = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.ConfirmRestart) },
+                onDismiss = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.CancelOverlay) },
             )
         }
+    }
+
+    private fun acceptFromOverlay(config: OverlayConfig, intent: TwentyFortyEightStore.Intent) {
+        if (overlay.value.child?.configuration == config) store.accept(intent)
     }
 }
 

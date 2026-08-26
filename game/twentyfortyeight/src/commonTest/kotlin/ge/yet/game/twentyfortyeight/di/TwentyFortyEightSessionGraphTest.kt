@@ -113,7 +113,7 @@ class TwentyFortyEightSessionGraphTest {
 
         assertSame(first.component, first.concreteComponent)
         assertSame(first.store, first.concreteComponent.retainedStore)
-        assertSame(first.session, first.session)
+        assertSame(first.session.component, first.component)
         assertNotSame(first.session, second.session)
         assertNotSame(first.component, second.component)
         assertNotSame(first.store, second.store)
