@@ -1,8 +1,10 @@
 package ge.yet.game.twentyfortyeight.ui
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import ge.yet.game.twentyfortyeight.engine.TileValue
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
@@ -74,10 +76,13 @@ internal object TileStylePolicy {
     }
 
     private fun compliantForeground(background: Color): Color {
-        val candidates = listOf(WarmInk, Ivory)
+        val compliant = ForegroundCandidates
             .map { color -> color to contrastRatio(color, background) }
-        val compliant = candidates.filter { (_, contrast) -> contrast >= MIN_TEXT_CONTRAST }
-        return (compliant.ifEmpty { candidates }).maxBy { (_, contrast) -> contrast }.first
+            .filter { (_, contrast) -> contrast >= MIN_TEXT_CONTRAST }
+        check(compliant.isNotEmpty()) {
+            "Tile background has no WCAG AA foreground: ${background.toArgb()}"
+        }
+        return compliant.maxBy { (_, contrast) -> contrast }.first
     }
 
     private fun interpolateBackground(exponent: Int, stops: Map<Int, Color>): Color {
@@ -86,14 +91,75 @@ internal object TileStylePolicy {
         val progress = (exponent - lowerExponent).toDouble() / (upperExponent - lowerExponent)
         val lower = srgbToOklch(stops.getValue(lowerExponent))
         val upper = srgbToOklch(stops.getValue(upperExponent))
-        return oklchToSrgb(
-            Oklch(
-                lightness = lerp(lower.lightness, upper.lightness, progress),
-                chroma = lerp(lower.chroma, upper.chroma, progress),
-                hue = interpolateHue(lower.hue, upper.hue, progress),
-            ),
+        val interpolated = Oklch(
+            lightness = lerp(lower.lightness, upper.lightness, progress),
+            chroma = lerp(lower.chroma, upper.chroma, progress),
+            hue = interpolateHue(lower.hue, upper.hue, progress),
+        )
+        val background = oklchToSrgb(interpolated)
+        return if (hasCompliantForeground(background)) {
+            background
+        } else {
+            nearestCompliantBackground(interpolated)
+        }
+    }
+
+    private fun nearestCompliantBackground(interpolated: Oklch): Color {
+        val candidates = listOfNotNull(
+            nearestDarkerBackground(interpolated),
+            nearestLighterBackground(interpolated),
+        )
+        check(candidates.isNotEmpty()) { "Unable to produce a WCAG AA tile background" }
+        return candidates.minWith(
+            compareBy<AdjustedBackground> { abs(it.lightness - interpolated.lightness) }
+                .thenBy { it.lightness },
+        ).color
+    }
+
+    private fun nearestDarkerBackground(interpolated: Oklch): AdjustedBackground? {
+        var compliantLightness = 0.0
+        if (!hasCompliantForeground(oklchToSrgb(interpolated.copy(lightness = compliantLightness)))) {
+            return null
+        }
+        var nonCompliantLightness = interpolated.lightness
+        repeat(LIGHTNESS_SEARCH_ITERATIONS) {
+            val candidateLightness = (compliantLightness + nonCompliantLightness) / 2.0
+            if (hasCompliantForeground(oklchToSrgb(interpolated.copy(lightness = candidateLightness)))) {
+                compliantLightness = candidateLightness
+            } else {
+                nonCompliantLightness = candidateLightness
+            }
+        }
+        return AdjustedBackground(
+            lightness = compliantLightness,
+            color = oklchToSrgb(interpolated.copy(lightness = compliantLightness)),
         )
     }
+
+    private fun nearestLighterBackground(interpolated: Oklch): AdjustedBackground? {
+        var nonCompliantLightness = interpolated.lightness
+        var compliantLightness = 1.0
+        if (!hasCompliantForeground(oklchToSrgb(interpolated.copy(lightness = compliantLightness)))) {
+            return null
+        }
+        repeat(LIGHTNESS_SEARCH_ITERATIONS) {
+            val candidateLightness = (nonCompliantLightness + compliantLightness) / 2.0
+            if (hasCompliantForeground(oklchToSrgb(interpolated.copy(lightness = candidateLightness)))) {
+                compliantLightness = candidateLightness
+            } else {
+                nonCompliantLightness = candidateLightness
+            }
+        }
+        return AdjustedBackground(
+            lightness = compliantLightness,
+            color = oklchToSrgb(interpolated.copy(lightness = compliantLightness)),
+        )
+    }
+
+    private fun hasCompliantForeground(background: Color): Boolean =
+        ForegroundCandidates.any { foreground ->
+            contrastRatio(foreground, background) >= MIN_TEXT_CONTRAST
+        }
 
     private fun insetMarkCount(exponent: Int): Int = when (exponent) {
         in 18..21 -> 1
@@ -110,10 +176,12 @@ internal object TileStylePolicy {
         return (lighter + 0.05) / (darker + 0.05)
     }
 
-    private fun relativeLuminance(color: Color): Double =
-        0.2126 * srgbToLinear(color.red.toDouble()) +
-            0.7152 * srgbToLinear(color.green.toDouble()) +
-            0.0722 * srgbToLinear(color.blue.toDouble())
+    private fun relativeLuminance(color: Color): Double {
+        val argb = color.toArgb()
+        return 0.2126 * srgbToLinear((argb ushr 16 and 0xFF) / 255.0) +
+            0.7152 * srgbToLinear((argb ushr 8 and 0xFF) / 255.0) +
+            0.0722 * srgbToLinear((argb and 0xFF) / 255.0)
+    }
 
     private fun srgbToOklch(color: Color): Oklch {
         val red = srgbToLinear(color.red.toDouble())
@@ -184,15 +252,22 @@ internal object TileStylePolicy {
         val hue: Double,
     )
 
+    private data class AdjustedBackground(
+        val lightness: Double,
+        val color: Color,
+    )
+
     private const val MIN_AUTHORED_EXPONENT = 1
     private const val MAX_AUTHORED_EXPONENT = 17
     private const val MILESTONE_EXPONENT = 11
     private const val MIN_TEXT_CONTRAST = 4.5
     private const val MIN_TEXT_SCALE = 0.50f
+    private const val LIGHTNESS_SEARCH_ITERATIONS = 48
 
     private val AuthoredExponents = setOf(1, 2, 3, 4, 7, 10, 11, 14, 17)
     private val WarmInk = Color(0xFF141413)
     private val Ivory = Color(0xFFFAF9F5)
+    private val ForegroundCandidates = listOf(WarmInk, Ivory)
     private val LightGold = Color(0xFF7A5710)
     private val DarkGold = Color(0xFFD7B769)
 

@@ -61,11 +61,10 @@ class TileStylePolicyTest {
     }
 
     @Test
-    fun `representative tile text meets WCAG AA contrast in both themes`() {
-        val values = listOf(2L, 4L, 8L, 16L, 128L, 1024L, 2048L, 16384L, 131072L)
-
+    fun `every legal tile value meets WCAG AA contrast in both themes`() {
         TileTheme.entries.forEach { theme ->
-            values.forEach { value ->
+            (0..62).forEach { exponent ->
+                val value = 1L shl exponent
                 val style = TileStylePolicy.style(value, theme)
                 val ratio = contrastRatio(style.foreground, style.background)
                 assertTrue(
@@ -74,6 +73,14 @@ class TileStylePolicyTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun `light value 64 meets WCAG AA contrast`() {
+        val style = TileStylePolicy.style(64L, TileTheme.Light)
+        val ratio = contrastRatio(style.foreground, style.background)
+
+        assertTrue(ratio >= MIN_TEXT_CONTRAST, "value=64 contrast=$ratio")
     }
 
     @Test

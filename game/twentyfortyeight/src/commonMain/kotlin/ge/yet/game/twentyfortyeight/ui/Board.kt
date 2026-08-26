@@ -16,6 +16,7 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import ge.yet.game.twentyfortyeight.engine.Board
@@ -77,6 +78,7 @@ internal fun TwentyFortyEightBoard(
     model: BoardModel,
     onDirection: (Direction) -> Unit,
     modifier: Modifier = Modifier,
+    onTileTextLayout: ((Long, TextLayoutResult) -> Unit)? = null,
 ) {
     val emptyCell = stringResource(Res.string.board_empty_cell)
     val summaryCells = model.tiles.map { tile -> tile?.value?.value?.toString() ?: emptyCell }
@@ -140,7 +142,12 @@ internal fun TwentyFortyEightBoard(
             }
             occupiedTiles.forEach { tile ->
                 key(tile.id) {
-                    TwentyFortyEightTile(value = tile.value.value)
+                    TwentyFortyEightTile(
+                        value = tile.value.value,
+                        onTextLayout = onTileTextLayout?.let { observer ->
+                            { result -> observer(tile.value.value, result) }
+                        },
+                    )
                 }
             }
         },
