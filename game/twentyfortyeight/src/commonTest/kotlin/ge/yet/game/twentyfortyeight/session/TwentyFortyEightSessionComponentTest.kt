@@ -59,6 +59,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -316,6 +317,55 @@ class TwentyFortyEightSessionComponentTest {
 
         assertEquals(before, harness.component.retainedStore.state)
         assertSame(restoredVictory, playing.overlay.value.child?.instance)
+        harness.destroy()
+    }
+
+    @Test
+    fun `stale Victory callbacks cannot affect a replacement Victory`() = runTest(dispatcher) {
+        val victorious = playableGame(score = 4L).copy(
+            successfulMovesInRun = 1L,
+            facts = playableGame().facts.copy(victoryReached = true),
+        )
+        val harness = componentHarness(unfinishedData(victorious))
+        advanceUntilIdle()
+        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+            harness.component.stack.value.active.instance,
+        ).component
+        val firstVictory = assertIs<OverlayComponent.Victory>(playing.overlay.value.child?.instance)
+        firstVictory.onRestartRequested()
+        assertIs<OverlayComponent.RestartConfirmation>(playing.overlay.value.child?.instance)
+        assertTrue(harness.component.handleBack())
+        val replacementVictory = assertIs<OverlayComponent.Victory>(playing.overlay.value.child?.instance)
+        assertNotSame(firstVictory, replacementVictory)
+        val before = harness.component.retainedStore.state
+
+        firstVictory.onContinueRequested()
+        firstVictory.onDismissRequested()
+
+        assertEquals(before, harness.component.retainedStore.state)
+        assertSame(replacementVictory, playing.overlay.value.child?.instance)
+        harness.destroy()
+    }
+
+    @Test
+    fun `stale Statistics dismissal cannot affect replacement Statistics`() = runTest(dispatcher) {
+        val harness = componentHarness(unfinishedData())
+        advanceUntilIdle()
+        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+            harness.component.stack.value.active.instance,
+        ).component
+        playing.onStatisticsRequested()
+        val firstStatistics = assertIs<OverlayComponent.Statistics>(playing.overlay.value.child?.instance)
+        firstStatistics.onDismissRequested()
+        playing.onStatisticsRequested()
+        val replacementStatistics = assertIs<OverlayComponent.Statistics>(playing.overlay.value.child?.instance)
+        assertNotSame(firstStatistics, replacementStatistics)
+        val before = harness.component.retainedStore.state
+
+        firstStatistics.onDismissRequested()
+
+        assertEquals(before, harness.component.retainedStore.state)
+        assertSame(replacementStatistics, playing.overlay.value.child?.instance)
         harness.destroy()
     }
 

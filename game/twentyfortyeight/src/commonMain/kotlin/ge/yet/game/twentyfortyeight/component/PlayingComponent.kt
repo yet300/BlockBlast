@@ -121,33 +121,47 @@ internal class DefaultPlayingComponent(
         val state = store.state
         val game = state.game
         return when (config) {
-            OverlayConfig.Victory -> OverlayComponent.Victory(
-                model = MutableValue(OverlayComponent.Model.Victory(game?.score ?: 0L, game?.bestScore ?: 0L)),
-                onContinue = {
-                    acceptFromOverlay(config, TwentyFortyEightStore.Intent.ContinueAfterVictory)
-                },
-                onRestart = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.RequestRestart) },
-                onDismiss = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.CancelOverlay) },
-            )
-            OverlayConfig.Statistics -> OverlayComponent.Statistics(
-                model = MutableValue(state.statistics.toOverlayModel()),
-                onDismiss = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.CancelOverlay) },
-            )
-            OverlayConfig.RestartConfirmation -> OverlayComponent.RestartConfirmation(
-                model = MutableValue(
-                    OverlayComponent.Model.RestartConfirmation(
-                        score = game?.score ?: 0L,
-                        successfulMovesInRun = game?.successfulMovesInRun ?: 0L,
+            OverlayConfig.Victory -> {
+                lateinit var origin: OverlayComponent.Victory
+                origin = OverlayComponent.Victory(
+                    model = MutableValue(
+                        OverlayComponent.Model.Victory(game?.score ?: 0L, game?.bestScore ?: 0L),
                     ),
-                ),
-                onConfirm = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.ConfirmRestart) },
-                onDismiss = { acceptFromOverlay(config, TwentyFortyEightStore.Intent.CancelOverlay) },
-            )
+                    onContinue = {
+                        acceptFromOverlay(origin, TwentyFortyEightStore.Intent.ContinueAfterVictory)
+                    },
+                    onRestart = { acceptFromOverlay(origin, TwentyFortyEightStore.Intent.RequestRestart) },
+                    onDismiss = { acceptFromOverlay(origin, TwentyFortyEightStore.Intent.CancelOverlay) },
+                )
+                origin
+            }
+            OverlayConfig.Statistics -> {
+                lateinit var origin: OverlayComponent.Statistics
+                origin = OverlayComponent.Statistics(
+                    model = MutableValue(state.statistics.toOverlayModel()),
+                    onDismiss = { acceptFromOverlay(origin, TwentyFortyEightStore.Intent.CancelOverlay) },
+                )
+                origin
+            }
+            OverlayConfig.RestartConfirmation -> {
+                lateinit var origin: OverlayComponent.RestartConfirmation
+                origin = OverlayComponent.RestartConfirmation(
+                    model = MutableValue(
+                        OverlayComponent.Model.RestartConfirmation(
+                            score = game?.score ?: 0L,
+                            successfulMovesInRun = game?.successfulMovesInRun ?: 0L,
+                        ),
+                    ),
+                    onConfirm = { acceptFromOverlay(origin, TwentyFortyEightStore.Intent.ConfirmRestart) },
+                    onDismiss = { acceptFromOverlay(origin, TwentyFortyEightStore.Intent.CancelOverlay) },
+                )
+                origin
+            }
         }
     }
 
-    private fun acceptFromOverlay(config: OverlayConfig, intent: TwentyFortyEightStore.Intent) {
-        if (overlay.value.child?.configuration == config) store.accept(intent)
+    private fun acceptFromOverlay(origin: OverlayComponent, intent: TwentyFortyEightStore.Intent) {
+        if (overlay.value.child?.instance === origin) store.accept(intent)
     }
 }
 
