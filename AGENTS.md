@@ -39,7 +39,8 @@ BlockBlast/
 │   ├── domain/                 Reusable domain contracts and app-level models
 │   ├── data/                   Repository implementations and settings persistence
 │   ├── telemetry/              Firebase analytics and Crashlytics abstraction
-│   └── pattern/                Exact generic temporal patterns and bounded queries
+│   ├── pattern/                Exact generic temporal patterns and bounded queries
+│   └── uikit/                  Shared Compose design system and adaptive game scaffold
 ├── feature/
 │   ├── root/                   Top-level navigation component
 │   ├── catalog/                Registry-backed MiniApp catalog and host-owned cards
@@ -83,6 +84,7 @@ BlockBlast/
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:core:pattern` | Exact, bounded and audio-independent temporal event patterns | no project dependency declared |
+| `:core:uikit` | Shared Compose theme, design-system components and the reusable Material 3 adaptive game scaffold | Compose convention, including Material 3 Adaptive |
 | `:feature:settings` | Settings components, stores and the confirmation/progress/result state holder for game-data reset | `:core:domain`, `:core:common`, `:miniapp:api` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
@@ -324,6 +326,9 @@ structural changes.
 - Declare project dependencies in the consuming module's `build.gradle.kts`.
 - Put shared KMP configuration in `build-logic/convention`; keep one-off module
   configuration local.
+- The shared Compose convention supplies Material 3 Adaptive to Compose modules.
+  Reusable breakpoint and pane policy belongs in `:core:uikit`; games consume the
+  shared `AdaptiveGameScaffold` instead of redefining size classes or layout modes.
 - Keep settings-phase MiniApp discovery in the isolated
   `build-logic/miniapp-settings` plugin artifact so applying it in root settings
   does not place project convention plugin descriptors on the build classpath.

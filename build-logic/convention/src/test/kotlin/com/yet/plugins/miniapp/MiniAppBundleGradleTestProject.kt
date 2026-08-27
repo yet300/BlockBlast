@@ -284,6 +284,7 @@ internal class MiniAppBundleGradleTestProject(
             serialization = "1.11.0"
             compose = "1.11.1"
             material3 = "1.10.0-alpha05"
+            material3Adaptive = "1.3.0-beta02"
             decompose = "3.5.0"
 
             [libraries]
@@ -296,6 +297,7 @@ internal class MiniAppBundleGradleTestProject(
             compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
             compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
             compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+            compose-material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "material3Adaptive" }
             compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
             compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose" }
             compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }
