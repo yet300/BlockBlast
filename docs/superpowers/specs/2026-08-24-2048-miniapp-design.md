@@ -407,7 +407,9 @@ Tile typography uses the existing emphasized numeric style with tabular alignmen
 
 ## 24. Adaptive policies
 
-The policy is a pure function of available width and height inside the MiniApp viewport. It reuses the repository's meaningful 840 dp wide breakpoint and 1200 dp content cap while adding only the necessary lower boundary:
+Adaptive classification and pane selection are shared UI infrastructure, not a 2048-owned enum/function pair. `:core:uikit` depends on `org.jetbrains.compose.material3.adaptive:adaptive` and owns one reusable `AdaptiveGameScaffold` backed by Material 3 `WindowSizeClass` breakpoints. Game modules provide primary/supporting slots and bounded sizing parameters; they do not recreate `WidthClass`, `HeightClass`, `LayoutMode`, or breakpoint logic.
+
+The shared scaffold classifies the available width and height inside the MiniApp viewport, rather than device identity or the full physical display. This preserves the host-owned toolbar/banner boundary while reusing Material 3's 600/840/480 dp breakpoints and the repository's 1200 dp content cap:
 
 - Compact: width `< 600dp`.
 - Medium: width `600dp..<840dp`.
@@ -420,7 +422,7 @@ Medium centers a board capped at 520 dp, uses adjacent or wrapped score/actions/
 
 Compact-height landscape uses a two-column layout: a square board bounded by available height and at least 240 dp where the window permits, plus an independently scrollable controls/support column. The board itself is never placed in the vertical scroller. The game swipe detector is attached to the full active gameplay viewport rather than the board, so board, score, actions and free background all share one large gesture surface. Inside the scrollable controls/support region, vertical drags belong to scrolling and horizontal drags belong to the game after axis lock. If both dimensions are below practical minima, scrolling remains confined to the content that needs it; the fixed gameplay root continues to receive swipes outside that scroll region.
 
-Window resize, split-screen, fold/unfold, and Activity recreation recompute layout without recreating Store/navigation state. Size-based behavior covers phone, tablet, iPhone, iPad, and non-occluding foldable profiles. The public MiniApp contract does not expose separating-hinge geometry; the design therefore does not claim hinge-aware placement across an occluding fold. That is an explicit host/adaptive API gap, mitigated by staying within current viewport constraints and verified with foldable resize/posture profiles.
+Window resize, split-screen, fold/unfold, and Activity recreation recompute the shared scaffold without recreating Store/navigation state. Size-based behavior covers phone, tablet, iPhone, iPad, and non-occluding foldable profiles. The public MiniApp contract does not expose separating-hinge geometry; the design therefore does not claim hinge-aware placement across an occluding fold. That is an explicit host/adaptive API gap, mitigated by staying within current viewport constraints and verified with foldable resize/posture profiles.
 
 ## 25. Gesture, keyboard, and accessibility input
 
@@ -701,13 +703,14 @@ No file below is created by this design. All Kotlin is `internal` unless the Min
 | `…/ui/TwentyFortyEightScreen.kt`, `PlayingContent.kt`, `ResultContent.kt` | Pure model rendering and intent forwarding; Compose/design system; UI tests/previews. |
 | `…/ui/Board.kt`, `Tile.kt`, `MoveTransition.kt` | Square board, stable-key layers, semantics and finite animation; Compose only; tile matrix/motion/semantics tests. |
 | `…/ui/ScoreBestRow.kt`, `GameActions.kt`, `VictoryOverlay.kt`, `StatisticsSheet.kt`, `RestartConfirmation.kt`, `TutorialOverlay.kt` | Focused slot UI with resource copy and accessible actions; Compose only; state/semantics tests. |
-| `…/ui/AdaptivePolicy.kt` | Pure constraint-to-layout mapping; no platform checks; breakpoint/resize tests. |
 | `…/ui/TwentyFortyEightSwipeDetector.kt`, `KeyboardInput.kt` | Internal pointer/key-to-direction recognition only; Compose input APIs; gesture/key tests. |
 | `src/commonMain/composeResources/values/strings.xml` | Default English title, short description, actions, content descriptions, announcements, plurals/errors; resource lint/UI tests. |
 | `src/commonMain/composeResources/drawable/miniapp_icon.xml` | Future original catalog icon only after design approval; catalog resource, not current output; manifest test. |
 | `src/commonTest/**` | Engine, Store, persistence, audio, component, DI/plugin, adaptive/input/semantics tests grouped with their subjects. |
 
 The future scaffold initially emits `Twentyfortyeight…` class names from the single ID segment. Game classes may be normalized to `TwentyFortyEight…` for readability, but the generated full-ID factory method remains exactly `createGameTwentyfortyeightSessionGraph` so sibling factories cannot collide.
+
+Shared adaptive infrastructure lives at `core/uikit/src/commonMain/kotlin/ge/yet/game/uikit/adaptive/AdaptiveGameScaffold.kt`. Its tests own Material breakpoint, compact-height, pane, cap, scroll-reachability, and live-resize behavior once for every game; 2048 UI tests verify only its own slot content and state continuity.
 
 ## 40. Risks and API gaps
 
