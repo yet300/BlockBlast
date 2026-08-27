@@ -12,8 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,16 +51,28 @@ internal fun PlayingContent(
     modifier: Modifier = Modifier,
     error: UiErrorCode? = null,
 ) {
+    var viewportOriginInRoot by remember { mutableStateOf(Offset.Zero) }
+    var supportBoundsInRoot by remember { mutableStateOf<Rect?>(null) }
+    val supportBoundsInViewport = supportBoundsInRoot?.translate(-viewportOriginInRoot)
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .onGloballyPositioned { viewportOriginInRoot = it.positionInRoot() }
+            .detectTwentyFortyEightSwipes(
+                enabled = model.gesturesEnabled,
+                supportBoundsInViewport = supportBoundsInViewport,
+                onDirection = onDirection,
+            )
             .testTag("gameplay_viewport"),
         contentAlignment = Alignment.Center,
     ) {
         AdaptiveGameScaffold(
             modifier = Modifier.fillMaxSize(),
-            supportingPaneModifier = Modifier.testTag("supporting_column"),
+            supportingPaneModifier = Modifier
+                .onGloballyPositioned { supportBoundsInRoot = it.boundsInRoot() }
+                .testTag("supporting_column"),
             primary = {
                 BoardOrLoading(
                     model = model,

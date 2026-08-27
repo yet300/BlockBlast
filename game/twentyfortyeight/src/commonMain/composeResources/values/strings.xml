@@ -26,12 +26,12 @@
     <string name="highest_tile">Highest tile</string>
     <string name="undo_uses">Undo uses</string>
 
-    <string name="tutorial_instruction">Swipe or use arrow keys to combine matching tiles.</string>
+    <string name="tutorial_instruction">Swipe to combine matching tiles.</string>
     <string name="restart_confirmation_title">Restart game?</string>
     <string name="restart_confirmation_body">Your score is %1$s after %2$s. Restarting begins a new game.</string>
     <string name="progress_not_saved">Progress could not be saved</string>
     <string name="new_game_not_saved">A new game could not be saved</string>
-    <string name="supporting_hint">Swipe anywhere in the game area or use arrow keys.</string>
+    <string name="supporting_hint">Swipe anywhere in the game area.</string>
 
     <string name="score_description">Score, %1$s</string>
     <string name="best_description">Best, %1$s</string>

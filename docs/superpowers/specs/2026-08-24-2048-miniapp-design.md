@@ -27,7 +27,7 @@ The future project is discoverable but unshipped. Discovery is not production au
 
 These decisions are the baseline submitted for approval with this document:
 
-- One classic 4×4 board, swipe and Arrow/WASD input, score, monotonic best score, one-step Undo, guarded Restart, incomplete-game restore, first-2048 victory, Continue, values above 2048, game over, statistics, and a first-run overlay.
+- One classic 4×4 board, viewport-wide swipe input, score, monotonic best score, one-step Undo, guarded Restart, incomplete-game restore, first-2048 victory, Continue, values above 2048, game over, statistics, and a first-run overlay.
 - A pure deterministic engine with injected RNG state; MVIKotlin owns asynchronous orchestration; Decompose owns internal navigation and modal ownership; Compose only renders immutable models and forwards intents.
 - The first direction entered while a visual move transition is active is retained in a one-slot pending queue. Further directions are ignored until the matching animation completes; persistence latency never extends that input gate.
 - Victory is a modal state over the live Playing child. Game Over is a separate Result child. Both Playing and Result use `MiniAppFrameMode.Standard`, retaining host Back, Settings, safe-area, and banner ownership.
@@ -324,7 +324,7 @@ DI tests must prove that app-scoped stateless persistence/analytics/diagnostics 
 
 The future manifest is exposed through `MiniAppPlugin`; the session implements `Background`, optional `TopBarContent`, `Content`, `frameMode`, and the optional generic `handleBack()` behavior above. The game background may fill the host background layer, while `LogicaTheme` and host chrome remain outside the game-local content styling boundary.
 
-`MiniAppVisibilitySource` gates input and lets the host-owned audio facade duck/suppress/pause correctly. Only an active, unobscured session accepts gesture, keyboard, custom accessibility actions, or modal confirmations. Obscuring does not destroy or mutate the game. Destruction closes the retained graph; the game never closes platform audio itself.
+`MiniAppVisibilitySource` gates input and lets the host-owned audio facade duck/suppress/pause correctly. Only an active, unobscured session accepts gestures, custom accessibility actions, or modal confirmations. Obscuring does not destroy or mutate the game. Destruction closes the retained graph; the game never closes platform audio itself.
 
 Review uses only `context.host.requestReview(MiniAppReviewOpportunity(triggerId = "twenty_forty_eight_first_victory", score, bestScore, revivesUsed = null))` at the first authoritative victory. Host review policy owns suppression and store SDK calls. Banner and safe-area layout remain in `MiniAppFrame`. No interstitial capability is consumed by default.
 
@@ -383,7 +383,7 @@ The screen consumes actual `LogicaTheme`/Material typography and existing warm t
 | Best gold | `#7A5710` | `#D7B769` | Crown/new-best foreground; contrast is 6.23:1 on light surface and 6.84:1 on dark surface. |
 | Outline | warm sand/ink at theme opacity | cream at theme opacity | Cells, focus, disabled boundaries. |
 
-Shadows are shallow and restricted to lifted tiles/modals. There is no glassmorphism, Haze, neon, pure-white canvas, cool-gray SaaS palette, permanent glow, or decorative gradient. Keyboard focus uses a two-tone outline that remains visible independently of tile color.
+Shadows are shallow and restricted to lifted tiles/modals. There is no glassmorphism, Haze, neon, pure-white canvas, cool-gray SaaS palette, permanent glow, or decorative gradient.
 
 ## 23. Tile readability matrix
 
@@ -424,15 +424,13 @@ Compact-height landscape uses a two-column layout: a square board bounded by ava
 
 Window resize, split-screen, fold/unfold, and Activity recreation recompute the shared scaffold without recreating Store/navigation state. Size-based behavior covers phone, tablet, iPhone, iPad, and non-occluding foldable profiles. The public MiniApp contract does not expose separating-hinge geometry; the design therefore does not claim hinge-aware placement across an occluding fold. That is an explicit host/adaptive API gap, mitigated by staying within current viewport constraints and verified with foldable resize/posture profiles.
 
-## 25. Gesture, keyboard, and accessibility input
+## 25. Gesture and accessibility input
 
 The game-owned `TwentyFortyEightSwipeDetector` is attached to the active gameplay viewport supplied to the MiniApp, below the host toolbar and above any host-owned banner. It accepts touch and mouse drag anywhere in that viewport, including the board, Score/Best region, game actions and free background; no visible direction buttons are added. It records one pointer, applies configurable distance and velocity thresholds, and emits at most one direction per gesture. Recognition uses the dominant axis; `abs(dx) >= abs(dy)` deterministically resolves an exact diagonal horizontally, otherwise vertically. Distance threshold is `max(touchSlop, min(viewportWidth, viewportHeight) * 0.08)` capped at 48 dp; velocity can recognize a shorter deliberate fling only after touch slop, with a default 650 dp/s. Pointer cancellation emits nothing.
 
 The detector does not consume movement until an axis locks. A pointer released before the threshold remains a tap, so Undo, Restart, Statistics and other controls keep their normal click behavior. Once a gameplay axis locks, the detector consumes the remainder and cancels the descendant click. A modal overlay disables viewport movement input completely. In an independently scrollable controls/support region, vertical axis lock is delegated to that scroller while horizontal axis lock becomes a game move; outside that region both axes become game moves. Tests cover swipes beginning over the board, score, free background and buttons; tap-versus-drag arbitration; modal blocking; vertical-scroll/horizontal-game nested handoff; mouse drag; cancellation; diagonal equality; thresholds; multi-pointer interruption; and one-emission behavior.
 
-The gameplay viewport is focusable and retains a `FocusRequester`. Arrow keys and physical W/A/S/D map to screen directions without adding on-screen direction controls; RTL does not mirror their mathematical meaning. Only the first `KeyDown` per pressed-key set emits; auto-repeat KeyDown is ignored until matching KeyUp. Modal presence, tutorial modal action focus, or non-active/obscured visibility disables movement keys. Resize requests focus only if focus belonged to the game before resize; the user does not need to tap after each change.
-
-The merged board semantics expose resource-backed custom actions Move up/down/left/right. Gesture, keyboard, and custom action all call the same component direction intent. Input mapping never examines legal moves or mutates game state.
+The merged board semantics expose resource-backed custom actions Move up/down/left/right. Gestures and custom accessibility actions call the same component direction intent. Input mapping never examines legal moves or mutates game state. There are no on-screen direction buttons.
 
 ## 26. Conditional `core:uikit` extraction decision
 
@@ -450,7 +448,7 @@ The detector remains internal to `:game:twentyfortyeight`. Extraction is reconsi
 
 ## 27. Tutorial
 
-After bootstrap confirms `tutorial_seen = false`, an inline overlay appears over the first real board. It shows one short resource string—proposed default English: “Swipe or use arrow keys to combine matching tiles.”—a reduced-motion-aware animated hand/arrow gesture, and a Skip action. The actual localized copy remains in Compose Resources.
+After bootstrap confirms `tutorial_seen = false`, an inline overlay appears over the first real board. It shows one short resource string—proposed default English: “Swipe to combine matching tiles.”—a reduced-motion-aware animated hand/arrow gesture, and a Skip action. The actual localized copy remains in Compose Resources.
 
 The board remains available to accessibility; the overlay is grouped, described, and placed after the board in focus order rather than hiding the board tree. The first successful move completes it with reason `MOVE`; Skip completes it with reason `SKIP` without touching board, score, Undo, statistics, or RNG. Completion is an authoritative Store transition and is checkpointed before the overlay is removed from restored state.
 
@@ -480,11 +478,11 @@ There is no animation work in the Reducer, no uncontrolled effect from recomposi
 - The board is one merged semantic node with a concise row-major summary such as “Board. Row 1: 2, empty, 4, empty…” and four custom move actions. Sixteen simultaneous tile nodes are suppressed.
 - A polite live-region node announces only useful authoritative changes: score delta plus largest merge, new best, victory, or game over. Spawn position and ordinary movement are not narrated.
 - Focus order is Score → Best/Crown → Board → Undo → Restart → active overlay. Victory and Game Over explicitly request accessibility focus after their transition; dismiss/Continue restores focus to Board.
-- Undo exposes disabled semantics and description. Every icon button has a resource content description, visible keyboard focus, pressed state, and at least 48×48 dp target.
+- Undo exposes disabled semantics and description. Every icon button has a resource content description, pressed state, and at least 48×48 dp target.
 - Crown's label includes “new best” and its pulse/outline/icon provide non-color cues. Tutorial text and Skip are screen-reader reachable.
 - Text scaling, 1–6 digit tile fitting, landscape scroll, and expanded layouts are tested at large font scales. No essential copy is clipped.
 - All tile/text and gold/surface pairs meet at least 4.5:1 in the defined matrices. Focus indicators target at least 3:1 against adjacent colors.
-- RTL mirrors general layout where appropriate but never remaps left/right board movement. Keyboard focus is visible on both themes.
+- RTL mirrors general layout where appropriate but never remaps left/right board movement.
 
 ## 30. Icon and Valkyrie prerequisites
 
@@ -665,7 +663,7 @@ MiniApp contract tests add the optional `MiniAppSession.handleBack(): Boolean = 
 
 ### Compose and input
 
-Existing Compose UI test infrastructure covers Compact/Medium/Expanded, compact height, portrait/landscape, split/resized constraints, light/dark, large text, tutorial, Undo enabled/disabled, Restart confirmation, statistics, tiles 2/2048/131072 and exponent fallback, Crown normal/new-best, Victory, Result, semantic board/custom actions, focus order, keyboard repeat suppression, viewport-wide gesture starts over board/score/background/actions, tap-versus-drag arbitration, gesture thresholds/cancel/diagonal/mouse/nested scroll, modal/obscured input, reduced motion, and state continuity during resize. No new screenshot framework is introduced.
+Existing Compose UI test infrastructure covers Compact/Medium/Expanded, compact height, portrait/landscape, split/resized constraints, light/dark, large text, tutorial, Undo enabled/disabled, Restart confirmation, statistics, tiles 2/2048/131072 and exponent fallback, Crown normal/new-best, Victory, Result, semantic board/custom actions, focus order, viewport-wide gesture starts over board/score/background/actions, tap-versus-drag arbitration, gesture thresholds/cancel/diagonal/mouse/nested scroll, modal/obscured input, reduced motion, and state continuity during resize. No new screenshot framework is introduced.
 
 ### Audio and platform
 
@@ -703,7 +701,7 @@ No file below is created by this design. All Kotlin is `internal` unless the Min
 | `…/ui/TwentyFortyEightScreen.kt`, `PlayingContent.kt`, `ResultContent.kt` | Pure model rendering and intent forwarding; Compose/design system; UI tests/previews. |
 | `…/ui/Board.kt`, `Tile.kt`, `MoveTransition.kt` | Square board, stable-key layers, semantics and finite animation; Compose only; tile matrix/motion/semantics tests. |
 | `…/ui/ScoreBestRow.kt`, `GameActions.kt`, `VictoryOverlay.kt`, `StatisticsSheet.kt`, `RestartConfirmation.kt`, `TutorialOverlay.kt` | Focused slot UI with resource copy and accessible actions; Compose only; state/semantics tests. |
-| `…/ui/TwentyFortyEightSwipeDetector.kt`, `KeyboardInput.kt` | Internal pointer/key-to-direction recognition only; Compose input APIs; gesture/key tests. |
+| `…/ui/SwipeDetector.kt` | Internal viewport-wide pointer-to-direction recognition only; Compose input APIs and gesture tests. |
 | `src/commonMain/composeResources/values/strings.xml` | Default English title, short description, actions, content descriptions, announcements, plurals/errors; resource lint/UI tests. |
 | `src/commonMain/composeResources/drawable/miniapp_icon.xml` | User-supplied approved catalog icon; manifest test. |
 | `src/commonTest/**` | Engine, Store, persistence, audio, component, DI/plugin, adaptive/input/semantics tests grouped with their subjects. |
@@ -744,7 +742,7 @@ Implementation may be planned only after the maintainer approves this written sp
 The eventual MiniApp is done only when:
 
 - all product rules, regressions, RNG determinism, score, persisted one-step Undo, victory/Continue, terminal detection, restore, statistics, tutorial, and reset semantics match this design;
-- UI is original, resource-backed, light/dark, contrast-verified, adaptive across the matrix, keyboard/mouse/touch accessible, screen-reader coherent, and reduced-motion safe;
+- UI is original, resource-backed, light/dark, contrast-verified, adaptive across the matrix, mouse/touch accessible, screen-reader coherent, and reduced-motion safe;
 - transition IDs prevent duplicate/stale animation, audio, analytics, review, focus, and announcement effects;
 - toolbar/system/predictive Back share Root's sheet → optional session → Catalog order; 2048 consumes only its three active slots and Block Blast/Counter keep default exit semantics;
 - storage uses only the session namespace, survives valid restore, safely rejects invalid versions/data, demonstrates one-in-flight/one-latest-pending ordering under failure/cancellation, and never extends the visual input gate;

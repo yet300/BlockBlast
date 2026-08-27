@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -13,12 +15,20 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -27,6 +37,7 @@ import ge.yet.game.twentyfortyeight.component.OverlayComponent
 import ge.yet.game.twentyfortyeight.component.PlayingComponent
 import ge.yet.game.twentyfortyeight.component.ResultComponent
 import ge.yet.game.twentyfortyeight.engine.Board
+import ge.yet.game.twentyfortyeight.engine.Direction
 import ge.yet.game.twentyfortyeight.engine.RuntimeBoard
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
 import ge.yet.game.uikit.theme.LogicaTheme
@@ -258,6 +269,181 @@ class TwentyFortyEightScreenTest {
         assertEquals(3, statisticsRequests)
     }
 
+    @Test
+    fun `horizontal swipe from support pane moves the game through full viewport detector`() =
+        runComposeUiTest {
+            val directions = mutableListOf<Direction>()
+            setContent {
+                LogicaTheme(darkTheme = false) {
+                    PlayingContent(
+                        model = playingModel(undoEnabled = true),
+                        onDirection = directions::add,
+                        onUndo = {},
+                        onRestart = {},
+                        onStatistics = {},
+                        onSkipTutorial = {},
+                        modifier = Modifier.size(800.dp, 479.dp),
+                    )
+                }
+            }
+
+            onNodeWithTag("gameplay_viewport").performTouchInput {
+                swipe(
+                    start = Offset(width * 0.9f, height * 0.5f),
+                    end = Offset(width * 0.7f, height * 0.5f),
+                    durationMillis = 250L,
+                )
+            }
+
+            assertEquals(listOf(Direction.Left), directions)
+        }
+
+    @Test
+    fun `vertical swipe from support pane delegates scrolling without moving the game`() =
+        runComposeUiTest {
+            val directions = mutableListOf<Direction>()
+            setContent {
+                LogicaTheme(darkTheme = false) {
+                    PlayingContent(
+                        model = playingModel(undoEnabled = true, tutorialVisible = true),
+                        onDirection = directions::add,
+                        onUndo = {},
+                        onRestart = {},
+                        onStatistics = {},
+                        onSkipTutorial = {},
+                        modifier = Modifier.size(800.dp, 479.dp),
+                    )
+                }
+            }
+
+            onNodeWithTag("gameplay_viewport").performTouchInput {
+                swipe(
+                    start = Offset(width * 0.9f, height * 0.8f),
+                    end = Offset(width * 0.9f, height * 0.2f),
+                    durationMillis = 250L,
+                )
+            }
+
+            assertTrue(directions.isEmpty())
+        }
+
+    @Test
+    fun `disabled viewport does not emit swipe moves`() = runComposeUiTest {
+        val directions = mutableListOf<Direction>()
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                PlayingContent(
+                    model = playingModel(undoEnabled = false, gesturesEnabled = false),
+                    onDirection = directions::add,
+                    onUndo = {},
+                    onRestart = {},
+                    onStatistics = {},
+                    onSkipTutorial = {},
+                    modifier = Modifier.size(400.dp, 700.dp),
+                )
+            }
+        }
+
+        onNodeWithTag("gameplay_viewport").performTouchInput { swipeLeft() }
+
+        assertTrue(directions.isEmpty())
+    }
+
+    @Test
+    fun `board score background and action regions share swipe arbitration`() = runComposeUiTest {
+        val directions = mutableListOf<Direction>()
+        var restartRequests = 0
+        var statisticsRequests = 0
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                PlayingContent(
+                    model = playingModel(undoEnabled = true),
+                    onDirection = directions::add,
+                    onUndo = {},
+                    onRestart = { restartRequests += 1 },
+                    onStatistics = { statisticsRequests += 1 },
+                    onSkipTutorial = {},
+                    modifier = Modifier.size(400.dp, 700.dp),
+                )
+            }
+        }
+
+        onNodeWithTag("game_board").performTouchInput { swipeUp() }
+        onNodeWithContentDescription("Restart").performTouchInput { swipeLeft() }
+        onNodeWithContentDescription("Statistics").performTouchInput { swipeLeft() }
+        onNodeWithTag("gameplay_viewport").performTouchInput {
+            swipe(
+                start = Offset(5f, 5f),
+                end = Offset(100f, 5f),
+                durationMillis = 250L,
+            )
+        }
+        onNodeWithContentDescription("Restart").performTouchInput { click() }
+
+        assertEquals(
+            listOf(Direction.Up, Direction.Left, Direction.Left, Direction.Right),
+            directions,
+        )
+        assertEquals(1, restartRequests)
+        assertEquals(0, statisticsRequests)
+    }
+
+    @Test
+    fun `mouse drag follows the same viewport-wide swipe path`() = runComposeUiTest {
+        val directions = mutableListOf<Direction>()
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                PlayingContent(
+                    model = playingModel(undoEnabled = true),
+                    onDirection = directions::add,
+                    onUndo = {},
+                    onRestart = {},
+                    onStatistics = {},
+                    onSkipTutorial = {},
+                    modifier = Modifier.size(400.dp, 700.dp),
+                )
+            }
+        }
+
+        onNodeWithTag("gameplay_viewport").performMouseInput {
+            moveTo(center)
+            press()
+            moveTo(Offset(center.x + 100f, center.y))
+            release()
+        }
+
+        assertEquals(listOf(Direction.Right), directions)
+    }
+
+    @Test
+    fun `detector is confined to viewport between host chrome regions`() = runComposeUiTest {
+        val directions = mutableListOf<Direction>()
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Column {
+                    Box(Modifier.size(400.dp, 50.dp).testTag("host_toolbar"))
+                    PlayingContent(
+                        model = playingModel(undoEnabled = true),
+                        onDirection = directions::add,
+                        onUndo = {},
+                        onRestart = {},
+                        onStatistics = {},
+                        onSkipTutorial = {},
+                        modifier = Modifier.size(400.dp, 600.dp),
+                    )
+                    Box(Modifier.size(400.dp, 50.dp).testTag("host_banner"))
+                }
+            }
+        }
+
+        onNodeWithTag("host_toolbar").performTouchInput { swipeLeft() }
+        onNodeWithTag("host_banner").performTouchInput { swipeLeft() }
+        assertTrue(directions.isEmpty())
+
+        onNodeWithTag("gameplay_viewport").performTouchInput { swipeLeft() }
+        assertEquals(listOf(Direction.Left), directions)
+    }
+
     private fun statisticsOverlay(): OverlayComponent.Statistics = OverlayComponent.Statistics(
         model = MutableValue(
             OverlayComponent.Model.Statistics(
@@ -277,11 +463,13 @@ class TwentyFortyEightScreenTest {
     private fun playingModel(
         undoEnabled: Boolean,
         tutorialVisible: Boolean = false,
+        gesturesEnabled: Boolean = true,
     ) = PlayingComponent.Model(
         board = board(),
         transition = null,
         score = 4096L,
         bestScore = 4096L,
+        gesturesEnabled = gesturesEnabled,
         undoEnabled = undoEnabled,
         tutorialVisible = tutorialVisible,
         overlay = null,
