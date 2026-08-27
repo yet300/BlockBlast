@@ -326,7 +326,8 @@ structural changes.
 - Declare project dependencies in the consuming module's `build.gradle.kts`.
 - Put shared KMP configuration in `build-logic/convention`; keep one-off module
   configuration local.
-- The shared Compose convention supplies Material 3 Adaptive to Compose modules.
+- The shared Compose convention supplies Material 3 Adaptive to `commonMain` and
+  Compose UI testing to `commonTest` for Compose modules.
   Reusable breakpoint and pane policy belongs in `:core:uikit`; games consume the
   shared `AdaptiveGameScaffold` instead of redefining size classes or layout modes.
 - Keep settings-phase MiniApp discovery in the isolated

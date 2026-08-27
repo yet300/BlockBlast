@@ -407,7 +407,7 @@ Tile typography uses the existing emphasized numeric style with tabular alignmen
 
 ## 24. Adaptive policies
 
-Adaptive classification and pane selection are shared UI infrastructure, not a 2048-owned enum/function pair. The shared Compose convention supplies `org.jetbrains.compose.material3.adaptive:adaptive` once to every Compose module; `:core:uikit` owns one reusable `AdaptiveGameScaffold` backed by Material 3 `WindowSizeClass` breakpoints. Game modules provide primary/supporting slots and bounded sizing parameters; they do not recreate `WidthClass`, `HeightClass`, `LayoutMode`, or breakpoint logic.
+Adaptive classification and pane selection are shared UI infrastructure, not a 2048-owned enum/function pair. The shared Compose convention supplies `org.jetbrains.compose.material3.adaptive:adaptive` once to every Compose module; `:core:uikit` owns one reusable `AdaptiveGameScaffold` backed by Material 3 `WindowSizeClass` breakpoints. Compact-height two-pane placement additionally requires enough local viewport width for a 240 dp primary pane, 280 dp supporting pane, spacing, and padding; narrower split-screen viewports fall back to vertical placement instead of collapsing the game. Game modules provide primary/supporting slots; they do not recreate `WidthClass`, `HeightClass`, `LayoutMode`, sizing constants, or breakpoint logic.
 
 The shared scaffold classifies the available width and height inside the MiniApp viewport, rather than device identity or the full physical display. This preserves the host-owned toolbar/banner boundary while reusing Material 3's 600/840/480 dp breakpoints and the repository's 1200 dp content cap:
 

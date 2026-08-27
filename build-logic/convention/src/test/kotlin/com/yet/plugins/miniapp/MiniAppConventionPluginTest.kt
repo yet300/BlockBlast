@@ -42,6 +42,9 @@ class MiniAppConventionPluginTest {
                 val implementationModules = configurations.getByName("commonMainImplementation").dependencies
                     .filterIsInstance<org.gradle.api.artifacts.ExternalModuleDependency>()
                     .map { "${'$'}{it.group}:${'$'}{it.name}" }.sorted()
+                val testImplementationModules = configurations.getByName("commonTestImplementation").dependencies
+                    .filterIsInstance<org.gradle.api.artifacts.ExternalModuleDependency>()
+                    .map { "${'$'}{it.group}:${'$'}{it.name}" }.sorted()
                 val probe = listOf(
                             plugins.hasPlugin("com.plugins.kotlinMultiplatformPlugin"),
                             plugins.hasPlugin("org.jetbrains.kotlin.multiplatform"),
@@ -58,6 +61,8 @@ class MiniAppConventionPluginTest {
                             implementationProjects,
                             implementationModules.contains("org.jetbrains.compose.components:components-resources"),
                             implementationModules.contains("com.arkivanov.decompose:extensions-compose"),
+                            implementationModules.contains("org.jetbrains.compose.material3.adaptive:adaptive"),
+                            testImplementationModules.contains("org.jetbrains.compose.ui:ui-test"),
                             configurations.getByName("commonTestImplementation").dependencies.filterIsInstance<org.gradle.api.artifacts.ProjectDependency>().map { it.path }.sorted(),
                             tasks.getByName("check").taskDependencies.getDependencies(tasks.getByName("check")).map { it.name }.contains("validateMiniAppDependencies"),
                             tasks.getByName("allTests").taskDependencies.getDependencies(tasks.getByName("allTests")).map { it.name }.contains("validateMiniAppDependencies"),
@@ -68,7 +73,7 @@ class MiniAppConventionPluginTest {
         val first = project.run(":game:blockblast:probeConvention")
         project.run(":game:blockblast:validateMiniAppDependencies", "--configuration-cache", "--configuration-cache-problems=fail")
         val second = project.run(":game:blockblast:validateMiniAppDependencies", "--configuration-cache", "--configuration-cache-problems=fail")
-        assertContains(first.output, "PROBE=[true, true, true, true, true, true, true, true, true, false, ge.yet.game.blockblast.generated.resources, [:miniapp:metro], [:miniapp:audio-presets], true, true, [:miniapp:testkit], true, true]")
+        assertContains(first.output, "PROBE=[true, true, true, true, true, true, true, true, true, false, ge.yet.game.blockblast.generated.resources, [:miniapp:metro], [:miniapp:audio-presets], true, true, true, true, [:miniapp:testkit], true, true]")
         assertContains(second.output, "Reusing configuration cache")
     }
 }
