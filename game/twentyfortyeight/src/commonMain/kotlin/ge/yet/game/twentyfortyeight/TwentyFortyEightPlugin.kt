@@ -28,7 +28,7 @@ class TwentyFortyEightPlugin(
         icon = Res.drawable.miniapp_icon,
         cover = null,
         category = MiniAppCategoryId("game"),
-        sortPriority = 0,
+        sortPriority = 100,
     )
 
     override fun createSession(context: MiniAppSessionContext): MiniAppSession {

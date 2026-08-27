@@ -339,7 +339,7 @@ The future catalog manifest is fixed as follows:
 | Category | `MiniAppCategoryId("game")` |
 | Default-English description | `Slide matching tiles and shape the board toward 2048.` |
 | Sort priority | `100` while unshipped; production ordering remains a maintainer decision. |
-| Icon | Original 24 dp vector: two offset cream tiles converging into one terracotta tile with a small gold corner mark; no borrowed number grid, palette, or asset. |
+| Icon | User-supplied approved cube/2048 vector in `miniapp_icon.xml`; keep the asset unchanged and constrain it at the catalog call site. |
 | Cover | `null` |
 | Deep link/context menu | None; the public manifest exposes no such requirement. |
 
@@ -705,7 +705,7 @@ No file below is created by this design. All Kotlin is `internal` unless the Min
 | `…/ui/ScoreBestRow.kt`, `GameActions.kt`, `VictoryOverlay.kt`, `StatisticsSheet.kt`, `RestartConfirmation.kt`, `TutorialOverlay.kt` | Focused slot UI with resource copy and accessible actions; Compose only; state/semantics tests. |
 | `…/ui/TwentyFortyEightSwipeDetector.kt`, `KeyboardInput.kt` | Internal pointer/key-to-direction recognition only; Compose input APIs; gesture/key tests. |
 | `src/commonMain/composeResources/values/strings.xml` | Default English title, short description, actions, content descriptions, announcements, plurals/errors; resource lint/UI tests. |
-| `src/commonMain/composeResources/drawable/miniapp_icon.xml` | Future original catalog icon only after design approval; catalog resource, not current output; manifest test. |
+| `src/commonMain/composeResources/drawable/miniapp_icon.xml` | User-supplied approved catalog icon; manifest test. |
 | `src/commonTest/**` | Engine, Store, persistence, audio, component, DI/plugin, adaptive/input/semantics tests grouped with their subjects. |
 
 The future scaffold initially emits `Twentyfortyeight…` class names from the single ID segment. Game classes may be normalized to `TwentyFortyEight…` for readability, but the generated full-ID factory method remains exactly `createGameTwentyfortyeightSessionGraph` so sibling factories cannot collide.

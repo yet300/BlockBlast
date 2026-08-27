@@ -10,6 +10,7 @@ import dev.zacsweers.metro.createGraph
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.domain.repository.CrashlyticsRepository
 import ge.yet.game.miniapp.api.MiniAppId
+import ge.yet.game.miniapp.api.MiniAppCategoryId
 import ge.yet.game.miniapp.audio.presets.PlacementClick
 import ge.yet.game.miniapp.compose.MiniAppRegistry
 import ge.yet.game.miniapp.metro.MiniAppMetroBindings
@@ -19,8 +20,14 @@ import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
 import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import ge.yet.game.twentyfortyeight.di.TwentyFortyEightAppBindings
+import ge.yet.game.twentyfortyeight.generated.resources.Res
+import ge.yet.game.twentyfortyeight.generated.resources.miniapp_description
+import ge.yet.game.twentyfortyeight.generated.resources.miniapp_icon
+import ge.yet.game.twentyfortyeight.generated.resources.miniapp_title
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @DependencyGraph(
     scope = AppScope::class,
@@ -47,6 +54,21 @@ internal object TwentyFortyEightGraphTestBindings {
 }
 
 class TwentyFortyEightPluginContractTest {
+    @Test
+    fun `manifest exposes the approved catalog resources and ordering`() {
+        val plugin = assertNotNull(
+            createGraph<TwentyFortyEightPluginTestGraph>().registry[MiniAppId("game.twentyfortyeight")],
+        )
+
+        assertEquals(MiniAppId("game.twentyfortyeight"), plugin.manifest.id)
+        assertEquals(Res.string.miniapp_title, plugin.manifest.title)
+        assertEquals(Res.string.miniapp_description, plugin.manifest.description)
+        assertEquals(Res.drawable.miniapp_icon, plugin.manifest.icon)
+        assertNull(plugin.manifest.cover)
+        assertEquals(MiniAppCategoryId("game"), plugin.manifest.category)
+        assertEquals(100, plugin.manifest.sortPriority)
+    }
+
     @Test
     fun `isolated graph contains exactly this plugin`() {
         val expectedId = MiniAppId("game.twentyfortyeight")
