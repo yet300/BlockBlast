@@ -74,7 +74,7 @@ fun `new game clears record improvement fact`() {
 Run:
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*GameRulesTest' --tests '*GameStateTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*GameRulesTest' --tests '*GameStateTest'
 ```
 
 Expected: compilation fails because `RunFacts.bestImprovedInRun` does not exist.
@@ -163,7 +163,7 @@ The persistence integration test must also assert that an invalid current game b
 - [ ] **Step 2: Run persistence tests and verify RED**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*TwentyFortyEightSchemasTest' --tests '*TwentyFortyEightPersistenceTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*TwentyFortyEightSchemasTest' --tests '*TwentyFortyEightPersistenceTest'
 ```
 
 Expected: compilation fails on the missing serialized field.
@@ -248,7 +248,7 @@ Retain all tests for `GameStatistics`, storage operations `StatisticsRead`/`Stat
 - [ ] **Step 2: Run affected tests and verify RED**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*StoreTest' --tests '*StorePersistenceTest' --tests '*SessionComponentTest' --tests '*LifecycleIntegrationTest' --tests '*TwentyFortyEightScreenTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*StoreTest' --tests '*StorePersistenceTest' --tests '*SessionComponentTest' --tests '*LifecycleIntegrationTest' --tests '*TwentyFortyEightScreenTest'
 ```
 
 Expected: old Statistics intent/component/UI remains visible or signatures still require callbacks.
@@ -325,7 +325,7 @@ Use distinct values so merged semantics do not make text queries ambiguous.
 - [ ] **Step 2: Run the UI test and verify RED**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*TwentyFortyEightScreenTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*TwentyFortyEightScreenTest'
 ```
 
 Expected: missing model field and old two-card labels/click semantics.
@@ -405,7 +405,7 @@ At `320.dp × 360.dp` and font scale `2f`, scroll the node tagged `result_scroll
 - [ ] **Step 2: Run result tests and verify RED**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*TwentyFortyEightScreenTest' --tests '*SessionComponentTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*TwentyFortyEightScreenTest' --tests '*SessionComponentTest'
 ```
 
 Expected: old selected statistics and two-pane layout remain.
@@ -533,7 +533,7 @@ Keep existing cancellation, disabled, scroll-delegation, touch-slop, and invalid
 - [ ] **Step 2: Run swipe tests and verify RED**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*SwipeDetectorTest' --tests '*TwentyFortyEightScreenTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*SwipeDetectorTest' --tests '*TwentyFortyEightScreenTest'
 ```
 
 Expected: exact diagonal currently resolves horizontally and threshold/velocity defaults are too high.
@@ -622,7 +622,7 @@ Also assert all values are finite/positive and effect count is at most the merge
 - [ ] **Step 2: Run transition tests and verify RED**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*MergeMotionTest' --tests '*TransitionGateTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*MergeMotionTest' --tests '*TransitionGateTest'
 ```
 
 Expected: the liquid model/functions do not exist.
@@ -698,7 +698,7 @@ Do not add blur, `RenderEffect`, shaders, bitmaps, draw-time collections, or per
 - [ ] **Step 6: Run transition tests and full UI tests**
 
 ```bash
-rtk ./gradlew :game:twentyfortyeight:allTests --tests '*MergeMotionTest' --tests '*TransitionGateTest' --tests '*TwentyFortyEightScreenTest'
+rtk ./gradlew :game:twentyfortyeight:iosSimulatorArm64Test --tests '*MergeMotionTest' --tests '*TransitionGateTest' --tests '*TwentyFortyEightScreenTest'
 ```
 
 Expected: PASS.

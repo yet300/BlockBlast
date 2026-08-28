@@ -22,6 +22,7 @@ internal data class RunFacts(
     val victoryAcknowledged: Boolean = false,
     val gamesWonRecorded: Boolean = false,
     val reviewReserved: Boolean = false,
+    val bestImprovedInRun: Boolean = false,
     val analyticsReservations: Set<String> = emptySet(),
     val milestoneReservations: Set<Long> = emptySet(),
 )

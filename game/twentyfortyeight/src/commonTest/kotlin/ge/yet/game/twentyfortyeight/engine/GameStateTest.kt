@@ -2,6 +2,7 @@ package ge.yet.game.twentyfortyeight.engine
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
@@ -275,6 +276,61 @@ class GameStateTest {
         assertEquals(4, merged.game.momentumStreak)
         assertEquals(0, slid.game.momentumStreak)
         assertEquals(merged.game.score, merged.game.bestScore)
+    }
+
+    @Test
+    fun `strict best improvement is retained through undo`() {
+        val initial = rulesState(
+            board = runtimeBoardOf(
+                2L, 2L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            bestScore = 2L,
+        )
+
+        val accepted = GameRules.acceptChanged(initial, changedMove(initial, Direction.Left))
+        assertTrue(accepted.game.facts.bestImprovedInRun)
+
+        val undone = assertIs<UndoResult.Changed>(GameRules.undo(accepted)).state
+        assertTrue(undone.game.facts.bestImprovedInRun)
+    }
+
+    @Test
+    fun `tying prior best does not mark run as improved`() {
+        val initial = rulesState(
+            board = runtimeBoardOf(
+                2L, 2L, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            bestScore = 4L,
+        )
+
+        val accepted = GameRules.acceptChanged(initial, changedMove(initial, Direction.Left))
+
+        assertEquals(4L, accepted.game.score)
+        assertFalse(accepted.game.facts.bestImprovedInRun)
+    }
+
+    @Test
+    fun `new game clears record improvement fact`() {
+        val previous = rulesState(
+            board = runtimeBoardOf(
+                8L, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null,
+            ),
+            bestScore = 64L,
+            facts = RunFacts(bestImprovedInRun = true),
+        )
+
+        val restarted = GameRules.newGame(previous, RngState.fromBits(7uL))
+
+        assertFalse(restarted.game.facts.bestImprovedInRun)
     }
 }
 

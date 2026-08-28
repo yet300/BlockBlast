@@ -46,6 +46,8 @@ internal object GameRules {
             victoryReached = state.game.facts.victoryReached || firstVictory,
             gamesWonRecorded = state.game.facts.gamesWonRecorded || firstVictory,
             reviewReserved = state.game.facts.reviewReserved || firstVictory,
+            bestImprovedInRun = state.game.facts.bestImprovedInRun ||
+                move.scoreAfter > state.game.bestScore,
             analyticsReservations = if (firstVictory) {
                 state.game.facts.analyticsReservations + VICTORY_ANALYTICS_RESERVATION
             } else {
