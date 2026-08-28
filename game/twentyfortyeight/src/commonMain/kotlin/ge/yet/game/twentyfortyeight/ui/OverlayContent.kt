@@ -29,19 +29,10 @@ import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.best
 import ge.yet.game.twentyfortyeight.generated.resources.cancel
 import ge.yet.game.twentyfortyeight.generated.resources.continue_game
-import ge.yet.game.twentyfortyeight.generated.resources.games_ended_by_game_over
-import ge.yet.game.twentyfortyeight.generated.resources.games_started
-import ge.yet.game.twentyfortyeight.generated.resources.games_won
-import ge.yet.game.twentyfortyeight.generated.resources.highest_tile_ever
 import ge.yet.game.twentyfortyeight.generated.resources.restart
 import ge.yet.game.twentyfortyeight.generated.resources.restart_confirmation_body
 import ge.yet.game.twentyfortyeight.generated.resources.restart_confirmation_title
 import ge.yet.game.twentyfortyeight.generated.resources.score
-import ge.yet.game.twentyfortyeight.generated.resources.statistics
-import ge.yet.game.twentyfortyeight.generated.resources.successful_moves
-import ge.yet.game.twentyfortyeight.generated.resources.total_merges
-import ge.yet.game.twentyfortyeight.generated.resources.total_score_earned
-import ge.yet.game.twentyfortyeight.generated.resources.undo_uses
 import ge.yet.game.twentyfortyeight.generated.resources.victory
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
@@ -64,14 +55,6 @@ internal fun OverlayContent(
                 onDismiss = component::onDismissRequested,
                 modifier = modifier,
                 focusRequester = victoryFocusRequester,
-            )
-        }
-        is OverlayComponent.Statistics -> {
-            val model by component.model.subscribeAsState()
-            StatisticsOverlay(
-                model = model,
-                onDismiss = component::onDismissRequested,
-                modifier = modifier,
             )
         }
         is OverlayComponent.RestartConfirmation -> {
@@ -148,61 +131,6 @@ private fun VictoryOverlay(
                         normalDurationMs = MotionPolicy.Normal.crownMs,
                         delayMs = MotionPolicy.Normal.victoryMaxStaggerMs,
                     ),
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatisticsOverlay(
-    model: OverlayComponent.Model.Statistics,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ClaudeBottomSheet(onDismiss = onDismiss, modifier = modifier) {
-        OverlayColumn {
-            Text(
-                text = stringResource(Res.string.statistics),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.games_started),
-                gamesValue(model.gamesStarted),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.games_won),
-                gamesValue(model.gamesWon),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.games_ended_by_game_over),
-                gamesValue(model.gamesEndedByGameOver),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.successful_moves),
-                movesValue(model.successfulMoves),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.total_merges),
-                mergesValue(model.totalMerges),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.total_score_earned),
-                model.totalScoreEarned.formatScore(),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.highest_tile_ever),
-                model.highestTileEver.formatScore(),
-            )
-            OverlayStatisticRow(
-                stringResource(Res.string.undo_uses),
-                undoUsesValue(model.undoUses),
-            )
-            SecondaryWarmSandButton(
-                text = stringResource(Res.string.cancel),
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

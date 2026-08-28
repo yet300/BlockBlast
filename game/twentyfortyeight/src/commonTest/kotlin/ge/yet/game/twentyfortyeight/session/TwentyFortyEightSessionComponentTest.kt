@@ -78,15 +78,17 @@ class TwentyFortyEightSessionComponentTest {
 
     @Test
     fun `2048 consumes Back only for active Playing overlay`() = runTest(dispatcher) {
-        val harness = componentHarness(unfinishedData())
+        val harness = componentHarness(
+            unfinishedData(playableGame(score = 4L).copy(successfulMovesInRun = 1L)),
+        )
         advanceUntilIdle()
         val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
             harness.component.stack.value.active.instance,
         ).component
 
         assertFalse(harness.component.handleBack())
-        playing.onStatisticsRequested()
-        assertIs<OverlayComponent.Model.Statistics>(playing.overlay.value.child?.instance?.model?.value)
+        playing.onRestartRequested()
+        assertIs<OverlayComponent.Model.RestartConfirmation>(playing.overlay.value.child?.instance?.model?.value)
         assertTrue(harness.component.handleBack())
         assertNull(playing.overlay.value.child)
 
@@ -255,25 +257,6 @@ class TwentyFortyEightSessionComponentTest {
     }
 
     @Test
-    fun `Back keeps an obscured active overlay coherent`() = runTest(dispatcher) {
-        val harness = componentHarness(unfinishedData())
-        advanceUntilIdle()
-        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
-            harness.component.stack.value.active.instance,
-        ).component
-        playing.onStatisticsRequested()
-        val statistics = assertIs<OverlayComponent.Statistics>(playing.overlay.value.child?.instance)
-        harness.visibility.set(MiniAppVisibility.OBSCURED)
-        runCurrent()
-
-        assertTrue(harness.component.handleBack())
-        assertEquals(OverlayState.Statistics, harness.component.retainedStore.state.overlay)
-        assertEquals(OverlayState.Statistics, playing.model.value.overlay)
-        assertSame(statistics, playing.overlay.value.child?.instance)
-        harness.destroy()
-    }
-
-    @Test
     fun `stale Victory callbacks cannot affect RestartConfirmation`() = runTest(dispatcher) {
         val victorious = playableGame(score = 4L).copy(
             successfulMovesInRun = 1L,
@@ -346,28 +329,6 @@ class TwentyFortyEightSessionComponentTest {
 
         assertEquals(before, harness.component.retainedStore.state)
         assertSame(replacementVictory, playing.overlay.value.child?.instance)
-        harness.destroy()
-    }
-
-    @Test
-    fun `stale Statistics dismissal cannot affect replacement Statistics`() = runTest(dispatcher) {
-        val harness = componentHarness(unfinishedData())
-        advanceUntilIdle()
-        val playing = assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
-            harness.component.stack.value.active.instance,
-        ).component
-        playing.onStatisticsRequested()
-        val firstStatistics = assertIs<OverlayComponent.Statistics>(playing.overlay.value.child?.instance)
-        firstStatistics.onDismissRequested()
-        playing.onStatisticsRequested()
-        val replacementStatistics = assertIs<OverlayComponent.Statistics>(playing.overlay.value.child?.instance)
-        assertNotSame(firstStatistics, replacementStatistics)
-        val before = harness.component.retainedStore.state
-
-        firstStatistics.onDismissRequested()
-
-        assertEquals(before, harness.component.retainedStore.state)
-        assertSame(replacementStatistics, playing.overlay.value.child?.instance)
         harness.destroy()
     }
 
@@ -470,29 +431,6 @@ class TwentyFortyEightSessionComponentTest {
     }
 
     @Test
-    fun `StateKeeper restores Statistics overlay`() = runTest(dispatcher) {
-        val stateKeeper = StateKeeperDispatcher()
-        val first = componentHarness(unfinishedData(), stateKeeper = stateKeeper)
-        advanceUntilIdle()
-        first.playing().onStatisticsRequested()
-        val saved = stateKeeper.save()
-        val keeper = first.instanceKeeper
-        first.destroy()
-
-        val restored = componentHarness(
-            unfinishedData(),
-            instanceKeeper = keeper,
-            visibility = first.visibility,
-            stateKeeper = StateKeeperDispatcher(saved),
-        )
-
-        assertIs<OverlayComponent.Model.Statistics>(restored.playing().overlay.value.child?.instance?.model?.value)
-        assertEquals(OverlayState.Statistics, restored.component.retainedStore.state.overlay)
-        restored.destroy()
-        keeper.destroy()
-    }
-
-    @Test
     fun `StateKeeper restores RestartConfirmation overlay`() = runTest(dispatcher) {
         val progressed = playableGame(score = 4L).copy(successfulMovesInRun = 1L)
         val stateKeeper = StateKeeperDispatcher()
@@ -559,13 +497,16 @@ class TwentyFortyEightSessionComponentTest {
     @Test
     fun `2048 routers do not register a Decompose BackCallback`() = runTest(dispatcher) {
         val backDispatcher = BackDispatcher()
-        val harness = componentHarness(unfinishedData(), backDispatcher = backDispatcher)
+        val harness = componentHarness(
+            unfinishedData(playableGame(score = 4L).copy(successfulMovesInRun = 1L)),
+            backDispatcher = backDispatcher,
+        )
         advanceUntilIdle()
-        harness.playing().onStatisticsRequested()
+        harness.playing().onRestartRequested()
 
         assertFalse(backDispatcher.isEnabled)
         assertFalse(backDispatcher.back())
-        assertIs<OverlayComponent.Statistics>(harness.playing().overlay.value.child?.instance)
+        assertIs<OverlayComponent.RestartConfirmation>(harness.playing().overlay.value.child?.instance)
         harness.destroy()
     }
 
@@ -634,7 +575,7 @@ class TwentyFortyEightSessionComponentTest {
         ).component
         assertTrue(playing.model.value.undoEnabled)
 
-        playing.onStatisticsRequested()
+        playing.onRestartRequested()
         assertFalse(playing.model.value.undoEnabled)
         present.destroy()
     }

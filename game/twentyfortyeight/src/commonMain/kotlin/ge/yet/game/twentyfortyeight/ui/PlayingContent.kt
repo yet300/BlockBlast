@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,7 +32,6 @@ import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.loading_game
 import ge.yet.game.twentyfortyeight.generated.resources.new_game_not_saved
 import ge.yet.game.twentyfortyeight.generated.resources.progress_not_saved
-import ge.yet.game.twentyfortyeight.generated.resources.supporting_hint
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
 import ge.yet.game.uikit.adaptive.AdaptiveGameScaffold
 import org.jetbrains.compose.resources.stringResource
@@ -45,7 +42,6 @@ internal fun PlayingContent(
     onDirection: (Direction) -> Unit,
     onUndo: () -> Unit,
     onRestart: () -> Unit,
-    onStatistics: () -> Unit,
     onSkipTutorial: () -> Unit,
     onTransitionCompleted: (Long) -> Unit = {},
     boardFocusRequester: FocusRequester? = null,
@@ -97,7 +93,6 @@ internal fun PlayingContent(
                     ScoreBestRow(
                         score = model.score,
                         bestScore = model.bestScore,
-                        onStatistics = onStatistics,
                         transition = model.transition,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -181,12 +176,6 @@ private fun SupportingContent(
             onUndo = onUndo,
             onRestart = onRestart,
         )
-        Text(
-            text = stringResource(Res.string.supporting_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
         val effectiveError = error ?: if (
             model.persistenceStatus == PlayingComponent.PersistenceStatus.Dirty
         ) {
@@ -202,7 +191,6 @@ private fun SupportingContent(
                 textAlign = TextAlign.Center,
             )
         }
-        Spacer(Modifier.height(2.dp))
     }
 }
 

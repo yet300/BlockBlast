@@ -47,6 +47,26 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class TwentyFortyEightScreenTest {
     @Test
+    fun `playing surface exposes neither statistics nor swipe hint`() = runComposeUiTest {
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                PlayingContent(
+                    model = playingModel(undoEnabled = false),
+                    onDirection = {},
+                    onUndo = {},
+                    onRestart = {},
+                    onSkipTutorial = {},
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        onNodeWithContentDescription("Statistics").assertDoesNotExist()
+        onNodeWithText("Statistics").assertDoesNotExist()
+        onNodeWithText("Swipe anywhere in the game area.").assertDoesNotExist()
+    }
+
+    @Test
     fun `accessibility traversal follows score best board actions and tutorial`() =
         runComposeUiTest {
             setContent {
@@ -56,7 +76,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = {},
                         onUndo = {},
                         onRestart = {},
-                        onStatistics = {},
                         onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 600.dp),
                     )
@@ -64,7 +83,7 @@ class TwentyFortyEightScreenTest {
             }
 
             val score = onNodeWithContentDescription("Score, 4,096").fetchSemanticsNode()
-            val best = onNodeWithContentDescription("Statistics").fetchSemanticsNode()
+            val best = onNodeWithContentDescription("Best, new best, 4,096").fetchSemanticsNode()
             val board = onNode(
                 SemanticsMatcher("board summary") { node ->
                     node.config.contains(SemanticsProperties.ContentDescription) &&
@@ -86,9 +105,8 @@ class TwentyFortyEightScreenTest {
         }
 
     @Test
-    fun `playing actions expose enabled state targets and full statistics`() = runComposeUiTest {
+    fun `playing actions expose enabled state and touch targets`() = runComposeUiTest {
         var restartRequests = 0
-        var statisticsRequests = 0
         var density = 1f
         setContent {
             LogicaTheme(darkTheme = false) {
@@ -98,7 +116,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = {},
                     onUndo = {},
                     onRestart = { restartRequests += 1 },
-                    onStatistics = { statisticsRequests += 1 },
                     onSkipTutorial = {},
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -107,17 +124,7 @@ class TwentyFortyEightScreenTest {
 
         onNodeWithContentDescription("Undo").assertIsNotEnabled()
         onNodeWithContentDescription("Restart").assertHasClickAction().performClick()
-        onNodeWithContentDescription("Statistics")
-            .assertHasClickAction()
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.StateDescription,
-                    "Best, new best, 4,096",
-                ),
-            )
-            .performClick()
         assertEquals(1, restartRequests)
-        assertEquals(1, statisticsRequests)
         onNodeWithContentDescription(
             "Best, new best, 4,096",
             useUnmergedTree = true,
@@ -133,21 +140,6 @@ class TwentyFortyEightScreenTest {
         assertTrue(undoBounds.height >= 48.dp.value * density)
         assertTrue(restartBounds.width >= 48.dp.value * density)
         assertTrue(restartBounds.height >= 48.dp.value * density)
-
-        setContent {
-            LogicaTheme(darkTheme = false) {
-                OverlayContent(statisticsOverlay())
-            }
-        }
-        onNodeWithText("Statistics").assertIsDisplayed()
-        onNodeWithText("Games started").assertIsDisplayed()
-        onNodeWithText("Games won").assertIsDisplayed()
-        onNodeWithText("Games ended by game over").assertIsDisplayed()
-        onNodeWithText("Successful moves").assertIsDisplayed()
-        onNodeWithText("Total merges").assertIsDisplayed()
-        onNodeWithText("Total score earned").assertIsDisplayed()
-        onNodeWithText("Highest tile ever").assertIsDisplayed()
-        onNodeWithText("Undo uses").assertIsDisplayed()
     }
 
     @Test
@@ -234,7 +226,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = {},
                         onUndo = {},
                         onRestart = {},
-                        onStatistics = {},
                         onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 479.dp),
                     )
@@ -263,7 +254,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = {},
                     onUndo = {},
                     onRestart = {},
-                    onStatistics = {},
                     onSkipTutorial = {},
                     modifier = Modifier.size(1200.dp, 900.dp),
                 )
@@ -281,15 +271,14 @@ class TwentyFortyEightScreenTest {
     fun `live layout changes retain the same model and callbacks`() = runComposeUiTest {
         val model = playingModel(undoEnabled = true)
         val viewport = mutableStateOf(DpSize(599.dp, 800.dp))
-        var statisticsRequests = 0
+        var restartRequests = 0
         setContent {
             LogicaTheme(darkTheme = false) {
                 PlayingContent(
                     model = model,
                     onDirection = {},
                     onUndo = {},
-                    onRestart = {},
-                    onStatistics = { statisticsRequests += 1 },
+                    onRestart = { restartRequests += 1 },
                     onSkipTutorial = {},
                     modifier = Modifier.size(viewport.value.width, viewport.value.height),
                 )
@@ -298,17 +287,14 @@ class TwentyFortyEightScreenTest {
 
         onNodeWithTag("game_board").assertIsDisplayed()
         onNodeWithTag("supporting_column").assertIsDisplayed()
-        onNodeWithContentDescription("Statistics").performClick()
         runOnIdle { viewport.value = DpSize(600.dp, 800.dp) }
         onNodeWithTag("game_board").assertIsDisplayed()
         onNodeWithTag("supporting_column").assertIsDisplayed()
-        onNodeWithContentDescription("Statistics").performClick()
         runOnIdle { viewport.value = DpSize(840.dp, 800.dp) }
         onNodeWithTag("game_board").assertIsDisplayed()
         onNodeWithTag("supporting_column").assertIsDisplayed()
-        onNodeWithContentDescription("Statistics").performClick()
-
-        assertEquals(3, statisticsRequests)
+        onNodeWithContentDescription("Restart").performClick()
+        assertEquals(1, restartRequests)
     }
 
     @Test
@@ -322,7 +308,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = directions::add,
                         onUndo = {},
                         onRestart = {},
-                        onStatistics = {},
                         onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 479.dp),
                     )
@@ -351,7 +336,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = directions::add,
                         onUndo = {},
                         onRestart = {},
-                        onStatistics = {},
                         onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 479.dp),
                     )
@@ -379,7 +363,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = {},
-                    onStatistics = {},
                     onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
@@ -395,7 +378,6 @@ class TwentyFortyEightScreenTest {
     fun `board score background and action regions share swipe arbitration`() = runComposeUiTest {
         val directions = mutableListOf<Direction>()
         var restartRequests = 0
-        var statisticsRequests = 0
         setContent {
             LogicaTheme(darkTheme = false) {
                 PlayingContent(
@@ -403,7 +385,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = { restartRequests += 1 },
-                    onStatistics = { statisticsRequests += 1 },
                     onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
@@ -412,7 +393,6 @@ class TwentyFortyEightScreenTest {
 
         onNodeWithTag("game_board").performTouchInput { swipeUp() }
         onNodeWithContentDescription("Restart").performTouchInput { swipeLeft() }
-        onNodeWithContentDescription("Statistics").performTouchInput { swipeLeft() }
         onNodeWithTag("gameplay_viewport").performTouchInput {
             swipe(
                 start = Offset(5f, 5f),
@@ -423,11 +403,10 @@ class TwentyFortyEightScreenTest {
         onNodeWithContentDescription("Restart").performTouchInput { click() }
 
         assertEquals(
-            listOf(Direction.Up, Direction.Left, Direction.Left, Direction.Right),
+            listOf(Direction.Up, Direction.Left, Direction.Right),
             directions,
         )
         assertEquals(1, restartRequests)
-        assertEquals(0, statisticsRequests)
     }
 
     @Test
@@ -440,7 +419,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = {},
-                    onStatistics = {},
                     onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
@@ -469,7 +447,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = directions::add,
                         onUndo = {},
                         onRestart = {},
-                        onStatistics = {},
                         onSkipTutorial = {},
                         modifier = Modifier.size(400.dp, 600.dp),
                     )
@@ -485,22 +462,6 @@ class TwentyFortyEightScreenTest {
         onNodeWithTag("gameplay_viewport").performTouchInput { swipeLeft() }
         assertEquals(listOf(Direction.Left), directions)
     }
-
-    private fun statisticsOverlay(): OverlayComponent.Statistics = OverlayComponent.Statistics(
-        model = MutableValue(
-            OverlayComponent.Model.Statistics(
-                gamesStarted = 8L,
-                gamesWon = 7L,
-                gamesEndedByGameOver = 6L,
-                successfulMoves = 5L,
-                totalMerges = 4L,
-                totalScoreEarned = 4096L,
-                highestTileEver = 2048L,
-                undoUses = 3L,
-            ),
-        ),
-        onDismiss = {},
-    )
 
     private fun playingModel(
         undoEnabled: Boolean,

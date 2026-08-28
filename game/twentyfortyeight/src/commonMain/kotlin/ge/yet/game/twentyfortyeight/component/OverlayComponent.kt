@@ -13,17 +13,6 @@ internal sealed interface OverlayComponent {
             val bestScore: Long,
         ) : Model
 
-        data class Statistics(
-            val gamesStarted: Long,
-            val gamesWon: Long,
-            val gamesEndedByGameOver: Long,
-            val successfulMoves: Long,
-            val totalMerges: Long,
-            val totalScoreEarned: Long,
-            val highestTileEver: Long,
-            val undoUses: Long,
-        ) : Model
-
         data class RestartConfirmation(
             val score: Long,
             val successfulMovesInRun: Long,
@@ -38,13 +27,6 @@ internal sealed interface OverlayComponent {
     ) : OverlayComponent {
         fun onContinueRequested() = onContinue()
         fun onRestartRequested() = onRestart()
-        override fun onDismissRequested() = onDismiss()
-    }
-
-    class Statistics(
-        override val model: Value<Model.Statistics>,
-        private val onDismiss: () -> Unit,
-    ) : OverlayComponent {
         override fun onDismissRequested() = onDismiss()
     }
 

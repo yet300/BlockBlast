@@ -28,7 +28,6 @@ internal interface TwentyFortyEightStore :
         data object SkipTutorial : Intent
         data class AnimationCompleted(val transitionId: Long) : Intent
         data class VisibilityChanged(val visibility: MiniAppVisibility) : Intent
-        data object OpenStatistics : Intent
     }
 
     data class State(
@@ -66,7 +65,6 @@ internal enum class FocusTarget { Board, Victory, Result }
 
 internal sealed interface OverlayState {
     data object Victory : OverlayState
-    data object Statistics : OverlayState
     data object RestartConfirmation : OverlayState
 }
 

@@ -11,32 +11,24 @@
     <string name="new_game">New game</string>
     <string name="victory">Victory</string>
     <string name="game_over">Game over</string>
-    <string name="statistics">Statistics</string>
     <string name="cancel">Cancel</string>
     <string name="skip">Skip</string>
     <string name="loading_game">Loading game</string>
 
-    <string name="games_started">Games started</string>
     <string name="games_won">Games won</string>
-    <string name="games_ended_by_game_over">Games ended by game over</string>
     <string name="successful_moves">Successful moves</string>
     <string name="total_merges">Total merges</string>
-    <string name="total_score_earned">Total score earned</string>
-    <string name="highest_tile_ever">Highest tile ever</string>
     <string name="highest_tile">Highest tile</string>
-    <string name="undo_uses">Undo uses</string>
 
     <string name="tutorial_instruction">Swipe to combine matching tiles.</string>
     <string name="restart_confirmation_title">Restart game?</string>
     <string name="restart_confirmation_body">Your score is %1$s after %2$s. Restarting begins a new game.</string>
     <string name="progress_not_saved">Progress could not be saved</string>
     <string name="new_game_not_saved">A new game could not be saved</string>
-    <string name="supporting_hint">Swipe anywhere in the game area.</string>
 
     <string name="score_description">Score, %1$s</string>
     <string name="best_description">Best, %1$s</string>
     <string name="best_new_description">Best, new best, %1$s</string>
-    <string name="statistics_description">Statistics</string>
     <string name="undo_description">Undo</string>
     <string name="restart_description">Restart</string>
     <string name="crown_description">Best score</string>

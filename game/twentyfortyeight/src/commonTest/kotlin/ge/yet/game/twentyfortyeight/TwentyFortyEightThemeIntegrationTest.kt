@@ -131,7 +131,6 @@ class TwentyFortyEightThemeIntegrationTest {
         override fun onContinueAfterVictory() = Unit
         override fun onTutorialSkipped() = Unit
         override fun onAnimationCompleted(transitionId: Long) = Unit
-        override fun onStatisticsRequested() = Unit
         override fun handleBack(): Boolean = false
     }
 

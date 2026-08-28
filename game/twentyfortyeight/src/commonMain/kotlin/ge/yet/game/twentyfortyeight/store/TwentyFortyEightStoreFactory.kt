@@ -185,7 +185,6 @@ internal class TwentyFortyEightStoreFactory(
                 is TwentyFortyEightStore.Intent.AnimationCompleted -> animationCompleted(intent.transitionId)
                 is TwentyFortyEightStore.Intent.VisibilityChanged ->
                     dispatch(Msg.VisibilityChanged(intent.visibility))
-                TwentyFortyEightStore.Intent.OpenStatistics -> openStatistics()
             }
         }
 
@@ -485,12 +484,6 @@ internal class TwentyFortyEightStoreFactory(
             if (queued != null) move(queued)
         }
 
-        private fun openStatistics() {
-            val current = state()
-            if (!current.acceptsGameInput() || current.overlay != null || current.activeTransition != null) return
-            dispatch(Msg.OverlayChanged(OverlayState.Statistics))
-        }
-
         private fun cancelOverlay() {
             if (!state().acceptsGameInput()) return
             if (destructivePending) return
@@ -509,10 +502,6 @@ internal class TwentyFortyEightStoreFactory(
                             if (restored == OverlayState.Victory) FocusTarget.Victory else FocusTarget.Board,
                         ),
                     )
-                }
-                OverlayState.Statistics -> {
-                    dispatch(Msg.OverlayChanged(null))
-                    publish(TwentyFortyEightStore.Label.Focus(FocusTarget.Board))
                 }
                 null -> Unit
             }
@@ -773,7 +762,6 @@ internal class TwentyFortyEightStoreFactory(
         TwentyFortyEightStore.Intent.CancelOverlay,
         TwentyFortyEightStore.Intent.ContinueAfterVictory,
         TwentyFortyEightStore.Intent.SkipTutorial,
-        TwentyFortyEightStore.Intent.OpenStatistics,
         -> true
         TwentyFortyEightStore.Intent.NewGameFromResult,
         is TwentyFortyEightStore.Intent.AnimationCompleted,

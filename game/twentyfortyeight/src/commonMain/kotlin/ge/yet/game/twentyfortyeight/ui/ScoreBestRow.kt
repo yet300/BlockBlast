@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,7 +40,6 @@ import ge.yet.game.twentyfortyeight.generated.resources.best_new_description
 import ge.yet.game.twentyfortyeight.generated.resources.crown_description
 import ge.yet.game.twentyfortyeight.generated.resources.score
 import ge.yet.game.twentyfortyeight.generated.resources.score_description
-import ge.yet.game.twentyfortyeight.generated.resources.statistics_description
 import ge.yet.game.twentyfortyeight.store.VisualTransition
 import ge.yet.game.uikit.components.icon.Crown
 import org.jetbrains.compose.resources.stringResource
@@ -50,7 +48,6 @@ import org.jetbrains.compose.resources.stringResource
 internal fun ScoreBestRow(
     score: Long,
     bestScore: Long,
-    onStatistics: () -> Unit,
     transition: VisualTransition? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -79,7 +76,6 @@ internal fun ScoreBestRow(
         BestCard(
             bestScore = bestScore,
             isNewBest = score > 0L && score >= bestScore,
-            onStatistics = onStatistics,
             modifier = Modifier.weight(1f),
         )
     }
@@ -169,7 +165,6 @@ private fun ScoreCard(
 private fun BestCard(
     bestScore: Long,
     isNewBest: Boolean,
-    onStatistics: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val formatted = bestScore.formatScore()
@@ -178,17 +173,14 @@ private fun BestCard(
     } else {
         stringResource(Res.string.best_description, formatted)
     }
-    val statisticsDescription = stringResource(Res.string.statistics_description)
     val crownDescription = stringResource(Res.string.crown_description)
 
     Surface(
-        onClick = onStatistics,
         modifier = modifier
             .heightIn(min = 64.dp)
             .semantics {
                 traversalIndex = 1f
-                contentDescription = statisticsDescription
-                stateDescription = bestDescription
+                contentDescription = bestDescription
             },
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -217,7 +209,6 @@ private fun BestCard(
             }
             Text(
                 text = formatted,
-                modifier = Modifier.semantics { contentDescription = bestDescription },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,

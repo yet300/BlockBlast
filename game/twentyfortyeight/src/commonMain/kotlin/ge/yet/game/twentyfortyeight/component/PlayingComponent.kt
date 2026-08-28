@@ -14,7 +14,6 @@ import com.arkivanov.essenty.lifecycle.doOnDestroy
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.twentyfortyeight.engine.Direction
 import ge.yet.game.twentyfortyeight.engine.GamePhase
-import ge.yet.game.twentyfortyeight.engine.GameStatistics
 import ge.yet.game.twentyfortyeight.engine.RuntimeBoard
 import ge.yet.game.twentyfortyeight.store.BootstrapState
 import ge.yet.game.twentyfortyeight.store.OverlayState
@@ -32,7 +31,6 @@ internal interface PlayingComponent {
     fun onContinueAfterVictory()
     fun onTutorialSkipped()
     fun onAnimationCompleted(transitionId: Long)
-    fun onStatisticsRequested()
     fun handleBack(): Boolean
 
     data class Model(
@@ -116,7 +114,6 @@ internal class DefaultPlayingComponent(
     override fun onTutorialSkipped() = store.accept(TwentyFortyEightStore.Intent.SkipTutorial)
     override fun onAnimationCompleted(transitionId: Long) =
         store.accept(TwentyFortyEightStore.Intent.AnimationCompleted(transitionId))
-    override fun onStatisticsRequested() = store.accept(TwentyFortyEightStore.Intent.OpenStatistics)
 
     override fun handleBack(): Boolean {
         if (overlay.value.child == null) return false
@@ -145,14 +142,6 @@ internal class DefaultPlayingComponent(
                 )
                 origin
             }
-            OverlayConfig.Statistics -> {
-                lateinit var origin: OverlayComponent.Statistics
-                origin = OverlayComponent.Statistics(
-                    model = MutableValue(state.statistics.toOverlayModel()),
-                    onDismiss = { acceptFromOverlay(origin, TwentyFortyEightStore.Intent.CancelOverlay) },
-                )
-                origin
-            }
             OverlayConfig.RestartConfirmation -> {
                 lateinit var origin: OverlayComponent.RestartConfirmation
                 origin = OverlayComponent.RestartConfirmation(
@@ -176,21 +165,9 @@ internal class DefaultPlayingComponent(
 }
 
 @Serializable
-private enum class OverlayConfig { Victory, Statistics, RestartConfirmation }
+private enum class OverlayConfig { Victory, RestartConfirmation }
 
 private fun OverlayState.toConfig(): OverlayConfig = when (this) {
     OverlayState.Victory -> OverlayConfig.Victory
-    OverlayState.Statistics -> OverlayConfig.Statistics
     OverlayState.RestartConfirmation -> OverlayConfig.RestartConfirmation
 }
-
-private fun GameStatistics.toOverlayModel() = OverlayComponent.Model.Statistics(
-    gamesStarted = gamesStarted,
-    gamesWon = gamesWon,
-    gamesEndedByGameOver = gamesEndedByGameOver,
-    successfulMoves = successfulMoves,
-    totalMerges = totalMerges,
-    totalScoreEarned = totalScoreEarned,
-    highestTileEver = highestTileEver,
-    undoUses = undoUses,
-)

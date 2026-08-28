@@ -99,7 +99,6 @@ class TwentyFortyEightLifecycleIntegrationTest {
         val secondInitial = second.store.state
 
         stalePlaying.onAnimationCompleted(Long.MAX_VALUE)
-        stalePlaying.onStatisticsRequested()
         stalePlaying.onTutorialSkipped()
         advanceUntilIdle()
 
@@ -110,7 +109,7 @@ class TwentyFortyEightLifecycleIntegrationTest {
     }
 
     @Test
-    fun `session Back consumes an active overlay and otherwise stays host compatible`() =
+    fun `session Back stays host compatible without an active overlay`() =
         runTest(dispatcher) {
             val app = createGraph<InspectableTwentyFortyEightAppGraph>()
             val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
@@ -118,10 +117,6 @@ class TwentyFortyEightLifecycleIntegrationTest {
             advanceUntilIdle()
 
             assertFalse(graph.session.handleBack())
-            graph.playing().onStatisticsRequested()
-            assertTrue(graph.session.handleBack())
-            assertFalse(graph.session.handleBack())
-
             graph.concreteComponent.navigateToResult(
                 ResultSnapshot(
                     score = 32L,

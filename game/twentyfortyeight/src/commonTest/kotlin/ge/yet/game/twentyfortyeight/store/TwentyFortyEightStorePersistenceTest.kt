@@ -248,7 +248,7 @@ class TwentyFortyEightStorePersistenceTest {
     }
 
     @Test
-    fun `restart is rejected while hidden transitioning or another modal owns the surface`() = runTest {
+    fun `restart is rejected while hidden or transitioning`() = runTest {
         val hiddenVisibility = MutableVisibility(ge.yet.game.miniapp.api.MiniAppVisibility.OBSCURED)
         val hidden = readyStore(loaded(game = playableGame(score = 4L)), visibility = hiddenVisibility)
         hidden.store.accept(TwentyFortyEightStore.Intent.RequestRestart)
@@ -258,11 +258,6 @@ class TwentyFortyEightStorePersistenceTest {
         transitioning.store.accept(TwentyFortyEightStore.Intent.Move(Direction.Left))
         transitioning.store.accept(TwentyFortyEightStore.Intent.RequestRestart)
         assertNull(transitioning.store.state.overlay)
-
-        val modal = readyStore(loaded(game = playableGame(score = 4L)))
-        modal.store.accept(TwentyFortyEightStore.Intent.OpenStatistics)
-        modal.store.accept(TwentyFortyEightStore.Intent.RequestRestart)
-        assertEquals(OverlayState.Statistics, modal.store.state.overlay)
     }
 
     @Test

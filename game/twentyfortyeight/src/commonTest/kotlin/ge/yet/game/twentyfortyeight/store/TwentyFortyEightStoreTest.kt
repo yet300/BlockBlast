@@ -233,16 +233,6 @@ class TwentyFortyEightStoreTest {
     }
 
     @Test
-    fun `statistics overlay opens and cancel clears it`() = runTest {
-        val harness = readyStore(loaded(game = playableGame()))
-
-        harness.store.accept(TwentyFortyEightStore.Intent.OpenStatistics)
-        assertEquals(OverlayState.Statistics, harness.store.state.overlay)
-        harness.store.accept(TwentyFortyEightStore.Intent.CancelOverlay)
-        assertNull(harness.store.state.overlay)
-    }
-
-    @Test
     fun `undo without snapshot is a complete no op`() = runTest {
         val harness = readyStore(loaded(game = playableGame()))
         val before = harness.store.state
@@ -520,7 +510,6 @@ class TwentyFortyEightStoreTest {
             TwentyFortyEightStore.Intent.RequestRestart,
             TwentyFortyEightStore.Intent.ConfirmRestart,
             TwentyFortyEightStore.Intent.ContinueAfterVictory,
-            TwentyFortyEightStore.Intent.OpenStatistics,
             TwentyFortyEightStore.Intent.SkipTutorial,
             TwentyFortyEightStore.Intent.CancelOverlay,
             TwentyFortyEightStore.Intent.AnimationCompleted(1L),
