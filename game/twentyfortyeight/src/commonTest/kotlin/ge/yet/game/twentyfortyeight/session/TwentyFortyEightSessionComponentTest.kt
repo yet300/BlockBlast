@@ -1,10 +1,12 @@
 package ge.yet.game.twentyfortyeight.session
 
 import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.instancekeeper.InstanceKeeperDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
+import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.domain.repository.AnalyticRepository
 import ge.yet.game.miniapp.api.MiniAppReviewOpportunity
@@ -372,9 +374,15 @@ class TwentyFortyEightSessionComponentTest {
     @Test
     fun `retained recreation reuses Store and collector cancels idempotently`() = runTest(dispatcher) {
         val keeper = InstanceKeeperDispatcher()
-        val first = componentHarness(unfinishedData(), instanceKeeper = keeper)
+        val stateKeeper = StateKeeperDispatcher()
+        val first = componentHarness(
+            unfinishedData(),
+            instanceKeeper = keeper,
+            stateKeeper = stateKeeper,
+        )
         advanceUntilIdle()
         val retained = first.component.retainedStore
+        val saved = stateKeeper.save()
 
         first.destroy()
         assertTrue(first.component.labelCollector.isCancelled)
@@ -384,6 +392,7 @@ class TwentyFortyEightSessionComponentTest {
             unfinishedData(),
             instanceKeeper = keeper,
             visibility = first.visibility,
+            stateKeeper = StateKeeperDispatcher(saved),
         )
         assertSame(retained, second.component.retainedStore)
         assertIs<TwentyFortyEightSessionComponent.Child.Playing>(second.component.stack.value.active.instance)
@@ -397,6 +406,167 @@ class TwentyFortyEightSessionComponentTest {
         assertEquals(1, second.component.stack.value.items.size)
         second.destroy()
         keeper.destroy()
+    }
+
+    @Test
+    fun `StateKeeper restores Result and rebuilds its model from the authoritative Store`() = runTest(dispatcher) {
+        val stateKeeper = StateKeeperDispatcher()
+        val statistics = GameStatistics(
+            gamesStarted = 7L,
+            gamesWon = 3L,
+            gamesEndedByGameOver = 4L,
+            successfulMoves = 80L,
+            totalMerges = 42L,
+            undoUses = 5L,
+        )
+        val terminalGame = playableGame().copy(
+            score = 64L,
+            bestScore = 128L,
+            phase = GamePhase.GameOver,
+        )
+        val first = componentHarness(
+            terminalData(terminalGame, statistics),
+            stateKeeper = stateKeeper,
+        )
+        advanceUntilIdle()
+        assertIs<TwentyFortyEightSessionComponent.Child.Result>(first.component.stack.value.active.instance)
+        val saved = stateKeeper.save()
+        first.destroy()
+
+        val restored = componentHarness(
+            terminalData(terminalGame, statistics),
+            stateKeeper = StateKeeperDispatcher(saved),
+        )
+        advanceUntilIdle()
+
+        val result = assertIs<TwentyFortyEightSessionComponent.Child.Result>(
+            restored.component.stack.value.active.instance,
+        )
+        assertEquals(1, restored.component.stack.value.items.size)
+        assertEquals(64L, result.component.model.value.score)
+        assertEquals(128L, result.component.model.value.bestScore)
+        assertEquals(7L, result.component.model.value.statistics.gamesStarted)
+        assertEquals(42L, result.component.model.value.statistics.totalMerges)
+        restored.destroy()
+    }
+
+    @Test
+    fun `StateKeeper restores Victory overlay`() = runTest(dispatcher) {
+        val victorious = playableGame().copy(
+            score = 2048L,
+            bestScore = 4096L,
+            facts = playableGame().facts.copy(victoryReached = true),
+        )
+
+        val restored = recreateWithStateKeeper(unfinishedData(victorious))
+
+        val playing = restored.playing()
+        val model = assertIs<OverlayComponent.Model.Victory>(playing.overlay.value.child?.instance?.model?.value)
+        assertEquals(2048L, model.score)
+        assertEquals(4096L, model.bestScore)
+        assertEquals(OverlayState.Victory, restored.component.retainedStore.state.overlay)
+        restored.destroy()
+        restored.instanceKeeper.destroy()
+    }
+
+    @Test
+    fun `StateKeeper restores Statistics overlay`() = runTest(dispatcher) {
+        val stateKeeper = StateKeeperDispatcher()
+        val first = componentHarness(unfinishedData(), stateKeeper = stateKeeper)
+        advanceUntilIdle()
+        first.playing().onStatisticsRequested()
+        val saved = stateKeeper.save()
+        val keeper = first.instanceKeeper
+        first.destroy()
+
+        val restored = componentHarness(
+            unfinishedData(),
+            instanceKeeper = keeper,
+            visibility = first.visibility,
+            stateKeeper = StateKeeperDispatcher(saved),
+        )
+
+        assertIs<OverlayComponent.Model.Statistics>(restored.playing().overlay.value.child?.instance?.model?.value)
+        assertEquals(OverlayState.Statistics, restored.component.retainedStore.state.overlay)
+        restored.destroy()
+        keeper.destroy()
+    }
+
+    @Test
+    fun `StateKeeper restores RestartConfirmation overlay`() = runTest(dispatcher) {
+        val progressed = playableGame(score = 4L).copy(successfulMovesInRun = 1L)
+        val stateKeeper = StateKeeperDispatcher()
+        val first = componentHarness(unfinishedData(progressed), stateKeeper = stateKeeper)
+        advanceUntilIdle()
+        first.playing().onRestartRequested()
+        val saved = stateKeeper.save()
+        val keeper = first.instanceKeeper
+        first.destroy()
+
+        val restored = componentHarness(
+            unfinishedData(progressed),
+            instanceKeeper = keeper,
+            visibility = first.visibility,
+            stateKeeper = StateKeeperDispatcher(saved),
+        )
+
+        val model = assertIs<OverlayComponent.Model.RestartConfirmation>(
+            restored.playing().overlay.value.child?.instance?.model?.value,
+        )
+        assertEquals(4L, model.score)
+        assertEquals(1L, model.successfulMovesInRun)
+        assertEquals(OverlayState.RestartConfirmation, restored.component.retainedStore.state.overlay)
+        restored.destroy()
+        keeper.destroy()
+    }
+
+    @Test
+    fun `overlay callback from destroyed component is stale after StateKeeper recreation`() = runTest(dispatcher) {
+        val victorious = playableGame(score = 4L).copy(
+            successfulMovesInRun = 1L,
+            facts = playableGame().facts.copy(victoryReached = true),
+        )
+        val stateKeeper = StateKeeperDispatcher()
+        val keeper = InstanceKeeperDispatcher()
+        val first = componentHarness(
+            unfinishedData(victorious),
+            instanceKeeper = keeper,
+            stateKeeper = stateKeeper,
+        )
+        advanceUntilIdle()
+        val staleVictory = assertIs<OverlayComponent.Victory>(first.playing().overlay.value.child?.instance)
+        val saved = stateKeeper.save()
+        first.destroy()
+
+        val restored = componentHarness(
+            unfinishedData(victorious),
+            instanceKeeper = keeper,
+            visibility = first.visibility,
+            stateKeeper = StateKeeperDispatcher(saved),
+        )
+        val restoredVictory = assertIs<OverlayComponent.Victory>(restored.playing().overlay.value.child?.instance)
+        val before = restored.component.retainedStore.state
+
+        staleVictory.onContinueRequested()
+        staleVictory.onDismissRequested()
+
+        assertEquals(before, restored.component.retainedStore.state)
+        assertSame(restoredVictory, restored.playing().overlay.value.child?.instance)
+        restored.destroy()
+        keeper.destroy()
+    }
+
+    @Test
+    fun `2048 routers do not register a Decompose BackCallback`() = runTest(dispatcher) {
+        val backDispatcher = BackDispatcher()
+        val harness = componentHarness(unfinishedData(), backDispatcher = backDispatcher)
+        advanceUntilIdle()
+        harness.playing().onStatisticsRequested()
+
+        assertFalse(backDispatcher.isEnabled)
+        assertFalse(backDispatcher.back())
+        assertIs<OverlayComponent.Statistics>(harness.playing().overlay.value.child?.instance)
+        harness.destroy()
     }
 
     @Test
@@ -486,6 +656,8 @@ class TwentyFortyEightSessionComponentTest {
         instanceKeeper: InstanceKeeperDispatcher = InstanceKeeperDispatcher(),
         audio: RecordingAudio = RecordingAudio(),
         visibility: MutableMiniAppVisibilitySource = MutableMiniAppVisibilitySource(),
+        stateKeeper: StateKeeperDispatcher = StateKeeperDispatcher(),
+        backDispatcher: BackDispatcher = BackDispatcher(),
     ): Harness {
         val lifecycle = LifecycleRegistry().also(LifecycleRegistry::resume)
         val persistence = SessionPersistenceCoordinator(
@@ -510,12 +682,38 @@ class TwentyFortyEightSessionComponentTest {
             uiEffects = ports,
         )
         val component = DefaultTwentyFortyEightSessionComponent(
-            componentContext = DefaultComponentContext(lifecycle = lifecycle, instanceKeeper = instanceKeeper),
+            componentContext = DefaultComponentContext(
+                lifecycle = lifecycle,
+                stateKeeper = stateKeeper,
+                instanceKeeper = instanceKeeper,
+                backHandler = backDispatcher,
+            ),
             storeFactory = storeFactory,
             adapter = adapter,
             ports = ports,
         )
-        return Harness(component, adapter, lifecycle, visibility)
+        return Harness(component, adapter, lifecycle, visibility, instanceKeeper)
+    }
+
+    private suspend fun kotlinx.coroutines.test.TestScope.recreateWithStateKeeper(
+        restoredData: RestoredGameData,
+    ): Harness {
+        val stateKeeper = StateKeeperDispatcher()
+        val keeper = InstanceKeeperDispatcher()
+        val first = componentHarness(
+            restoredData,
+            instanceKeeper = keeper,
+            stateKeeper = stateKeeper,
+        )
+        advanceUntilIdle()
+        val saved = stateKeeper.save()
+        first.destroy()
+        return componentHarness(
+            restoredData,
+            instanceKeeper = keeper,
+            visibility = first.visibility,
+            stateKeeper = StateKeeperDispatcher(saved),
+        )
     }
 
     private data class Harness(
@@ -523,7 +721,13 @@ class TwentyFortyEightSessionComponentTest {
         val adapter: TwentyFortyEightSessionAdapter,
         val lifecycle: LifecycleRegistry,
         val visibility: MutableMiniAppVisibilitySource,
+        val instanceKeeper: InstanceKeeperDispatcher,
     ) {
+        fun playing(): ge.yet.game.twentyfortyeight.component.PlayingComponent =
+            assertIs<TwentyFortyEightSessionComponent.Child.Playing>(
+                component.stack.value.active.instance,
+            ).component
+
         fun destroy() {
             lifecycle.destroy()
         }

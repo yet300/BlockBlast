@@ -17,8 +17,6 @@ import ge.yet.game.twentyfortyeight.component.DefaultResultComponent
 import ge.yet.game.twentyfortyeight.component.PlayingComponent
 import ge.yet.game.twentyfortyeight.component.ResultComponent
 import ge.yet.game.twentyfortyeight.engine.GamePhase
-import ge.yet.game.twentyfortyeight.engine.GameState
-import ge.yet.game.twentyfortyeight.engine.GameStatistics
 import ge.yet.game.twentyfortyeight.engine.ResultSnapshot
 import ge.yet.game.twentyfortyeight.store.AnnouncementFact
 import ge.yet.game.twentyfortyeight.store.FocusTarget
@@ -28,6 +26,7 @@ import ge.yet.game.twentyfortyeight.store.UiErrorCode
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 internal interface TwentyFortyEightSessionComponent {
     val stack: Value<ChildStack<*, Child>>
@@ -82,7 +81,7 @@ internal class DefaultTwentyFortyEightSessionComponent(
 
     override val stack: Value<ChildStack<*, TwentyFortyEightSessionComponent.Child>> = childStack(
         source = navigation,
-        serializer = null,
+        serializer = Config.serializer(),
         initialConfiguration = retainedStore.state.toInitialConfig(),
         handleBackButton = false,
         childFactory = ::createChild,
@@ -108,9 +107,9 @@ internal class DefaultTwentyFortyEightSessionComponent(
             ?.handleBack()
             ?: false
 
-    internal fun navigateToResult(snapshot: ResultSnapshot) {
+    internal fun navigateToResult(@Suppress("UNUSED_PARAMETER") snapshot: ResultSnapshot) {
         if (stack.value.active.instance is TwentyFortyEightSessionComponent.Child.Result) return
-        navigation.replaceAll(Config.Result(snapshot))
+        navigation.replaceAll(Config.Result(retainedStore.state.game?.runOrdinal ?: 0L))
     }
 
     private fun onNewGameCommitted(runOrdinal: Long) {
@@ -124,31 +123,27 @@ internal class DefaultTwentyFortyEightSessionComponent(
                 DefaultPlayingComponent(componentContext, retainedStore),
             )
             is Config.Result -> TwentyFortyEightSessionComponent.Child.Result(
-                DefaultResultComponent(config.snapshot) {
+                DefaultResultComponent(retainedStore) {
                     retainedStore.accept(TwentyFortyEightStore.Intent.NewGameFromResult)
                 },
             )
         }
 }
 
+@Serializable
 private sealed interface Config {
+    @Serializable
     data class Playing(val runOrdinal: Long) : Config
-    data class Result(val snapshot: ResultSnapshot) : Config
+
+    @Serializable
+    data class Result(val runOrdinal: Long) : Config
 }
 
 private fun TwentyFortyEightStore.State.toInitialConfig(): Config {
     val authoritativeGame = game
     return if (authoritativeGame?.phase == GamePhase.GameOver) {
-        Config.Result(authoritativeGame.toResultSnapshot(statistics))
+        Config.Result(authoritativeGame.runOrdinal)
     } else {
         Config.Playing(authoritativeGame?.runOrdinal ?: 0L)
     }
 }
-
-private fun GameState.toResultSnapshot(statistics: GameStatistics) =
-    ResultSnapshot(
-        score = score,
-        bestScore = bestScore,
-        highestTile = board.values().filterNotNull().maxOrNull() ?: 0L,
-        statistics = statistics,
-    )

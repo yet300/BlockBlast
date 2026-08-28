@@ -1,8 +1,9 @@
 package ge.yet.game.twentyfortyeight.component
 
-import com.arkivanov.decompose.value.MutableValue
+import com.app.common.decompose.asValue
 import com.arkivanov.decompose.value.Value
-import ge.yet.game.twentyfortyeight.engine.ResultSnapshot
+import com.arkivanov.decompose.value.operator.map
+import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStore
 
 internal interface ResultComponent {
     val model: Value<Model>
@@ -27,24 +28,28 @@ internal interface ResultComponent {
 }
 
 internal class DefaultResultComponent(
-    snapshot: ResultSnapshot,
+    store: TwentyFortyEightStore,
     private val onNewGame: () -> Unit,
 ) : ResultComponent {
-    override val model: Value<ResultComponent.Model> = MutableValue(snapshot.toModel())
+    override val model: Value<ResultComponent.Model> = store.asValue().map { state ->
+        val game = state.game
+        ResultComponent.Model(
+            score = game?.score ?: 0L,
+            bestScore = game?.bestScore ?: 0L,
+            highestTile = game?.board?.values()?.filterNotNull()?.maxOrNull() ?: 0L,
+            statistics = state.statistics.toSelectedStatistics(),
+        )
+    }
 
     override fun onNewGameRequested() = onNewGame()
 }
 
-private fun ResultSnapshot.toModel() = ResultComponent.Model(
-    score = score,
-    bestScore = bestScore,
-    highestTile = highestTile,
-    statistics = ResultComponent.SelectedStatistics(
-        gamesStarted = statistics.gamesStarted,
-        gamesWon = statistics.gamesWon,
-        gamesEndedByGameOver = statistics.gamesEndedByGameOver,
-        successfulMoves = statistics.successfulMoves,
-        totalMerges = statistics.totalMerges,
-        undoUses = statistics.undoUses,
-    ),
-)
+private fun ge.yet.game.twentyfortyeight.engine.GameStatistics.toSelectedStatistics() =
+    ResultComponent.SelectedStatistics(
+        gamesStarted = gamesStarted,
+        gamesWon = gamesWon,
+        gamesEndedByGameOver = gamesEndedByGameOver,
+        successfulMoves = successfulMoves,
+        totalMerges = totalMerges,
+        undoUses = undoUses,
+    )

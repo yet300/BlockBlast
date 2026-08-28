@@ -20,6 +20,7 @@ import ge.yet.game.twentyfortyeight.store.BootstrapState
 import ge.yet.game.twentyfortyeight.store.OverlayState
 import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStore
 import ge.yet.game.twentyfortyeight.store.VisualTransition
+import kotlinx.serialization.Serializable
 
 internal interface PlayingComponent {
     val model: Value<Model>
@@ -56,6 +57,7 @@ internal class DefaultPlayingComponent(
     ComponentContext by componentContext {
 
     private val overlayNavigation = SlotNavigation<OverlayConfig>()
+    private var componentAlive = true
 
     override val model: Value<PlayingComponent.Model> = store.asValue().map { state ->
         val game = state.game
@@ -86,7 +88,7 @@ internal class DefaultPlayingComponent(
 
     override val overlay: Value<ChildSlot<*, OverlayComponent>> = childSlot(
         source = overlayNavigation,
-        serializer = null,
+        serializer = OverlayConfig.serializer(),
         key = "TwentyFortyEightOverlay",
         handleBackButton = false,
         childFactory = ::createOverlay,
@@ -101,7 +103,10 @@ internal class DefaultPlayingComponent(
                 desired != null && desired != current -> overlayNavigation.activate(desired)
             }
         }
-        lifecycle.doOnDestroy(cancellation::cancel)
+        lifecycle.doOnDestroy {
+            componentAlive = false
+            cancellation.cancel()
+        }
     }
 
     override fun onMove(direction: Direction) = store.accept(TwentyFortyEightStore.Intent.Move(direction))
@@ -166,10 +171,11 @@ internal class DefaultPlayingComponent(
     }
 
     private fun acceptFromOverlay(origin: OverlayComponent, intent: TwentyFortyEightStore.Intent) {
-        if (overlay.value.child?.instance === origin) store.accept(intent)
+        if (componentAlive && overlay.value.child?.instance === origin) store.accept(intent)
     }
 }
 
+@Serializable
 private enum class OverlayConfig { Victory, Statistics, RestartConfirmation }
 
 private fun OverlayState.toConfig(): OverlayConfig = when (this) {
