@@ -68,7 +68,7 @@ class TwentyFortyEightStorePersistenceTest {
     }
 
     @Test
-    fun `slow write never delays queued move after matching animation`() = runTest {
+    fun `250 ms write never delays queued move after matching animation`() = runTest {
         val writer = StoreCommitWriter(controlled = true)
         val harness = readyStore(loaded(game = playableGame()), writer)
 
