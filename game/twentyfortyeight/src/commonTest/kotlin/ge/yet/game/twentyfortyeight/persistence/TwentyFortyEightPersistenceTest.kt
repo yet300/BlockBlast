@@ -155,6 +155,35 @@ class TwentyFortyEightPersistenceTest {
     }
 
     @Test
+    fun `invalid record improvement is isolated while metadata is restored`() = runTest {
+        val storage = RecordingMiniAppStorage(
+            initialSnapshots = mapOf(
+                "current_game" to currentGameV1(revision = 20L).copy(
+                    score = 0L,
+                    bestImprovedInRun = true,
+                    bestMirror = BestScoreV1(revision = 20L, bestScore = 0L),
+                ),
+                "best_score" to BestScoreV1(revision = 8L, bestScore = 4096L),
+                "statistics" to statisticsV1(revision = 9L).copy(successfulMoves = 21L),
+                "tutorial_seen" to TutorialV1(10L, seen = true, reason = "SKIP"),
+            ),
+        )
+
+        val result = assertIs<LoadResult.Loaded>(persistence.load(storage))
+
+        assertNull(result.data.game)
+        assertEquals(10L, result.data.revision)
+        assertEquals(4096L, result.data.bestScore)
+        assertEquals(21L, result.data.statistics.successfulMoves)
+        assertTrue(result.data.tutorialSeen)
+        assertEquals(TutorialCompletionReason.Skip, result.data.tutorialReason)
+        assertEquals(
+            setOf(TwentyFortyEightFailure.ContractViolation(ContractCode.SnapshotShape)),
+            result.validationFailures,
+        )
+    }
+
+    @Test
     fun `invalid dedicated record is absent while other records are restored`() = runTest {
         val storage = RecordingMiniAppStorage(
             initialSnapshots = mapOf(

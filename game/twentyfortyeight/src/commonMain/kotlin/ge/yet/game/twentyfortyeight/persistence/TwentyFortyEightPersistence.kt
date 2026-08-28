@@ -264,6 +264,7 @@ private fun GameCommit.toCurrentGameV1(): CurrentGameV1 = CurrentGameV1(
     victoryAcknowledged = game.facts.victoryAcknowledged,
     gamesWonRecorded = game.facts.gamesWonRecorded,
     reviewReserved = game.facts.reviewReserved,
+    bestImprovedInRun = game.facts.bestImprovedInRun,
     analyticsReservations = game.facts.analyticsReservations,
     milestoneReservations = game.facts.milestoneReservations,
     momentumStreak = game.momentumStreak,

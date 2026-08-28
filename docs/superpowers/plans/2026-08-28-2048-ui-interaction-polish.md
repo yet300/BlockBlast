@@ -145,14 +145,14 @@ fun `legacy current game without record field defaults false`() {
 }
 
 @Test
-fun `improved record with zero best is rejected as invariant failure`() {
+fun `improved record with zero best is rejected as contract failure`() {
     val result = TwentyFortyEightSchemas.toDomain(
         validCurrentGame().copy(
             bestImprovedInRun = true,
             bestMirror = validBest().copy(bestScore = 0L),
         ),
     )
-    assertIs<TwentyFortyEightFailure.InvariantViolation>(
+    assertIs<TwentyFortyEightFailure.ContractViolation>(
         assertIs<SnapshotValidationException>(result.exceptionOrNull()).failure,
     )
 }

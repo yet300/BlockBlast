@@ -30,6 +30,7 @@ internal data class CurrentGameV1(
     val victoryAcknowledged: Boolean,
     val gamesWonRecorded: Boolean,
     val reviewReserved: Boolean,
+    val bestImprovedInRun: Boolean = false,
     val analyticsReservations: Set<String>,
     val milestoneReservations: Set<Long>,
     val momentumStreak: Int,
@@ -115,6 +116,7 @@ internal object TwentyFortyEightSchemas {
         val phase = decodePhase(payload.phase)
         val undo = payload.undo?.let(::decodeUndo)
         val best = toBestScore(payload.bestMirror).getOrThrow()
+        requireSnapshot(!payload.bestImprovedInRun || best > 0L)
         toStatistics(payload.statisticsMirror).getOrThrow()
         toTutorial(payload.tutorialMirror).getOrThrow()
         requireSnapshot(payload.milestoneReservations.all { it in MILESTONE_VALUES })
@@ -131,6 +133,7 @@ internal object TwentyFortyEightSchemas {
                 victoryAcknowledged = payload.victoryAcknowledged,
                 gamesWonRecorded = payload.gamesWonRecorded,
                 reviewReserved = payload.reviewReserved,
+                bestImprovedInRun = payload.bestImprovedInRun,
                 analyticsReservations = payload.analyticsReservations,
                 milestoneReservations = payload.milestoneReservations,
             ),

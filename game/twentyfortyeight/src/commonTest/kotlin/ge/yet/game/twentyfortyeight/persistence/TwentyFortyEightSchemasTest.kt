@@ -27,7 +27,7 @@ class TwentyFortyEightSchemasTest {
 
     @Test
     fun `current game payload round trips every persisted field`() {
-        val source = currentGameV1(revision = 7L)
+        val source = currentGameV1(revision = 7L).copy(bestImprovedInRun = true)
         val json = Json.encodeToString(TwentyFortyEightSchemas.currentGame.serializer, source)
         val restored = Json.decodeFromString(TwentyFortyEightSchemas.currentGame.serializer, json)
 
@@ -37,6 +37,7 @@ class TwentyFortyEightSchemasTest {
         assertEquals("splitmix64-v1", restored.rngAlgorithm)
         assertNotNull(restored.undo)
         assertTrue(restored.victoryAcknowledged)
+        assertTrue(restored.bestImprovedInRun)
         assertEquals(setOf("victory"), restored.analyticsReservations)
         assertEquals(setOf(128L, 2048L), restored.milestoneReservations)
         assertEquals(4, restored.momentumStreak)
@@ -46,6 +47,40 @@ class TwentyFortyEightSchemasTest {
         assertEquals("MOVE", restored.tutorialMirror.reason)
         assertFalse(json.contains("undoLineage"))
         assertFalse(json.contains("TileId"))
+    }
+
+    @Test
+    fun `legacy current game without record field defaults false`() {
+        val json = Json { encodeDefaults = true }
+        val encoded = json.encodeToString(
+            TwentyFortyEightSchemas.currentGame.serializer,
+            currentGameV1().copy(bestImprovedInRun = true),
+        )
+        val legacy = encoded
+            .replace("\"bestImprovedInRun\":true,", "")
+            .replace(",\"bestImprovedInRun\":true", "")
+
+        val restored = json.decodeFromString(
+            TwentyFortyEightSchemas.currentGame.serializer,
+            legacy,
+        )
+
+        assertFalse(restored.bestImprovedInRun)
+        assertFalse(TwentyFortyEightSchemas.toDomain(restored).getOrThrow().facts.bestImprovedInRun)
+    }
+
+    @Test
+    fun `record improvement requires a positive best score`() {
+        assertFailure(
+            ContractCode.SnapshotShape,
+            TwentyFortyEightSchemas.toDomain(
+                currentGameV1().copy(
+                    score = 0L,
+                    bestImprovedInRun = true,
+                    bestMirror = BestScoreV1(revision = 7L, bestScore = 0L),
+                ),
+            ),
+        )
     }
 
     @Test
@@ -163,6 +198,7 @@ class TwentyFortyEightSchemasTest {
         assertEquals(4, game.momentumStreak)
         assertEquals("GameOver", game.phase.name)
         assertTrue(game.facts.gamesWonRecorded)
+        assertFalse(game.facts.bestImprovedInRun)
         assertNull(game.undoLineage)
     }
 
