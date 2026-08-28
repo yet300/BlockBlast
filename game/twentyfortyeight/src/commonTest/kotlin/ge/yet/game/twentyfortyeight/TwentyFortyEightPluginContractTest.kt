@@ -20,6 +20,7 @@ import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
 import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
 import ge.yet.game.twentyfortyeight.di.TwentyFortyEightAppBindings
+import ge.yet.game.twentyfortyeight.di.TwentyFortyEightSessionGraph
 import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.miniapp_description
 import ge.yet.game.twentyfortyeight.generated.resources.miniapp_icon
@@ -54,6 +55,21 @@ internal object TwentyFortyEightGraphTestBindings {
 }
 
 class TwentyFortyEightPluginContractTest {
+    @Test
+    fun `manifest access does not create a child graph`() {
+        var graphCreations = 0
+        val plugin = TwentyFortyEightPlugin(
+            TwentyFortyEightSessionGraph.Factory {
+                graphCreations += 1
+                error("Session graph must not be created while reading metadata")
+            },
+        )
+
+        assertEquals(MiniAppId("game.twentyfortyeight"), plugin.manifest.id)
+        assertEquals(Res.string.miniapp_title, plugin.manifest.title)
+        assertEquals(0, graphCreations)
+    }
+
     @Test
     fun `manifest exposes the approved catalog resources and ordering`() {
         val plugin = assertNotNull(
@@ -99,6 +115,26 @@ class TwentyFortyEightPluginContractTest {
 
         MiniAppContractAssertions.assertRetainedGraphSession(session)
         MiniAppContractAssertions.assertBackNotConsumed(session)
+        lifecycle.destroy()
+    }
+
+    @Test
+    fun `destroying a retained plugin lifecycle repeatedly is idempotent`() {
+        val plugin = assertNotNull(
+            createGraph<TwentyFortyEightPluginTestGraph>()
+                .registry[MiniAppId("game.twentyfortyeight")],
+        )
+        val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val session = plugin.createSession(
+            TestMiniAppSessionContext(
+                componentContext = lifecycle.componentContext,
+                visibility = MutableMiniAppVisibilitySource(),
+                host = RecordingMiniAppSessionHost(),
+            ),
+        )
+
+        MiniAppContractAssertions.assertRetainedGraphSession(session)
+        lifecycle.destroy()
         lifecycle.destroy()
     }
 }

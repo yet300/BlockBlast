@@ -32,6 +32,7 @@ import ge.yet.game.twentyfortyeight.persistence.TwentyFortyEightPersistence
 import ge.yet.game.twentyfortyeight.session.DefaultTwentyFortyEightSessionComponent
 import ge.yet.game.twentyfortyeight.session.TwentyFortyEightSessionAdapter
 import ge.yet.game.twentyfortyeight.session.TwentyFortyEightSessionComponent
+import ge.yet.game.twentyfortyeight.session.TwentyFortyEightSessionPorts
 import ge.yet.game.twentyfortyeight.store.NewGameSeedSource
 import ge.yet.game.twentyfortyeight.store.TwentyFortyEightStore
 import kotlin.test.Test
@@ -65,6 +66,7 @@ internal interface InspectableTwentyFortyEightSessionGraph {
     val coordinator: SessionPersistenceCoordinator
     val adapter: TwentyFortyEightSessionAdapter
     val audioAdapter: TwentyFortyEightAudioAdapter
+    val ports: TwentyFortyEightSessionPorts
     val persistence: TwentyFortyEightPersistence
     val analytics: TwentyFortyEightAnalytics
     val diagnostics: TwentyFortyEightDiagnostics
@@ -75,6 +77,7 @@ internal interface InspectableTwentyFortyEightSessionGraph {
     val host: MiniAppSessionHost
     val storage: MiniAppStorage
     val audio: MiniAppAudio
+    val context: MiniAppSessionContext
 
     @ContributesTo(AppScope::class)
     @GraphExtension.Factory
@@ -87,7 +90,7 @@ internal interface InspectableTwentyFortyEightSessionGraph {
 
 class TwentyFortyEightSessionGraphTest {
     @Test
-    fun `session runtime is child scoped while stateless dependencies are app scoped`() {
+    fun `two child graphs share only app scoped stateless services`() {
         val app = createGraph<InspectableTwentyFortyEightAppGraph>()
         val firstLifecycle = MiniAppLifecycleHarness().also { it.resume() }
         val secondLifecycle = MiniAppLifecycleHarness().also { it.resume() }
@@ -98,14 +101,14 @@ class TwentyFortyEightSessionGraphTest {
             MutableMiniAppVisibilitySource(),
             RecordingMiniAppSessionHost(),
             firstStorage,
-            NoopMiniAppAudio,
+            TestAudio(),
         )
         val secondContext = TestMiniAppSessionContext(
             secondLifecycle.componentContext,
             MutableMiniAppVisibilitySource(),
             RecordingMiniAppSessionHost(),
             secondStorage,
-            NoopMiniAppAudio,
+            TestAudio(),
         )
 
         val first = app.factory.createInspectableTwentyFortyEightSessionGraph(firstContext)
@@ -120,6 +123,7 @@ class TwentyFortyEightSessionGraphTest {
         assertNotSame(first.coordinator, second.coordinator)
         assertNotSame(first.adapter, second.adapter)
         assertNotSame(first.audioAdapter, second.audioAdapter)
+        assertNotSame(first.ports, second.ports)
 
         assertSame(app.persistence, first.persistence)
         assertSame(app.analytics, first.analytics)
@@ -133,15 +137,22 @@ class TwentyFortyEightSessionGraphTest {
         assertSame(first.seedSource, second.seedSource)
 
         assertSame(firstContext.componentContext, first.componentContext)
+        assertSame(firstContext, first.context)
         assertSame(firstContext.visibility, first.visibility)
         assertSame(firstContext.host, first.host)
         assertSame(firstContext.storage, first.storage)
         assertSame(firstContext.audio, first.audio)
         assertSame(firstStorage, first.storage)
         assertSame(secondStorage, second.storage)
+        assertSame(secondContext, second.context)
         assertNotSame(first.storage, second.storage)
+        assertNotSame(first.visibility, second.visibility)
+        assertNotSame(first.host, second.host)
+        assertNotSame(first.audio, second.audio)
 
         firstLifecycle.destroy()
         secondLifecycle.destroy()
     }
 }
+
+private class TestAudio : MiniAppAudio by NoopMiniAppAudio
