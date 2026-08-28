@@ -1,8 +1,10 @@
 package ge.yet.game.twentyfortyeight.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -11,11 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -79,6 +84,8 @@ internal fun TwentyFortyEightBoard(
     onDirection: (Direction) -> Unit,
     modifier: Modifier = Modifier,
     onTileTextLayout: ((Long, TextLayoutResult) -> Unit)? = null,
+    onTransitionCompleted: (Long) -> Unit = {},
+    focusRequester: FocusRequester? = null,
 ) {
     val emptyCell = stringResource(Res.string.board_empty_cell)
     val summaryCells = model.tiles.map { tile -> tile?.value?.value?.toString() ?: emptyCell }
@@ -127,7 +134,7 @@ internal fun TwentyFortyEightBoard(
         Direction.Left to stringResource(Res.string.move_left),
         Direction.Right to stringResource(Res.string.move_right),
     )
-    val occupiedTiles = model.tiles.filterNotNull()
+    val occupiedTiles = if (model.transition == null) model.tiles.filterNotNull() else emptyList()
     val tileTheme = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
         TileTheme.Dark
     } else {
@@ -135,6 +142,11 @@ internal fun TwentyFortyEightBoard(
     }
     val wellColor = boardWellColor(tileTheme)
 
+    val focusModifier = if (focusRequester == null) {
+        Modifier
+    } else {
+        Modifier.focusRequester(focusRequester)
+    }
     Layout(
         content = {
             repeat(Board.CELL_COUNT) {
@@ -150,12 +162,23 @@ internal fun TwentyFortyEightBoard(
                     )
                 }
             }
+            model.transition?.let { transition ->
+                VisualTransitionView(
+                    transition = transition,
+                    policy = rememberMotionPolicy(),
+                    onCompleted = onTransitionCompleted,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         },
         modifier = modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .then(focusModifier)
+            .focusable()
             .semantics(mergeDescendants = true) {
+                traversalIndex = 2f
                 contentDescription = summary
                 customActions = Direction.entries.map { direction ->
                     CustomAccessibilityAction(label = actionLabels.getValue(direction)) {
@@ -181,7 +204,12 @@ internal fun TwentyFortyEightBoard(
         val cellSize = ((side - outerPadding * 2 - spacing * (Board.SIZE - 1)) / Board.SIZE)
             .coerceAtLeast(0)
         val childConstraints = Constraints.fixed(cellSize, cellSize)
-        val placeables = measurables.map { measurable -> measurable.measure(childConstraints) }
+        val transitionIndex = if (model.transition != null) measurables.lastIndex else -1
+        val placeables = measurables.mapIndexed { index, measurable ->
+            measurable.measure(
+                if (index == transitionIndex) Constraints.fixed(side, side) else childConstraints,
+            )
+        }
 
         layout(side, side) {
             placeables.take(Board.CELL_COUNT).forEachIndexed { index, placeable ->
@@ -195,6 +223,9 @@ internal fun TwentyFortyEightBoard(
                     x = cellOffset(tile.cellIndex % Board.SIZE, outerPadding, spacing, cellSize),
                     y = cellOffset(tile.cellIndex / Board.SIZE, outerPadding, spacing, cellSize),
                 )
+            }
+            if (model.transition != null) {
+                placeables.last().place(0, 0)
             }
         }
     }
@@ -217,5 +248,5 @@ internal fun boardWellColor(theme: TileTheme): Color = when (theme) {
     TileTheme.Dark -> Color(0xFF292826)
 }
 
-private fun cellOffset(index: Int, padding: Int, spacing: Int, cellSize: Int): Int =
+internal fun cellOffset(index: Int, padding: Int, spacing: Int, cellSize: Int): Int =
     padding + index * (cellSize + spacing)

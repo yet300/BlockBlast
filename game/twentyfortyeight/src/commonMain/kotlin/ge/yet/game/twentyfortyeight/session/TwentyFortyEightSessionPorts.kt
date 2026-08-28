@@ -32,14 +32,27 @@ internal class TwentyFortyEightSessionPorts : SessionNavigation, SessionUiEffect
     }
 
     override fun announce(fact: AnnouncementFact) =
-        publish(TwentyFortyEightSessionComponent.Effect.Announcement(effectIds.next(), fact))
+        publish { id -> TwentyFortyEightSessionComponent.Effect.Announcement(id, fact) }
     override fun requestFocus(target: FocusTarget) =
-        publish(TwentyFortyEightSessionComponent.Effect.Focus(effectIds.next(), target))
+        publish { id -> TwentyFortyEightSessionComponent.Effect.Focus(id, target) }
     override fun showError(code: UiErrorCode) =
-        publish(TwentyFortyEightSessionComponent.Effect.Error(effectIds.next(), code))
+        publish { id -> TwentyFortyEightSessionComponent.Effect.Error(id, code) }
 
-    private fun publish(effect: TwentyFortyEightSessionComponent.Effect) {
-        mutableEffect.value = TwentyFortyEightSessionComponent.EffectState(effect)
+    fun consumeEffect(effectId: Long) {
+        val pending = mutableEffect.value.effects
+        if (pending.firstOrNull()?.id != effectId) return
+        mutableEffect.value = TwentyFortyEightSessionComponent.EffectState(pending.drop(1))
+    }
+
+    private inline fun publish(
+        createEffect: (Long) -> TwentyFortyEightSessionComponent.Effect,
+    ) {
+        val pending = mutableEffect.value.effects
+        check(pending.size < TwentyFortyEightSessionComponent.MaxPendingEffects) {
+            "Pending UI effect capacity exceeded"
+        }
+        val effect = createEffect(effectIds.next())
+        mutableEffect.value = TwentyFortyEightSessionComponent.EffectState(pending + effect)
     }
 }
 

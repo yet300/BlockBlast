@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.restart_description
@@ -36,12 +37,14 @@ internal fun GameActions(
             contentDescription = stringResource(Res.string.undo_description),
             enabled = undoEnabled,
             onClick = onUndo,
+            traversalIndex = 3f,
         )
         GameIconAction(
             icon = Restart,
             contentDescription = stringResource(Res.string.restart_description),
             enabled = true,
             onClick = onRestart,
+            traversalIndex = 4f,
         )
     }
 }
@@ -52,6 +55,7 @@ private fun GameIconAction(
     contentDescription: String,
     enabled: Boolean,
     onClick: () -> Unit,
+    traversalIndex: Float,
     modifier: Modifier = Modifier,
 ) {
     IconButton(
@@ -59,7 +63,10 @@ private fun GameIconAction(
         modifier = modifier
             .minimumInteractiveComponentSize()
             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .semantics { this.contentDescription = contentDescription },
+            .semantics {
+                this.traversalIndex = traversalIndex
+                this.contentDescription = contentDescription
+            },
         enabled = enabled,
     ) {
         Icon(

@@ -21,7 +21,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
@@ -47,6 +46,45 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class TwentyFortyEightScreenTest {
+    @Test
+    fun `accessibility traversal follows score best board actions and tutorial`() =
+        runComposeUiTest {
+            setContent {
+                LogicaTheme(darkTheme = false) {
+                    PlayingContent(
+                        model = playingModel(undoEnabled = true, tutorialVisible = true),
+                        onDirection = {},
+                        onUndo = {},
+                        onRestart = {},
+                        onStatistics = {},
+                        onSkipTutorial = {},
+                        modifier = Modifier.size(800.dp, 600.dp),
+                    )
+                }
+            }
+
+            val score = onNodeWithContentDescription("Score, 4,096").fetchSemanticsNode()
+            val best = onNodeWithContentDescription("Statistics").fetchSemanticsNode()
+            val board = onNode(
+                SemanticsMatcher("board summary") { node ->
+                    node.config.contains(SemanticsProperties.ContentDescription) &&
+                        node.config[SemanticsProperties.ContentDescription]
+                            .singleOrNull()
+                            ?.startsWith("Board.") == true
+                },
+            ).fetchSemanticsNode()
+            val undo = onNodeWithContentDescription("Undo").fetchSemanticsNode()
+            val restart = onNodeWithContentDescription("Restart").fetchSemanticsNode()
+            val tutorial = onNodeWithTag("tutorial").fetchSemanticsNode()
+
+            assertEquals(
+                listOf(0f, 1f, 2f, 3f, 4f, 5f),
+                listOf(score, best, board, undo, restart, tutorial).map {
+                    it.config[SemanticsProperties.TraversalIndex]
+                },
+            )
+        }
+
     @Test
     fun `playing actions expose enabled state targets and full statistics`() = runComposeUiTest {
         var restartRequests = 0
@@ -207,7 +245,11 @@ class TwentyFortyEightScreenTest {
         onNodeWithTag("gameplay_viewport").assertIsDisplayed()
         onNodeWithTag("game_board").assertIsDisplayed()
         onNodeWithTag("supporting_column").assertIsDisplayed()
-        onNodeWithText("Skip").performScrollTo().assertIsDisplayed()
+        onNodeWithText("Skip").assertIsDisplayed()
+        val boardBounds = onNodeWithTag("game_board").fetchSemanticsNode().boundsInRoot
+        val tutorialBounds = onNodeWithTag("tutorial").fetchSemanticsNode().boundsInRoot
+        assertTrue(tutorialBounds.top >= boardBounds.top)
+        assertTrue(tutorialBounds.bottom <= boardBounds.bottom)
     }
 
     @Test

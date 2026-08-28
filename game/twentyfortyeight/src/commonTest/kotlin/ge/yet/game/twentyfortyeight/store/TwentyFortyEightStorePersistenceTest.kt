@@ -10,6 +10,7 @@ import ge.yet.game.twentyfortyeight.engine.MoveInput
 import ge.yet.game.twentyfortyeight.engine.MoveResult
 import ge.yet.game.twentyfortyeight.engine.RulesState
 import ge.yet.game.twentyfortyeight.engine.SpawnPolicy
+import ge.yet.game.twentyfortyeight.engine.TutorialCompletionReason
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,6 +39,32 @@ class TwentyFortyEightStorePersistenceTest {
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `tutorial skip checkpoints Skip without changing domain game state`() = runTest {
+        val writer = ImmediateCommitWriter()
+        val harness = readyStore(loaded(game = playableGame(), tutorialSeen = false), writer)
+        val before = harness.store.state.game
+
+        harness.store.accept(TwentyFortyEightStore.Intent.SkipTutorial)
+        advanceUntilIdle()
+
+        assertTrue(harness.store.state.tutorialSeen)
+        assertEquals(before, harness.store.state.game)
+        assertEquals(TutorialCompletionReason.Skip, writer.commits.single().tutorialReason)
+    }
+
+    @Test
+    fun `first successful move checkpoints Move tutorial reason`() = runTest {
+        val writer = ImmediateCommitWriter()
+        val harness = readyStore(loaded(game = playableGame(), tutorialSeen = false), writer)
+
+        harness.store.accept(TwentyFortyEightStore.Intent.Move(Direction.Left))
+        advanceUntilIdle()
+
+        assertTrue(harness.store.state.tutorialSeen)
+        assertEquals(TutorialCompletionReason.Move, writer.commits.single().tutorialReason)
     }
 
     @Test

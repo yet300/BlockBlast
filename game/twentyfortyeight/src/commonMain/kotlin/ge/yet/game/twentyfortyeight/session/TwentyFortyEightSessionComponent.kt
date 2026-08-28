@@ -33,9 +33,22 @@ internal interface TwentyFortyEightSessionComponent {
     val stack: Value<ChildStack<*, Child>>
     val frameMode: Value<MiniAppFrameMode>
     val effect: Value<EffectState>
+    fun onEffectConsumed(effectId: Long)
     fun handleBack(): Boolean
 
-    data class EffectState(val effect: Effect? = null)
+    data class EffectState(val effects: List<Effect> = emptyList()) {
+        init {
+            require(effects.size <= MaxPendingEffects) {
+                "Too many pending UI effects: ${effects.size}"
+            }
+            require(effects.map { it.id }.distinct().size == effects.size) {
+                "Pending UI effect IDs must be unique"
+            }
+        }
+
+        val effect: Effect?
+            get() = effects.firstOrNull()
+    }
 
     sealed interface Effect {
         val id: Long
@@ -48,6 +61,10 @@ internal interface TwentyFortyEightSessionComponent {
     sealed interface Child {
         class Playing(val component: PlayingComponent) : Child
         class Result(val component: ResultComponent) : Child
+    }
+
+    companion object {
+        const val MaxPendingEffects: Int = 16
     }
 }
 
@@ -73,6 +90,8 @@ internal class DefaultTwentyFortyEightSessionComponent(
 
     override val frameMode: Value<MiniAppFrameMode> = stack.map { MiniAppFrameMode.Standard }
     override val effect: Value<TwentyFortyEightSessionComponent.EffectState> = ports.effect
+
+    override fun onEffectConsumed(effectId: Long) = ports.consumeEffect(effectId)
 
     internal val labelCollector: Job
 

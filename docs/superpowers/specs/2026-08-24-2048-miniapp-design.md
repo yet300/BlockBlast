@@ -477,6 +477,7 @@ There is no animation work in the Reducer, no uncontrolled effect from recomposi
 
 - The board is one merged semantic node with a concise row-major summary such as “Board. Row 1: 2, empty, 4, empty…” and four custom move actions. Sixteen simultaneous tile nodes are suppressed.
 - A polite live-region node announces only useful authoritative changes: score delta plus largest merge, new best, victory, or game over. Spawn position and ordinary movement are not narrated.
+- Announcement, focus, and transient-error effects share one bounded FIFO of closed typed variants with monotonic IDs. Compose acknowledges only the exact current head after consumption, so a following focus request cannot overwrite an announcement and a stale acknowledgement cannot remove a newer effect.
 - Focus order is Score → Best/Crown → Board → Undo → Restart → active overlay. Victory and Game Over explicitly request accessibility focus after their transition; dismiss/Continue restores focus to Board.
 - Undo exposes disabled semantics and description. Every icon button has a resource content description, pressed state, and at least 48×48 dp target.
 - Crown's label includes “new best” and its pulse/outline/icon provide non-color cues. Tutorial text and Skip are screen-reader reachable.

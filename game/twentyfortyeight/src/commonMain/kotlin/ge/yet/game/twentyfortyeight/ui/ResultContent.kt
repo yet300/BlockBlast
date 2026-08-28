@@ -14,6 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,6 +48,7 @@ internal fun ResultContent(
     onNewGame: () -> Unit,
     modifier: Modifier = Modifier,
     error: UiErrorCode? = null,
+    resultFocusRequester: FocusRequester? = null,
 ) {
     AdaptiveGameScaffold(
         modifier = modifier
@@ -56,7 +60,8 @@ internal fun ResultContent(
             Surface(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(12.dp),
+                    .padding(12.dp)
+                    .finiteEntryReveal(MotionPolicy.Normal.gameOverMs),
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp,
@@ -68,6 +73,12 @@ internal fun ResultContent(
                 ) {
                     Text(
                         text = stringResource(Res.string.game_over),
+                        modifier = Modifier
+                            .then(
+                                resultFocusRequester?.let { Modifier.focusRequester(it) }
+                                    ?: Modifier,
+                            )
+                            .focusable(),
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )

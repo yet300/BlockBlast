@@ -40,6 +40,11 @@
     <string name="undo_description">Undo</string>
     <string name="restart_description">Restart</string>
     <string name="crown_description">Best score</string>
+    <string name="announcement_move">Score increased by %1$s.</string>
+    <string name="announcement_move_merge">Score increased by %1$s. Largest merge %2$s.</string>
+    <string name="announcement_new_best">New best score %1$s.</string>
+    <string name="announcement_victory">2048 reached.</string>
+    <string name="announcement_game_over">Game over.</string>
 
     <plurals name="games_count">
         <item quantity="one">%1$d game</item>

@@ -2,6 +2,7 @@ package ge.yet.game.twentyfortyeight.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -32,12 +34,9 @@ import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.loading_game
 import ge.yet.game.twentyfortyeight.generated.resources.new_game_not_saved
 import ge.yet.game.twentyfortyeight.generated.resources.progress_not_saved
-import ge.yet.game.twentyfortyeight.generated.resources.skip
 import ge.yet.game.twentyfortyeight.generated.resources.supporting_hint
-import ge.yet.game.twentyfortyeight.generated.resources.tutorial_instruction
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
 import ge.yet.game.uikit.adaptive.AdaptiveGameScaffold
-import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -48,6 +47,8 @@ internal fun PlayingContent(
     onRestart: () -> Unit,
     onStatistics: () -> Unit,
     onSkipTutorial: () -> Unit,
+    onTransitionCompleted: (Long) -> Unit = {},
+    boardFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
     error: UiErrorCode? = null,
 ) {
@@ -77,6 +78,9 @@ internal fun PlayingContent(
                 BoardOrLoading(
                     model = model,
                     onDirection = onDirection,
+                    onTransitionCompleted = onTransitionCompleted,
+                    boardFocusRequester = boardFocusRequester,
+                    onSkipTutorial = onSkipTutorial,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(12.dp),
@@ -94,13 +98,13 @@ internal fun PlayingContent(
                         score = model.score,
                         bestScore = model.bestScore,
                         onStatistics = onStatistics,
+                        transition = model.transition,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     SupportingContent(
                         model = model,
                         onUndo = onUndo,
                         onRestart = onRestart,
-                        onSkipTutorial = onSkipTutorial,
                         error = error,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -114,6 +118,9 @@ internal fun PlayingContent(
 private fun BoardOrLoading(
     model: PlayingComponent.Model,
     onDirection: (Direction) -> Unit,
+    onTransitionCompleted: (Long) -> Unit,
+    boardFocusRequester: FocusRequester?,
+    onSkipTutorial: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val board = model.board
@@ -128,11 +135,31 @@ private fun BoardOrLoading(
             )
         }
     } else {
-        TwentyFortyEightBoard(
-            model = BoardModel(board, model.transition),
-            onDirection = onDirection,
-            modifier = modifier.testTag("game_board"),
-        )
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .aspectRatio(1f)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                TwentyFortyEightBoard(
+                    model = BoardModel(board, model.transition),
+                    onDirection = onDirection,
+                    onTransitionCompleted = onTransitionCompleted,
+                    focusRequester = boardFocusRequester,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("game_board"),
+                )
+                TutorialOverlay(
+                    visible = model.tutorialVisible,
+                    active = model.gesturesEnabled,
+                    policy = rememberMotionPolicy(),
+                    onSkip = onSkipTutorial,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+        }
     }
 }
 
@@ -141,7 +168,6 @@ private fun SupportingContent(
     model: PlayingComponent.Model,
     onUndo: () -> Unit,
     onRestart: () -> Unit,
-    onSkipTutorial: () -> Unit,
     error: UiErrorCode?,
     modifier: Modifier = Modifier,
 ) {
@@ -161,18 +187,6 @@ private fun SupportingContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        if (model.tutorialVisible) {
-            Text(
-                text = stringResource(Res.string.tutorial_instruction),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-            SecondaryWarmSandButton(
-                text = stringResource(Res.string.skip),
-                onClick = onSkipTutorial,
-            )
-        }
         val effectiveError = error ?: if (
             model.persistenceStatus == PlayingComponent.PersistenceStatus.Dirty
         ) {

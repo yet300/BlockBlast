@@ -403,11 +403,6 @@ class TwentyFortyEightSessionComponentTest {
     fun `adapter effects are observable with unique monotonic IDs`() = runTest(dispatcher) {
         val harness = componentHarness(unfinishedData())
         advanceUntilIdle()
-        val observed = mutableListOf<TwentyFortyEightSessionComponent.Effect>()
-        val cancellation = harness.component.effect.subscribe { state ->
-            state.effect?.let(observed::add)
-        }
-
         harness.adapter.collect(
             flowOf(
                 Label.Announcement(AnnouncementFact.Move(scoreDelta = 8L, largestMerge = 8L)),
@@ -416,6 +411,7 @@ class TwentyFortyEightSessionComponentTest {
             ),
         )
 
+        val observed = harness.component.effect.value.effects
         assertEquals(listOf(1L, 2L, 3L), observed.map { it.id })
         assertEquals(
             AnnouncementFact.Move(scoreDelta = 8L, largestMerge = 8L),
@@ -429,7 +425,6 @@ class TwentyFortyEightSessionComponentTest {
             UiErrorCode.ProgressNotSaved,
             assertIs<TwentyFortyEightSessionComponent.Effect.Error>(observed[2]).code,
         )
-        cancellation.cancel()
         harness.destroy()
     }
 

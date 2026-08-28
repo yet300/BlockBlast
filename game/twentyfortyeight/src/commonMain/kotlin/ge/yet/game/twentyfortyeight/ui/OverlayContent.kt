@@ -14,6 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,6 +52,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun OverlayContent(
     component: OverlayComponent,
     modifier: Modifier = Modifier,
+    victoryFocusRequester: FocusRequester? = null,
 ) {
     when (component) {
         is OverlayComponent.Victory -> {
@@ -57,6 +63,7 @@ internal fun OverlayContent(
                 onRestart = component::onRestartRequested,
                 onDismiss = component::onDismissRequested,
                 modifier = modifier,
+                focusRequester = victoryFocusRequester,
             )
         }
         is OverlayComponent.Statistics -> {
@@ -86,26 +93,61 @@ private fun VictoryOverlay(
     onRestart: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
 ) {
     ClaudeBottomSheet(onDismiss = onDismiss, modifier = modifier) {
         OverlayColumn {
             Text(
                 text = stringResource(Res.string.victory),
+                modifier = Modifier
+                    .then(
+                        focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier,
+                    )
+                    .focusable()
+                    .semantics { traversalIndex = 5f }
+                    .finiteEntryReveal(
+                        normalDurationMs = MotionPolicy.Normal.crownMs,
+                        delayMs = 0,
+                    ),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            OverlayStatisticRow(stringResource(Res.string.score), model.score.formatScore())
-            OverlayStatisticRow(stringResource(Res.string.best), model.bestScore.formatScore())
+            OverlayStatisticRow(
+                stringResource(Res.string.score),
+                model.score.formatScore(),
+                Modifier.finiteEntryReveal(
+                    normalDurationMs = MotionPolicy.Normal.crownMs,
+                    delayMs = 40,
+                ),
+            )
+            OverlayStatisticRow(
+                stringResource(Res.string.best),
+                model.bestScore.formatScore(),
+                Modifier.finiteEntryReveal(
+                    normalDurationMs = MotionPolicy.Normal.crownMs,
+                    delayMs = 60,
+                ),
+            )
             PrimaryTerracottaButton(
                 text = stringResource(Res.string.continue_game),
                 onClick = onContinue,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .finiteEntryReveal(
+                        normalDurationMs = MotionPolicy.Normal.crownMs,
+                        delayMs = MotionPolicy.Normal.victoryMaxStaggerMs,
+                    ),
             )
             SecondaryWarmSandButton(
                 text = stringResource(Res.string.restart),
                 onClick = onRestart,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .finiteEntryReveal(
+                        normalDurationMs = MotionPolicy.Normal.crownMs,
+                        delayMs = MotionPolicy.Normal.victoryMaxStaggerMs,
+                    ),
             )
         }
     }
