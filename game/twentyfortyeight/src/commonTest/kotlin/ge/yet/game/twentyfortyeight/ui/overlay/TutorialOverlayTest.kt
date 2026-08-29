@@ -42,7 +42,6 @@ class TutorialOverlayTest {
                     visible = true,
                     active = true,
                     policy = MotionPolicy.Reduced,
-                    onSkip = {},
                 )
             }
         }
@@ -61,7 +60,6 @@ class TutorialOverlayTest {
                 visible = false,
                 active = true,
                 policy = MotionPolicy.Normal,
-                onSkip = {},
             )
         }
 
