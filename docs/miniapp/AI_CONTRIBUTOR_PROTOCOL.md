@@ -11,8 +11,8 @@ a MiniApp in this repository.
 3. Stop for existing or licensed IP unless an approved proposal issue and
    verifiable rights evidence are present.
 4. Verify that the ID, project path and package names are valid and unused.
-5. Use `createMiniApp`; never hand-roll a new MiniApp module or copy a complete
-   existing game.
+5. Use `createMiniApp`; for a game, prefer `-PminiAppProfile=game`. Never
+   hand-roll a new MiniApp module or copy a complete existing game.
 6. Implement rules and UI inside the generated module boundaries.
 7. Add deterministic engine, lifecycle, persistence, accessibility and
    acceptance tests appropriate to the game.

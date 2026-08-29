@@ -96,6 +96,61 @@ class CreateMiniAppTaskTest {
     }
 
     @Test
+    fun `game profile renders a typed state action engine and component tests`() {
+        val target = temporaryFolder.newFolder("snake-game-profile")
+        MiniAppScaffoldRenderer(
+            id = "game.snake",
+            displayName = "Snake",
+            projectPath = ":game:snake",
+            profile = MiniAppScaffoldProfile.GAME,
+        ).writeTo(target)
+
+        assertEquals(
+            setOf(
+                "src/commonMain/kotlin/ge/yet/game/snake/SnakeGameState.kt",
+                "src/commonMain/kotlin/ge/yet/game/snake/SnakeGameEngine.kt",
+                "src/commonTest/kotlin/ge/yet/game/snake/SnakeGameEngineTest.kt",
+                "src/commonTest/kotlin/ge/yet/game/snake/SnakeComponentTest.kt",
+            ),
+            target.walkTopDown().filter(File::isFile).mapNotNull { file ->
+                file.relativeTo(target).invariantSeparatorsPath.takeIf {
+                    it.contains("SnakeGame") || it.contains("SnakeComponentTest")
+                }
+            }.toSet(),
+        )
+
+        val state = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeGameState.kt").readText()
+        assertContains(state, "data class SnakeGameState")
+        assertContains(state, "sealed interface SnakeGameAction")
+        assertContains(state, "data object Reset")
+
+        val engine = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeGameEngine.kt").readText()
+        assertContains(engine, "interface SnakeGameEngine")
+        assertContains(engine, "fun reduce(state: SnakeGameState, action: SnakeGameAction)")
+        assertContains(engine, "SnakeGameAction.Reset -> SnakeGameState()")
+        assertContains(engine, "SnakeGameAction.Tick -> state")
+
+        val component = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeComponent.kt").readText()
+        assertContains(component, "fun dispatch(action: SnakeGameAction)")
+        assertContains(component, "private val engine: SnakeGameEngine")
+        assertContains(component, "engine.reduce(current.state, action)")
+
+        assertContains(
+            target.resolve("AGENTS.md").readText(),
+            "pure state/action/engine seam",
+        )
+    }
+
+    @Test
+    fun `unknown scaffold profile is rejected with the supported values`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            MiniAppScaffoldProfile.from("arcade")
+        }
+
+        assertContains(failure.message.orEmpty(), "basic or game")
+    }
+
+    @Test
     fun `root task creates a discoverable but unshipped game under strict configuration cache`() {
         val fixture = MiniAppBundleGradleTestProject(temporaryFolder, declarations = "", useMarker = false)
         fixture.write("build.gradle.kts", """
@@ -104,6 +159,7 @@ class CreateMiniAppTaskTest {
         """)
         fixture.run(
             "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
+            "-PminiAppProfile=game",
             "--configuration-cache", "--configuration-cache-problems=fail",
         )
         fixture.run(":verifyMiniApp", "--configuration-cache", "--configuration-cache-problems=fail")
@@ -148,6 +204,7 @@ class CreateMiniAppTaskTest {
         """)
         fixture.run(
             "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
+            "-PminiAppProfile=game",
             "--configuration-cache", "--configuration-cache-problems=fail",
         )
         val compile = fixture.run(

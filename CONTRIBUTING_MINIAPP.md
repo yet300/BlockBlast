@@ -38,6 +38,21 @@ Use the repository scaffold from the root:
   -PminiAppName=Snake
 ```
 
+For a game, use the optional game profile:
+
+```bash
+./gradlew createMiniApp \
+  -PminiAppId=game.snake \
+  -PminiAppName=Snake \
+  -PminiAppProfile=game
+```
+
+The game profile adds immutable `GameState`, typed `GameAction`, a pure
+`GameEngine` reducer seam and focused engine/component tests. Its `Tick`
+action is deliberately a placeholder: contributors must define the actual
+rules instead of inheriting mechanics that may not fit their game. Omitting
+the profile keeps the smaller basic scaffold.
+
 Only direct `:game:<name>` and `:miniapp:samples:<name>` projects are accepted.
 The command must not overwrite an existing project.
 

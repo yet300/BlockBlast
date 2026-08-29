@@ -140,6 +140,11 @@ allowlist automatically.
 ./gradlew :game:snake:verifyMiniApp
 ```
 
+For a game-oriented starting point with immutable state, typed actions, a pure
+engine seam and focused component tests, add `-PminiAppProfile=game` to the
+first command. The default profile is intentionally smaller and keeps the
+existing basic scaffold behavior.
+
 The first command creates reviewable source. The next Gradle invocation
 discovers `game/*` and `miniapp/samples/*`, but discovery does not ship a
 plugin. `verifyMiniApp` checks the module boundary, tests and Android/iOS

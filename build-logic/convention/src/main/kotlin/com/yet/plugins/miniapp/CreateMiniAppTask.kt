@@ -61,6 +61,7 @@ internal abstract class CreateMiniAppTask : DefaultTask() {
     @get:Input abstract val miniAppId: Property<String>
     @get:Input abstract val miniAppName: Property<String>
     @get:Optional @get:Input abstract val miniAppProjectPath: Property<String>
+    @get:Optional @get:Input abstract val miniAppProfile: Property<String>
 
     @TaskAction
     fun create() {
@@ -69,13 +70,14 @@ internal abstract class CreateMiniAppTask : DefaultTask() {
         val name = miniAppName.get().trim()
         require(name.isNotEmpty()) { "miniAppName must not be blank" }
         val path = miniAppProjectPath.orNull ?: ":game:${id.substringAfterLast('.')}"
+        val profile = MiniAppScaffoldProfile.from(miniAppProfile.orNull)
         val root = repositoryRoot.get().asFile
         val target = validatedProjectDirectory(root, path)
         check(!Files.exists(target.toPath(), NOFOLLOW_LINKS)) { "Refusing to overwrite existing mini-app project $path" }
         createMiniAppWithoutReplacing(
             target = target,
             validateTarget = { check(validatedProjectDirectory(root, path) == target) { "Mini-app target changed during creation" } },
-        ) { staging -> MiniAppScaffoldRenderer(id, name, path).writeTo(staging) }
+        ) { staging -> MiniAppScaffoldRenderer(id, name, path, profile).writeTo(staging) }
         logger.lifecycle("Created $path; it becomes discoverable on the next Gradle invocation")
     }
 }

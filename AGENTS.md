@@ -209,9 +209,14 @@ before generating or modifying a MiniApp. Maintainer acceptance uses
 Create and verify a reviewable contributor project with:
 
 ```bash
-./gradlew createMiniApp -PminiAppId=game.snake -PminiAppName=Snake
+./gradlew createMiniApp -PminiAppId=game.snake -PminiAppName=Snake -PminiAppProfile=game
 ./gradlew :game:snake:allTests :game:snake:validateMiniAppDependencies
 ```
+
+`miniAppProfile=game` is optional but recommended for games. It generates a
+small immutable `GameState`/typed `GameAction`/pure `GameEngine` seam plus
+focused engine and component tests; its `Tick` action is only a placeholder
+for game-owned rules. Omit the profile for the smaller basic scaffold.
 
 The task accepts only direct `:game:<name>` and
 `:miniapp:samples:<name>` paths (or the matching explicit

@@ -11,6 +11,7 @@ class MiniAppRootPlugin : Plugin<Project> {
             miniAppId.set(providers.gradleProperty("miniAppId"))
             miniAppName.set(providers.gradleProperty("miniAppName"))
             miniAppProjectPath.set(providers.gradleProperty("miniAppProjectPath"))
+            miniAppProfile.set(providers.gradleProperty("miniAppProfile"))
         }
         val shippingModel = gradle.extensions.getByType<MiniAppShippingModel>()
         val verifyMiniApp = tasks.register("verifyMiniApp") {
