@@ -20,7 +20,7 @@ import kotlin.test.assertNull
 @Config(sdk = [35])
 class ProductionMiniAppRegistryAndroidTest {
     @Test
-    fun `production registry contains exactly the configured mini-app on Android`() = runTest {
+    fun `production registry contains exactly the configured mini-apps on Android`() = runTest {
         val graph = createGraphFactory<AndroidAppGraph.Factory>().create(
             ApplicationProvider.getApplicationContext<Context>(),
         )
@@ -28,8 +28,10 @@ class ProductionMiniAppRegistryAndroidTest {
         val registry = graph.miniAppRegistry
 
         assertEquals(expected, registry.manifests.mapTo(mutableSetOf()) { it.id })
-        val productionPlugin = assertNotNull(registry[expected.single()])
+        expected.forEach { id ->
+            val productionPlugin = assertNotNull(registry[id])
+            MiniAppContractAssertions.assertResourcesResolvable(productionPlugin.manifest)
+        }
         assertNull(registry[MiniAppId("sample.counter")])
-        MiniAppContractAssertions.assertResourcesResolvable(productionPlugin.manifest)
     }
 }
