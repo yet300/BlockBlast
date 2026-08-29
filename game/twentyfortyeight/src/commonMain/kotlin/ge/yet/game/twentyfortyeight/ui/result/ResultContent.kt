@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.result
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,12 +33,14 @@ import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.best
 import ge.yet.game.twentyfortyeight.generated.resources.game_over
 import ge.yet.game.twentyfortyeight.generated.resources.highest_tile
-import ge.yet.game.twentyfortyeight.generated.resources.moves_count
 import ge.yet.game.twentyfortyeight.generated.resources.new_game
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
+import ge.yet.game.twentyfortyeight.ui.common.errorText
+import ge.yet.game.twentyfortyeight.ui.common.movesValue
+import ge.yet.game.twentyfortyeight.ui.motion.MotionPolicy
+import ge.yet.game.twentyfortyeight.ui.motion.finiteEntryReveal
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.icon.Crown
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -166,12 +168,3 @@ private fun ResultMetric(
         )
     }
 }
-
-@Composable
-internal fun movesValue(value: Long): String = pluralStringResource(
-    Res.plurals.moves_count,
-    value.pluralQuantity(),
-    value,
-)
-
-private fun Long.pluralQuantity(): Int = coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()

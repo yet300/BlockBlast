@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.board
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -38,6 +38,7 @@ import ge.yet.game.twentyfortyeight.generated.resources.move_left
 import ge.yet.game.twentyfortyeight.generated.resources.move_right
 import ge.yet.game.twentyfortyeight.generated.resources.move_up
 import ge.yet.game.twentyfortyeight.store.VisualTransition
+import ge.yet.game.twentyfortyeight.ui.motion.rememberMotionPolicy
 import org.jetbrains.compose.resources.stringResource
 
 internal data class BoardTileModel(

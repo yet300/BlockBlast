@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.board
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable

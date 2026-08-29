@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.screen
 
 import ge.yet.game.twentyfortyeight.session.TwentyFortyEightSessionComponent
 import ge.yet.game.twentyfortyeight.session.TwentyFortyEightSessionPorts

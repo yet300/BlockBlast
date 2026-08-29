@@ -26,7 +26,7 @@ Do not remove `GameStatistics`, its engine updates, persistence records, diagnos
 
 ## Unified Score Card
 
-Replace the two independent Score and Best surfaces with one non-clickable surface. It has three visual states:
+Replace the two independent Score and Best surfaces with one non-clickable presentation. It has three visual states:
 
 1. **No prior record:** show only the current formatted score.
 2. **Existing record:** show a row containing current score, crown icon, and best score, without visible `Score` or `Best` labels.
@@ -42,7 +42,21 @@ Add `bestImprovedInRun: Boolean` to `RunFacts`. `GameRules.acceptChanged()` sets
 
 Persist the flag in `current_game`. The serialized field has a default of `false` so older version-1 payloads remain readable. Validation rejects impossible states where the flag is true but the best score is zero. The UI reads the flag through the Store model; it does not own a parallel `rememberSaveable` record state.
 
-The visual transition uses one persistent Surface. Content changes use bounded Compose value/content animation: the score side contracts and fades toward the crown side, while the crown receives a short pulse. Reduced Motion uses an alpha-only transition.
+The visual transition uses one persistent transparent container with no card fill, shape, or elevation. Its content is centered in the available width. Content changes use bounded Compose value/content animation: the score side contracts and fades toward the crown side, while the crown receives a short pulse. Reduced Motion uses an alpha-only transition.
+
+## UI Package Boundaries
+
+Keep the 2048 Compose layer organized by responsibility rather than in one flat package:
+
+- `ui/board`: board composition, tiles, palette policy, and move/Undo transitions;
+- `ui/common`: shared UI-only text formatting;
+- `ui/gameplay`: the playing composition, score presentation, actions, and swipe input;
+- `ui/motion`: shared bounded motion policy and entry animation primitives;
+- `ui/overlay`: victory/restart sheets and the tutorial overlay;
+- `ui/result`: the compact Game Over presentation;
+- `ui/screen`: session routing, focus, announcements, and top-level effect consumption.
+
+Common tests mirror the same package layout. All types remain module-internal, and the package split does not change Store, component, session, or public MiniApp contracts.
 
 ## Supporting Hint Removal
 

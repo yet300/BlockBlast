@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.gameplay
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

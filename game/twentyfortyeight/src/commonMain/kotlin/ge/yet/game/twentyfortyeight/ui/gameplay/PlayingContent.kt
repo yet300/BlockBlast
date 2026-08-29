@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.gameplay
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -30,9 +30,12 @@ import ge.yet.game.twentyfortyeight.component.PlayingComponent
 import ge.yet.game.twentyfortyeight.engine.Direction
 import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.loading_game
-import ge.yet.game.twentyfortyeight.generated.resources.new_game_not_saved
-import ge.yet.game.twentyfortyeight.generated.resources.progress_not_saved
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
+import ge.yet.game.twentyfortyeight.ui.board.BoardModel
+import ge.yet.game.twentyfortyeight.ui.board.TwentyFortyEightBoard
+import ge.yet.game.twentyfortyeight.ui.common.errorText
+import ge.yet.game.twentyfortyeight.ui.motion.rememberMotionPolicy
+import ge.yet.game.twentyfortyeight.ui.overlay.TutorialOverlay
 import ge.yet.game.uikit.adaptive.AdaptiveGameScaffold
 import org.jetbrains.compose.resources.stringResource
 
@@ -192,10 +195,4 @@ private fun SupportingContent(
             )
         }
     }
-}
-
-@Composable
-internal fun errorText(code: UiErrorCode): String = when (code) {
-    UiErrorCode.ProgressNotSaved -> stringResource(Res.string.progress_not_saved)
-    UiErrorCode.NewGameNotSaved -> stringResource(Res.string.new_game_not_saved)
 }

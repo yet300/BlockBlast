@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.gameplay
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.board
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb

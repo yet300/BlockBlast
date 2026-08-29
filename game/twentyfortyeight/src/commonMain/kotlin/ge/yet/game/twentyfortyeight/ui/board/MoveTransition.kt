@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.board
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -27,6 +27,7 @@ import ge.yet.game.twentyfortyeight.engine.RuntimeBoard
 import ge.yet.game.twentyfortyeight.engine.TileId
 import ge.yet.game.twentyfortyeight.engine.UndoTransition
 import ge.yet.game.twentyfortyeight.store.VisualTransition
+import ge.yet.game.twentyfortyeight.ui.motion.MotionPolicy
 import kotlin.math.roundToInt
 
 private enum class TransitionTileKind {

@@ -1,21 +1,26 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.screen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -28,8 +33,6 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.v2.runComposeUiTest
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -41,6 +44,10 @@ import ge.yet.game.twentyfortyeight.engine.Board
 import ge.yet.game.twentyfortyeight.engine.Direction
 import ge.yet.game.twentyfortyeight.engine.RuntimeBoard
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
+import ge.yet.game.twentyfortyeight.ui.gameplay.PlayingContent
+import ge.yet.game.twentyfortyeight.ui.gameplay.ScoreBestRow
+import ge.yet.game.twentyfortyeight.ui.overlay.OverlayContent
+import ge.yet.game.twentyfortyeight.ui.result.ResultContent
 import ge.yet.game.uikit.theme.LogicaTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,7 +56,37 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class TwentyFortyEightScreenTest {
     @Test
-    fun `score card uses one label-free non-clickable surface for every record state`() =
+    fun `score presentation has no background and centers its content`() = runComposeUiTest {
+        val parentColor = Color.Magenta
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(
+                    modifier = Modifier
+                        .size(320.dp, 80.dp)
+                        .background(parentColor),
+                ) {
+                    ScoreBestRow(
+                        score = 128L,
+                        bestScore = 0L,
+                        bestImprovedInRun = false,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+
+        val card = onNodeWithTag("score_card").fetchSemanticsNode().boundsInRoot
+        val score = onNodeWithTag("score_value", useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .boundsInRoot
+        assertEquals(card.center.x, score.center.x, absoluteTolerance = 1f)
+
+        val pixels = onNodeWithTag("score_card").captureToImage().toPixelMap()
+        assertEquals(parentColor, pixels[pixels.width / 2, 2])
+    }
+
+    @Test
+    fun `score presentation stays label-free and non-clickable for every record state`() =
         runComposeUiTest {
             val state = mutableStateOf(
                 PlayingComponent.Model(

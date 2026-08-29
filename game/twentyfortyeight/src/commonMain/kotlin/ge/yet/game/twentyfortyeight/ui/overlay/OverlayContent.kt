@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.overlay
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +34,9 @@ import ge.yet.game.twentyfortyeight.generated.resources.restart_confirmation_bod
 import ge.yet.game.twentyfortyeight.generated.resources.restart_confirmation_title
 import ge.yet.game.twentyfortyeight.generated.resources.score
 import ge.yet.game.twentyfortyeight.generated.resources.victory
+import ge.yet.game.twentyfortyeight.ui.common.movesValue
+import ge.yet.game.twentyfortyeight.ui.motion.MotionPolicy
+import ge.yet.game.twentyfortyeight.ui.motion.finiteEntryReveal
 import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import ge.yet.game.uikit.components.sheet.ClaudeBottomSheet

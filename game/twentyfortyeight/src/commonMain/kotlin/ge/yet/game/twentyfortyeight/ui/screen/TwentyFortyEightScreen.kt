@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.screen
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -24,6 +24,9 @@ import ge.yet.game.twentyfortyeight.session.TwentyFortyEightSessionComponent
 import ge.yet.game.twentyfortyeight.store.AnnouncementFact
 import ge.yet.game.twentyfortyeight.store.FocusTarget
 import ge.yet.game.twentyfortyeight.store.UiErrorCode
+import ge.yet.game.twentyfortyeight.ui.gameplay.PlayingContent
+import ge.yet.game.twentyfortyeight.ui.overlay.OverlayContent
+import ge.yet.game.twentyfortyeight.ui.result.ResultContent
 import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.announcement_game_over
 import ge.yet.game.twentyfortyeight.generated.resources.announcement_move

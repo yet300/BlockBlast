@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.gameplay
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Velocity

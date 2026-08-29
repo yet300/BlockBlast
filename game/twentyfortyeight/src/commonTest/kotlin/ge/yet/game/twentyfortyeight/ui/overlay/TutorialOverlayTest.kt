@@ -1,4 +1,6 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.overlay
+
+import ge.yet.game.twentyfortyeight.ui.motion.MotionPolicy
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction

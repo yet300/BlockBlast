@@ -750,3 +750,26 @@ Expected: no whitespace errors, no staged files, and only the pre-existing user-
 - [ ] **Step 4: Perform manual platform follow-up when devices are available**
 
 Verify on a weak Android device and an iOS simulator/device: short swipes in all directions, support-column vertical scrolling, one move per held gesture, 60/120 Hz merge motion, Reduced Motion crossfade, 200% font scale Game Over scrolling, TalkBack/VoiceOver score semantics, and allocation/frame traces during repeated merges. Record this as unverified in the handoff if no devices are available.
+
+### Task 9: Finalize UI package boundaries and score presentation
+
+**Files:**
+- Move production UI into `ui/board`, `ui/common`, `ui/gameplay`, `ui/motion`, `ui/overlay`, `ui/result`, and `ui/screen`.
+- Move common UI tests into matching package folders.
+- Modify `ui/gameplay/ScoreBestRow.kt` and its Compose UI coverage.
+
+- [ ] **Step 1: Add a failing rendering test for the score container**
+
+Render the score over a distinct parent color, capture its Compose image, and assert the parent color remains visible through the score bounds. Also assert the visible score center aligns with the container center.
+
+- [ ] **Step 2: Remove the score Surface and verify GREEN**
+
+Use a transparent root `Box` with centered content. Preserve record-state animation, accessibility description, traversal order, minimum touch-readable height, and the existing non-clickable contract.
+
+- [ ] **Step 3: Move UI sources and tests by responsibility**
+
+Use actual file moves, update package declarations and imports, and extract only shared UI text formatting into `ui/common`. Do not change Store, component, engine, persistence, or public MiniApp APIs.
+
+- [ ] **Step 4: Run the complete release verification gate again**
+
+Run all 2048 tests, dependency validation, Android/iOS compilation, forbidden-effect scans, `git diff --check`, and repository-scope checks. Stage only the 2048 implementation and these two documentation files.

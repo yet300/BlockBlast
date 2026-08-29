@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.motion
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing

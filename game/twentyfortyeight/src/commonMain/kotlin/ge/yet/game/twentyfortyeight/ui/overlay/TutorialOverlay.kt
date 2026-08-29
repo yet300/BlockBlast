@@ -1,4 +1,4 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.overlay
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import ge.yet.game.twentyfortyeight.generated.resources.Res
 import ge.yet.game.twentyfortyeight.generated.resources.skip
 import ge.yet.game.twentyfortyeight.generated.resources.tutorial_instruction
+import ge.yet.game.twentyfortyeight.ui.motion.MotionPolicy
 import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
 import org.jetbrains.compose.resources.stringResource
 

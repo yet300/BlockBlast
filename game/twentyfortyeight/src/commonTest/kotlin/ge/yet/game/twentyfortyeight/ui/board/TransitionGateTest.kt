@@ -1,4 +1,7 @@
-package ge.yet.game.twentyfortyeight.ui
+package ge.yet.game.twentyfortyeight.ui.board
+
+import ge.yet.game.twentyfortyeight.ui.motion.MotionPolicy
+import ge.yet.game.twentyfortyeight.ui.motion.normalTransitionDurationMs
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
