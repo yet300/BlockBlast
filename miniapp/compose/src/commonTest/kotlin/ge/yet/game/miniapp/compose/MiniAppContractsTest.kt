@@ -58,6 +58,18 @@ class MiniAppContractsTest {
         assertTrue(completed)
     }
 
+    @Test
+    fun `fruit merge action placements remain explicit host contracts`() {
+        assertEquals(
+            setOf(
+                MiniAppInterstitialPlacement.CONTINUE_AFTER_GAME_OVER,
+                MiniAppInterstitialPlacement.FRUIT_MERGE_CLEAR,
+                MiniAppInterstitialPlacement.FRUIT_MERGE_SHAKE,
+            ),
+            MiniAppInterstitialPlacement.entries.toSet(),
+        )
+    }
+
     private class FakePlugin : MiniAppPlugin {
         var manifestReadCount = 0
         var sessionCreateCount = 0
