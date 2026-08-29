@@ -25,6 +25,10 @@ miniApps {
         projectPath = ":game:blockblast",
         expectedId = "game.blockblast",
     )
+    include(
+        projectPath = ":game:twentyfortyeight",
+        expectedId = "game.twentyfortyeight",
+    )
 }
 
 dependencyResolutionManagement {
