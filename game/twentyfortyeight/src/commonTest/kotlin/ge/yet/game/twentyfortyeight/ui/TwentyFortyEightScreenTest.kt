@@ -13,6 +13,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
@@ -21,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
@@ -46,6 +48,61 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class TwentyFortyEightScreenTest {
+    @Test
+    fun `score card uses one label-free non-clickable surface for every record state`() =
+        runComposeUiTest {
+            val state = mutableStateOf(
+                PlayingComponent.Model(
+                    board = null,
+                    transition = null,
+                    score = 128L,
+                    bestScore = 0L,
+                    bestImprovedInRun = false,
+                    gesturesEnabled = false,
+                    undoEnabled = false,
+                    tutorialVisible = false,
+                    overlay = null,
+                    persistenceStatus = PlayingComponent.PersistenceStatus.Clean,
+                ),
+            )
+            setContent {
+                LogicaTheme(darkTheme = false) {
+                    ScoreBestRow(
+                        score = state.value.score,
+                        bestScore = state.value.bestScore,
+                        bestImprovedInRun = state.value.bestImprovedInRun,
+                        modifier = Modifier.size(320.dp, 80.dp),
+                    )
+                }
+            }
+
+            onNodeWithTag("score_card").assertHasNoClickAction()
+            onNodeWithTag("score_value", useUnmergedTree = true).assertIsDisplayed()
+            onNodeWithTag("best_value", useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithText("Score").assertDoesNotExist()
+            onNodeWithText("Best").assertDoesNotExist()
+
+            runOnIdle {
+                state.value = state.value.copy(score = 256L, bestScore = 4096L)
+            }
+            waitForIdle()
+            onNodeWithTag("score_value", useUnmergedTree = true).assertIsDisplayed()
+            onNodeWithTag("best_value", useUnmergedTree = true).assertIsDisplayed()
+            onNodeWithTag("best_crown", useUnmergedTree = true).assertIsDisplayed()
+
+            runOnIdle {
+                state.value = state.value.copy(
+                    score = 8192L,
+                    bestScore = 8192L,
+                    bestImprovedInRun = true,
+                )
+            }
+            waitForIdle()
+            onNodeWithTag("score_value", useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithTag("best_value", useUnmergedTree = true).assertIsDisplayed()
+            onNodeWithContentDescription("Score, 8,192. Best, 8,192").assertIsDisplayed()
+        }
+
     @Test
     fun `playing surface exposes neither statistics nor swipe hint`() = runComposeUiTest {
         setContent {
@@ -82,8 +139,9 @@ class TwentyFortyEightScreenTest {
                 }
             }
 
-            val score = onNodeWithContentDescription("Score, 4,096").fetchSemanticsNode()
-            val best = onNodeWithContentDescription("Best, new best, 4,096").fetchSemanticsNode()
+            val score = onNodeWithContentDescription(
+                "Score, 4,096. Best, 4,096",
+            ).fetchSemanticsNode()
             val board = onNode(
                 SemanticsMatcher("board summary") { node ->
                     node.config.contains(SemanticsProperties.ContentDescription) &&
@@ -97,8 +155,8 @@ class TwentyFortyEightScreenTest {
             val tutorial = onNodeWithTag("tutorial").fetchSemanticsNode()
 
             assertEquals(
-                listOf(0f, 1f, 2f, 3f, 4f, 5f),
-                listOf(score, best, board, undo, restart, tutorial).map {
+                listOf(0f, 2f, 3f, 4f, 5f),
+                listOf(score, board, undo, restart, tutorial).map {
                     it.config[SemanticsProperties.TraversalIndex]
                 },
             )
@@ -125,10 +183,7 @@ class TwentyFortyEightScreenTest {
         onNodeWithContentDescription("Undo").assertIsNotEnabled()
         onNodeWithContentDescription("Restart").assertHasClickAction().performClick()
         assertEquals(1, restartRequests)
-        onNodeWithContentDescription(
-            "Best, new best, 4,096",
-            useUnmergedTree = true,
-        ).assertIsDisplayed()
+        onNodeWithTag("score_card").assertHasNoClickAction()
         onNodeWithText("Move up").assertDoesNotExist()
         onNodeWithText("Move down").assertDoesNotExist()
         onNodeWithText("Move left").assertDoesNotExist()
@@ -206,12 +261,35 @@ class TwentyFortyEightScreenTest {
         onNodeWithText("Progress could not be saved").assertIsDisplayed()
         onNodeWithText("New game").assertHasClickAction().performClick()
         assertEquals(1, newGameRequests)
-        onNodeWithText("Games won").assertIsDisplayed()
-        onNodeWithText("Successful moves").assertIsDisplayed()
-        onNodeWithText("Total merges").assertIsDisplayed()
+        onNodeWithText("Games won").assertDoesNotExist()
+        onNodeWithText("Successful moves").assertDoesNotExist()
+        onNodeWithText("Total merges").assertDoesNotExist()
         onNodeWithText("Games started").assertDoesNotExist()
         onNodeWithText("Undo uses").assertDoesNotExist()
     }
+
+    @Test
+    fun `game over stays reachable on a compact screen at two hundred percent font scale`() =
+        runComposeUiTest {
+            setContent {
+                LogicaTheme(darkTheme = true) {
+                    val density = LocalDensity.current
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density.density, fontScale = 2f),
+                    ) {
+                        ResultContent(
+                            model = resultModel(),
+                            onNewGame = {},
+                            modifier = Modifier.size(320.dp, 360.dp),
+                        )
+                    }
+                }
+            }
+
+            onNodeWithTag("result_card").assertIsDisplayed()
+            onNodeWithTag("result_supporting_column").assertDoesNotExist()
+            onNodeWithText("New game").performScrollTo().assertIsDisplayed()
+        }
 
     @Test
     fun `compact height support remains reachable at two hundred percent font scale`() = runComposeUiTest {
@@ -467,11 +545,15 @@ class TwentyFortyEightScreenTest {
         undoEnabled: Boolean,
         tutorialVisible: Boolean = false,
         gesturesEnabled: Boolean = true,
+        score: Long = 4096L,
+        bestScore: Long = 4096L,
+        bestImprovedInRun: Boolean = false,
     ) = PlayingComponent.Model(
         board = board(),
         transition = null,
-        score = 4096L,
-        bestScore = 4096L,
+        score = score,
+        bestScore = bestScore,
+        bestImprovedInRun = bestImprovedInRun,
         gesturesEnabled = gesturesEnabled,
         undoEnabled = undoEnabled,
         tutorialVisible = tutorialVisible,
@@ -483,14 +565,6 @@ class TwentyFortyEightScreenTest {
         score = 4096L,
         bestScore = 8192L,
         highestTile = 2048L,
-        statistics = ResultComponent.SelectedStatistics(
-            gamesStarted = 8L,
-            gamesWon = 7L,
-            gamesEndedByGameOver = 6L,
-            successfulMoves = 5L,
-            totalMerges = 4L,
-            undoUses = 3L,
-        ),
     )
 
     private fun board(): RuntimeBoard = RuntimeBoard.restore(

@@ -151,12 +151,6 @@ class TwentyFortyEightSessionComponentTest {
             assertEquals(64L, model.score)
             assertEquals(128L, model.bestScore)
             assertEquals(terminalGame.board.values().filterNotNull().maxOrNull(), model.highestTile)
-            assertEquals(7L, model.statistics.gamesStarted)
-            assertEquals(3L, model.statistics.gamesWon)
-            assertEquals(4L, model.statistics.gamesEndedByGameOver)
-            assertEquals(80L, model.statistics.successfulMoves)
-            assertEquals(42L, model.statistics.totalMerges)
-            assertEquals(5L, model.statistics.undoUses)
 
             advanceUntilIdle()
             assertSame(result, second.component.stack.value.active.instance)
@@ -406,8 +400,6 @@ class TwentyFortyEightSessionComponentTest {
         assertEquals(1, restored.component.stack.value.items.size)
         assertEquals(64L, result.component.model.value.score)
         assertEquals(128L, result.component.model.value.bestScore)
-        assertEquals(7L, result.component.model.value.statistics.gamesStarted)
-        assertEquals(42L, result.component.model.value.statistics.totalMerges)
         restored.destroy()
     }
 

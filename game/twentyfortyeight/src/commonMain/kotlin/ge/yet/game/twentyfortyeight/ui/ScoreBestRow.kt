@@ -1,16 +1,20 @@
 package ge.yet.game.twentyfortyeight.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,108 +34,53 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.app.common.utils.formatScore
 import ge.yet.game.twentyfortyeight.generated.resources.Res
-import ge.yet.game.twentyfortyeight.generated.resources.best
 import ge.yet.game.twentyfortyeight.generated.resources.best_description
-import ge.yet.game.twentyfortyeight.generated.resources.best_new_description
-import ge.yet.game.twentyfortyeight.generated.resources.crown_description
-import ge.yet.game.twentyfortyeight.generated.resources.score
 import ge.yet.game.twentyfortyeight.generated.resources.score_description
-import ge.yet.game.twentyfortyeight.store.VisualTransition
 import ge.yet.game.uikit.components.icon.Crown
 import org.jetbrains.compose.resources.stringResource
+
+internal enum class ScoreCardState {
+    ScoreOnly,
+    ScoreAndBest,
+    BestOnly,
+}
+
+internal fun scoreCardState(
+    bestScore: Long,
+    bestImprovedInRun: Boolean,
+): ScoreCardState = when {
+    bestImprovedInRun -> ScoreCardState.BestOnly
+    bestScore > 0L -> ScoreCardState.ScoreAndBest
+    else -> ScoreCardState.ScoreOnly
+}
 
 @Composable
 internal fun ScoreBestRow(
     score: Long,
     bestScore: Long,
-    transition: VisualTransition? = null,
+    bestImprovedInRun: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(modifier = Modifier.weight(1f)) {
-            ScoreCard(
-                label = stringResource(Res.string.score),
-                value = score.formatScore(),
-                description = stringResource(Res.string.score_description, score.formatScore()),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .scorePulse(score, MotionPolicy.Normal.scoreMs),
-            )
-            val move = transition as? VisualTransition.Move
-            if (move != null && move.result.scoreDelta > 0L) {
-                ScoreDeltaChip(
-                    transitionId = move.transitionId,
-                    scoreDelta = move.result.scoreDelta,
-                    modifier = Modifier.align(Alignment.TopEnd),
-                )
-            }
-        }
-        BestCard(
-            bestScore = bestScore,
-            isNewBest = score > 0L && score >= bestScore,
-            modifier = Modifier.weight(1f),
-        )
+    val state = scoreCardState(bestScore, bestImprovedInRun)
+    val scoreText = score.formatScore()
+    val bestText = bestScore.formatScore()
+    val scoreDescription = stringResource(Res.string.score_description, scoreText)
+    val description = if (state == ScoreCardState.ScoreOnly) {
+        scoreDescription
+    } else {
+        "$scoreDescription. ${stringResource(Res.string.best_description, bestText)}"
     }
-}
-
-@Composable
-private fun ScoreDeltaChip(
-    transitionId: Long,
-    scoreDelta: Long,
-    modifier: Modifier = Modifier,
-) {
     val policy = rememberMotionPolicy()
-    val progress = remember(transitionId) { Animatable(0f) }
-    LaunchedEffect(transitionId, policy) {
-        progress.snapTo(0f)
-        progress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = if (policy.usesSpatialMotion) {
-                    MotionPolicy.Normal.scoreMs
-                } else {
-                    MotionPolicy.Reduced.alphaMs
-                },
-                easing = LinearEasing,
-            ),
-        )
-    }
-    Text(
-        text = "+${scoreDelta.formatScore()}",
-        modifier = modifier.graphicsLayer {
-            val fade = if (progress.value < 0.5f) {
-                progress.value * 2f
-            } else {
-                (1f - progress.value) * 2f
-            }
-            alpha = fade.coerceIn(0f, 1f)
-            if (policy.usesSpatialMotion) {
-                translationY = -progress.value * 16.dp.toPx()
-            }
-        },
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.Bold,
-    )
-}
-
-@Composable
-private fun ScoreCard(
-    label: String,
-    value: String,
-    description: String,
-    modifier: Modifier = Modifier,
-) {
     Surface(
         modifier = modifier
+            .fillMaxWidth()
             .heightIn(min = 64.dp)
+            .testTag("score_card")
             .semantics(mergeDescendants = true) {
                 traversalIndex = 0f
                 contentDescription = description
@@ -141,76 +90,80 @@ private fun ScoreCard(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        AnimatedContent(
+            targetState = state,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center,
+            transitionSpec = {
+                val duration = if (policy.usesSpatialMotion) {
+                    MotionPolicy.Normal.scoreMs
+                } else {
+                    MotionPolicy.Reduced.alphaMs
+                }
+                if (policy.usesSpatialMotion) {
+                    (fadeIn(tween(duration)) + scaleIn(tween(duration), initialScale = 0.92f))
+                        .togetherWith(
+                            fadeOut(tween(duration)) +
+                                scaleOut(tween(duration), targetScale = 0.92f),
+                        )
+                } else {
+                    fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
+                }
+            },
+            label = "score-record-state",
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+            ScoreCardContent(
+                state = it,
+                score = scoreText,
+                bestScore = bestText,
+                scoreKey = score,
+                bestScoreKey = bestScore,
             )
         }
     }
 }
 
 @Composable
-private fun BestCard(
-    bestScore: Long,
-    isNewBest: Boolean,
-    modifier: Modifier = Modifier,
+private fun ScoreCardContent(
+    state: ScoreCardState,
+    score: String,
+    bestScore: String,
+    scoreKey: Long,
+    bestScoreKey: Long,
 ) {
-    val formatted = bestScore.formatScore()
-    val bestDescription = if (isNewBest) {
-        stringResource(Res.string.best_new_description, formatted)
-    } else {
-        stringResource(Res.string.best_description, formatted)
-    }
-    val crownDescription = stringResource(Res.string.crown_description)
-
-    Surface(
-        modifier = modifier
-            .heightIn(min = 64.dp)
-            .semantics {
-                traversalIndex = 1f
-                contentDescription = bestDescription
-            },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Crown,
-                    contentDescription = crownDescription,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .scorePulse(bestScore, MotionPolicy.Normal.crownMs),
-                    tint = MaterialTheme.colorScheme.tertiary,
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = stringResource(Res.string.best),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        if (state != ScoreCardState.BestOnly) {
             Text(
-                text = formatted,
+                text = score,
+                modifier = Modifier
+                    .testTag("score_value")
+                    .scorePulse(scoreKey, MotionPolicy.Normal.scoreMs),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        if (state == ScoreCardState.ScoreAndBest) Spacer(Modifier.width(20.dp))
+        if (state != ScoreCardState.ScoreOnly) {
+            Icon(
+                imageVector = Crown,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(20.dp)
+                    .testTag("best_crown")
+                    .scorePulse(bestScoreKey, MotionPolicy.Normal.crownMs),
+                tint = MaterialTheme.colorScheme.tertiary,
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = bestScore,
+                modifier = Modifier.testTag("best_value"),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }

@@ -93,7 +93,7 @@ internal fun PlayingContent(
                     ScoreBestRow(
                         score = model.score,
                         bestScore = model.bestScore,
-                        transition = model.transition,
+                        bestImprovedInRun = model.bestImprovedInRun,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     SupportingContent(

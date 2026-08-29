@@ -38,6 +38,7 @@ internal interface PlayingComponent {
         val transition: VisualTransition?,
         val score: Long,
         val bestScore: Long,
+        val bestImprovedInRun: Boolean = false,
         val gesturesEnabled: Boolean,
         val undoEnabled: Boolean,
         val tutorialVisible: Boolean,
@@ -64,6 +65,7 @@ internal class DefaultPlayingComponent(
             transition = state.activeTransition,
             score = game?.score ?: 0L,
             bestScore = game?.bestScore ?: 0L,
+            bestImprovedInRun = game?.facts?.bestImprovedInRun == true,
             gesturesEnabled = state.bootstrap == BootstrapState.Ready &&
                 state.visibility == MiniAppVisibility.ACTIVE &&
                 game?.phase == GamePhase.Playing &&
