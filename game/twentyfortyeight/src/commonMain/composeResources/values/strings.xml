@@ -12,7 +12,6 @@
     <string name="victory">Victory</string>
     <string name="game_over">Game over</string>
     <string name="cancel">Cancel</string>
-    <string name="skip">Skip</string>
     <string name="loading_game">Loading game</string>
 
     <string name="games_won">Games won</string>
@@ -20,7 +19,6 @@
     <string name="total_merges">Total merges</string>
     <string name="highest_tile">Highest tile</string>
 
-    <string name="tutorial_instruction">Swipe to combine matching tiles.</string>
     <string name="restart_confirmation_title">Restart game?</string>
     <string name="restart_confirmation_body">Your score is %1$s after %2$s. Restarting begins a new game.</string>
     <string name="progress_not_saved">Progress could not be saved</string>

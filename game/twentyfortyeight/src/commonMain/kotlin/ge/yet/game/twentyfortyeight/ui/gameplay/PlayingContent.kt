@@ -45,7 +45,6 @@ internal fun PlayingContent(
     onDirection: (Direction) -> Unit,
     onUndo: () -> Unit,
     onRestart: () -> Unit,
-    onSkipTutorial: () -> Unit,
     onTransitionCompleted: (Long) -> Unit = {},
     boardFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
@@ -79,7 +78,6 @@ internal fun PlayingContent(
                     onDirection = onDirection,
                     onTransitionCompleted = onTransitionCompleted,
                     boardFocusRequester = boardFocusRequester,
-                    onSkipTutorial = onSkipTutorial,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(12.dp),
@@ -118,7 +116,6 @@ private fun BoardOrLoading(
     onDirection: (Direction) -> Unit,
     onTransitionCompleted: (Long) -> Unit,
     boardFocusRequester: FocusRequester?,
-    onSkipTutorial: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val board = model.board
@@ -153,7 +150,6 @@ private fun BoardOrLoading(
                     visible = model.tutorialVisible,
                     active = model.gesturesEnabled,
                     policy = rememberMotionPolicy(),
-                    onSkip = onSkipTutorial,
                     modifier = Modifier.padding(16.dp),
                 )
             }

@@ -149,7 +149,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = {},
                     onUndo = {},
                     onRestart = {},
-                    onSkipTutorial = {},
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -170,7 +169,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = {},
                         onUndo = {},
                         onRestart = {},
-                        onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 600.dp),
                     )
                 }
@@ -211,7 +209,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = {},
                     onUndo = {},
                     onRestart = { restartRequests += 1 },
-                    onSkipTutorial = {},
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -341,7 +338,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = {},
                         onUndo = {},
                         onRestart = {},
-                        onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 479.dp),
                     )
                 }
@@ -351,7 +347,7 @@ class TwentyFortyEightScreenTest {
         onNodeWithTag("gameplay_viewport").assertIsDisplayed()
         onNodeWithTag("game_board").assertIsDisplayed()
         onNodeWithTag("supporting_column").assertIsDisplayed()
-        onNodeWithText("Skip").assertIsDisplayed()
+        onNodeWithText("Skip").assertDoesNotExist()
         val boardBounds = onNodeWithTag("game_board").fetchSemanticsNode().boundsInRoot
         val tutorialBounds = onNodeWithTag("tutorial").fetchSemanticsNode().boundsInRoot
         assertTrue(tutorialBounds.top >= boardBounds.top)
@@ -369,7 +365,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = {},
                     onUndo = {},
                     onRestart = {},
-                    onSkipTutorial = {},
                     modifier = Modifier.size(1200.dp, 900.dp),
                 )
             }
@@ -394,7 +389,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = {},
                     onUndo = {},
                     onRestart = { restartRequests += 1 },
-                    onSkipTutorial = {},
                     modifier = Modifier.size(viewport.value.width, viewport.value.height),
                 )
             }
@@ -423,7 +417,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = directions::add,
                         onUndo = {},
                         onRestart = {},
-                        onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 479.dp),
                     )
                 }
@@ -451,7 +444,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = directions::add,
                         onUndo = {},
                         onRestart = {},
-                        onSkipTutorial = {},
                         modifier = Modifier.size(800.dp, 479.dp),
                     )
                 }
@@ -478,7 +470,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = {},
-                    onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
             }
@@ -499,7 +490,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = {},
-                    onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
             }
@@ -527,7 +517,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = { restartRequests += 1 },
-                    onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
             }
@@ -561,7 +550,6 @@ class TwentyFortyEightScreenTest {
                     onDirection = directions::add,
                     onUndo = {},
                     onRestart = {},
-                    onSkipTutorial = {},
                     modifier = Modifier.size(400.dp, 700.dp),
                 )
             }
@@ -589,7 +577,6 @@ class TwentyFortyEightScreenTest {
                         onDirection = directions::add,
                         onUndo = {},
                         onRestart = {},
-                        onSkipTutorial = {},
                         modifier = Modifier.size(400.dp, 600.dp),
                     )
                     Box(Modifier.size(400.dp, 50.dp).testTag("host_banner"))
