@@ -11,6 +11,7 @@ import org.jetbrains.compose.resources.getDrawableResourceBytes
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.getSystemResourceEnvironment
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -30,6 +31,14 @@ object MiniAppContractAssertions {
             session is RetainedMiniAppSession<*>,
             "MiniAppPlugin must return RetainedMiniAppSession so the child graph stays alive",
         )
+    }
+
+    fun assertBackConsumed(session: MiniAppSession) {
+        assertTrue(session.handleBack())
+    }
+
+    fun assertBackNotConsumed(session: MiniAppSession) {
+        assertFalse(session.handleBack())
     }
 
     suspend fun assertResourcesResolvable(manifest: MiniAppManifest) {

@@ -389,6 +389,31 @@
             ]
         },
         {
+            "uniqueId": "androidx.compose.material3.adaptive:adaptive-android",
+            "artifactVersion": "1.3.0-beta02",
+            "name": "Material Adaptive",
+            "description": "Compose Material Design Adaptive Library",
+            "website": "https://developer.android.com/jetpack/androidx/releases/compose-material3-adaptive#1.3.0-beta02",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+
+            ]
+        },
+        {
             "uniqueId": "androidx.compose.material3:material3-android",
             "artifactVersion": "1.5.0-alpha08",
             "name": "Compose Material3 Components",
@@ -3483,6 +3508,30 @@
             ]
         },
         {
+            "uniqueId": "org.jetbrains.androidx.window:window-core",
+            "artifactVersion": "1.5.0",
+            "name": "WindowManager Core",
+            "description": "WindowManager Core Library.",
+            "website": "https://github.com/JetBrains/compose-jb",
+            "developers": [
+                {
+                    "name": "Compose Multiplatform Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/JetBrains/compose-jb.git",
+                "developerConnection": "scm:git:https://github.com/JetBrains/compose-jb.git",
+                "url": "https://github.com/JetBrains/compose-jb"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+
+            ]
+        },
+        {
             "uniqueId": "org.jetbrains.compose.animation:animation",
             "artifactVersion": "1.11.1",
             "name": "Compose Animation",
@@ -3648,6 +3697,30 @@
             ],
             "funding": [
                 
+            ]
+        },
+        {
+            "uniqueId": "org.jetbrains.compose.material3.adaptive:adaptive",
+            "artifactVersion": "1.3.0-beta02",
+            "name": "Material Adaptive",
+            "description": "Compose Material Design Adaptive Library",
+            "website": "https://github.com/JetBrains/compose-multiplatform",
+            "developers": [
+                {
+                    "name": "Compose Multiplatform Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/JetBrains/compose-multiplatform.git",
+                "developerConnection": "scm:git:https://github.com/JetBrains/compose-multiplatform.git",
+                "url": "https://github.com/JetBrains/compose-multiplatform"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+
             ]
         },
         {

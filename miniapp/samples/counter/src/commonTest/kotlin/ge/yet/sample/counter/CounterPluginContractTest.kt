@@ -65,6 +65,7 @@ class CounterPluginContractTest {
         ))
 
         MiniAppContractAssertions.assertRetainedGraphSession(session)
+        MiniAppContractAssertions.assertBackNotConsumed(session)
         lifecycle.destroy()
     }
 

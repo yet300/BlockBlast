@@ -76,7 +76,8 @@ BlockBlast/
 │   ├── review/      # App review policy
 │   └── settings/    # Host settings
 ├── game/
-│   └── blockblast/  # Shipped Block Blast MiniApp
+│   ├── blockblast/       # Shipped Block Blast MiniApp
+│   └── twentyfortyeight/ # Discovered, unshipped 2048 MiniApp
 ├── miniapp/
 │   ├── api/         # Stable Compose-free contracts
 │   ├── compose/     # Plugin, manifest, session and frame contracts

@@ -139,8 +139,12 @@ internal class DefaultRootComponent(
         when (val sheet = sheetSlot.value.child?.instance) {
             is RootComponent.SheetChild.Settings -> sheet.component.onBackClicked()
             is RootComponent.SheetChild.AppReview -> sheetNavigation.dismiss()
-            null -> if (stack.value.active.configuration is Config.Running) {
-                runtimeCoordinator.closeActiveSession()
+            null -> {
+                val running = stack.value.active.instance as? RootComponent.Child.RunningMiniApp
+                val session = (running?.state as? RootComponent.MiniAppState.Content)?.session
+                if (running != null && session?.handleBack() != true) {
+                    runtimeCoordinator.closeActiveSession()
+                }
             }
         }
     }

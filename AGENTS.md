@@ -39,14 +39,16 @@ BlockBlast/
 │   ├── domain/                 Reusable domain contracts and app-level models
 │   ├── data/                   Repository implementations and settings persistence
 │   ├── telemetry/              Firebase analytics and Crashlytics abstraction
-│   └── pattern/                Exact generic temporal patterns and bounded queries
+│   ├── pattern/                Exact generic temporal patterns and bounded queries
+│   └── uikit/                  Shared Compose design system and adaptive game scaffold
 ├── feature/
 │   ├── root/                   Top-level navigation component
 │   ├── catalog/                Registry-backed MiniApp catalog and host-owned cards
 │   ├── review/                 App review policy and component
 │   └── settings/               Settings feature
 ├── game/
-│   └── blockblast/             Block Blast rules, persistence, resources, components and UI
+│   ├── blockblast/             Block Blast rules, persistence, resources, components and UI
+│   └── twentyfortyeight/       Discovered, unshipped 2048 MiniApp
 ├── monetization/
 │   ├── core/                   SDK-free entitlement and advertising policy
 │   └── ads/                    AdMob, UMP, ATT bridge and Compose ad adapter
@@ -82,11 +84,13 @@ BlockBlast/
 | `:core:data` | App settings, reusable audio playback and repository implementations | `:core:domain`, `:core:common` |
 | `:core:telemetry` | Shared analytics and crash-reporting facade | `:core:domain` |
 | `:core:pattern` | Exact, bounded and audio-independent temporal event patterns | no project dependency declared |
+| `:core:uikit` | Shared Compose theme, design-system components and the reusable Material 3 adaptive game scaffold | Compose convention, including Material 3 Adaptive |
 | `:feature:settings` | Settings components, stores and the confirmation/progress/result state holder for game-data reset | `:core:domain`, `:core:common`, `:miniapp:api` |
 | `:feature:catalog` | Registry-backed MiniApp catalog with adaptive host-owned Material 3 list cards and direct Play actions | `:miniapp:compose`, `:core:uikit`, Decompose, Compose resources and Haze |
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its runtime coordinator owns session creation, visibility, stale callbacks, session-bound audio opening/closure, reset/launch serialization and teardown-before-clear ordering. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:audio`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, bundled-audio filename mapping, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; MiniApp/core contracts, ConfettiKit and MVIKotlin; no raw Settings, platform-audio or native-ad dependency |
+| `:game:twentyfortyeight` | Discovered, unshipped 2048 MiniApp scaffold and future game-owned rules, persistence, session graph, UI and tests | `logica.miniapp` convention; approved inward core and MVI dependencies; absent from the production allowlist and bundle |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
@@ -187,8 +191,8 @@ The root settings `miniApps` allowlist is the sole authoritative shipping path:
 the bundle convention consumes its finalized declarations in order, adds exactly
 those projects to `commonMainApi` alongside `:miniapp:metro`, and generates the
 public `ProductionMiniAppExpectation` contributed to Metro. Block Blast is the
-sole current production allowlist entry and shipped MiniApp; Counter remains
-discovered but excluded from the allowlist and unshipped.
+sole current production allowlist entry and shipped MiniApp; Counter and 2048
+remain discovered but excluded from the allowlist and unshipped.
 `verifyMiniAppBundle` rejects missing,
 unexpected or duplicated bundle dependencies, and allowlisted projects that do
 not apply `logica.miniapp`.
@@ -322,6 +326,10 @@ structural changes.
 - Declare project dependencies in the consuming module's `build.gradle.kts`.
 - Put shared KMP configuration in `build-logic/convention`; keep one-off module
   configuration local.
+- The shared Compose convention supplies Material 3 Adaptive to `commonMain` and
+  Compose UI testing to `commonTest` for Compose modules.
+  Reusable breakpoint and pane policy belongs in `:core:uikit`; games consume the
+  shared `AdaptiveGameScaffold` instead of redefining size classes or layout modes.
 - Keep settings-phase MiniApp discovery in the isolated
   `build-logic/miniapp-settings` plugin artifact so applying it in root settings
   does not place project convention plugin descriptors on the build classpath.
@@ -352,6 +360,10 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew :core:domain:allTests
 ./gradlew :core:data:allTests
 ./gradlew :game:blockblast:allTests
+./gradlew :game:twentyfortyeight:allTests
+./gradlew :game:twentyfortyeight:validateMiniAppDependencies
+./gradlew :game:twentyfortyeight:compileAndroidMain
+./gradlew :game:twentyfortyeight:compileKotlinIosSimulatorArm64
 ./gradlew :feature:review:allTests
 ./gradlew :feature:catalog:allTests
 ./gradlew :feature:root:allTests

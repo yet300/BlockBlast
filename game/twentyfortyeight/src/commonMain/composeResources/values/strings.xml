@@ -1,0 +1,65 @@
+<resources>
+    <string name="miniapp_title">2048</string>
+    <string name="miniapp_description">Slide matching tiles and shape the board toward 2048.</string>
+
+    <string name="score">Score</string>
+    <string name="best">Best</string>
+    <string name="new_best">new best</string>
+    <string name="undo">Undo</string>
+    <string name="restart">Restart</string>
+    <string name="continue_game">Continue</string>
+    <string name="new_game">New game</string>
+    <string name="victory">Victory</string>
+    <string name="game_over">Game over</string>
+    <string name="cancel">Cancel</string>
+    <string name="skip">Skip</string>
+    <string name="loading_game">Loading game</string>
+
+    <string name="games_won">Games won</string>
+    <string name="successful_moves">Successful moves</string>
+    <string name="total_merges">Total merges</string>
+    <string name="highest_tile">Highest tile</string>
+
+    <string name="tutorial_instruction">Swipe to combine matching tiles.</string>
+    <string name="restart_confirmation_title">Restart game?</string>
+    <string name="restart_confirmation_body">Your score is %1$s after %2$s. Restarting begins a new game.</string>
+    <string name="progress_not_saved">Progress could not be saved</string>
+    <string name="new_game_not_saved">A new game could not be saved</string>
+
+    <string name="score_description">Score, %1$s</string>
+    <string name="best_description">Best, %1$s</string>
+    <string name="best_new_description">Best, new best, %1$s</string>
+    <string name="undo_description">Undo</string>
+    <string name="restart_description">Restart</string>
+    <string name="crown_description">Best score</string>
+    <string name="announcement_move">Score increased by %1$s.</string>
+    <string name="announcement_move_merge">Score increased by %1$s. Largest merge %2$s.</string>
+    <string name="announcement_new_best">New best score %1$s.</string>
+    <string name="announcement_victory">2048 reached.</string>
+    <string name="announcement_game_over">Game over.</string>
+
+    <plurals name="games_count">
+        <item quantity="one">%1$d game</item>
+        <item quantity="other">%1$d games</item>
+    </plurals>
+    <plurals name="moves_count">
+        <item quantity="one">%1$d move</item>
+        <item quantity="other">%1$d moves</item>
+    </plurals>
+    <plurals name="merges_count">
+        <item quantity="one">%1$d merge</item>
+        <item quantity="other">%1$d merges</item>
+    </plurals>
+    <plurals name="undo_uses_count">
+        <item quantity="one">%1$d Undo use</item>
+        <item quantity="other">%1$d Undo uses</item>
+    </plurals>
+
+    <string name="board_empty_cell">empty</string>
+    <string name="board_row_summary">Row %1$d: %2$s, %3$s, %4$s, %5$s</string>
+    <string name="board_summary">Board. %1$s; %2$s; %3$s; %4$s</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="move_left">Move left</string>
+    <string name="move_right">Move right</string>
+</resources>

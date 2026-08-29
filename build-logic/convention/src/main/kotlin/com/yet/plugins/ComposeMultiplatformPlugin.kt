@@ -25,8 +25,12 @@ class ComposeMultiplatformPlugin : Plugin<Project> {
                         implementation(libs.findLibrary("compose-foundation").get())
                         implementation(libs.findLibrary("compose-material3").get())
                         implementation(libs.findLibrary("compose-ui").get())
+                        implementation(libs.findLibrary("compose-material3-adaptive").get())
                         implementation(libs.findLibrary("compose-uiToolingPreview").get())
                     }
+                }
+                commonTest.dependencies {
+                    implementation(libs.findLibrary("compose-ui-test").get())
                 }
             }
         }
