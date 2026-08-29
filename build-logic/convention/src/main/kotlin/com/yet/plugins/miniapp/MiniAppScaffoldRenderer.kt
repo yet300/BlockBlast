@@ -94,10 +94,7 @@ internal class MiniAppScaffoldRenderer(
             import ge.yet.game.miniapp.compose.MiniAppRegistry
             import ge.yet.game.miniapp.metro.MiniAppMetroBindings
             import ge.yet.game.miniapp.testkit.MiniAppContractAssertions
-            import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
-            import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
-            import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
-            import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
+            import ge.yet.game.miniapp.testkit.withMiniAppSession
             import kotlin.test.Test
             import kotlin.test.assertNotNull
 
@@ -125,21 +122,14 @@ internal class MiniAppScaffoldRenderer(
                     val expectedId = MiniAppId("$id")
                     val graph = createGraph<${classPrefix}PluginTestGraph>()
                     val plugin = assertNotNull(graph.registry[expectedId])
-                    val lifecycle = MiniAppLifecycleHarness()
-                    lifecycle.resume()
-
-                    val context = TestMiniAppSessionContext(
-                        componentContext = lifecycle.componentContext,
-                        visibility = MutableMiniAppVisibilitySource(),
-                        host = RecordingMiniAppSessionHost(),
-                    )
-                    val sharedSfx = PlacementClick()
-                    assertNotNull(context.audio)
-                    assertNotNull(sharedSfx)
-                    val session = plugin.createSession(context)
-
-                    MiniAppContractAssertions.assertRetainedGraphSession(session)
-                    lifecycle.destroy()
+                    withMiniAppSession { harness ->
+                        val sharedSfx = PlacementClick()
+                        assertNotNull(harness.context.audio)
+                        assertNotNull(sharedSfx)
+                        val session = plugin.createSession(harness.context)
+                        MiniAppContractAssertions.assertRetainedGraphSession(session)
+                        harness.resume()
+                    }
                 }
             }
         """.trimIndent() + "\n")

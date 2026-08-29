@@ -90,7 +90,8 @@ class CreateMiniAppTaskTest {
         assertContains(contract, "MiniAppContractAssertions.assertRetainedGraphSession")
         assertContains(contract, "import ge.yet.game.miniapp.audio.presets.PlacementClick")
         assertContains(contract, "val sharedSfx = PlacementClick()")
-        assertContains(contract, "assertNotNull(context.audio)")
+        assertContains(contract, "import ge.yet.game.miniapp.testkit.withMiniAppSession")
+        assertContains(contract, "assertNotNull(harness.context.audio)")
         assertEquals(false, contract.contains("playSfx("))
     }
 
