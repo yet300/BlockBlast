@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "game.fruitmerge",
+  "displayName": "Fruit Merge",
+  "category": "game",
+  "authors": ["Logica contributors", "OpenAI Codex"],
+  "summary": "Drop expressive fruit, combine matching pairs, and manage the pile without crossing the danger line.",
+  "rules": "Drop fruit into a bounded container. Equal fruit merge into the next original level and award score. Two maximum-level melons disappear for a bonus. A fruit continuously above the danger line for 1.5 seconds ends the run.",
+  "controls": [
+    {"input": "Drag or tap horizontally", "action": "Position the preview fruit"},
+    {"input": "Release", "action": "Drop the preview fruit"},
+    {"input": "Clear, then fruit", "action": "Remove one fruit"},
+    {"input": "Shake", "action": "Apply bounded impulses to the settled pile"}
+  ],
+  "sessionFlow": ["Start or restore a run", "Drop and merge fruit", "Use bounded actions", "Show result after sustained overflow", "Start a new run"],
+  "platforms": {"android": true, "ios": true, "orientations": ["portrait", "landscape"], "deviceClasses": ["phone", "tablet"]},
+  "accessibility": {
+    "announcements": "Announce clear mode, merge chains, exhausted free actions, and game over.",
+    "focus": "Preserve action focus across adaptive rearrangement and move focus to New game on result.",
+    "labels": "Label score, next fruit, fill level, actions, counts, and selectable fruit regions.",
+    "reducedMotion": "Disable squash, camera displacement, glow expansion, and particles while retaining gameplay physics."
+  },
+  "visualStyle": {"description": "Original warm orchard palette with matte vector fruit, highlights, leaves, blush, and expressive faces.", "references": []},
+  "audioStyle": {"description": "Silent initial version with visual feedback only.", "references": []},
+  "storage": {"values": [{"name": "best_score", "type": "long", "default": 0}, {"name": "game_snapshot", "type": "snapshot", "default": null}], "resetBehavior": "Both values are removed by the host-owned MiniApp namespace reset."},
+  "capabilities": ["interstitial"],
+  "rights": {"classification": "new_expression", "evidence": ["All code and Canvas art are original to this repository; only genre-level rules were referenced."]},
+  "provenance": {
+    "code": ["Original Kotlin and Compose implementation in :game:fruitmerge"],
+    "art": ["Original runtime Canvas primitives and original vector icon"],
+    "audio": [],
+    "fonts": [],
+    "references": [],
+    "licenses": [],
+    "ai": {"used": true, "tools": ["OpenAI Codex"], "promptArchive": "../../docs/superpowers/specs/2026-08-29-fruit-merge-design.md"}
+  },
+  "acceptanceScenarios": [
+    {"name": "Merge", "given": "Two equal fruit touch", "when": "The fixed step resolves", "then": "They become one next-level fruit and score increases once"},
+    {"name": "Overflow grace", "given": "A fruit briefly crosses the danger line", "when": "It falls below before 1.5 seconds", "then": "The run continues"},
+    {"name": "Clear gate", "given": "Five free clears are spent", "when": "Clear is requested again", "then": "The ad gate completes before one target opportunity"},
+    {"name": "Shake gate", "given": "Three free shakes are spent", "when": "Shake is requested again", "then": "The ad gate completes before one bounded shake"}
+  ],
+  "knownLimitations": ["Circle collision geometry", "No online leaderboard or multiplayer", "No game-owned audio"]
+}
