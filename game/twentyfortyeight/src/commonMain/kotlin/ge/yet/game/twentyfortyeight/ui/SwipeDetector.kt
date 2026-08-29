@@ -24,11 +24,13 @@ internal data class SwipeConfig(
     val distanceThresholdPx: Float,
     val velocityThresholdPxPerSecond: Float,
     val touchSlopPx: Float,
+    val axisDominanceRatio: Float,
 ) {
     init {
         require(distanceThresholdPx.isFinite() && distanceThresholdPx > 0f)
         require(velocityThresholdPxPerSecond.isFinite() && velocityThresholdPxPerSecond > 0f)
         require(touchSlopPx.isFinite() && touchSlopPx >= 0f)
+        require(axisDominanceRatio.isFinite() && axisDominanceRatio > 1f)
     }
 }
 
@@ -62,7 +64,11 @@ internal fun resolveGesture(
     val locked = crossedDistance || (crossedTouchSlop && crossedVelocity)
     if (!locked) return GestureDecision.PendingTap
     val resolved = if (crossedDistance) delta else Offset(velocity.x, velocity.y)
-    val horizontal = abs(resolved.x) >= abs(resolved.y)
+    val horizontal = when {
+        abs(resolved.x) >= abs(resolved.y) * config.axisDominanceRatio -> true
+        abs(resolved.y) >= abs(resolved.x) * config.axisDominanceRatio -> false
+        else -> return GestureDecision.PendingTap
+    }
     if (!horizontal && startRegion == SwipeStartRegion.VerticalScrollSupport) {
         return GestureDecision.DelegateVerticalScroll
     }
@@ -76,6 +82,20 @@ internal fun resolveGesture(
     )
 }
 
+internal fun swipeDistanceThresholdPx(
+    shortestSidePx: Float,
+    touchSlopPx: Float,
+    maximumDistancePx: Float,
+): Float {
+    require(shortestSidePx.isFinite() && shortestSidePx >= 0f)
+    require(touchSlopPx.isFinite() && touchSlopPx >= 0f)
+    require(maximumDistancePx.isFinite() && maximumDistancePx > 0f)
+    return min(
+        max(touchSlopPx, shortestSidePx * DISTANCE_FRACTION),
+        maximumDistancePx,
+    )
+}
+
 internal fun Modifier.detectTwentyFortyEightSwipes(
     enabled: Boolean,
     supportBoundsInViewport: Rect?,
@@ -86,8 +106,8 @@ internal fun Modifier.detectTwentyFortyEightSwipes(
     val currentOnDirection by rememberUpdatedState(onDirection)
     val touchSlop = LocalViewConfiguration.current.touchSlop
     val density = LocalDensity.current
-    val maximumDistance = with(density) { 48.dp.toPx() }
-    val velocityThreshold = with(density) { 650.dp.toPx() }
+    val maximumDistance = with(density) { 30.dp.toPx() }
+    val velocityThreshold = with(density) { 480.dp.toPx() }
 
     pointerInput(touchSlop, maximumDistance, velocityThreshold) {
         awaitEachGesture {
@@ -103,12 +123,14 @@ internal fun Modifier.detectTwentyFortyEightSwipes(
                 SwipeStartRegion.Gameplay
             }
             val config = SwipeConfig(
-                distanceThresholdPx = min(
-                    max(touchSlop, min(size.width, size.height) * DISTANCE_FRACTION),
-                    maximumDistance,
+                distanceThresholdPx = swipeDistanceThresholdPx(
+                    shortestSidePx = min(size.width, size.height).toFloat(),
+                    touchSlopPx = touchSlop,
+                    maximumDistancePx = maximumDistance,
                 ),
                 velocityThresholdPxPerSecond = velocityThreshold,
                 touchSlopPx = touchSlop,
+                axisDominanceRatio = AXIS_DOMINANCE_RATIO,
             )
             val tracker = VelocityTracker()
             tracker.addPosition(down.uptimeMillis, down.position)
@@ -149,4 +171,5 @@ internal fun Modifier.detectTwentyFortyEightSwipes(
     }
 }
 
-private const val DISTANCE_FRACTION = 0.08f
+private const val DISTANCE_FRACTION = 0.05f
+private const val AXIS_DOMINANCE_RATIO = 1.2f

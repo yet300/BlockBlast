@@ -453,6 +453,33 @@ class TwentyFortyEightScreenTest {
     }
 
     @Test
+    fun `short deliberate swipe moves from the whole gameplay viewport`() = runComposeUiTest {
+        val directions = mutableListOf<Direction>()
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                PlayingContent(
+                    model = playingModel(undoEnabled = true),
+                    onDirection = directions::add,
+                    onUndo = {},
+                    onRestart = {},
+                    onSkipTutorial = {},
+                    modifier = Modifier.size(400.dp, 700.dp),
+                )
+            }
+        }
+
+        onNodeWithTag("gameplay_viewport").performTouchInput {
+            swipe(
+                start = Offset(width * 0.25f, height * 0.5f),
+                end = Offset(width * 0.31f, height * 0.5f),
+                durationMillis = 250L,
+            )
+        }
+
+        assertEquals(listOf(Direction.Right), directions)
+    }
+
+    @Test
     fun `board score background and action regions share swipe arbitration`() = runComposeUiTest {
         val directions = mutableListOf<Direction>()
         var restartRequests = 0
