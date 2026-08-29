@@ -11,6 +11,7 @@ internal class MiniAppScaffoldRenderer(
     private val packageName = "ge.yet.${segments.joinToString(".")}"
     private val resourcePackage = MiniAppResourcePackage.from(projectPath)
     private val classPrefix = segments.last().replaceFirstChar(Char::uppercaseChar)
+    private val docsPath = if (projectPath.startsWith(":game:")) "../../docs" else "../../../docs"
     private val graphFactoryMethod = "create" +
         segments.joinToString("") { it.replaceFirstChar(Char::uppercaseChar) } +
         "SessionGraph"
@@ -20,8 +21,13 @@ internal class MiniAppScaffoldRenderer(
         write(root, "AGENTS.md", """
             # $classPrefix MiniApp
 
+            Read [the AI contributor protocol]($docsPath/miniapp/AI_CONTRIBUTOR_PROTOCOL.md)
+            before making changes. The human workflow is documented in
+            [the MiniApp contributor guide]($docsPath/CONTRIBUTING_MINIAPP.md).
+
             Use `MiniAppId("$id").storageKey(localName)` for every new persistent key. Never copy another plugin's key prefix.
             This project is discovered on the next Gradle invocation, but is not shipped until a maintainer adds it to the production allowlist.
+            Verify it with `./gradlew :${projectPath.removePrefix(":").replace(':', ':')}:verifyMiniApp`.
         """.trimIndent() + "\n")
         write(root, "src/commonMain/composeResources/values/strings.xml", """
             <resources>

@@ -198,6 +198,12 @@ unshipped.
 unexpected or duplicated bundle dependencies, and allowlisted projects that do
 not apply `logica.miniapp`.
 
+For contributor work, read
+[`CONTRIBUTING_MINIAPP.md`](CONTRIBUTING_MINIAPP.md) and
+[`docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md`](docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md)
+before generating or modifying a MiniApp. Maintainer acceptance uses
+[`docs/miniapp/review-checklist.md`](docs/miniapp/review-checklist.md).
+
 ## MiniApp Contributor Workflow
 
 Create and verify a reviewable contributor project with:

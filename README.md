@@ -149,9 +149,11 @@ server, runtime download or remote code loading.
 
 The stable policy and rationale are recorded in
 [ADR-0001: MiniApp Contribution and Shipping Workflow](docs/adr/0001-miniapp-contribution-and-shipping.md).
-The current agent-level architecture and verification rules are in
-[AGENTS.md](AGENTS.md). Detailed human and AI contributor guides will follow
-the approved [contributor pipeline design](docs/superpowers/specs/2026-08-23-miniapp-contributor-pipeline-design.md).
+Use the [human MiniApp contributor guide](CONTRIBUTING_MINIAPP.md) for the
+end-to-end workflow and the [AI contributor protocol](docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md)
+for deterministic agent behavior. The current agent-level architecture and
+verification rules are in [AGENTS.md](AGENTS.md). The guides implement the
+approved [contributor pipeline design](docs/superpowers/specs/2026-08-23-miniapp-contributor-pipeline-design.md).
 
 Plugins depend only on MiniApp contracts, approved inward core contracts and
 typed host capabilities. Root owns Catalog/Running navigation, Back,

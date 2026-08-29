@@ -53,6 +53,8 @@ class CreateMiniAppTaskTest {
         val component = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeComponent.kt").readText()
         assertContains(component, "componentContext.lifecycle.doOnDestroy")
         assertContains(target.resolve("AGENTS.md").readText(), "not shipped until a maintainer adds it to the production allowlist")
+        assertContains(target.resolve("AGENTS.md").readText(), "docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md")
+        assertContains(target.resolve("AGENTS.md").readText(), ":game:snake:verifyMiniApp")
     }
 
     @Test
@@ -63,6 +65,10 @@ class CreateMiniAppTaskTest {
             true,
             target.resolve("src/commonMain/kotlin/ge/yet/sample/counter/CounterPlugin.kt").readText()
                 .contains("import ge.yet.miniapp.samples.counter.generated.resources.Res"),
+        )
+        assertContains(
+            target.resolve("AGENTS.md").readText(),
+            "../../../docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md",
         )
     }
 
