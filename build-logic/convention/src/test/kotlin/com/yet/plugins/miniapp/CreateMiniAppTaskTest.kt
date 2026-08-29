@@ -99,6 +99,7 @@ class CreateMiniAppTaskTest {
             "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
             "--configuration-cache", "--configuration-cache-problems=fail",
         )
+        fixture.run(":verifyMiniApp", "--configuration-cache", "--configuration-cache-problems=fail")
         val projects = fixture.run("projects")
         assertContains(projects.output, ":game:snake")
         val bundle = fixture.run(":miniapp:bundle:verifyMiniAppBundle")

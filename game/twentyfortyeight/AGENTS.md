@@ -1,8 +1,9 @@
 # 2048 MiniApp Agent Guide
 
-This module owns the discovered, unshipped `game.twentyfortyeight` MiniApp in
-the `ge.yet.game.twentyfortyeight` package. It is not part of the production
-allowlist or `:miniapp:bundle`; only a separate maintainer decision may ship it.
+This module owns the allowlisted `game.twentyfortyeight` MiniApp in the
+`ge.yet.game.twentyfortyeight` package. It is included in `:miniapp:bundle` by
+the root `miniApps` declarations. Allowlisting controls compiled production
+membership; a separate release decision controls store distribution.
 
 Keep dependencies inward and limited to the `logica.miniapp` convention,
 `:core:common`, `:core:domain`, `:core:uikit`, and the existing MVI bundle.

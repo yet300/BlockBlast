@@ -48,7 +48,7 @@ BlockBlast/
 │   └── settings/               Settings feature
 ├── game/
 │   ├── blockblast/             Block Blast rules, persistence, resources, components and UI
-│   └── twentyfortyeight/       Discovered, unshipped 2048 MiniApp
+│   └── twentyfortyeight/       Allowlisted 2048 MiniApp
 ├── monetization/
 │   ├── core/                   SDK-free entitlement and advertising policy
 │   └── ads/                    AdMob, UMP, ATT bridge and Compose ad adapter
@@ -90,7 +90,7 @@ BlockBlast/
 | `:feature:review` | Reusable app-review policy, prompt persistence, analytics and component | `:core:domain`, `:core:common`, multiplatform-settings |
 | `:feature:root` | Decompose Catalog/running-MiniApp navigation and sheet ownership. Its runtime coordinator owns session creation, visibility, stale callbacks, session-bound audio opening/closure, reset/launch serialization and teardown-before-clear ordering. | core modules, `:feature:catalog`, `:feature:review`, `:feature:settings`, `:miniapp:api`, `:miniapp:audio`, `:miniapp:compose` |
 | `:game:blockblast` | Block Blast rules, models, persistence, bundled-audio filename mapping, Metro child graph, MiniApp plugin/session, components, tests and Compose UI | `logica.miniapp` convention; MiniApp/core contracts, ConfettiKit and MVIKotlin; no raw Settings, platform-audio or native-ad dependency |
-| `:game:twentyfortyeight` | Discovered, unshipped 2048 MiniApp scaffold and future game-owned rules, persistence, session graph, UI and tests | `logica.miniapp` convention; approved inward core and MVI dependencies; absent from the production allowlist and bundle |
+| `:game:twentyfortyeight` | Allowlisted 2048 MiniApp with game-owned rules, persistence, session graph, UI and tests | `logica.miniapp` convention; approved inward core and MVI dependencies; included in the production bundle |
 | `:monetization:core` | SDK-neutral entitlement state and advertising policy | no project dependency declared |
 | `:monetization:ads` | AdMob/UMP integration, ATT bridge, banners and interstitials | `:monetization:core` |
 | `:miniapp:api` | Stable Compose-free IDs, storage-key helpers, review/session and visibility contracts | kotlinx serialization, coroutines |
@@ -190,9 +190,10 @@ contract; overlay and effect inputs use explicit `InViewport` names.
 The root settings `miniApps` allowlist is the sole authoritative shipping path:
 the bundle convention consumes its finalized declarations in order, adds exactly
 those projects to `commonMainApi` alongside `:miniapp:metro`, and generates the
-public `ProductionMiniAppExpectation` contributed to Metro. Block Blast is the
-sole current production allowlist entry and shipped MiniApp; Counter and 2048
-remain discovered but excluded from the allowlist and unshipped.
+public `ProductionMiniAppExpectation` contributed to Metro. Block Blast and
+2048 are the current allowlist entries and are included in the production
+bundle; Counter remains discovered but excluded from the allowlist and
+unshipped.
 `verifyMiniAppBundle` rejects missing,
 unexpected or duplicated bundle dependencies, and allowlisted projects that do
 not apply `logica.miniapp`.
@@ -375,6 +376,7 @@ the narrowest relevant task first, then broaden verification as appropriate.
 # Verify the authoritative MiniApp shipping bundle and its generated expectation
 ./gradlew -p build-logic :convention:test --tests '*MiniAppBundlePluginTest'
 ./gradlew :miniapp:bundle:verifyMiniAppBundle
+./gradlew verifyMiniApp
 ./gradlew :miniapp:bundle:dependencies --configuration commonMainApi
 ./gradlew :miniapp:bundle:compileAndroidMain
 ./gradlew :miniapp:bundle:compileKotlinIosSimulatorArm64
@@ -397,6 +399,9 @@ the narrowest relevant task first, then broaden verification as appropriate.
 ./gradlew -p build-logic :convention:test --tests '*MiniAppConventionPluginTest' --tests '*MiniAppDependencyBoundaryTest' --tests '*ValidateMiniAppDependenciesTaskTest' --tests '*CreateMiniAppTaskTest'
 ./gradlew -p build-logic :convention:validatePlugins
 ./gradlew tasks --all
+
+# Verify one allowlisted MiniApp end to end
+./gradlew :game:twentyfortyeight:verifyMiniApp
 
 # Verify the stable MiniApp API and Compose-facing contracts
 ./gradlew :miniapp:api:allTests

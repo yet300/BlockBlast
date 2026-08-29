@@ -33,6 +33,14 @@ class MiniAppConventionPlugin : Plugin<Project> {
             sourceRootPath.set(layout.projectDirectory.asFile.absolutePath)
             miniAppProjectPath.set(projectPath)
         }
+        tasks.register("verifyMiniApp") {
+            group = "verification"
+            description = "Verifies this MiniApp's boundaries, tests, and Android/iOS compilation."
+            dependsOn(validate)
+            dependsOn("allTests")
+            dependsOn("compileAndroidMain")
+            dependsOn("compileKotlinIosSimulatorArm64")
+        }
         val configurationContainer = configurations
         gradle.projectsEvaluated {
             val messages = configurationContainer.toList()
