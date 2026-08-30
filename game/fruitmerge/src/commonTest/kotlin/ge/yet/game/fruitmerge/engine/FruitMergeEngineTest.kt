@@ -108,6 +108,22 @@ class FruitMergeEngineTest {
     }
 
     @Test
+    fun `drop promotes the queued fruit and deterministically refills next`() {
+        val original = FruitMergeState(
+            previewLevel = FruitLevel.BLUEBERRY,
+            nextPreviewLevel = FruitLevel.STRAWBERRY,
+            random = RandomState(19L),
+        )
+
+        val dropped = engine.drop(original).state
+
+        assertEquals(FruitLevel.BLUEBERRY, dropped.bodies.single().level)
+        assertEquals(FruitLevel.STRAWBERRY, dropped.previewLevel)
+        assertTrue(dropped.nextPreviewLevel in FruitLevel.spawnable)
+        assertNotEquals(original.random, dropped.random)
+    }
+
+    @Test
     fun `fixed steps make drop ready after cooldown`() {
         val dropped = engine.drop(FruitMergeState()).state
         val ready = generateSequence(dropped) { state -> engine.step(state, 1f / 60f) }

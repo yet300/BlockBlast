@@ -29,6 +29,7 @@ internal data class FruitBodySnapshot(
 internal data class FruitMergeSnapshot(
     val bodies: List<FruitBodySnapshot>,
     val previewLevel: String,
+    val nextPreviewLevel: String = FruitLevel.CHERRY.name,
     val previewX: Float,
     val randomBits: Long,
     val nextBodyId: Long,
@@ -51,7 +52,9 @@ internal data class FruitMergeSnapshot(
         require(shakeStepsRemaining in 0..FruitMergeEngine.SHAKE_DURATION_STEPS)
         require(runOrdinal > 0L)
         val restoredPreview = requireNotNull(FruitLevel.entries.firstOrNull { it.name == previewLevel })
+        val restoredNextPreview = requireNotNull(FruitLevel.entries.firstOrNull { it.name == nextPreviewLevel })
         require(restoredPreview in FruitLevel.spawnable)
+        require(restoredNextPreview in FruitLevel.spawnable)
         require(previewX.isFinite())
         require(previewX in restoredPreview.radius - WORLD_TOLERANCE..1f - restoredPreview.radius + WORLD_TOLERANCE)
         val restoredPhase = requireNotNull(RunPhase.entries.firstOrNull { it.name == phase })
@@ -63,6 +66,7 @@ internal data class FruitMergeSnapshot(
         return FruitMergeState(
             bodies = restoredBodies,
             previewLevel = restoredPreview,
+            nextPreviewLevel = restoredNextPreview,
             previewX = previewX.coerceIn(restoredPreview.radius, 1f - restoredPreview.radius),
             random = RandomState(randomBits),
             nextBodyId = nextBodyId,
@@ -83,6 +87,7 @@ internal data class FruitMergeSnapshot(
         fun from(state: FruitMergeState): FruitMergeSnapshot = FruitMergeSnapshot(
             bodies = state.bodies.map(FruitBody::toSnapshot),
             previewLevel = state.previewLevel.name,
+            nextPreviewLevel = state.nextPreviewLevel.name,
             previewX = state.previewX,
             randomBits = state.random.bits,
             nextBodyId = state.nextBodyId,

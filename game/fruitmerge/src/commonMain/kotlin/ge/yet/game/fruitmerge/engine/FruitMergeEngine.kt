@@ -60,8 +60,12 @@ class FruitMergeEngine(
         return ActionResult(
             state.copy(
                 bodies = state.bodies + body,
-                previewLevel = selectSpawnLevel(nextRandom.value),
-                previewX = state.previewX.coerceIn(radius, 1f - radius),
+                previewLevel = state.nextPreviewLevel,
+                nextPreviewLevel = selectSpawnLevel(nextRandom.value),
+                previewX = state.previewX.coerceIn(
+                    state.nextPreviewLevel.radius,
+                    1f - state.nextPreviewLevel.radius,
+                ),
                 random = nextRandom.state,
                 nextBodyId = state.nextBodyId + 1,
                 targetingMode = TargetingMode.NONE,
@@ -184,10 +188,12 @@ class FruitMergeEngine(
     }
 
     override fun newRun(state: FruitMergeState): FruitMergeState {
-        val randomValue = state.random.nextInt()
+        val previewRandom = state.random.nextInt()
+        val nextRandom = previewRandom.state.nextInt()
         return FruitMergeState(
-            previewLevel = selectSpawnLevel(randomValue.value),
-            random = randomValue.state,
+            previewLevel = selectSpawnLevel(previewRandom.value),
+            nextPreviewLevel = selectSpawnLevel(nextRandom.value),
+            random = nextRandom.state,
             bestScore = max(state.bestScore, state.score),
             runOrdinal = if (state.runOrdinal == Long.MAX_VALUE) Long.MAX_VALUE else state.runOrdinal + 1,
         )

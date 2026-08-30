@@ -13,6 +13,7 @@ enum class TargetingMode {
 data class FruitMergeState(
     val bodies: List<FruitBody> = emptyList(),
     val previewLevel: FruitLevel = FruitLevel.BLUEBERRY,
+    val nextPreviewLevel: FruitLevel = FruitLevel.CHERRY,
     val previewX: Float = 0.5f,
     val random: RandomState = RandomState(1),
     val nextBodyId: Long = 1,

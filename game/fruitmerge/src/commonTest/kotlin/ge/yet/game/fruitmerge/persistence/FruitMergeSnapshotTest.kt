@@ -92,6 +92,7 @@ class FruitMergeSnapshotTest {
             FruitBody(2, FruitLevel.APPLE, Vec2(0.63f, 0.79f)),
         ),
         previewLevel = FruitLevel.STRAWBERRY,
+        nextPreviewLevel = FruitLevel.MANDARIN,
         previewX = 0.37f,
         random = RandomState(randomBits),
         nextBodyId = 3,
