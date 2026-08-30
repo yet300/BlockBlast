@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -32,8 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -82,6 +87,12 @@ internal object FruitMergeTestTags {
     const val Clear = "fruit_merge_clear"
     const val Shake = "fruit_merge_shake"
     const val Evolution = "fruit_merge_evolution"
+    const val Tutorial = "fruit_merge_tutorial"
+    const val TutorialSkip = "fruit_merge_tutorial_skip"
+    const val Result = "fruit_merge_result"
+    const val ResultScore = "fruit_merge_result_score"
+    const val ResultBest = "fruit_merge_result_best"
+    const val ResultLargestFruit = "fruit_merge_result_largest_fruit"
     const val NewGame = "fruit_merge_new_game"
 }
 
@@ -95,6 +106,8 @@ internal fun FruitMergeScreen(
     val model by component.model.subscribeAsState()
     val reducedMotion = rememberCoroutineScope().coroutineContext[MotionDurationScale]?.scaleFactor == 0f
     var faceTimeSeconds by remember(component) { mutableFloatStateOf(0f) }
+    var viewportOriginInRoot by remember { mutableStateOf(Offset.Zero) }
+    var boardBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
 
     LaunchedEffect(component, model.initialized, model.visible, model.game.phase, reducedMotion) {
         if (!model.initialized || !model.visible || model.game.phase != RunPhase.PLAYING) return@LaunchedEffect
@@ -115,6 +128,9 @@ internal fun FruitMergeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .onGloballyPositioned { coordinates ->
+                viewportOriginInRoot = coordinates.positionInRoot()
+            }
             .fruitMergeDropInput(
                 enabled = dropEnabled,
                 onMovePreview = component::movePreview,
@@ -144,6 +160,9 @@ internal fun FruitMergeScreen(
                         onClearTarget = component::selectClearTarget,
                         modifier = Modifier
                             .fillMaxSize()
+                            .onGloballyPositioned { coordinates ->
+                                boardBoundsInRoot = coordinates.boundsInRoot()
+                            }
                             .semantics { testTag = FruitMergeTestTags.Board },
                     )
                     ActionHud(
@@ -171,6 +190,20 @@ internal fun FruitMergeScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                 )
             },
+        )
+        val boardBoundsInViewport = Rect(
+            left = boardBoundsInRoot.left - viewportOriginInRoot.x,
+            top = boardBoundsInRoot.top - viewportOriginInRoot.y,
+            right = boardBoundsInRoot.right - viewportOriginInRoot.x,
+            bottom = boardBoundsInRoot.bottom - viewportOriginInRoot.y,
+        )
+        FruitMergeTutorial(
+            step = model.tutorialStep,
+            boardBoundsInViewport = boardBoundsInViewport,
+            previewX = game.previewX,
+            reducedMotion = reducedMotion,
+            onSkip = component::skipTutorial,
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
@@ -342,7 +375,7 @@ private fun FruitEvolutionStrip(
     }
 }
 
-private fun fruitNameResource(level: FruitLevel): StringResource = when (level) {
+internal fun fruitNameResource(level: FruitLevel): StringResource = when (level) {
     FruitLevel.BLUEBERRY -> Res.string.blueberry
     FruitLevel.CHERRY -> Res.string.cherry
     FruitLevel.STRAWBERRY -> Res.string.strawberry

@@ -21,6 +21,7 @@ import ge.yet.game.fruitmerge.engine.Vec2
 import ge.yet.game.fruitmerge.session.FruitMergeComponent
 import ge.yet.game.fruitmerge.session.PaidAction
 import ge.yet.game.fruitmerge.session.PaidActionToken
+import ge.yet.game.fruitmerge.session.TutorialStep
 import ge.yet.game.uikit.theme.LogicaTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -104,6 +105,29 @@ class FruitMergeScreenTest {
         assertEquals(false, component.lastDropDragged)
     }
 
+    @Test
+    fun `tutorial stays pass through while skip remains actionable`() = runComposeUiTest {
+        val component = FakeFruitMergeComponent(
+            playingModel().copy(tutorialStep = TutorialStep.Tap),
+        )
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(Modifier.size(390.dp, 760.dp)) {
+                    FruitMergeScreen(component, {}, {})
+                }
+            }
+        }
+
+        onNodeWithTag(FruitMergeTestTags.Tutorial).assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.Viewport).performTouchInput {
+            click(Offset(40f, 300f))
+        }
+        onNodeWithTag(FruitMergeTestTags.TutorialSkip).performClick()
+
+        assertEquals(1, component.dropCalls)
+        assertEquals(1, component.skipTutorialCalls)
+    }
+
     private fun playingModel(): FruitMergeComponent.Model = FruitMergeComponent.Model(
         game = FruitMergeState(
             bodies = listOf(FruitBody(1, FruitLevel.APPLE, Vec2(0.5f, 0.8f))),
@@ -127,6 +151,7 @@ private class FakeFruitMergeComponent(
     var dropCalls = 0
     var lastDropDragged: Boolean? = null
     var newGameCalls = 0
+    var skipTutorialCalls = 0
 
     override fun frame(elapsedSeconds: Float) = Unit
     override fun movePreview(x: Float) = Unit
@@ -152,7 +177,9 @@ private class FakeFruitMergeComponent(
         newGameCalls += 1
     }
 
-    override fun skipTutorial() = Unit
+    override fun skipTutorial() {
+        skipTutorialCalls += 1
+    }
 
     override fun handleBack(): Boolean = false
 }
