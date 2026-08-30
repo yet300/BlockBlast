@@ -1,20 +1,24 @@
 package ge.yet.game.fruitmerge.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,12 +31,13 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.fruitmerge.engine.FruitLevel
@@ -45,20 +50,13 @@ import ge.yet.game.fruitmerge.generated.resources.best_score
 import ge.yet.game.fruitmerge.generated.resources.blueberry
 import ge.yet.game.fruitmerge.generated.resources.board_description
 import ge.yet.game.fruitmerge.generated.resources.cancel
-import ge.yet.game.fruitmerge.generated.resources.clear_hint
 import ge.yet.game.fruitmerge.generated.resources.clear_with_ad
 import ge.yet.game.fruitmerge.generated.resources.clear_with_count
 import ge.yet.game.fruitmerge.generated.resources.cherry
 import ge.yet.game.fruitmerge.generated.resources.danger_line
-import ge.yet.game.fruitmerge.generated.resources.drop_hint
-import ge.yet.game.fruitmerge.generated.resources.game_over
-import ge.yet.game.fruitmerge.generated.resources.game_over_supporting
-import ge.yet.game.fruitmerge.generated.resources.fruit_description
 import ge.yet.game.fruitmerge.generated.resources.loading_game
 import ge.yet.game.fruitmerge.generated.resources.mandarin
 import ge.yet.game.fruitmerge.generated.resources.melon
-import ge.yet.game.fruitmerge.generated.resources.new_game
-import ge.yet.game.fruitmerge.generated.resources.next_fruit
 import ge.yet.game.fruitmerge.generated.resources.peach
 import ge.yet.game.fruitmerge.generated.resources.pear
 import ge.yet.game.fruitmerge.generated.resources.pineapple
@@ -70,9 +68,10 @@ import ge.yet.game.fruitmerge.generated.resources.strawberry
 import ge.yet.game.fruitmerge.session.FruitMergeComponent
 import ge.yet.game.fruitmerge.session.PaidActionToken
 import ge.yet.game.uikit.adaptive.AdaptiveGameScaffold
-import ge.yet.game.uikit.components.button.PrimaryTerracottaButton
-import ge.yet.game.uikit.components.button.SecondaryWarmSandButton
-import ge.yet.game.uikit.components.card.RowCard
+import ge.yet.game.uikit.components.button.IconCircleButton
+import ge.yet.game.uikit.components.icon.BombFilled
+import ge.yet.game.uikit.components.icon.Crown
+import ge.yet.game.uikit.components.icon.Vibration
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -82,6 +81,7 @@ internal object FruitMergeTestTags {
     const val Support = "fruit_merge_support"
     const val Clear = "fruit_merge_clear"
     const val Shake = "fruit_merge_shake"
+    const val Evolution = "fruit_merge_evolution"
     const val NewGame = "fruit_merge_new_game"
 }
 
@@ -96,13 +96,7 @@ internal fun FruitMergeScreen(
     val reducedMotion = rememberCoroutineScope().coroutineContext[MotionDurationScale]?.scaleFactor == 0f
     var faceTimeSeconds by remember(component) { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(
-        component,
-        model.initialized,
-        model.visible,
-        model.game.phase,
-        reducedMotion,
-    ) {
+    LaunchedEffect(component, model.initialized, model.visible, model.game.phase, reducedMotion) {
         if (!model.initialized || !model.visible || model.game.phase != RunPhase.PLAYING) return@LaunchedEffect
         var previous = withFrameNanos { it }
         while (true) {
@@ -114,75 +108,67 @@ internal fun FruitMergeScreen(
         }
     }
 
+    val game = model.game
+    val dropEnabled = model.initialized && model.tutorialReady &&
+        game.phase == RunPhase.PLAYING && game.targetingMode == TargetingMode.NONE
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .fruitMergeDropInput(
+                enabled = dropEnabled,
+                onMovePreview = component::movePreview,
+                onDrop = component::drop,
+            )
             .semantics { testTag = FruitMergeTestTags.Viewport },
         contentAlignment = Alignment.Center,
     ) {
-        if (!model.initialized) {
+        if (!model.initialized || !model.tutorialReady) {
             LoadingContent()
             return@Box
         }
 
-        val game = model.game
-        val boardDescription = stringResource(
-            Res.string.board_description,
-            game.score,
-            game.bodies.size,
-        )
+        val boardDescription = stringResource(Res.string.board_description, game.score, game.bodies.size)
         val dangerDescription = stringResource(Res.string.danger_line)
-
         AdaptiveGameScaffold(
             modifier = Modifier.fillMaxSize(),
             supportingPaneModifier = Modifier.semantics { testTag = FruitMergeTestTags.Support },
             primary = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                     FruitMergeBoard(
                         game = game,
                         faceTimeSeconds = faceTimeSeconds,
                         reducedMotion = reducedMotion,
                         boardDescription = boardDescription,
                         dangerDescription = dangerDescription,
-                        onMovePreview = component::movePreview,
-                        onDrop = component::drop,
                         onClearTarget = component::selectClearTarget,
                         modifier = Modifier
                             .fillMaxSize()
                             .semantics { testTag = FruitMergeTestTags.Board },
                     )
-                    if (game.phase == RunPhase.RESULT) {
-                        ResultCard(
-                            score = game.score,
-                            onNewGame = component::newGame,
-                            modifier = Modifier.padding(24.dp),
-                        )
-                    }
+                    ActionHud(
+                        freeClears = game.freeClears,
+                        freeShakes = game.freeShakes,
+                        hasBodies = game.bodies.isNotEmpty(),
+                        isTargeting = game.targetingMode == TargetingMode.CLEAR,
+                        onClear = {
+                            val token = component.requestClearGate()
+                            if (token != null) requestClearAd(token)
+                        },
+                        onCancelClear = component::cancelClear,
+                        onShake = {
+                            val token = component.requestShakeGate()
+                            if (token != null) requestShakeAd(token)
+                        },
+                        modifier = Modifier.align(Alignment.TopEnd).padding(14.dp),
+                    )
                 }
             },
             supporting = {
                 SupportingPanel(
-                    game = game,
-                    faceTimeSeconds = faceTimeSeconds,
-                    reducedMotion = reducedMotion,
-                    onClear = {
-                        val token = component.requestClearGate()
-                        if (token != null) requestClearAd(token)
-                    },
-                    onCancelClear = component::cancelClear,
-                    onShake = {
-                        val token = component.requestShakeGate()
-                        if (token != null) requestShakeAd(token)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                    score = game.score,
+                    bestScore = game.bestScore,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                 )
             },
         )
@@ -192,149 +178,166 @@ internal fun FruitMergeScreen(
 @Composable
 private fun LoadingContent() {
     val description = stringResource(Res.string.loading_game)
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.semantics { contentDescription = description },
-    ) {
-        CircularProgressIndicator()
-        Text(description, style = MaterialTheme.typography.bodyMedium)
-    }
+    CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = description })
 }
 
 @Composable
-private fun SupportingPanel(
-    game: ge.yet.game.fruitmerge.engine.FruitMergeState,
-    faceTimeSeconds: Float,
-    reducedMotion: Boolean,
+private fun ActionHud(
+    freeClears: Int,
+    freeShakes: Int,
+    hasBodies: Boolean,
+    isTargeting: Boolean,
     onClear: () -> Unit,
     onCancelClear: () -> Unit,
     onShake: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isPlaying = game.phase == RunPhase.PLAYING
-    val isTargeting = game.targetingMode == TargetingMode.CLEAR
-    val scoreLabel = stringResource(Res.string.score)
-    val bestLabel = stringResource(Res.string.best_score)
-    val clearLabel = if (game.freeClears > 0) {
-        stringResource(Res.string.clear_with_count, game.freeClears)
+    val clearLabel = if (freeClears > 0) {
+        stringResource(Res.string.clear_with_count, freeClears)
     } else {
         stringResource(Res.string.clear_with_ad)
     }
-    val shakeLabel = if (game.freeShakes > 0) {
-        stringResource(Res.string.shake_with_count, game.freeShakes)
+    val shakeLabel = if (freeShakes > 0) {
+        stringResource(Res.string.shake_with_count, freeShakes)
     } else {
         stringResource(Res.string.shake_with_ad)
     }
     val advertisement = stringResource(Res.string.ad_disclosure)
 
-    Column(
+    Row(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            RowCard(
-                firstText = scoreLabel,
-                secondText = game.score.toString(),
-                modifier = Modifier.weight(1f),
-            )
-            RowCard(
-                firstText = bestLabel,
-                secondText = game.bestScore.toString(),
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        NextFruitCard(
-            level = game.previewLevel,
-            faceTimeSeconds = faceTimeSeconds,
-            reducedMotion = reducedMotion,
-            modifier = Modifier.fillMaxWidth(),
+        ConsumableIconButton(
+            badge = if (freeClears > 0) freeClears.toString() else "AD",
+            icon = BombFilled,
+            contentDescription = if (isTargeting) stringResource(Res.string.cancel) else {
+                if (freeClears == 0) "$clearLabel, $advertisement" else clearLabel
+            },
+            enabled = isTargeting || hasBodies,
+            onClick = if (isTargeting) onCancelClear else onClear,
+            modifier = Modifier.semantics { testTag = FruitMergeTestTags.Clear },
         )
-
-        Text(
-            text = stringResource(if (isTargeting) Res.string.clear_hint else Res.string.drop_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        if (isTargeting) {
-            SecondaryWarmSandButton(
-                text = stringResource(Res.string.cancel),
-                onClick = onCancelClear,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { testTag = FruitMergeTestTags.Clear },
-            )
-        } else {
-            SecondaryWarmSandButton(
-                text = clearLabel,
-                onClick = onClear,
-                enabled = isPlaying && game.bodies.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics {
-                        testTag = FruitMergeTestTags.Clear
-                        if (game.freeClears == 0) contentDescription = "$clearLabel, $advertisement"
-                    },
-            )
-        }
-
-        SecondaryWarmSandButton(
-            text = shakeLabel,
+        ConsumableIconButton(
+            badge = if (freeShakes > 0) freeShakes.toString() else "AD",
+            icon = Vibration,
+            contentDescription = if (freeShakes == 0) "$shakeLabel, $advertisement" else shakeLabel,
+            enabled = !isTargeting && hasBodies,
             onClick = onShake,
-            enabled = isPlaying && !isTargeting && game.bodies.isNotEmpty(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics {
-                    testTag = FruitMergeTestTags.Shake
-                    if (game.freeShakes == 0) contentDescription = "$shakeLabel, $advertisement"
-                },
+            modifier = Modifier.semantics { testTag = FruitMergeTestTags.Shake },
         )
     }
 }
 
 @Composable
-private fun NextFruitCard(
-    level: FruitLevel,
-    faceTimeSeconds: Float,
-    reducedMotion: Boolean,
+private fun ConsumableIconButton(
+    badge: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val nextLabel = stringResource(Res.string.next_fruit)
-    val fruitName = stringResource(fruitNameResource(level))
-    val fruitDescription = stringResource(Res.string.fruit_description, fruitName)
-    Card(
-        modifier = modifier.semantics {
-            contentDescription = "$nextLabel. $fruitDescription"
+    BadgedBox(
+        modifier = modifier,
+        badge = {
+            Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                Text(badge, fontWeight = FontWeight.Bold)
+            }
         },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Row(
+        IconCircleButton(
+            icon = icon,
+            contentDescription = contentDescription,
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(52.dp),
+        )
+    }
+}
+
+@Composable
+private fun SupportingPanel(
+    score: Long,
+    bestScore: Long,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        ScoreStrip(score, bestScore, Modifier.fillMaxWidth())
+        FruitEvolutionStrip(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 10.dp),
+                .height(64.dp)
+                .semantics { testTag = FruitMergeTestTags.Evolution },
+        )
+    }
+}
+
+@Composable
+private fun ScoreStrip(score: Long, bestScore: Long, modifier: Modifier = Modifier) {
+    val scoreDescription = "${stringResource(Res.string.score)} $score"
+    val bestDescription = "${stringResource(Res.string.best_score)} $bestScore"
+    Surface(modifier = modifier, shape = MaterialTheme.shapes.large, tonalElevation = 2.dp) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = nextLabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
+                text = score.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { contentDescription = scoreDescription },
             )
-            Spacer(Modifier.width(12.dp))
-            FruitPreview(
-                level = level,
-                faceTimeSeconds = faceTimeSeconds,
-                reducedMotion = reducedMotion,
-                modifier = Modifier.size(58.dp),
+            Icon(
+                imageVector = Crown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
             )
+            Text(
+                text = bestScore.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { contentDescription = bestDescription },
+            )
+        }
+    }
+}
+
+@Composable
+private fun FruitEvolutionStrip(
+    modifier: Modifier = Modifier,
+) {
+    val fruitNames = FruitLevel.entries.map { level -> stringResource(fruitNameResource(level)) }
+    val description = fruitNames.joinToString(separator = ", ")
+    Surface(
+        modifier = modifier.semantics { contentDescription = description },
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 2.dp,
+    ) {
+        Canvas(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp)) {
+            val slotWidth = size.width / FruitLevel.entries.size
+            val radius = minOf(slotWidth * 0.40f, size.height * 0.40f)
+            FruitLevel.entries.forEachIndexed { index, level ->
+                drawFruit(
+                    level = level,
+                    center = Offset(slotWidth * (index + 0.5f), size.height * 0.53f),
+                    radius = radius,
+                    angleRadians = 0f,
+                    verticalVelocity = 0f,
+                    impact = 0f,
+                    facePhase = level.ordinal.toFloat(),
+                    anxious = false,
+                    alpha = 1f,
+                )
+            }
         }
     }
 }
@@ -352,50 +355,30 @@ private fun fruitNameResource(level: FruitLevel): StringResource = when (level) 
     FruitLevel.MELON -> Res.string.melon
 }
 
-@Composable
-private fun ResultCard(
-    score: Long,
-    onNewGame: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth(0.84f)
-            .clip(MaterialTheme.shapes.extraLarge),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(Res.string.game_over),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(Res.string.game_over_supporting),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = score.toString(),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            )
-            PrimaryTerracottaButton(
-                text = stringResource(Res.string.new_game),
-                onClick = onNewGame,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { testTag = FruitMergeTestTags.NewGame },
-            )
+private fun Modifier.fruitMergeDropInput(
+    enabled: Boolean,
+    onMovePreview: (Float) -> Unit,
+    onDrop: (Boolean) -> Unit,
+): Modifier = pointerInput(enabled) {
+    if (!enabled) return@pointerInput
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = true)
+        val touchSlopSquared = viewConfiguration.touchSlop * viewConfiguration.touchSlop
+        onMovePreview((down.position.x / size.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+        var last: PointerInputChange = down
+        var dragged = false
+        while (last.pressed) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
+            last = change
+            if (change.pressed) {
+                val offset = change.position - down.position
+                if (offset.getDistanceSquared() >= touchSlopSquared) dragged = true
+                onMovePreview((change.position.x / size.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+            }
         }
+        onMovePreview((last.position.x / size.width.coerceAtLeast(1)).coerceIn(0f, 1f))
+        onDrop(dragged)
     }
 }
 

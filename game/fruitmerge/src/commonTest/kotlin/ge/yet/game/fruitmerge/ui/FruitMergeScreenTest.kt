@@ -3,11 +3,13 @@ package ge.yet.game.fruitmerge.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.value.MutableValue
@@ -15,7 +17,6 @@ import com.arkivanov.decompose.value.Value
 import ge.yet.game.fruitmerge.engine.FruitBody
 import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.FruitMergeState
-import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.engine.Vec2
 import ge.yet.game.fruitmerge.session.FruitMergeComponent
 import ge.yet.game.fruitmerge.session.PaidAction
@@ -40,7 +41,10 @@ class FruitMergeScreenTest {
 
         onNodeWithTag(FruitMergeTestTags.Board).assertIsDisplayed()
         onNodeWithTag(FruitMergeTestTags.Clear).assertIsDisplayed()
-        onNodeWithTag(FruitMergeTestTags.Shake).performScrollTo().assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.Shake).assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.Evolution).assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.Shake).performClick()
+        assertEquals(1, component.shakeRequests)
     }
 
     @Test
@@ -82,10 +86,8 @@ class FruitMergeScreenTest {
     }
 
     @Test
-    fun `result presents a new game action`() = runComposeUiTest {
-        val component = FakeFruitMergeComponent(
-            playingModel().copy(game = playingModel().game.copy(phase = RunPhase.RESULT)),
-        )
+    fun `tap above the board still drops through the full viewport`() = runComposeUiTest {
+        val component = FakeFruitMergeComponent(playingModel())
         setContent {
             LogicaTheme(darkTheme = false) {
                 Box(Modifier.size(390.dp, 760.dp)) {
@@ -94,8 +96,12 @@ class FruitMergeScreenTest {
             }
         }
 
-        onNodeWithTag(FruitMergeTestTags.NewGame).assertIsDisplayed().performClick()
-        assertEquals(1, component.newGameCalls)
+        onNodeWithTag(FruitMergeTestTags.Viewport).performTouchInput {
+            click(Offset(20f, 20f))
+        }
+
+        assertEquals(1, component.dropCalls)
+        assertEquals(false, component.lastDropDragged)
     }
 
     private fun playingModel(): FruitMergeComponent.Model = FruitMergeComponent.Model(
@@ -105,6 +111,7 @@ class FruitMergeScreenTest {
         ),
         initialized = true,
         visible = false,
+        tutorialReady = true,
     )
 }
 
@@ -116,11 +123,17 @@ private class FakeFruitMergeComponent(
     override val model: Value<FruitMergeComponent.Model> = mutableModel
 
     var clearRequests = 0
+    var shakeRequests = 0
+    var dropCalls = 0
+    var lastDropDragged: Boolean? = null
     var newGameCalls = 0
 
     override fun frame(elapsedSeconds: Float) = Unit
     override fun movePreview(x: Float) = Unit
-    override fun drop(dragged: Boolean) = Unit
+    override fun drop(dragged: Boolean) {
+        dropCalls += 1
+        lastDropDragged = dragged
+    }
 
     override fun requestClearGate(): PaidActionToken? {
         clearRequests += 1
@@ -129,7 +142,10 @@ private class FakeFruitMergeComponent(
 
     override fun selectClearTarget(id: Long) = Unit
     override fun cancelClear() = Unit
-    override fun requestShakeGate(): PaidActionToken? = null
+    override fun requestShakeGate(): PaidActionToken? {
+        shakeRequests += 1
+        return null
+    }
     override fun completePaidAction(token: PaidActionToken) = Unit
 
     override fun newGame() {

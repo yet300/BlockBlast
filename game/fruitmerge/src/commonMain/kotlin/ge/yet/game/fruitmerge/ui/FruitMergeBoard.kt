@@ -38,26 +38,19 @@ internal fun FruitMergeBoard(
     reducedMotion: Boolean,
     boardDescription: String,
     dangerDescription: String,
-    onMovePreview: (Float) -> Unit,
-    onDrop: () -> Unit,
     onClearTarget: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dangerDash = remember { PathEffect.dashPathEffect(floatArrayOf(10f, 8f)) }
     val targetingClear = game.targetingMode == TargetingMode.CLEAR
     val latestBodies = rememberUpdatedState(game.bodies)
-    val latestMovePreview = rememberUpdatedState(onMovePreview)
-    val latestDrop = rememberUpdatedState(onDrop)
     val latestClearTarget = rememberUpdatedState(onClearTarget)
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .fruitMergePointerInput(
-                enabled = game.phase == RunPhase.PLAYING,
-                targetingClear = targetingClear,
+            .fruitMergeClearPointerInput(
+                enabled = game.phase == RunPhase.PLAYING && targetingClear,
                 bodies = { latestBodies.value },
-                onMovePreview = { latestMovePreview.value(it) },
-                onDrop = { latestDrop.value() },
                 onClearTarget = { latestClearTarget.value(it) },
             )
             .semantics {
@@ -165,44 +158,22 @@ internal fun FruitPreview(
     }
 }
 
-private fun Modifier.fruitMergePointerInput(
+private fun Modifier.fruitMergeClearPointerInput(
     enabled: Boolean,
-    targetingClear: Boolean,
     bodies: () -> List<FruitBody>,
-    onMovePreview: (Float) -> Unit,
-    onDrop: () -> Unit,
     onClearTarget: (Long) -> Unit,
-): Modifier = pointerInput(enabled, targetingClear) {
+): Modifier = pointerInput(enabled) {
     if (!enabled) return@pointerInput
     awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
-        if (!targetingClear) onMovePreview(worldX(down.position, size))
+        val down = awaitFirstDown(requireUnconsumed = true)
         var last: PointerInputChange = down
-        var released = false
         while (last.pressed) {
             val event = awaitPointerEvent()
             val change = event.changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
             last = change
-            if (change.pressed && !targetingClear) {
-                onMovePreview(worldX(change.position, size))
-            } else if (!change.pressed) {
-                released = true
-            }
         }
-        if (!released) return@awaitEachGesture
-        if (targetingClear) {
-            findClearTarget(last.position, size, bodies())?.let(onClearTarget)
-        } else {
-            onMovePreview(worldX(last.position, size))
-            onDrop()
-        }
+        findClearTarget(last.position, size, bodies())?.let(onClearTarget)
     }
-}
-
-private fun worldX(position: Offset, size: IntSize): Float {
-    val side = min(size.width, size.height).toFloat().coerceAtLeast(1f)
-    val originX = (size.width - side) * 0.5f
-    return ((position.x - originX) / side).coerceIn(0f, 1f)
 }
 
 private fun findClearTarget(position: Offset, size: IntSize, bodies: List<FruitBody>): Long? {
@@ -224,7 +195,7 @@ private fun findClearTarget(position: Offset, size: IntSize, bodies: List<FruitB
     return bestId
 }
 
-private fun DrawScope.drawFruit(
+internal fun DrawScope.drawFruit(
     level: FruitLevel,
     center: Offset,
     radius: Float,
@@ -240,12 +211,7 @@ private fun DrawScope.drawFruit(
     val fruitSize = Size(radius * 2f * (1f + squash), radius * 2f * (1f - squash))
     val topLeft = Offset(center.x - fruitSize.width * 0.5f, center.y - fruitSize.height * 0.5f)
 
-    drawOval(
-        color = FaceInk.copy(alpha = 0.13f * alpha),
-        topLeft = topLeft + Offset(radius * 0.08f, radius * 0.13f),
-        size = fruitSize,
-    )
-    drawOval(color = style.base.copy(alpha = alpha), topLeft = topLeft, size = fruitSize)
+    drawFruitBody(level, center, radius, fruitSize, topLeft, style, alpha)
     drawOval(
         color = style.highlight.copy(alpha = 0.72f * alpha),
         topLeft = Offset(center.x - radius * 0.54f, center.y - radius * 0.55f),
@@ -262,20 +228,7 @@ private fun DrawScope.drawFruit(
         size = Size(radius * 0.32f, radius * 0.20f),
     )
 
-    val angleDegrees = angleRadians * (180f / PI.toFloat())
-    rotate(degrees = angleDegrees, pivot = center) {
-        drawOval(
-            color = LeafGreen.copy(alpha = alpha),
-            topLeft = Offset(center.x + radius * 0.04f, center.y - radius * 1.13f),
-            size = Size(radius * 0.64f, radius * 0.31f),
-        )
-        drawLine(
-            color = StemBrown.copy(alpha = alpha),
-            start = Offset(center.x, center.y - radius * 0.83f),
-            end = Offset(center.x + radius * 0.08f, center.y - radius * 1.08f),
-            strokeWidth = (radius * 0.10f).coerceAtLeast(1f),
-        )
-    }
+    drawFruitTop(level, center, radius, angleRadians, alpha)
 
     val blink = (facePhase % 4.2f) < 0.12f
     val eyeY = center.y - radius * 0.03f
@@ -330,6 +283,183 @@ private fun DrawScope.drawFruit(
     }
 }
 
+private fun DrawScope.drawFruitBody(
+    level: FruitLevel,
+    center: Offset,
+    radius: Float,
+    fruitSize: Size,
+    topLeft: Offset,
+    style: FruitStyle,
+    alpha: Float,
+) {
+    drawOval(
+        color = FaceInk.copy(alpha = 0.13f * alpha),
+        topLeft = topLeft + Offset(radius * 0.08f, radius * 0.13f),
+        size = fruitSize,
+    )
+    when (level) {
+        FruitLevel.BLUEBERRY -> {
+            drawCircle(style.base.copy(alpha = alpha), radius * 0.94f, center)
+            drawCircle(style.highlight.copy(alpha = 0.35f * alpha), radius * 0.72f, center, style = Stroke(radius * 0.06f))
+        }
+        FruitLevel.CHERRY -> {
+            val lobeRadius = radius * 0.72f
+            drawCircle(style.base.copy(alpha = alpha), lobeRadius, center + Offset(-radius * 0.32f, radius * 0.08f))
+            drawCircle(style.base.copy(alpha = alpha), lobeRadius, center + Offset(radius * 0.32f, radius * 0.08f))
+            drawCircle(style.highlight.copy(alpha = 0.36f * alpha), radius * 0.22f, center + Offset(-radius * 0.50f, -radius * 0.26f))
+        }
+        FruitLevel.STRAWBERRY -> {
+            drawOval(
+                style.base.copy(alpha = alpha),
+                topLeft = Offset(center.x - radius * 0.82f, center.y - radius * 0.92f),
+                size = Size(radius * 1.64f, radius * 1.92f),
+            )
+            val seeds = arrayOf(
+                Offset(-0.48f, -0.34f), Offset(0.48f, -0.34f),
+                Offset(-0.56f, 0.18f), Offset(0.56f, 0.18f), Offset(0f, 0.54f),
+            )
+            for (seed in seeds) {
+                drawOval(
+                    StrawberrySeed.copy(alpha = 0.72f * alpha),
+                    topLeft = center + Offset(seed.x * radius - radius * 0.045f, seed.y * radius - radius * 0.075f),
+                    size = Size(radius * 0.09f, radius * 0.15f),
+                )
+            }
+        }
+        FruitLevel.PLUM -> {
+            drawOval(style.base.copy(alpha = alpha), topLeft + Offset(radius * 0.08f, -radius * 0.02f), Size(fruitSize.width * 0.92f, fruitSize.height * 1.02f))
+            drawArc(
+                color = style.highlight.copy(alpha = 0.34f * alpha),
+                startAngle = 95f,
+                sweepAngle = 170f,
+                useCenter = false,
+                topLeft = Offset(center.x - radius * 0.16f, center.y - radius * 0.74f),
+                size = Size(radius * 0.55f, radius * 1.52f),
+                style = Stroke((radius * 0.055f).coerceAtLeast(1f)),
+            )
+        }
+        FruitLevel.MANDARIN -> {
+            drawOval(style.base.copy(alpha = alpha), topLeft + Offset(0f, radius * 0.10f), Size(fruitSize.width, fruitSize.height * 0.90f))
+            for (x in listOf(-0.42f, 0f, 0.42f)) {
+                drawArc(
+                    color = style.highlight.copy(alpha = 0.28f * alpha),
+                    startAngle = 82f,
+                    sweepAngle = 196f,
+                    useCenter = false,
+                    topLeft = Offset(center.x + x * radius - radius * 0.28f, center.y - radius * 0.74f),
+                    size = Size(radius * 0.56f, radius * 1.48f),
+                    style = Stroke((radius * 0.045f).coerceAtLeast(1f)),
+                )
+            }
+        }
+        FruitLevel.APPLE -> {
+            drawCircle(style.base.copy(alpha = alpha), radius * 0.82f, center + Offset(-radius * 0.25f, radius * 0.08f))
+            drawCircle(style.base.copy(alpha = alpha), radius * 0.82f, center + Offset(radius * 0.25f, radius * 0.08f))
+        }
+        FruitLevel.PEAR -> {
+            drawOval(style.base.copy(alpha = alpha), Offset(center.x - radius * 0.86f, center.y - radius * 0.32f), Size(radius * 1.72f, radius * 1.38f))
+            drawCircle(style.base.copy(alpha = alpha), radius * 0.56f, center + Offset(0f, -radius * 0.48f))
+        }
+        FruitLevel.PEACH -> {
+            drawOval(style.base.copy(alpha = alpha), topLeft, fruitSize)
+            drawArc(
+                color = PeachSeam.copy(alpha = 0.48f * alpha),
+                startAngle = 255f,
+                sweepAngle = 150f,
+                useCenter = false,
+                topLeft = Offset(center.x - radius * 0.14f, center.y - radius * 0.82f),
+                size = Size(radius * 0.64f, radius * 1.64f),
+                style = Stroke((radius * 0.06f).coerceAtLeast(1f)),
+            )
+        }
+        FruitLevel.PINEAPPLE -> {
+            drawOval(style.base.copy(alpha = alpha), Offset(center.x - radius * 0.82f, center.y - radius * 0.91f), Size(radius * 1.64f, radius * 1.96f))
+            for (offset in listOf(-0.48f, 0f, 0.48f)) {
+                drawLine(
+                    PineappleGrid.copy(alpha = 0.42f * alpha),
+                    center + Offset(-radius * 0.62f, offset * radius),
+                    center + Offset(radius * 0.62f, (offset + 0.42f) * radius),
+                    strokeWidth = (radius * 0.045f).coerceAtLeast(1f),
+                )
+                drawLine(
+                    PineappleGrid.copy(alpha = 0.42f * alpha),
+                    center + Offset(radius * 0.62f, offset * radius),
+                    center + Offset(-radius * 0.62f, (offset + 0.42f) * radius),
+                    strokeWidth = (radius * 0.045f).coerceAtLeast(1f),
+                )
+            }
+        }
+        FruitLevel.MELON -> {
+            drawCircle(style.base.copy(alpha = alpha), radius, center)
+            for (x in listOf(-0.48f, 0f, 0.48f)) {
+                drawArc(
+                    MelonStripe.copy(alpha = 0.48f * alpha),
+                    startAngle = 88f,
+                    sweepAngle = 184f,
+                    useCenter = false,
+                    topLeft = Offset(center.x + x * radius - radius * 0.30f, center.y - radius * 0.86f),
+                    size = Size(radius * 0.60f, radius * 1.72f),
+                    style = Stroke((radius * 0.07f).coerceAtLeast(1f)),
+                )
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawFruitTop(
+    level: FruitLevel,
+    center: Offset,
+    radius: Float,
+    angleRadians: Float,
+    alpha: Float,
+) {
+    val angleDegrees = angleRadians * (180f / PI.toFloat())
+    rotate(degrees = angleDegrees, pivot = center) {
+        when (level) {
+            FruitLevel.BLUEBERRY -> repeat(5) { index ->
+                drawCircle(
+                    BlueberryCrown.copy(alpha = alpha),
+                    radius * 0.14f,
+                    center + Offset((index - 2) * radius * 0.13f, -radius * (0.82f + abs(index - 2) * 0.035f)),
+                )
+            }
+            FruitLevel.CHERRY -> {
+                drawLine(StemBrown.copy(alpha = alpha), center + Offset(-radius * 0.28f, -radius * 0.45f), center + Offset(0f, -radius * 1.12f), (radius * 0.08f).coerceAtLeast(1f))
+                drawLine(StemBrown.copy(alpha = alpha), center + Offset(radius * 0.28f, -radius * 0.45f), center + Offset(0f, -radius * 1.12f), (radius * 0.08f).coerceAtLeast(1f))
+            }
+            FruitLevel.STRAWBERRY -> repeat(3) { index ->
+                drawOval(
+                    LeafGreen.copy(alpha = alpha),
+                    Offset(center.x + (index - 1) * radius * 0.28f - radius * 0.24f, center.y - radius * 1.02f),
+                    Size(radius * 0.48f, radius * 0.32f),
+                )
+            }
+            FruitLevel.PINEAPPLE -> repeat(3) { index ->
+                drawLine(
+                    LeafGreen.copy(alpha = alpha),
+                    center + Offset((index - 1) * radius * 0.18f, -radius * 0.72f),
+                    center + Offset((index - 1) * radius * 0.36f, -radius * (1.38f - abs(index - 1) * 0.12f)),
+                    (radius * 0.16f).coerceAtLeast(1f),
+                )
+            }
+            FruitLevel.MELON -> Unit
+            else -> {
+                drawOval(
+                    LeafGreen.copy(alpha = alpha),
+                    topLeft = Offset(center.x + radius * 0.04f, center.y - radius * 1.13f),
+                    size = Size(radius * 0.64f, radius * 0.31f),
+                )
+                drawLine(
+                    StemBrown.copy(alpha = alpha),
+                    center + Offset(0f, -radius * 0.83f),
+                    center + Offset(radius * 0.08f, -radius * 1.08f),
+                    (radius * 0.10f).coerceAtLeast(1f),
+                )
+            }
+        }
+    }
+}
+
 private data class FruitStyle(
     val base: Color,
     val highlight: Color,
@@ -356,6 +486,11 @@ private val ClearTarget = Color(0xFFCC5E43)
 private val FaceInk = Color(0xFF49372F)
 private val LeafGreen = Color(0xFF6E9A58)
 private val StemBrown = Color(0xFF7D5B42)
+private val BlueberryCrown = Color(0xFF3F477F)
+private val StrawberrySeed = Color(0xFFFFD36A)
+private val PeachSeam = Color(0xFFC96F78)
+private val PineappleGrid = Color(0xFF9D7934)
+private val MelonStripe = Color(0xFF3D8751)
 private val FruitStyles = listOf(
     FruitStyle(Color(0xFF6F78C9), Color(0xFFAEB6F2), Color(0xFFE6A1B2)),
     FruitStyle(Color(0xFFD95362), Color(0xFFFFA6A0), Color(0xFFF7A0AC)),
