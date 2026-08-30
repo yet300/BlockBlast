@@ -2,6 +2,7 @@ package ge.yet.game.fruitmerge.engine
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -98,6 +99,48 @@ class FruitMergeEngineTest {
     }
 
     @Test
+    fun `accepted drop starts cooldown and second drop does not advance rng`() {
+        val first = engine.drop(FruitMergeState()).state
+
+        val second = engine.drop(first)
+
+        assertEquals(ActionRejection.DROP_COOLDOWN, second.rejection)
+        assertEquals(first, second.state)
+        assertEquals(FruitMergeEngine.DROP_COOLDOWN_SECONDS, first.dropCooldownSeconds)
+    }
+
+    @Test
+    fun `fixed steps make drop ready after cooldown`() {
+        val dropped = engine.drop(FruitMergeState()).state
+        val ready = generateSequence(dropped) { state -> engine.step(state, 1f / 60f) }
+            .drop(27)
+            .first()
+
+        assertEquals(0f, ready.dropCooldownSeconds)
+        assertNull(engine.drop(ready).rejection)
+    }
+
+    @Test
+    fun `shake applies to moving bodies and consumes one free use`() {
+        val moving = stateWithBody(FruitLevel.APPLE).copy(
+            bodies = listOf(
+                FruitBody(
+                    id = 1,
+                    level = FruitLevel.APPLE,
+                    position = Vec2(0.5f, 0.8f),
+                    velocity = Vec2(0.2f, 0.1f),
+                ),
+            ),
+        )
+
+        val result = engine.shake(moving)
+
+        assertNull(result.rejection)
+        assertEquals(moving.freeShakes - 1, result.state.freeShakes)
+        assertNotEquals(moving.bodies, result.state.bodies)
+    }
+
+    @Test
     fun `drop chooses only spawnable levels and remains in bounds`() {
         var state = FruitMergeState(previewX = -10f, previewLevel = FruitLevel.MANDARIN)
         repeat(30) {
@@ -107,7 +150,7 @@ class FruitMergeEngineTest {
             val body = dropped.state.bodies.last()
             assertTrue(body.level in FruitLevel.spawnable)
             assertTrue(body.position.x in body.level.radius..(1f - body.level.radius))
-            state = dropped.state.copy(bodies = emptyList())
+            state = dropped.state.copy(bodies = emptyList(), dropCooldownSeconds = 0f)
         }
     }
 

@@ -22,6 +22,7 @@ data class FruitMergeState(
     val freeShakes: Int = FREE_SHAKE_COUNT,
     val dangerSeconds: Float = 0f,
     val graceSeconds: Float = 0f,
+    val dropCooldownSeconds: Float = 0f,
     val runOrdinal: Long = 1,
     val phase: RunPhase = RunPhase.PLAYING,
     val targetingMode: TargetingMode = TargetingMode.NONE,

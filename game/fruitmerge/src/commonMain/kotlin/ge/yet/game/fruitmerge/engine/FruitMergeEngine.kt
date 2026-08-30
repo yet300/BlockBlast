@@ -1,6 +1,5 @@
 package ge.yet.game.fruitmerge.engine
 
-import kotlin.math.abs
 import kotlin.math.max
 
 enum class ActionRejection {
@@ -9,6 +8,7 @@ enum class ActionRejection {
     BODY_NOT_FOUND,
     NO_FREE_USE,
     BODY_LIMIT,
+    DROP_COOLDOWN,
 }
 
 data class ActionResult(
@@ -45,6 +45,7 @@ class FruitMergeEngine(
 
     override fun drop(state: FruitMergeState): ActionResult {
         if (state.phase != RunPhase.PLAYING) return ActionResult(state, ActionRejection.GAME_OVER)
+        if (state.dropCooldownSeconds > 0f) return ActionResult(state, ActionRejection.DROP_COOLDOWN)
         if (state.bodies.size >= MAX_BODIES || state.nextBodyId == Long.MAX_VALUE) {
             return ActionResult(state, ActionRejection.BODY_LIMIT)
         }
@@ -63,6 +64,7 @@ class FruitMergeEngine(
                 random = nextRandom.state,
                 nextBodyId = state.nextBodyId + 1,
                 targetingMode = TargetingMode.NONE,
+                dropCooldownSeconds = DROP_COOLDOWN_SECONDS,
             ),
         )
     }
@@ -74,7 +76,13 @@ class FruitMergeEngine(
         diagnostics = diagnostics.copy(
             maxCandidatePairs = max(diagnostics.maxCandidatePairs, physicsResult.candidatePairCount),
         )
-        val merged = resolveMerges(state.copy(bodies = physicsResult.bodies), physicsResult.contacts)
+        val merged = resolveMerges(
+            state.copy(
+                bodies = physicsResult.bodies,
+                dropCooldownSeconds = (state.dropCooldownSeconds - elapsedSeconds).coerceAtLeast(0f),
+            ),
+            physicsResult.contacts,
+        )
         val grace = (merged.graceSeconds - elapsedSeconds).coerceAtLeast(0f)
         val overDangerLine = merged.bodies.any { body ->
             body.position.y - body.level.radius < DANGER_Y
@@ -130,7 +138,7 @@ class FruitMergeEngine(
     override fun shake(state: FruitMergeState, paid: Boolean): ActionResult {
         val rejection = actionRejection(state, paid, state.freeShakes)
         if (rejection != null) return ActionResult(state, rejection)
-        if (state.bodies.isEmpty() || state.bodies.any { body -> body.isMoving() }) {
+        if (state.bodies.isEmpty()) {
             return ActionResult(state, ActionRejection.BOARD_BUSY)
         }
         var random = state.random
@@ -240,9 +248,6 @@ class FruitMergeEngine(
     private fun signedUnit(value: Int): Float = unit(value) * 2f - 1f
     private fun unit(value: Int): Float = value.toFloat() / Int.MAX_VALUE.toFloat()
 
-    private fun FruitBody.isMoving(): Boolean =
-        velocity.lengthSquared() > SETTLED_SPEED_SQUARED || abs(angularVelocity) > SETTLED_ANGULAR_SPEED
-
     private fun Vec2.clampLength(maxLength: Float): Vec2 {
         val lengthSquared = lengthSquared()
         return if (lengthSquared > maxLength * maxLength) this * (maxLength / length()) else this
@@ -253,14 +258,13 @@ class FruitMergeEngine(
 
     companion object {
         const val DANGER_Y: Float = 0.18f
+        const val DROP_COOLDOWN_SECONDS: Float = 0.45f
 
         private const val SPAWN_Y: Float = 0.08f
         private const val DANGER_DURATION_SECONDS: Float = 1.5f
         private const val DANGER_EPSILON: Float = 0.000_1f
         private const val ACTION_GRACE_SECONDS: Float = 0.75f
         private const val MERGE_GRACE_SECONDS: Float = 0.75f
-        private const val SETTLED_SPEED_SQUARED: Float = 0.001_6f
-        private const val SETTLED_ANGULAR_SPEED: Float = 0.08f
         private const val MAX_SHAKE_HORIZONTAL: Float = 0.55f
         private const val MIN_SHAKE_UPWARD: Float = 0.16f
         private const val MAX_SHAKE_UPWARD: Float = 0.38f
