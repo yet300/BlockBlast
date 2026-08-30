@@ -1,6 +1,7 @@
 package ge.yet.game.fruitmerge.store
 
 import com.arkivanov.mvikotlin.core.store.Store
+import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.FruitMergeState
 
 internal interface FruitMergeStore :
@@ -28,6 +29,10 @@ internal interface FruitMergeStore :
     )
 
     sealed interface Label {
+        data object DropAccepted : Label
+        data class MergeResolved(val level: FruitLevel) : Label
+        data object ClearApplied : Label
+        data object ShakeApplied : Label
         data object ResultReached : Label
     }
 }

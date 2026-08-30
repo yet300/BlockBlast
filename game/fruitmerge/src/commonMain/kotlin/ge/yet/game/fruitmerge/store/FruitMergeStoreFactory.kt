@@ -9,6 +9,7 @@ import dev.zacsweers.metro.Inject
 import ge.yet.game.fruitmerge.engine.ActionResult
 import ge.yet.game.fruitmerge.engine.FruitMergeRules
 import ge.yet.game.fruitmerge.engine.FruitMergeState
+import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
 import kotlinx.coroutines.launch
@@ -79,15 +80,31 @@ internal class FruitMergeStoreFactory(
             when (intent) {
                 is FruitMergeStore.Intent.Frame -> frame(intent.elapsedSeconds)
                 is FruitMergeStore.Intent.MovePreview -> replace(rules.movePreview(state().game, intent.x))
-                FruitMergeStore.Intent.Drop -> applyAction(rules.drop(state().game), checkpoint = true)
+                FruitMergeStore.Intent.Drop -> applyAction(
+                    result = rules.drop(state().game),
+                    checkpoint = true,
+                    label = FruitMergeStore.Label.DropAccepted,
+                )
                 FruitMergeStore.Intent.BeginFreeClear -> applyAction(rules.beginClear(state().game))
                 is FruitMergeStore.Intent.ClearBody ->
-                    applyAction(rules.clear(state().game, intent.id, intent.paid), checkpoint = true)
+                    applyAction(
+                        result = rules.clear(state().game, intent.id, intent.paid),
+                        checkpoint = true,
+                        label = FruitMergeStore.Label.ClearApplied,
+                    )
                 FruitMergeStore.Intent.CancelClear -> replace(rules.cancelClear(state().game))
-                FruitMergeStore.Intent.FreeShake -> applyAction(rules.shake(state().game), checkpoint = true)
+                FruitMergeStore.Intent.FreeShake -> applyAction(
+                    result = rules.shake(state().game),
+                    checkpoint = true,
+                    label = FruitMergeStore.Label.ShakeApplied,
+                )
                 FruitMergeStore.Intent.PaidClear -> applyAction(rules.beginClear(state().game, paid = true))
                 FruitMergeStore.Intent.PaidShake ->
-                    applyAction(rules.shake(state().game, paid = true), checkpoint = true)
+                    applyAction(
+                        result = rules.shake(state().game, paid = true),
+                        checkpoint = true,
+                        label = FruitMergeStore.Label.ShakeApplied,
+                    )
                 FruitMergeStore.Intent.NewGame -> {
                     accumulatorSeconds = 0f
                     replace(rules.newRun(state().game), checkpoint = true)
@@ -108,7 +125,9 @@ internal class FruitMergeStoreFactory(
             var steps = 0
             val startingPhase = game.phase
             while (accumulatorSeconds + STEP_EPSILON >= FIXED_STEP_SECONDS && steps < MAX_STEPS_PER_FRAME) {
-                game = rules.step(game, FIXED_STEP_SECONDS)
+                val beforeStep = game
+                game = rules.step(beforeStep, FIXED_STEP_SECONDS)
+                publishMergeLabels(beforeStep, game)
                 accumulatorSeconds -= FIXED_STEP_SECONDS
                 steps += 1
             }
@@ -127,9 +146,32 @@ internal class FruitMergeStoreFactory(
             if (!active) checkpoint()
         }
 
-        private fun applyAction(result: ActionResult, checkpoint: Boolean = false) {
+        private fun applyAction(
+            result: ActionResult,
+            checkpoint: Boolean = false,
+            label: FruitMergeStore.Label? = null,
+        ) {
             if (result.rejection != null || result.state == state().game) return
             replace(result.state, checkpoint)
+            if (label != null) publish(label)
+        }
+
+        private fun publishMergeLabels(before: FruitMergeState, after: FruitMergeState) {
+            if (before.score == after.score) return
+            val previousIds = before.bodies.asSequence().map { body -> body.id }.toHashSet()
+            after.bodies
+                .asSequence()
+                .filterNot { body -> body.id in previousIds }
+                .sortedBy { body -> body.id }
+                .forEach { body -> publish(FruitMergeStore.Label.MergeResolved(body.level)) }
+
+            val survivingIds = after.bodies.asSequence().map { body -> body.id }.toHashSet()
+            val removedMelons = before.bodies.count { body ->
+                body.level == FruitLevel.MELON && body.id !in survivingIds
+            }
+            repeat(removedMelons / 2) {
+                publish(FruitMergeStore.Label.MergeResolved(FruitLevel.MELON))
+            }
         }
 
         private fun replace(game: FruitMergeState, checkpoint: Boolean = false) {

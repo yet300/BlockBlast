@@ -8,6 +8,7 @@ import ge.yet.game.fruitmerge.engine.FruitMergeState
 internal class TestFruitMergeRules(
     private val delegate: FruitMergeRules = FruitMergeEngine(),
 ) : FruitMergeRules {
+    var nextStepState: FruitMergeState? = null
     var stepCalls: Int = 0
         private set
     var paidShakeCalls: Int = 0
@@ -20,7 +21,8 @@ internal class TestFruitMergeRules(
 
     override fun step(state: FruitMergeState, elapsedSeconds: Float): FruitMergeState {
         stepCalls += 1
-        return delegate.step(state, elapsedSeconds)
+        return nextStepState?.also { nextStepState = null }
+            ?: delegate.step(state, elapsedSeconds)
     }
 
     override fun beginClear(state: FruitMergeState, paid: Boolean): ActionResult =
