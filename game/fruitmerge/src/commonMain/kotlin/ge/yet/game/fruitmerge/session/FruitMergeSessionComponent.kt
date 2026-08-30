@@ -12,6 +12,7 @@ import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.states
+import ge.yet.game.fruitmerge.audio.FruitMergeAudioAdapter
 import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
 import ge.yet.game.fruitmerge.store.FruitMergeStore
@@ -41,6 +42,7 @@ internal class DefaultFruitMergeSessionComponent(
     storeFactory: FruitMergeStoreFactory,
     private val persistence: FruitMergePersistence,
     private val visibility: MiniAppVisibilitySource,
+    private val audio: FruitMergeAudioAdapter,
 ) : FruitMergeSessionComponent,
     ComponentContext by componentContext {
     internal val retainedStore: FruitMergeStore = instanceKeeper.getStore(storeFactory::create)
@@ -62,9 +64,11 @@ internal class DefaultFruitMergeSessionComponent(
     }
 
     init {
+        audio.start()
         val scope = coroutineScope()
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             retainedStore.labels.collect { label ->
+                audio.play(label)
                 if (label == FruitMergeStore.Label.ResultReached) navigateToResult()
             }
         }

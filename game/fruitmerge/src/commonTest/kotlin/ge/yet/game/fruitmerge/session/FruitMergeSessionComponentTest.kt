@@ -2,6 +2,7 @@ package ge.yet.game.fruitmerge.session
 
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.fruitmerge.TestFruitMergeRules
+import ge.yet.game.fruitmerge.audio.FruitMergeAudioAdapter
 import ge.yet.game.fruitmerge.engine.FruitMergeState
 import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
@@ -9,6 +10,7 @@ import ge.yet.game.fruitmerge.store.FruitMergeStoreFactory
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
+import ge.yet.game.miniapp.testkit.NoopMiniAppAudio
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -44,6 +46,7 @@ class FruitMergeSessionComponentTest {
             ),
             persistence = persistence,
             visibility = MutableMiniAppVisibilitySource(),
+            audio = FruitMergeAudioAdapter(NoopMiniAppAudio),
         )
 
         advanceUntilIdle()
@@ -70,6 +73,7 @@ class FruitMergeSessionComponentTest {
             ),
             persistence = persistence,
             visibility = MutableMiniAppVisibilitySource(),
+            audio = FruitMergeAudioAdapter(NoopMiniAppAudio),
         )
         advanceUntilIdle()
         val playing = assertIs<FruitMergeSessionComponent.Child.Playing>(component.stack.value.active.instance)
