@@ -75,4 +75,42 @@ class FruitMergeAudioTest {
             assertTrue(first.peak < 0.98f, name.value)
         }
     }
+
+    @Test
+    fun `drop has a soft impact tail while clear carries a faster slice texture`() {
+        val drop = renderSfx(FruitMergeAudio.Drop)
+        val clear = renderSfx(FruitMergeAudio.Clear)
+
+        assertTrue(windowRms(drop.left, 0, 1_200) > windowRms(drop.left, 3_600, 4_800))
+        assertTrue(windowRms(drop.left, 1_800, 3_000) > 0.0001f)
+        assertTrue(zeroCrossings(clear.left, 0, 2_400) > zeroCrossings(drop.left, 0, 2_400))
+        assertTrue(windowRms(clear.left, 0, 1_200) > windowRms(clear.left, 3_600, 4_800))
+    }
+
+    private fun renderSfx(name: ge.yet.game.miniapp.audio.SfxName) =
+        assertIs<AudioTestRenderResult.Success>(
+            MiniAppAudioTestRenderer.render(
+                FruitMergeAudio.program,
+                AudioTestRenderRequest(
+                    sampleRate = 24_000,
+                    frameCount = 4_800,
+                    includeMusic = false,
+                    sfxTriggers = listOf(AudioTestSfxTrigger(name, frameOffset = 0)),
+                ),
+            ),
+        ).pcm
+
+    private fun windowRms(samples: FloatArray, start: Int, end: Int): Float {
+        var sum = 0.0
+        for (index in start until end) sum += samples[index] * samples[index]
+        return kotlin.math.sqrt(sum / (end - start)).toFloat()
+    }
+
+    private fun zeroCrossings(samples: FloatArray, start: Int, end: Int): Int {
+        var count = 0
+        for (index in start + 1 until end) {
+            if ((samples[index - 1] < 0f) != (samples[index] < 0f)) count += 1
+        }
+        return count
+    }
 }

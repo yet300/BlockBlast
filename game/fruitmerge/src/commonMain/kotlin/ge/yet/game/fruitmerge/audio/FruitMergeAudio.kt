@@ -9,8 +9,6 @@ import ge.yet.game.miniapp.audio.audioProgram
 import ge.yet.game.miniapp.audio.hz
 import ge.yet.game.miniapp.audio.ms
 import ge.yet.game.miniapp.audio.presets.GlassBell
-import ge.yet.game.miniapp.audio.presets.PlacementClick
-import ge.yet.game.miniapp.audio.presets.PowerUp
 import ge.yet.game.miniapp.audio.smoothNoise
 import ge.yet.game.pattern.degrade
 import ge.yet.game.pattern.sequence
@@ -79,8 +77,24 @@ internal object FruitMergeAudio {
             reverb(send = 0.12f)
         }
 
-        include(PlacementClick(name = Drop.value, gain = 0.18f))
-        include(PowerUp(name = Clear.value, gain = 0.22f))
+        sfx(Drop.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.19f)
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.035f, detuneCents = -7f)
+            noise(NoiseColor.BROWN, gain = 0.055f, seed = 6_170_310L)
+            noise(NoiseColor.PINK, gain = 0.025f, seed = 6_170_311L)
+            pitch(from = 168.hz, to = 86.hz, duration = 145.ms)
+            envelope(attack = 1.ms, decay = 46.ms, sustain = 0.10f, release = 180.ms)
+            lowPass(cutoff = 950.hz, resonance = 0.16f)
+        }
+        sfx(Clear.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.075f)
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.045f, detuneCents = 11f)
+            noise(NoiseColor.WHITE, gain = 0.085f, seed = 6_170_312L)
+            noise(NoiseColor.PINK, gain = 0.035f, seed = 6_170_313L)
+            pitch(from = 980.hz, to = 190.hz, duration = 118.ms)
+            envelope(attack = 1.ms, decay = 52.ms, sustain = 0.07f, release = 165.ms)
+            bandPass(center = 1_320.hz, resonance = 0.24f)
+        }
 
         sfx(MergeLow.value) {
             oscillator(OscillatorShape.SINE, gain = 0.16f)
