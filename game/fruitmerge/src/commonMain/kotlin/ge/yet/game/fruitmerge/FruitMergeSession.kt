@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.value.Value
 import ge.yet.game.fruitmerge.session.FruitMergeSessionComponent
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
@@ -22,7 +24,12 @@ class FruitMergeSession internal constructor(
 
     @Composable
     override fun Background(modifier: Modifier) {
-        Box(modifier = modifier.background(MaterialTheme.colorScheme.background))
+        val mode by frameMode.subscribeAsState()
+        val color = when (fruitMergeBackgroundRole(mode)) {
+            FruitMergeBackgroundRole.PLAYING -> MaterialTheme.colorScheme.background
+            FruitMergeBackgroundRole.RESULT -> MaterialTheme.colorScheme.primaryContainer
+        }
+        Box(modifier = modifier.background(color))
     }
 
     @Composable
@@ -40,4 +47,14 @@ class FruitMergeSession internal constructor(
             modifier = modifier,
         )
     }
+}
+
+internal enum class FruitMergeBackgroundRole {
+    PLAYING,
+    RESULT,
+}
+
+internal fun fruitMergeBackgroundRole(mode: MiniAppFrameMode): FruitMergeBackgroundRole = when (mode) {
+    MiniAppFrameMode.Standard -> FruitMergeBackgroundRole.PLAYING
+    MiniAppFrameMode.ContentOnly -> FruitMergeBackgroundRole.RESULT
 }

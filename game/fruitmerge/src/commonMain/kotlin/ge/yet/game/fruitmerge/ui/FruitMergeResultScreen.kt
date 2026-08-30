@@ -73,7 +73,10 @@ internal fun FruitMergeResultScreen(
             .semantics { testTag = FruitMergeTestTags.Result },
         contentAlignment = Alignment.Center,
     ) {
-        AmbientMeshBackground(animated = !reducedMotion)
+        AmbientMeshBackground(
+            baseColor = MaterialTheme.colorScheme.primaryContainer,
+            animated = !reducedMotion,
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
