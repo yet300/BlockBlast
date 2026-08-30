@@ -136,6 +136,25 @@ class FruitMergeStoreTest {
     }
 
     @Test
+    fun `duplicate shake while active publishes once and consumes once`() = runTest {
+        val store = createStore()
+        val labels = mutableListOf<FruitMergeStore.Label>()
+        val subscription = store.labels(observer(onNext = labels::add))
+        advanceUntilIdle()
+        store.accept(FruitMergeStore.Intent.Drop)
+        labels.clear()
+
+        store.accept(FruitMergeStore.Intent.FreeShake)
+        store.accept(FruitMergeStore.Intent.FreeShake)
+
+        assertEquals(listOf<FruitMergeStore.Label>(FruitMergeStore.Label.ShakeApplied), labels)
+        assertEquals(FruitMergeState.FREE_SHAKE_COUNT - 1, store.state.game.freeShakes)
+        assertTrue(store.state.game.shakeStepsRemaining > 0)
+        subscription.dispose()
+        store.dispose()
+    }
+
+    @Test
     fun `accepted clear publishes only its committed effect`() = runTest {
         val store = createStore()
         val labels = mutableListOf<FruitMergeStore.Label>()

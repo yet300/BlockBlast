@@ -21,7 +21,9 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FruitMergeSessionComponentTest {
@@ -37,11 +39,12 @@ class FruitMergeSessionComponentTest {
         val persistence = FruitMergePersistence(storage)
         persistence.checkpoint(FruitMergeState(runOrdinal = 7L, phase = RunPhase.RESULT))
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val rules = TestFruitMergeRules()
         val component = DefaultFruitMergeSessionComponent(
             componentContext = lifecycle.componentContext,
             storeFactory = FruitMergeStoreFactory(
                 storeFactory = DefaultStoreFactory(),
-                rules = TestFruitMergeRules(),
+                rules = rules,
                 persistence = persistence,
             ),
             persistence = persistence,
@@ -87,6 +90,49 @@ class FruitMergeSessionComponentTest {
 
         kotlin.test.assertEquals(null, playing.component.model.value.tutorialStep)
         kotlin.test.assertTrue(FruitMergePersistence(storage).isTutorialSeen())
+        lifecycle.destroy()
+    }
+
+    @Test
+    fun `active shake blocks another free action at the component boundary`() = runTest {
+        val storage = MutableMiniAppStorage()
+        val persistence = FruitMergePersistence(storage)
+        persistence.checkpoint(
+            FruitMergeState(
+                bodies = listOf(
+                    ge.yet.game.fruitmerge.engine.FruitBody(
+                        id = 1L,
+                        level = ge.yet.game.fruitmerge.engine.FruitLevel.APPLE,
+                        position = ge.yet.game.fruitmerge.engine.Vec2(0.5f, 0.8f),
+                    ),
+                ),
+                nextBodyId = 2L,
+            ),
+        )
+        val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val rules = TestFruitMergeRules()
+        val component = DefaultFruitMergeSessionComponent(
+            componentContext = lifecycle.componentContext,
+            storeFactory = FruitMergeStoreFactory(
+                storeFactory = DefaultStoreFactory(),
+                rules = rules,
+                persistence = persistence,
+            ),
+            persistence = persistence,
+            visibility = MutableMiniAppVisibilitySource(),
+            audio = FruitMergeAudioAdapter(NoopMiniAppAudio),
+        )
+        advanceUntilIdle()
+        val playing = assertIs<FruitMergeSessionComponent.Child.Playing>(component.stack.value.active.instance)
+
+        assertNull(playing.component.requestShakeGate())
+        advanceUntilIdle()
+        val active = playing.component.model.value.game
+        assertNull(playing.component.requestShakeGate())
+
+        assertEquals(FruitMergeState.FREE_SHAKE_COUNT - 1, active.freeShakes)
+        assertEquals(active, playing.component.model.value.game)
+        assertEquals(1, rules.shakeCalls)
         lifecycle.destroy()
     }
 }

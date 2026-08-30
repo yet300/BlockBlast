@@ -86,11 +86,9 @@ class FruitMergeEngineTest {
         repeat(3) {
             val result = engine.shake(state)
             assertNull(result.rejection)
-            state = result.state.copy(
-                bodies = result.state.bodies.map { body ->
-                    body.copy(velocity = Vec2.ZERO, angularVelocity = 0f)
-                },
-            )
+            state = generateSequence(result.state) { current -> engine.step(current, 1f / 60f) }
+                .drop(FruitMergeEngine.SHAKE_DURATION_STEPS)
+                .first()
         }
 
         assertEquals(0, state.freeShakes)
@@ -121,7 +119,7 @@ class FruitMergeEngineTest {
     }
 
     @Test
-    fun `shake applies to moving bodies and consumes one free use`() {
+    fun `shake runs for a bounded interval and consumes one free use`() {
         val moving = stateWithBody(FruitLevel.APPLE).copy(
             bodies = listOf(
                 FruitBody(
@@ -137,7 +135,46 @@ class FruitMergeEngineTest {
 
         assertNull(result.rejection)
         assertEquals(moving.freeShakes - 1, result.state.freeShakes)
-        assertNotEquals(moving.bodies, result.state.bodies)
+        assertEquals(FruitMergeEngine.SHAKE_DURATION_STEPS, result.state.shakeStepsRemaining)
+
+        val firstStep = engine.step(result.state, 1f / 60f)
+        assertNotEquals(moving.bodies, firstStep.bodies)
+
+        val completed = generateSequence(firstStep) { state -> engine.step(state, 1f / 60f) }
+            .drop(FruitMergeEngine.SHAKE_DURATION_STEPS - 1)
+            .first()
+        assertEquals(0, completed.shakeStepsRemaining)
+    }
+
+    @Test
+    fun `active shake rejects duplicate without consuming a use or advancing rng`() {
+        val active = engine.shake(stateWithBody(FruitLevel.APPLE)).state
+
+        val duplicate = engine.shake(active)
+
+        assertEquals(ActionRejection.SHAKE_ACTIVE, duplicate.rejection)
+        assertEquals(active, duplicate.state)
+    }
+
+    @Test
+    fun `shake impulses are repeated and deterministic`() {
+        val active = engine.shake(stateWithBody(FruitLevel.APPLE)).state
+        val first = engine.step(active, 1f / 60f)
+        val beforeSecondImpulse = generateSequence(first) { state -> engine.step(state, 1f / 60f) }
+            .drop(FruitMergeEngine.SHAKE_IMPULSE_INTERVAL_STEPS - 1)
+            .first()
+        val secondImpulse = engine.step(beforeSecondImpulse, 1f / 60f)
+
+        assertNotEquals(beforeSecondImpulse.random, secondImpulse.random)
+        assertEquals(
+            secondImpulse,
+            engine.step(
+                generateSequence(first) { state -> engine.step(state, 1f / 60f) }
+                    .drop(FruitMergeEngine.SHAKE_IMPULSE_INTERVAL_STEPS - 1)
+                    .first(),
+                1f / 60f,
+            ),
+        )
     }
 
     @Test

@@ -7,6 +7,7 @@ import ge.yet.game.fruitmerge.engine.MAX_BODIES
 import ge.yet.game.fruitmerge.engine.RandomState
 import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.engine.Vec2
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -15,13 +16,25 @@ class FruitMergeSnapshotTest {
     @Test
     fun `validated snapshot round trips authoritative run fields`() {
         val state = populatedState(freeClears = 2, freeShakes = 1, randomBits = 99)
+            .copy(shakeStepsRemaining = 42)
 
         assertEquals(state, FruitMergeSnapshot.from(state).toState(bestScore = state.bestScore))
     }
 
     @Test
+    fun `legacy snapshot defaults to an inactive shake`() {
+        val encoded = Json.encodeToString(FruitMergeSnapshot.serializer(), validSnapshot())
+            .replace(",\"shakeStepsRemaining\":0", "")
+
+        val decoded = Json.decodeFromString(FruitMergeSnapshot.serializer(), encoded)
+
+        assertEquals(0, decoded.toState(bestScore = 0).shakeStepsRemaining)
+    }
+
+    @Test
     fun `invalid body and impossible counts are rejected`() {
         assertFails { validSnapshot().copy(freeClears = -1).toState(0) }
+        assertFails { validSnapshot().copy(shakeStepsRemaining = 136).toState(0) }
         assertFails {
             validSnapshot().copy(
                 bodies = listOf(validBody().copy(x = Float.NaN)),

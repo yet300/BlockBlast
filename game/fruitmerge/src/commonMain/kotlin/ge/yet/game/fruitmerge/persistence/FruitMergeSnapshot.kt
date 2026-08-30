@@ -2,6 +2,7 @@ package ge.yet.game.fruitmerge.persistence
 
 import ge.yet.game.fruitmerge.engine.FruitBody
 import ge.yet.game.fruitmerge.engine.FruitLevel
+import ge.yet.game.fruitmerge.engine.FruitMergeEngine
 import ge.yet.game.fruitmerge.engine.FruitMergeState
 import ge.yet.game.fruitmerge.engine.MAX_BODIES
 import ge.yet.game.fruitmerge.engine.RandomState
@@ -38,6 +39,7 @@ internal data class FruitMergeSnapshot(
     val graceSeconds: Float,
     val runOrdinal: Long,
     val phase: String,
+    val shakeStepsRemaining: Int = 0,
 ) {
     fun toState(bestScore: Long): FruitMergeState {
         require(bodies.size <= MAX_BODIES)
@@ -46,6 +48,7 @@ internal data class FruitMergeSnapshot(
         require(freeShakes in 0..FruitMergeState.FREE_SHAKE_COUNT)
         require(dangerSeconds.isFinite() && dangerSeconds in 0f..MAX_DANGER_SECONDS)
         require(graceSeconds.isFinite() && graceSeconds in 0f..MAX_GRACE_SECONDS)
+        require(shakeStepsRemaining in 0..FruitMergeEngine.SHAKE_DURATION_STEPS)
         require(runOrdinal > 0L)
         val restoredPreview = requireNotNull(FruitLevel.entries.firstOrNull { it.name == previewLevel })
         require(restoredPreview in FruitLevel.spawnable)
@@ -69,6 +72,7 @@ internal data class FruitMergeSnapshot(
             freeShakes = freeShakes,
             dangerSeconds = dangerSeconds,
             graceSeconds = graceSeconds,
+            shakeStepsRemaining = shakeStepsRemaining,
             runOrdinal = runOrdinal,
             phase = restoredPhase,
             targetingMode = TargetingMode.NONE,
@@ -87,6 +91,7 @@ internal data class FruitMergeSnapshot(
             freeShakes = state.freeShakes,
             dangerSeconds = state.dangerSeconds,
             graceSeconds = state.graceSeconds,
+            shakeStepsRemaining = state.shakeStepsRemaining,
             runOrdinal = state.runOrdinal,
             phase = state.phase.name,
         )

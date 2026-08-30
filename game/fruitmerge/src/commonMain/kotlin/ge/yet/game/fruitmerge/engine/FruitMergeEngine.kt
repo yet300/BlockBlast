@@ -9,6 +9,7 @@ enum class ActionRejection {
     NO_FREE_USE,
     BODY_LIMIT,
     DROP_COOLDOWN,
+    SHAKE_ACTIVE,
 }
 
 data class ActionResult(
@@ -72,14 +73,23 @@ class FruitMergeEngine(
     override fun step(state: FruitMergeState, elapsedSeconds: Float): FruitMergeState {
         if (state.phase != RunPhase.PLAYING) return state
         require(elapsedSeconds.isFinite() && elapsedSeconds in 0f..FruitPhysics.MAX_STEP_SECONDS)
-        val physicsResult = physics.step(state.bodies, elapsedSeconds)
+        val shakeState = if (
+            state.shakeStepsRemaining > 0 &&
+            (SHAKE_DURATION_STEPS - state.shakeStepsRemaining) % SHAKE_IMPULSE_INTERVAL_STEPS == 0
+        ) {
+            applyShakeImpulse(state)
+        } else {
+            state
+        }
+        val physicsResult = physics.step(shakeState.bodies, elapsedSeconds)
         diagnostics = diagnostics.copy(
             maxCandidatePairs = max(diagnostics.maxCandidatePairs, physicsResult.candidatePairCount),
         )
         val merged = resolveMerges(
-            state.copy(
+            shakeState.copy(
                 bodies = physicsResult.bodies,
-                dropCooldownSeconds = (state.dropCooldownSeconds - elapsedSeconds).coerceAtLeast(0f),
+                dropCooldownSeconds = (shakeState.dropCooldownSeconds - elapsedSeconds).coerceAtLeast(0f),
+                shakeStepsRemaining = (shakeState.shakeStepsRemaining - 1).coerceAtLeast(0),
             ),
             physicsResult.contacts,
         )
@@ -136,35 +146,41 @@ class FruitMergeEngine(
         state.copy(targetingMode = TargetingMode.NONE)
 
     override fun shake(state: FruitMergeState, paid: Boolean): ActionResult {
+        if (state.phase != RunPhase.PLAYING) return ActionResult(state, ActionRejection.GAME_OVER)
+        if (state.shakeStepsRemaining > 0) return ActionResult(state, ActionRejection.SHAKE_ACTIVE)
         val rejection = actionRejection(state, paid, state.freeShakes)
         if (rejection != null) return ActionResult(state, rejection)
         if (state.bodies.isEmpty()) {
             return ActionResult(state, ActionRejection.BOARD_BUSY)
         }
+        return ActionResult(
+            state.copy(
+                freeShakes = if (paid) state.freeShakes else (state.freeShakes - 1).coerceAtLeast(0),
+                dangerSeconds = 0f,
+                graceSeconds = ACTION_GRACE_SECONDS,
+                targetingMode = TargetingMode.NONE,
+                shakeStepsRemaining = SHAKE_DURATION_STEPS,
+            ),
+        )
+    }
+
+    private fun applyShakeImpulse(state: FruitMergeState): FruitMergeState {
         var random = state.random
         val shaken = state.bodies.map { body ->
             val horizontal = random.nextInt().also { random = it.state }.value
             val upward = random.nextInt().also { random = it.state }.value
             val spin = random.nextInt().also { random = it.state }.value
             body.copy(
-                velocity = Vec2(
+                velocity = (body.velocity + Vec2(
                     x = signedUnit(horizontal) * MAX_SHAKE_HORIZONTAL,
                     y = -(MIN_SHAKE_UPWARD + unit(upward) * (MAX_SHAKE_UPWARD - MIN_SHAKE_UPWARD)),
-                ),
-                angularVelocity = signedUnit(spin) * MAX_SHAKE_ANGULAR,
+                )).clampLength(MAX_SHAKE_SPEED),
+                angularVelocity = (body.angularVelocity + signedUnit(spin) * MAX_SHAKE_ANGULAR)
+                    .coerceIn(-MAX_SHAKE_ANGULAR_SPEED, MAX_SHAKE_ANGULAR_SPEED),
                 impact = max(body.impact, 0.35f),
             )
         }
-        return ActionResult(
-            state.copy(
-                bodies = shaken,
-                random = random,
-                freeShakes = if (paid) state.freeShakes else (state.freeShakes - 1).coerceAtLeast(0),
-                dangerSeconds = 0f,
-                graceSeconds = ACTION_GRACE_SECONDS,
-                targetingMode = TargetingMode.NONE,
-            ),
-        )
+        return state.copy(bodies = shaken, random = random)
     }
 
     override fun newRun(state: FruitMergeState): FruitMergeState {
@@ -259,6 +275,8 @@ class FruitMergeEngine(
     companion object {
         const val DANGER_Y: Float = 0.18f
         const val DROP_COOLDOWN_SECONDS: Float = 0.45f
+        const val SHAKE_DURATION_STEPS: Int = 135
+        const val SHAKE_IMPULSE_INTERVAL_STEPS: Int = 27
 
         private const val SPAWN_Y: Float = 0.08f
         private const val DANGER_DURATION_SECONDS: Float = 1.5f
@@ -269,6 +287,8 @@ class FruitMergeEngine(
         private const val MIN_SHAKE_UPWARD: Float = 0.16f
         private const val MAX_SHAKE_UPWARD: Float = 0.38f
         private const val MAX_SHAKE_ANGULAR: Float = 4f
+        private const val MAX_SHAKE_SPEED: Float = 1.15f
+        private const val MAX_SHAKE_ANGULAR_SPEED: Float = 7f
         private const val MAX_MERGE_SPEED: Float = 2f
         private const val MAX_MERGE_ANGULAR_SPEED: Float = 6f
     }

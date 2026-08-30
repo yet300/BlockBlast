@@ -151,6 +151,7 @@ internal class DefaultFruitMergeComponent(
 
     override fun requestShakeGate(): PaidActionToken? {
         if (!alive || !model.value.initialized || pendingToken != null) return null
+        if (model.value.game.shakeStepsRemaining > 0) return null
         if (model.value.game.freeShakes > 0) {
             store.accept(FruitMergeStore.Intent.FreeShake)
             return null

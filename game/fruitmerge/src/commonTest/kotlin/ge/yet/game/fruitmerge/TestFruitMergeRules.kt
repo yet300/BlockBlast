@@ -13,6 +13,8 @@ internal class TestFruitMergeRules(
         private set
     var paidShakeCalls: Int = 0
         private set
+    var shakeCalls: Int = 0
+        private set
 
     override fun movePreview(state: FruitMergeState, normalizedX: Float): FruitMergeState =
         delegate.movePreview(state, normalizedX)
@@ -34,6 +36,7 @@ internal class TestFruitMergeRules(
     override fun cancelClear(state: FruitMergeState): FruitMergeState = delegate.cancelClear(state)
 
     override fun shake(state: FruitMergeState, paid: Boolean): ActionResult {
+        shakeCalls += 1
         if (paid) paidShakeCalls += 1
         return delegate.shake(state, paid)
     }
