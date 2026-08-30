@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class FruitMergePersistenceTest {
     @Test
@@ -44,5 +45,14 @@ class FruitMergePersistenceTest {
 
         assertNull(storage.readSnapshot(SNAPSHOT_KEY, FruitMergeSnapshotSpec))
         assertEquals(240, persistence.restore().bestScore)
+    }
+
+    @Test
+    fun `tutorial seen survives persistence recreation`() = runTest {
+        val storage = MutableMiniAppStorage()
+
+        FruitMergePersistence(storage).markTutorialSeen()
+
+        assertTrue(FruitMergePersistence(storage).isTutorialSeen())
     }
 }

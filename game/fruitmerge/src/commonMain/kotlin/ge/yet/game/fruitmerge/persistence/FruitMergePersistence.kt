@@ -8,6 +8,7 @@ import kotlin.math.max
 
 internal const val SNAPSHOT_KEY: String = "game_snapshot"
 internal const val BEST_SCORE_KEY: String = "best_score"
+internal const val TUTORIAL_SEEN_KEY: String = "tutorial_seen"
 
 internal val FruitMergeSnapshotSpec = MiniAppSnapshotSpec(
     serializer = FruitMergeSnapshot.serializer(),
@@ -42,5 +43,23 @@ internal class FruitMergePersistence(
 
     suspend fun clearRun() {
         storage.remove(SNAPSHOT_KEY)
+    }
+
+    suspend fun isTutorialSeen(): Boolean = try {
+        storage.getBoolean(TUTORIAL_SEEN_KEY, false)
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Exception) {
+        false
+    }
+
+    suspend fun markTutorialSeen() {
+        try {
+            storage.putBoolean(TUTORIAL_SEEN_KEY, true)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            // Tutorial progress is best-effort and must never block the game session.
+        }
     }
 }

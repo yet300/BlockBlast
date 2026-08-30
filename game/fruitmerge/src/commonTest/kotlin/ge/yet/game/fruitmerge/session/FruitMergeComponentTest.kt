@@ -78,13 +78,15 @@ class FruitMergeComponentTest {
         val persistence = FruitMergePersistence(storage)
         persistence.checkpoint(initial)
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val store = FruitMergeStoreFactory(
+            storeFactory = DefaultStoreFactory(),
+            rules = rules,
+            persistence = persistence,
+        ).create()
         val component = DefaultFruitMergeComponent(
             componentContext = lifecycle.componentContext,
-            storeFactory = FruitMergeStoreFactory(
-                storeFactory = DefaultStoreFactory(),
-                rules = rules,
-                persistence = persistence,
-            ),
+            store = store,
+            persistence = persistence,
             visibility = MutableMiniAppVisibilitySource(),
         )
         advanceUntilIdle()

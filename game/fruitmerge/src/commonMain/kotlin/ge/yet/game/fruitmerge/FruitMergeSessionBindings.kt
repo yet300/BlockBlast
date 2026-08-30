@@ -8,8 +8,8 @@ import dev.zacsweers.metro.SingleIn
 import ge.yet.game.fruitmerge.engine.FruitMergeEngine
 import ge.yet.game.fruitmerge.engine.FruitMergeRules
 import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
-import ge.yet.game.fruitmerge.session.DefaultFruitMergeComponent
-import ge.yet.game.fruitmerge.session.FruitMergeComponent
+import ge.yet.game.fruitmerge.session.DefaultFruitMergeSessionComponent
+import ge.yet.game.fruitmerge.session.FruitMergeSessionComponent
 import ge.yet.game.fruitmerge.store.FruitMergeStoreFactory
 import ge.yet.game.miniapp.api.MiniAppStorage
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
@@ -31,16 +31,22 @@ abstract class FruitMergeSessionBindings {
 
         @Provides
         @SingleIn(MiniAppSessionScope::class)
-        internal fun provideComponent(
+        internal fun provideSessionComponent(
             componentContext: ComponentContext,
             storeFactory: FruitMergeStoreFactory,
+            persistence: FruitMergePersistence,
             visibility: MiniAppVisibilitySource,
-        ): FruitMergeComponent = DefaultFruitMergeComponent(componentContext, storeFactory, visibility)
+        ): FruitMergeSessionComponent = DefaultFruitMergeSessionComponent(
+            componentContext = componentContext,
+            storeFactory = storeFactory,
+            persistence = persistence,
+            visibility = visibility,
+        )
 
         @Provides
         @SingleIn(MiniAppSessionScope::class)
         internal fun provideSession(
-            component: FruitMergeComponent,
+            component: FruitMergeSessionComponent,
             interstitials: MiniAppInterstitialCapability,
         ): FruitMergeSession = FruitMergeSession(component, interstitials)
     }

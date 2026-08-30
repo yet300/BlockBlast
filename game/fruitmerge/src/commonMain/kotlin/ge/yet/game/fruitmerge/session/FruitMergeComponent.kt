@@ -6,12 +6,11 @@ import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.doOnDestroy
-import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.states
 import ge.yet.game.fruitmerge.engine.FruitMergeState
 import ge.yet.game.fruitmerge.engine.TargetingMode
+import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
 import ge.yet.game.fruitmerge.store.FruitMergeStore
-import ge.yet.game.fruitmerge.store.FruitMergeStoreFactory
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import kotlinx.coroutines.CoroutineStart
@@ -29,35 +28,43 @@ internal data class PaidActionToken(
     val action: PaidAction,
 )
 
+internal sealed interface TutorialStep {
+    data object Tap : TutorialStep
+    data object Drag : TutorialStep
+}
+
 internal interface FruitMergeComponent {
     val model: Value<Model>
 
     fun frame(elapsedSeconds: Float)
     fun movePreview(x: Float)
-    fun drop()
+    fun drop(dragged: Boolean = false)
     fun requestClearGate(): PaidActionToken?
     fun selectClearTarget(id: Long)
     fun cancelClear()
     fun requestShakeGate(): PaidActionToken?
     fun completePaidAction(token: PaidActionToken)
     fun newGame()
+    fun skipTutorial()
     fun handleBack(): Boolean
 
     data class Model(
         val game: FruitMergeState = FruitMergeState(),
         val initialized: Boolean = false,
         val visible: Boolean = true,
+        val tutorialReady: Boolean = false,
+        val tutorialStep: TutorialStep? = null,
     )
 }
 
 @OptIn(DelicateDecomposeApi::class)
 internal class DefaultFruitMergeComponent(
     componentContext: ComponentContext,
-    storeFactory: FruitMergeStoreFactory,
+    private val store: FruitMergeStore,
+    private val persistence: FruitMergePersistence,
     private val visibility: MiniAppVisibilitySource,
 ) : FruitMergeComponent,
     ComponentContext by componentContext {
-    private val store: FruitMergeStore = instanceKeeper.getStore(storeFactory::create)
     private val mutableModel = MutableValue(
         FruitMergeComponent.Model(
             game = store.state.game,
@@ -90,6 +97,15 @@ internal class DefaultFruitMergeComponent(
                 store.accept(FruitMergeStore.Intent.VisibilityChanged(active))
             }
         }
+        scope.launch {
+            val seen = persistence.isTutorialSeen()
+            if (alive) {
+                mutableModel.value = mutableModel.value.copy(
+                    tutorialReady = true,
+                    tutorialStep = if (seen) null else TutorialStep.Tap,
+                )
+            }
+        }
         lifecycle.doOnDestroy {
             alive = false
             pendingToken = null
@@ -104,8 +120,11 @@ internal class DefaultFruitMergeComponent(
         if (alive) store.accept(FruitMergeStore.Intent.MovePreview(x))
     }
 
-    override fun drop() {
-        if (alive) store.accept(FruitMergeStore.Intent.Drop)
+    override fun drop(dragged: Boolean) {
+        if (!alive || !model.value.tutorialReady) return
+        val previousNextBodyId = store.state.game.nextBodyId
+        store.accept(FruitMergeStore.Intent.Drop)
+        if (store.state.game.nextBodyId != previousNextBodyId) onDropAccepted(dragged)
     }
 
     override fun requestClearGate(): PaidActionToken? {
@@ -162,6 +181,11 @@ internal class DefaultFruitMergeComponent(
         store.accept(FruitMergeStore.Intent.NewGame)
     }
 
+    override fun skipTutorial() {
+        if (!alive || model.value.tutorialStep == null) return
+        finishTutorial()
+    }
+
     override fun handleBack(): Boolean = if (model.value.game.targetingMode == TargetingMode.CLEAR) {
         cancelClear()
         true
@@ -179,5 +203,20 @@ internal class DefaultFruitMergeComponent(
         if (nextTokenId < Long.MAX_VALUE) nextTokenId += 1L
         pendingToken = token
         return token
+    }
+
+    private fun onDropAccepted(dragged: Boolean) {
+        when (model.value.tutorialStep) {
+            TutorialStep.Tap -> if (!dragged) {
+                mutableModel.value = mutableModel.value.copy(tutorialStep = TutorialStep.Drag)
+            }
+            TutorialStep.Drag -> if (dragged) finishTutorial()
+            null -> Unit
+        }
+    }
+
+    private fun finishTutorial() {
+        mutableModel.value = mutableModel.value.copy(tutorialStep = null)
+        coroutineScope().launch { persistence.markTutorialSeen() }
     }
 }

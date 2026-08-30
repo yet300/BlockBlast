@@ -5,15 +5,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import ge.yet.game.fruitmerge.session.FruitMergeComponent
+import com.arkivanov.decompose.value.Value
+import ge.yet.game.fruitmerge.session.FruitMergeSessionComponent
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
 import ge.yet.game.miniapp.compose.MiniAppSession
 
 class FruitMergeSession internal constructor(
-    private val component: FruitMergeComponent,
+    private val component: FruitMergeSessionComponent,
     private val interstitials: MiniAppInterstitialCapability,
 ) : MiniAppSession {
+    override val frameMode: Value<MiniAppFrameMode> = component.frameMode
+
     override fun handleBack(): Boolean = component.handleBack()
 
     @Composable

@@ -120,7 +120,7 @@ private class FakeFruitMergeComponent(
 
     override fun frame(elapsedSeconds: Float) = Unit
     override fun movePreview(x: Float) = Unit
-    override fun drop() = Unit
+    override fun drop(dragged: Boolean) = Unit
 
     override fun requestClearGate(): PaidActionToken? {
         clearRequests += 1
@@ -135,6 +135,8 @@ private class FakeFruitMergeComponent(
     override fun newGame() {
         newGameCalls += 1
     }
+
+    override fun skipTutorial() = Unit
 
     override fun handleBack(): Boolean = false
 }
