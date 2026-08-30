@@ -1,10 +1,10 @@
 package ge.yet.game.fruitmerge
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ge.yet.game.fruitmerge.session.FruitMergeComponent
 import ge.yet.game.fruitmerge.session.PaidActionToken
+import ge.yet.game.fruitmerge.ui.FruitMergeScreen
 
 @Composable
 internal fun FruitMergeContent(
@@ -13,7 +13,10 @@ internal fun FruitMergeContent(
     requestShakeAd: (PaidActionToken) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    @Suppress("UNUSED_VARIABLE")
-    val callbacks = Triple(component, requestClearAd, requestShakeAd)
-    Box(modifier = modifier)
+    FruitMergeScreen(
+        component = component,
+        requestClearAd = requestClearAd,
+        requestShakeAd = requestShakeAd,
+        modifier = modifier,
+    )
 }

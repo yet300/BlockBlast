@@ -15,8 +15,10 @@ class FruitPhysics(
 ) {
     fun step(input: List<FruitBody>, dt: Float): PhysicsResult {
         require(dt.isFinite() && dt in 0f..MAX_STEP_SECONDS)
-        val bodies = input.take(MAX_BODIES).mapTo(ArrayList(MAX_BODIES)) { body ->
-            integrate(body, dt)
+        val bodyCount = minOf(input.size, MAX_BODIES)
+        val bodies = ArrayList<FruitBody>(bodyCount)
+        for (index in 0 until bodyCount) {
+            bodies += integrate(input[index], dt)
         }
         val contactKeys = HashSet<Long>(MAX_CANDIDATE_PAIRS)
         val contacts = ArrayList<BodyPair>(MAX_CANDIDATE_PAIRS)

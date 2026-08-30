@@ -61,6 +61,25 @@ class FruitMergeEngineTest {
     }
 
     @Test
+    fun `five valid clears are free and the sixth requires a gate`() {
+        var state = FruitMergeState(
+            bodies = (1L..6L).map { id ->
+                FruitBody(id, FruitLevel.BLUEBERRY, Vec2(0.08f + id * 0.12f, 0.8f))
+            },
+            nextBodyId = 7,
+        )
+        repeat(5) { index ->
+            val result = engine.clear(state, bodyId = index + 1L)
+            assertNull(result.rejection)
+            state = result.state
+        }
+
+        assertEquals(0, state.freeClears)
+        assertEquals(ActionRejection.NO_FREE_USE, engine.beginClear(state).rejection)
+        assertNull(engine.beginClear(state, paid = true).rejection)
+    }
+
+    @Test
     fun `three settled shakes are free and the fourth requires a gate`() {
         var state = stateWithBody(FruitLevel.APPLE)
         repeat(3) {

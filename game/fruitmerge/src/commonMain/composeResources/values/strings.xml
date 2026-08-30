@@ -1,4 +1,32 @@
 <resources>
     <string name="miniapp_title">Fruit Merge</string>
-    <string name="miniapp_description">Fruit Merge mini-app</string>
+    <string name="miniapp_description">Drop, merge, and grow a cheerful tower of fruit.</string>
+    <string name="score">Score</string>
+    <string name="best_score">Best</string>
+    <string name="next_fruit">Next</string>
+    <string name="clear_with_count">Clear · %1$d</string>
+    <string name="clear_with_ad">Clear · Ad</string>
+    <string name="shake_with_count">Shake · %1$d</string>
+    <string name="shake_with_ad">Shake · Ad</string>
+    <string name="cancel">Cancel</string>
+    <string name="new_game">New game</string>
+    <string name="game_over">Fruit tower full</string>
+    <string name="game_over_supporting">The fruit stayed above the danger line. Start again and build a bigger melon.</string>
+    <string name="loading_game">Loading Fruit Merge</string>
+    <string name="drop_hint">Move along the top, then release to drop</string>
+    <string name="clear_hint">Choose one fruit to remove</string>
+    <string name="danger_line">Danger line</string>
+    <string name="board_description">Fruit Merge board. Score %1$d. %2$d fruits in the container.</string>
+    <string name="fruit_description">%1$s fruit</string>
+    <string name="ad_disclosure">Advertisement</string>
+    <string name="blueberry">Blueberry</string>
+    <string name="cherry">Cherry</string>
+    <string name="strawberry">Strawberry</string>
+    <string name="plum">Plum</string>
+    <string name="mandarin">Mandarin</string>
+    <string name="apple">Apple</string>
+    <string name="pear">Pear</string>
+    <string name="peach">Peach</string>
+    <string name="pineapple">Pineapple</string>
+    <string name="melon">Melon</string>
 </resources>

@@ -15,10 +15,10 @@
   "sessionFlow": ["Start or restore a run", "Drop and merge fruit", "Use bounded actions", "Show result after sustained overflow", "Start a new run"],
   "platforms": {"android": true, "ios": true, "orientations": ["portrait", "landscape"], "deviceClasses": ["phone", "tablet"]},
   "accessibility": {
-    "announcements": "Announce clear mode, merge chains, exhausted free actions, and game over.",
-    "focus": "Preserve action focus across adaptive rearrangement and move focus to New game on result.",
-    "labels": "Label score, next fruit, fill level, actions, counts, and selectable fruit regions.",
-    "reducedMotion": "Disable squash, camera displacement, glow expansion, and particles while retaining gameplay physics."
+    "announcements": "Expose the changing score, body count, danger state, clear instruction, and result through semantics.",
+    "focus": "Preserve pane identity across adaptive rearrangement and keep every action in the supporting scroll path.",
+    "labels": "Label the board summary, next fruit, action counts, advertising actions, loading state, and result controls.",
+    "reducedMotion": "Disable optional blinking and targeting pulses while retaining deterministic gameplay physics."
   },
   "visualStyle": {"description": "Original warm orchard palette with matte vector fruit, highlights, leaves, blush, and expressive faces.", "references": []},
   "audioStyle": {"description": "Silent initial version with visual feedback only.", "references": []},
