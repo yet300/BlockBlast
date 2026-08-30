@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -44,8 +45,27 @@ class FruitMergeScreenTest {
         onNodeWithTag(FruitMergeTestTags.Clear).assertIsDisplayed()
         onNodeWithTag(FruitMergeTestTags.Shake).assertIsDisplayed()
         onNodeWithTag(FruitMergeTestTags.Evolution).assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.Next).assertIsDisplayed()
         onNodeWithTag(FruitMergeTestTags.Shake).performClick()
         assertEquals(1, component.shakeRequests)
+    }
+
+    @Test
+    fun `shake control is disabled for the full active interval`() = runComposeUiTest {
+        val component = FakeFruitMergeComponent(
+            playingModel().copy(
+                game = playingModel().game.copy(shakeStepsRemaining = 90),
+            ),
+        )
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(Modifier.size(390.dp, 760.dp)) {
+                    FruitMergeScreen(component, {}, {})
+                }
+            }
+        }
+
+        onNodeWithTag(FruitMergeTestTags.Shake).assertIsNotEnabled()
     }
 
     @Test

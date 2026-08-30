@@ -15,11 +15,13 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import ge.yet.game.fruitmerge.engine.FruitBody
 import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.FruitMergeEngine
@@ -45,9 +47,14 @@ internal fun FruitMergeBoard(
     val targetingClear = game.targetingMode == TargetingMode.CLEAR
     val latestBodies = rememberUpdatedState(game.bodies)
     val latestClearTarget = rememberUpdatedState(onClearTarget)
+    val shakeTransform = shakeVisualTransform(game.shakeStepsRemaining, reducedMotion)
     Canvas(
         modifier = modifier
             .fillMaxSize()
+            .graphicsLayer {
+                translationX = shakeTransform.translationXDp.dp.toPx()
+                rotationZ = shakeTransform.rotationDegrees
+            }
             .fruitMergeClearPointerInput(
                 enabled = game.phase == RunPhase.PLAYING && targetingClear,
                 bodies = { latestBodies.value },
@@ -206,16 +213,21 @@ internal fun DrawScope.drawFruit(
     anxious: Boolean,
     alpha: Float,
 ) {
-    val style = fruitStyle(level)
+    val style = fruitVisualSpec(level)
     val squash = (abs(verticalVelocity) * 0.025f + impact * 0.10f).coerceIn(0f, 0.14f)
     val fruitSize = Size(radius * 2f * (1f + squash), radius * 2f * (1f - squash))
     val topLeft = Offset(center.x - fruitSize.width * 0.5f, center.y - fruitSize.height * 0.5f)
 
     drawFruitBody(level, center, radius, fruitSize, topLeft, style, alpha)
     drawOval(
-        color = style.highlight.copy(alpha = 0.72f * alpha),
-        topLeft = Offset(center.x - radius * 0.54f, center.y - radius * 0.55f),
-        size = Size(radius * 0.46f, radius * 0.30f),
+        color = Color.White.copy(alpha = 0.16f * alpha),
+        topLeft = Offset(center.x - radius * 0.62f, center.y - radius * 0.64f),
+        size = Size(radius * 0.76f, radius * 0.52f),
+    )
+    drawOval(
+        color = style.highlight.copy(alpha = 0.78f * alpha),
+        topLeft = Offset(center.x - radius * 0.52f, center.y - radius * 0.52f),
+        size = Size(radius * 0.34f, radius * 0.22f),
     )
     drawOval(
         color = style.blush.copy(alpha = 0.42f * alpha),
@@ -231,8 +243,8 @@ internal fun DrawScope.drawFruit(
     drawFruitTop(level, center, radius, angleRadians, alpha)
 
     val blink = (facePhase % 4.2f) < 0.12f
-    val eyeY = center.y - radius * 0.03f
-    val eyeOffset = radius * 0.29f
+    val eyeY = center.y - radius * if (style.face == FruitFace.SLEEPY) 0.08f else 0.03f
+    val eyeOffset = radius * if (style.face == FruitFace.SHY) 0.25f else 0.29f
     val eyeRadius = (radius * 0.075f).coerceAtLeast(1.15f)
     if (blink || impact > 0.76f) {
         val halfWidth = radius * 0.11f
@@ -271,6 +283,22 @@ internal fun DrawScope.drawFruit(
             topLeft = Offset(mouthCenter.x - radius * 0.10f, mouthCenter.y - radius * 0.07f),
             size = Size(radius * 0.20f, radius * 0.18f),
         )
+        style.face == FruitFace.CHEEKY -> {
+            drawArc(
+                color = FaceInk.copy(alpha = alpha),
+                startAngle = 15f,
+                sweepAngle = 150f,
+                useCenter = false,
+                topLeft = Offset(mouthCenter.x - radius * 0.18f, mouthCenter.y - radius * 0.18f),
+                size = Size(radius * 0.36f, radius * 0.30f),
+                style = Stroke(width = (radius * 0.055f).coerceAtLeast(1f)),
+            )
+            drawCircle(
+                color = style.blush.copy(alpha = alpha),
+                radius = radius * 0.055f,
+                center = mouthCenter + Offset(radius * 0.08f, radius * 0.10f),
+            )
+        }
         else -> drawArc(
             color = FaceInk.copy(alpha = alpha),
             startAngle = 18f,
@@ -289,7 +317,7 @@ private fun DrawScope.drawFruitBody(
     radius: Float,
     fruitSize: Size,
     topLeft: Offset,
-    style: FruitStyle,
+    style: FruitVisualSpec,
     alpha: Float,
 ) {
     drawOval(
@@ -460,14 +488,6 @@ private fun DrawScope.drawFruitTop(
     }
 }
 
-private data class FruitStyle(
-    val base: Color,
-    val highlight: Color,
-    val blush: Color,
-)
-
-private fun fruitStyle(level: FruitLevel): FruitStyle = FruitStyles[level.ordinal]
-
 private data class BoardTransform(val canvasSize: Size) {
     val side: Float = min(canvasSize.width, canvasSize.height).coerceAtLeast(1f)
     val origin: Offset = Offset((canvasSize.width - side) * 0.5f, (canvasSize.height - side) * 0.5f)
@@ -491,15 +511,3 @@ private val StrawberrySeed = Color(0xFFFFD36A)
 private val PeachSeam = Color(0xFFC96F78)
 private val PineappleGrid = Color(0xFF9D7934)
 private val MelonStripe = Color(0xFF3D8751)
-private val FruitStyles = listOf(
-    FruitStyle(Color(0xFF6F78C9), Color(0xFFAEB6F2), Color(0xFFE6A1B2)),
-    FruitStyle(Color(0xFFD95362), Color(0xFFFFA6A0), Color(0xFFF7A0AC)),
-    FruitStyle(Color(0xFFE86761), Color(0xFFFFB6A7), Color(0xFFF79AA1)),
-    FruitStyle(Color(0xFF8C64A7), Color(0xFFC9A6DD), Color(0xFFE4A2C0)),
-    FruitStyle(Color(0xFFF29A45), Color(0xFFFFD09A), Color(0xFFF7A884)),
-    FruitStyle(Color(0xFFD95D4F), Color(0xFFFFB09D), Color(0xFFF39494)),
-    FruitStyle(Color(0xFFAEC65A), Color(0xFFDBE995), Color(0xFFE8A69A)),
-    FruitStyle(Color(0xFFF29A82), Color(0xFFFFD0B9), Color(0xFFEFA0A6)),
-    FruitStyle(Color(0xFFE7B94F), Color(0xFFFFDEA0), Color(0xFFE9A08C)),
-    FruitStyle(Color(0xFF77B86A), Color(0xFFB9DF9D), Color(0xFFE39B98)),
-)

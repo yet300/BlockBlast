@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,6 +64,7 @@ import ge.yet.game.fruitmerge.generated.resources.danger_line
 import ge.yet.game.fruitmerge.generated.resources.loading_game
 import ge.yet.game.fruitmerge.generated.resources.mandarin
 import ge.yet.game.fruitmerge.generated.resources.melon
+import ge.yet.game.fruitmerge.generated.resources.next_fruit
 import ge.yet.game.fruitmerge.generated.resources.peach
 import ge.yet.game.fruitmerge.generated.resources.pear
 import ge.yet.game.fruitmerge.generated.resources.pineapple
@@ -87,6 +90,7 @@ internal object FruitMergeTestTags {
     const val Clear = "fruit_merge_clear"
     const val Shake = "fruit_merge_shake"
     const val Evolution = "fruit_merge_evolution"
+    const val Next = "fruit_merge_next"
     const val Tutorial = "fruit_merge_tutorial"
     const val TutorialSkip = "fruit_merge_tutorial_skip"
     const val Result = "fruit_merge_result"
@@ -149,6 +153,31 @@ internal fun FruitMergeScreen(
         AdaptiveGameScaffold(
             modifier = Modifier.fillMaxSize(),
             supportingPaneModifier = Modifier.semantics { testTag = FruitMergeTestTags.Support },
+            verticalPrimaryWeight = 5f,
+            header = {
+                GameHeader(
+                    score = game.score,
+                    bestScore = game.bestScore,
+                    nextLevel = game.nextPreviewLevel,
+                    faceTimeSeconds = faceTimeSeconds,
+                    reducedMotion = reducedMotion,
+                    freeClears = game.freeClears,
+                    freeShakes = game.freeShakes,
+                    hasBodies = game.bodies.isNotEmpty(),
+                    isTargeting = game.targetingMode == TargetingMode.CLEAR,
+                    isShaking = game.shakeStepsRemaining > 0,
+                    onClear = {
+                        val token = component.requestClearGate()
+                        if (token != null) requestClearAd(token)
+                    },
+                    onCancelClear = component::cancelClear,
+                    onShake = {
+                        val token = component.requestShakeGate()
+                        if (token != null) requestShakeAd(token)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                )
+            },
             primary = {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                     FruitMergeBoard(
@@ -165,28 +194,10 @@ internal fun FruitMergeScreen(
                             }
                             .semantics { testTag = FruitMergeTestTags.Board },
                     )
-                    ActionHud(
-                        freeClears = game.freeClears,
-                        freeShakes = game.freeShakes,
-                        hasBodies = game.bodies.isNotEmpty(),
-                        isTargeting = game.targetingMode == TargetingMode.CLEAR,
-                        onClear = {
-                            val token = component.requestClearGate()
-                            if (token != null) requestClearAd(token)
-                        },
-                        onCancelClear = component::cancelClear,
-                        onShake = {
-                            val token = component.requestShakeGate()
-                            if (token != null) requestShakeAd(token)
-                        },
-                        modifier = Modifier.align(Alignment.TopEnd).padding(14.dp),
-                    )
                 }
             },
             supporting = {
                 SupportingPanel(
-                    score = game.score,
-                    bestScore = game.bestScore,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                 )
             },
@@ -209,6 +220,85 @@ internal fun FruitMergeScreen(
 }
 
 @Composable
+private fun GameHeader(
+    score: Long,
+    bestScore: Long,
+    nextLevel: FruitLevel,
+    faceTimeSeconds: Float,
+    reducedMotion: Boolean,
+    freeClears: Int,
+    freeShakes: Int,
+    hasBodies: Boolean,
+    isTargeting: Boolean,
+    isShaking: Boolean,
+    onClear: () -> Unit,
+    onCancelClear: () -> Unit,
+    onShake: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ScoreStrip(score, bestScore, Modifier.fillMaxWidth())
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ActionHud(
+                freeClears = freeClears,
+                freeShakes = freeShakes,
+                hasBodies = hasBodies,
+                isTargeting = isTargeting,
+                isShaking = isShaking,
+                onClear = onClear,
+                onCancelClear = onCancelClear,
+                onShake = onShake,
+            )
+            Spacer(Modifier.weight(1f))
+            NextFruitCard(nextLevel, faceTimeSeconds, reducedMotion)
+        }
+    }
+}
+
+@Composable
+private fun NextFruitCard(
+    level: FruitLevel,
+    faceTimeSeconds: Float,
+    reducedMotion: Boolean,
+) {
+    val label = stringResource(Res.string.next_fruit)
+    val fruit = stringResource(fruitNameResource(level))
+    Surface(
+        modifier = Modifier
+            .width(118.dp)
+            .height(58.dp)
+            .semantics {
+                testTag = FruitMergeTestTags.Next
+                contentDescription = "$label: $fruit"
+            },
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FruitPreview(
+                level = level,
+                faceTimeSeconds = faceTimeSeconds,
+                reducedMotion = reducedMotion,
+                modifier = Modifier.weight(1f).fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Composable
 private fun LoadingContent() {
     val description = stringResource(Res.string.loading_game)
     CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = description })
@@ -220,6 +310,7 @@ private fun ActionHud(
     freeShakes: Int,
     hasBodies: Boolean,
     isTargeting: Boolean,
+    isShaking: Boolean,
     onClear: () -> Unit,
     onCancelClear: () -> Unit,
     onShake: () -> Unit,
@@ -256,7 +347,7 @@ private fun ActionHud(
             badge = if (freeShakes > 0) freeShakes.toString() else "AD",
             icon = Vibration,
             contentDescription = if (freeShakes == 0) "$shakeLabel, $advertisement" else shakeLabel,
-            enabled = !isTargeting && hasBodies,
+            enabled = !isTargeting && hasBodies && !isShaking,
             onClick = onShake,
             modifier = Modifier.semantics { testTag = FruitMergeTestTags.Shake },
         )
@@ -273,7 +364,6 @@ private fun ConsumableIconButton(
     modifier: Modifier = Modifier,
 ) {
     BadgedBox(
-        modifier = modifier,
         badge = {
             Badge(containerColor = MaterialTheme.colorScheme.primary) {
                 Text(badge, fontWeight = FontWeight.Bold)
@@ -285,15 +375,13 @@ private fun ConsumableIconButton(
             contentDescription = contentDescription,
             onClick = onClick,
             enabled = enabled,
-            modifier = Modifier.size(52.dp),
+            modifier = modifier.size(52.dp),
         )
     }
 }
 
 @Composable
 private fun SupportingPanel(
-    score: Long,
-    bestScore: Long,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -301,7 +389,6 @@ private fun SupportingPanel(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        ScoreStrip(score, bestScore, Modifier.fillMaxWidth())
         FruitEvolutionStrip(
             modifier = Modifier
                 .fillMaxWidth()
@@ -323,7 +410,7 @@ private fun ScoreStrip(score: Long, bestScore: Long, modifier: Modifier = Modifi
         ) {
             Text(
                 text = score.toString(),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.semantics { contentDescription = scoreDescription },
             )
@@ -335,7 +422,7 @@ private fun ScoreStrip(score: Long, bestScore: Long, modifier: Modifier = Modifi
             )
             Text(
                 text = bestScore.toString(),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.semantics { contentDescription = bestDescription },
             )

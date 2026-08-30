@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,14 +26,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -69,6 +67,11 @@ internal fun FruitMergeTutorial(
     val displayedStep = remember { mutableStateOf<TutorialStep>(step ?: TutorialStep.Tap) }
     val previousStep = remember { mutableStateOf<TutorialStep?>(step) }
     val burst = remember { Animatable(1f) }
+    val motionMode = tutorialMotionMode(
+        visible = step != null,
+        boundsReady = boardBoundsInViewport != Rect.Zero,
+        reducedMotion = reducedMotion,
+    )
 
     LaunchedEffect(step) {
         if (step != null) displayedStep.value = step
@@ -81,7 +84,7 @@ internal fun FruitMergeTutorial(
 
     Box(modifier = modifier) {
         AnimatedVisibility(
-            visible = step != null && boardBoundsInViewport != Rect.Zero,
+            visible = motionMode != TutorialMotionMode.HIDDEN,
             enter = fadeIn(tween(if (reducedMotion) 0 else 220)),
             exit = fadeOut(tween(if (reducedMotion) 0 else 360)),
         ) {
@@ -89,7 +92,7 @@ internal fun FruitMergeTutorial(
                 step = displayedStep.value,
                 boardBounds = boardBoundsInViewport,
                 previewX = previewX,
-                reducedMotion = reducedMotion,
+                reducedMotion = motionMode == TutorialMotionMode.STATIC,
                 onSkip = onSkip,
                 modifier = Modifier
                     .fillMaxSize()
@@ -134,8 +137,6 @@ private fun TutorialLayer(
     }
 
     val primary = MaterialTheme.colorScheme.primary
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
-    val scrim = MaterialTheme.colorScheme.scrim.copy(alpha = 0.54f)
     val start = tutorialStart(step, boardBounds, previewX)
     val end = tutorialEnd(step, boardBounds, previewX)
     val handPoint = Offset(
@@ -145,36 +146,27 @@ private fun TutorialLayer(
 
     Box(modifier = modifier) {
         Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                .drawWithCache {
-                    onDrawWithContent {
-                        drawRect(scrim)
-                        val spotlight = tutorialSpotlight(step, boardBounds, end)
-                        drawRoundRect(
-                            color = Color.Transparent,
-                            topLeft = spotlight.topLeft,
-                            size = spotlight.size,
-                            cornerRadius = CornerRadius(spotlight.height * 0.35f),
-                            blendMode = BlendMode.Clear,
-                        )
-                        drawRoundRect(
-                            color = primary.copy(alpha = 0.8f),
-                            topLeft = spotlight.topLeft,
-                            size = spotlight.size,
-                            cornerRadius = CornerRadius(spotlight.height * 0.35f),
-                            style = Stroke(width = 3.dp.toPx()),
-                        )
-                        drawContent()
-                    }
-                },
+            modifier = Modifier.fillMaxSize(),
         ) {
+            val spotlight = tutorialSpotlight(step, boardBounds, end)
+            drawRoundRect(
+                color = primary.copy(alpha = 0.10f),
+                topLeft = spotlight.topLeft,
+                size = spotlight.size,
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(spotlight.height * 0.35f),
+            )
+            drawRoundRect(
+                color = primary.copy(alpha = 0.88f),
+                topLeft = spotlight.topLeft,
+                size = spotlight.size,
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(spotlight.height * 0.35f),
+                style = Stroke(width = 2.dp.toPx()),
+            )
             val dotRadius = size.minDimension * 0.007f
-            repeat(8) { index ->
-                val fraction = index / 7f
+            repeat(7) { index ->
+                val fraction = index / 6f
                 drawCircle(
-                    color = primary.copy(alpha = 0.76f),
+                    color = primary.copy(alpha = 0.64f),
                     radius = dotRadius,
                     center = Offset(
                         x = end.x,
@@ -200,14 +192,20 @@ private fun TutorialLayer(
 
         Surface(
             modifier = Modifier
-                .align(Alignment.Center)
-                .offset(y = 72.dp)
-                .padding(horizontal = 28.dp)
-                .widthIn(max = 480.dp)
+                .align(Alignment.TopCenter)
+                .offset {
+                    IntOffset(
+                        x = 0,
+                        y = (boardBounds.top + boardBounds.height * 0.42f).roundToInt(),
+                    )
+                }
+                .padding(horizontal = 36.dp)
+                .widthIn(max = 420.dp)
                 .fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            color = primary,
-            shadowElevation = 8.dp,
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(2.dp, primary.copy(alpha = 0.72f)),
+            shadowElevation = 2.dp,
         ) {
             Text(
                 text = stringResource(
@@ -216,10 +214,10 @@ private fun TutorialLayer(
                         TutorialStep.Drag -> Res.string.tutorial_drag
                     },
                 ),
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 18.dp),
-                color = onPrimary,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
             )
         }
@@ -228,11 +226,11 @@ private fun TutorialLayer(
             modifier = Modifier
                 .offset {
                     IntOffset(
-                        x = (handPoint.x - 64.dp.toPx() * HAND_TIP_X).roundToInt(),
-                        y = (handPoint.y - 74.dp.toPx() * HAND_TIP_Y).roundToInt(),
+                        x = (handPoint.x - 54.dp.toPx() * HAND_TIP_X).roundToInt(),
+                        y = (handPoint.y - 62.dp.toPx() * HAND_TIP_Y).roundToInt(),
                     )
                 }
-                .size(width = 64.dp, height = 74.dp)
+                .size(width = 54.dp, height = 62.dp)
                 .graphicsLayer {
                     val scale = if (pressed.value) 0.9f else 1f
                     scaleX = scale
@@ -250,6 +248,22 @@ private fun TutorialLayer(
             drawTutorialHand()
         }
     }
+}
+
+internal enum class TutorialMotionMode {
+    HIDDEN,
+    STATIC,
+    ANIMATED,
+}
+
+internal fun tutorialMotionMode(
+    visible: Boolean,
+    boundsReady: Boolean,
+    reducedMotion: Boolean,
+): TutorialMotionMode = when {
+    !visible || !boundsReady -> TutorialMotionMode.HIDDEN
+    reducedMotion -> TutorialMotionMode.STATIC
+    else -> TutorialMotionMode.ANIMATED
 }
 
 private fun tutorialSpotlight(step: TutorialStep, board: Rect, end: Offset): Rect =
