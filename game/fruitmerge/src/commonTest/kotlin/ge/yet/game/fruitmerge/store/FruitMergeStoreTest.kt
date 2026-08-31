@@ -5,6 +5,7 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.fruitmerge.TestFruitMergeRules
 import ge.yet.game.fruitmerge.engine.FruitBody
 import ge.yet.game.fruitmerge.engine.FruitLevel
+import ge.yet.game.fruitmerge.engine.FruitMergeEngine
 import ge.yet.game.fruitmerge.engine.FruitMergeState
 import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.engine.Vec2
@@ -81,7 +82,9 @@ class FruitMergeStoreTest {
         store.accept(FruitMergeStore.Intent.Drop)
 
         assertEquals(
-            listOf<FruitMergeStore.Label>(FruitMergeStore.Label.DropAccepted),
+            listOf<FruitMergeStore.Label>(
+                FruitMergeStore.Label.DropReleased(FruitLevel.BLUEBERRY),
+            ),
             labels,
         )
         subscription.dispose()
@@ -99,18 +102,19 @@ class FruitMergeStoreTest {
             bodies = listOf(
                 FruitBody(
                     id = 1L,
-                    level = FruitLevel.CHERRY,
+                    level = FruitLevel.RASPBERRY,
                     position = Vec2(0.5f, 0.5f),
                 ),
             ),
             nextBodyId = 2L,
-            score = FruitLevel.CHERRY.mergeScore,
+            score = FruitLevel.RASPBERRY.mergeScore,
         )
 
         store.accept(FruitMergeStore.Intent.Frame(1f / 60f))
 
         assertIs<FruitMergeStore.Label.MergeResolved>(labels.single())
-        assertEquals(FruitLevel.CHERRY, (labels.single() as FruitMergeStore.Label.MergeResolved).level)
+        assertEquals(FruitLevel.RASPBERRY, (labels.single() as FruitMergeStore.Label.MergeResolved).level)
+        assertEquals(Vec2(0.5f, 0.5f), (labels.single() as FruitMergeStore.Label.MergeResolved).position)
         subscription.dispose()
         store.dispose()
     }
@@ -128,7 +132,7 @@ class FruitMergeStoreTest {
         store.accept(FruitMergeStore.Intent.FreeShake)
 
         assertEquals(
-            listOf<FruitMergeStore.Label>(FruitMergeStore.Label.ShakeApplied),
+            listOf<FruitMergeStore.Label>(FruitMergeStore.Label.ShakeStarted),
             labels,
         )
         subscription.dispose()
@@ -147,7 +151,7 @@ class FruitMergeStoreTest {
         store.accept(FruitMergeStore.Intent.FreeShake)
         store.accept(FruitMergeStore.Intent.FreeShake)
 
-        assertEquals(listOf<FruitMergeStore.Label>(FruitMergeStore.Label.ShakeApplied), labels)
+        assertEquals(listOf<FruitMergeStore.Label>(FruitMergeStore.Label.ShakeStarted), labels)
         assertEquals(FruitMergeState.FREE_SHAKE_COUNT - 1, store.state.game.freeShakes)
         assertTrue(store.state.game.shakeStepsRemaining > 0)
         subscription.dispose()
@@ -167,9 +171,54 @@ class FruitMergeStoreTest {
         store.accept(FruitMergeStore.Intent.ClearBody(id = 1L, paid = false))
 
         assertEquals(
-            listOf<FruitMergeStore.Label>(FruitMergeStore.Label.ClearApplied),
+            listOf<FruitMergeStore.Label>(
+                FruitMergeStore.Label.ClearApplied(
+                    level = FruitLevel.BLUEBERRY,
+                    position = Vec2(0.5f, 0.08f),
+                ),
+            ),
             labels,
         )
+        subscription.dispose()
+        store.dispose()
+    }
+
+    @Test
+    fun `landing danger and shake pulses publish only on committed edges`() = runTest {
+        val rules = TestFruitMergeRules()
+        val store = createStore(rules)
+        val labels = mutableListOf<FruitMergeStore.Label>()
+        val subscription = store.labels(observer(onNext = labels::add))
+        advanceUntilIdle()
+        store.accept(FruitMergeStore.Intent.Drop)
+        labels.clear()
+
+        val airborne = store.state.game.bodies.single()
+        rules.nextStepState = store.state.game.copy(
+            bodies = listOf(airborne.copy(hasJoinedPile = true, position = Vec2(0.5f, 0.4f))),
+            dangerSeconds = 0.1f,
+        )
+        store.accept(FruitMergeStore.Intent.Frame(1f / 60f))
+        rules.nextStepState = store.state.game.copy(dangerSeconds = 0.2f)
+        store.accept(FruitMergeStore.Intent.Frame(1f / 60f))
+
+        assertEquals(
+            listOf<FruitMergeStore.Label>(
+                FruitMergeStore.Label.FruitLanded(FruitLevel.BLUEBERRY, Vec2(0.5f, 0.4f)),
+                FruitMergeStore.Label.DangerEntered,
+            ),
+            labels,
+        )
+
+        labels.clear()
+        store.accept(FruitMergeStore.Intent.FreeShake)
+        store.accept(FruitMergeStore.Intent.Frame(1f / 60f))
+        repeat(FruitMergeEngine.SHAKE_IMPULSE_INTERVAL_STEPS) {
+            store.accept(FruitMergeStore.Intent.Frame(1f / 60f))
+        }
+        val pulses = labels.filterIsInstance<FruitMergeStore.Label.ShakePulse>()
+        assertEquals(listOf(0, 1), pulses.map(FruitMergeStore.Label.ShakePulse::index))
+
         subscription.dispose()
         store.dispose()
     }

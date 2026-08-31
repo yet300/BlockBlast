@@ -11,7 +11,7 @@
     <string name="cancel">Cancel</string>
     <string name="new_game">New game</string>
     <string name="game_over">Fruit tower full</string>
-    <string name="game_over_supporting">The fruit stayed above the danger line. Start again and build a bigger melon.</string>
+    <string name="game_over_supporting">The fruit stayed above the danger line. Start again and build a bigger watermelon.</string>
     <string name="largest_fruit">Largest fruit</string>
     <string name="tutorial_skip">Skip</string>
     <string name="tutorial_tap">Tap anywhere to drop the fruit</string>
@@ -24,13 +24,13 @@
     <string name="fruit_description">%1$s fruit</string>
     <string name="ad_disclosure">Advertisement</string>
     <string name="blueberry">Blueberry</string>
-    <string name="cherry">Cherry</string>
+    <string name="raspberry">Raspberry</string>
     <string name="strawberry">Strawberry</string>
-    <string name="plum">Plum</string>
+    <string name="lime">Lime</string>
     <string name="mandarin">Mandarin</string>
     <string name="apple">Apple</string>
     <string name="pear">Pear</string>
     <string name="peach">Peach</string>
     <string name="pineapple">Pineapple</string>
-    <string name="melon">Melon</string>
+    <string name="watermelon">Watermelon</string>
 </resources>

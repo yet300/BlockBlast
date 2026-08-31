@@ -6,13 +6,13 @@ import kotlin.test.assertEquals
 
 class FruitMergeBackgroundPolicyTest {
     @Test
-    fun `content-only result uses the result background behind host chrome`() {
+    fun `playing and game over share one background behind host chrome`() {
         assertEquals(
-            FruitMergeBackgroundRole.RESULT,
+            FruitMergeBackgroundRole.MARKET,
             fruitMergeBackgroundRole(MiniAppFrameMode.ContentOnly),
         )
         assertEquals(
-            FruitMergeBackgroundRole.PLAYING,
+            FruitMergeBackgroundRole.MARKET,
             fruitMergeBackgroundRole(MiniAppFrameMode.Standard),
         )
     }

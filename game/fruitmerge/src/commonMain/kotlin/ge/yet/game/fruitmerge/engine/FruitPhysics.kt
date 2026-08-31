@@ -42,6 +42,8 @@ class FruitPhysics(
             }
         }
 
+        applyWatermelonShocks(bodies)
+
         return PhysicsResult(
             bodies = bodies.map { body -> body.copy(impact = body.impact * IMPACT_DECAY) },
             contacts = contacts,
@@ -49,20 +51,64 @@ class FruitPhysics(
         )
     }
 
+    private fun applyWatermelonShocks(bodies: MutableList<FruitBody>) {
+        for (sourceIndex in bodies.indices) {
+            val source = bodies[sourceIndex]
+            if (
+                source.level != FruitLevel.WATERMELON ||
+                !source.shockAvailable ||
+                source.impact < WATERMELON_SHOCK_IMPACT_THRESHOLD
+            ) {
+                continue
+            }
+
+            val profile = fruitPhysicsProfile(source.level)
+            val reach = source.level.radius * WATERMELON_SHOCK_REACH_MULTIPLIER
+            bodies[sourceIndex] = source.copy(shockAvailable = false)
+            for (targetIndex in bodies.indices) {
+                if (targetIndex == sourceIndex) continue
+                val target = bodies[targetIndex]
+                val delta = target.position - source.position
+                val distance = delta.length().coerceAtLeast(CONTACT_EPSILON)
+                if (distance >= reach) continue
+
+                val falloff = 1f - distance / reach
+                val impulse = delta / distance * (profile.shockImpulse * falloff)
+                bodies[targetIndex] = target.copy(
+                    velocity = (target.velocity + impulse).clampLength(MAX_SPEED),
+                )
+            }
+        }
+    }
+
+    private fun Vec2.clampLength(maxLength: Float): Vec2 {
+        val lengthSquared = lengthSquared()
+        return if (lengthSquared > maxLength * maxLength) {
+            this * (maxLength / length())
+        } else {
+            this
+        }
+    }
+
     private fun integrate(body: FruitBody, dt: Float): FruitBody {
+        val gripSecondsRemaining = (body.wallGripSecondsRemaining - dt).coerceAtLeast(0f)
         val velocity = Vec2(
             x = (body.velocity.x * AIR_DAMPING).coerceIn(-MAX_SPEED, MAX_SPEED),
-            y = (body.velocity.y * AIR_DAMPING + GRAVITY * dt).coerceIn(-MAX_SPEED, MAX_SPEED),
+            y = (
+                body.velocity.y * AIR_DAMPING + GRAVITY * dt
+            ).coerceIn(-MAX_SPEED, MAX_SPEED),
         )
         return body.copy(
             position = body.position + velocity * dt,
             velocity = velocity,
             angle = body.angle + body.angularVelocity * dt,
             angularVelocity = (body.angularVelocity * ANGULAR_DAMPING).coerceIn(-MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED),
+            wallGripSecondsRemaining = gripSecondsRemaining,
         )
     }
 
     private fun constrainToContainer(body: FruitBody): FruitBody {
+        val profile = fruitPhysicsProfile(body.level)
         val radius = body.level.radius
         var x = body.position.x
         var y = body.position.y
@@ -70,24 +116,33 @@ class FruitPhysics(
         var velocityY = body.velocity.y
         var angularVelocity = body.angularVelocity
         var impact = body.impact
+        var hasJoinedPile = body.hasJoinedPile
+        var wallGripSecondsRemaining = body.wallGripSecondsRemaining
 
         if (x < radius) {
             x = radius
             impact = max(impact, abs(velocityX))
             velocityX = abs(velocityX) * WALL_RESTITUTION
+            if (profile.wallGripSeconds > 0f) {
+                wallGripSecondsRemaining = max(wallGripSecondsRemaining, profile.wallGripSeconds)
+            }
         } else if (x > 1f - radius) {
             x = 1f - radius
             impact = max(impact, abs(velocityX))
             velocityX = -abs(velocityX) * WALL_RESTITUTION
+            if (profile.wallGripSeconds > 0f) {
+                wallGripSecondsRemaining = max(wallGripSecondsRemaining, profile.wallGripSeconds)
+            }
         }
         val floor = FLOOR_Y - radius
         if (y > floor) {
             y = floor
             impact = max(impact, abs(velocityY))
-            velocityY = -abs(velocityY) * WALL_RESTITUTION
+            velocityY = -abs(velocityY) * profile.contactRestitution
             if (abs(velocityY) < REST_SPEED) velocityY = 0f
-            velocityX *= FLOOR_FRICTION
-            angularVelocity *= FLOOR_FRICTION
+            velocityX *= profile.floorRetention
+            angularVelocity *= profile.floorRetention
+            hasJoinedPile = true
         }
 
         return body.copy(
@@ -95,6 +150,8 @@ class FruitPhysics(
             velocity = Vec2(velocityX, velocityY),
             angularVelocity = angularVelocity,
             impact = impact.coerceAtMost(MAX_IMPACT),
+            hasJoinedPile = hasJoinedPile,
+            wallGripSecondsRemaining = wallGripSecondsRemaining,
         )
     }
 
@@ -115,32 +172,59 @@ class FruitPhysics(
         } else {
             Vec2(-1f, 0f)
         }
-        val inverseMassFirst = 1f / first.level.mass
-        val inverseMassSecond = 1f / second.level.mass
+        val firstProfile = fruitPhysicsProfile(first.level)
+        val secondProfile = fruitPhysicsProfile(second.level)
+        val inverseMassFirst = 1f / (first.level.mass * firstProfile.massMultiplier)
+        val inverseMassSecond = 1f / (second.level.mass * secondProfile.massMultiplier)
         val inverseMassSum = inverseMassFirst + inverseMassSecond
         val penetration = (minimumDistance - distance).coerceAtLeast(0f)
         val correction = normal * (penetration * POSITION_CORRECTION / inverseMassSum)
 
         var firstVelocity = first.velocity
         var secondVelocity = second.velocity
+        var firstAngularVelocity = first.angularVelocity
+        var secondAngularVelocity = second.angularVelocity
         val relativeNormalVelocity = (secondVelocity - firstVelocity).dot(normal)
         var impulseMagnitude = 0f
         if (relativeNormalVelocity < 0f) {
-            impulseMagnitude = -(1f + CONTACT_RESTITUTION) * relativeNormalVelocity / inverseMassSum
+            val restitution = (
+                firstProfile.contactRestitution + secondProfile.contactRestitution
+            ) * 0.5f
+            impulseMagnitude = -(1f + restitution) * relativeNormalVelocity / inverseMassSum
             val impulse = normal * impulseMagnitude
             firstVelocity = firstVelocity - impulse * inverseMassFirst
             secondVelocity = secondVelocity + impulse * inverseMassSecond
         }
 
+        val tangent = Vec2(-normal.y, normal.x)
+        val relativeTangentVelocity = (secondVelocity - firstVelocity).dot(tangent)
+        if (abs(relativeTangentVelocity) > CONTACT_EPSILON) {
+            val spinTransfer = (
+                firstProfile.spinTransfer + secondProfile.spinTransfer
+            ) * 0.5f
+            val angularImpulse = relativeTangentVelocity * spinTransfer
+            firstAngularVelocity += angularImpulse
+            secondAngularVelocity -= angularImpulse
+        }
+
+        firstAngularVelocity += firstProfile.balanceTorque * normal.x
+        secondAngularVelocity -= secondProfile.balanceTorque * normal.x
+        firstAngularVelocity = firstAngularVelocity.coerceIn(-MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED)
+        secondAngularVelocity = secondAngularVelocity.coerceIn(-MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED)
+
         bodies[pair.firstIndex] = first.copy(
             position = first.position - correction * inverseMassFirst,
             velocity = firstVelocity,
             impact = max(first.impact, impulseMagnitude),
+            hasJoinedPile = true,
+            angularVelocity = firstAngularVelocity,
         )
         bodies[pair.secondIndex] = second.copy(
             position = second.position + correction * inverseMassSecond,
             velocity = secondVelocity,
             impact = max(second.impact, impulseMagnitude),
+            hasJoinedPile = true,
+            angularVelocity = secondAngularVelocity,
         )
         return true
     }
@@ -153,8 +237,6 @@ class FruitPhysics(
         private const val AIR_DAMPING: Float = 0.998f
         private const val ANGULAR_DAMPING: Float = 0.996f
         private const val WALL_RESTITUTION: Float = 0.18f
-        private const val CONTACT_RESTITUTION: Float = 0.08f
-        private const val FLOOR_FRICTION: Float = 0.78f
         private const val POSITION_CORRECTION: Float = 0.82f
         private const val CONTACT_EPSILON: Float = 0.000_01f
         private const val CONTACT_SLOP: Float = 0.000_1f
@@ -163,5 +245,7 @@ class FruitPhysics(
         private const val MAX_ANGULAR_SPEED: Float = 8f
         private const val MAX_IMPACT: Float = 2f
         private const val IMPACT_DECAY: Float = 0.88f
+        private const val WATERMELON_SHOCK_IMPACT_THRESHOLD: Float = 0.55f
+        private const val WATERMELON_SHOCK_REACH_MULTIPLIER: Float = 2.4f
     }
 }

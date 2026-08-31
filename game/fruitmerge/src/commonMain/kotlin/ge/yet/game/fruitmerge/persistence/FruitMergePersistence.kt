@@ -1,6 +1,7 @@
 package ge.yet.game.fruitmerge.persistence
 
 import ge.yet.game.fruitmerge.engine.FruitMergeState
+import ge.yet.game.miniapp.api.MiniAppSnapshotMigration
 import ge.yet.game.miniapp.api.MiniAppSnapshotSpec
 import ge.yet.game.miniapp.api.MiniAppStorage
 import kotlinx.coroutines.CancellationException
@@ -12,7 +13,8 @@ internal const val TUTORIAL_SEEN_KEY: String = "tutorial_seen"
 
 internal val FruitMergeSnapshotSpec = MiniAppSnapshotSpec(
     serializer = FruitMergeSnapshot.serializer(),
-    currentVersion = 1,
+    currentVersion = 2,
+    migrations = mapOf(1 to MiniAppSnapshotMigration { payload -> payload }),
 )
 
 internal class FruitMergePersistence(

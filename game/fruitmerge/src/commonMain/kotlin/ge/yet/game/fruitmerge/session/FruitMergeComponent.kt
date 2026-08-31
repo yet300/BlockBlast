@@ -7,13 +7,18 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.mvikotlin.extensions.coroutines.states
+import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.FruitMergeState
+import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.engine.TargetingMode
 import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
 import ge.yet.game.fruitmerge.store.FruitMergeStore
 import ge.yet.game.miniapp.api.MiniAppVisibility
 import ge.yet.game.miniapp.api.MiniAppVisibilitySource
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 internal enum class PaidAction {
@@ -29,12 +34,14 @@ internal data class PaidActionToken(
 )
 
 internal sealed interface TutorialStep {
-    data object Tap : TutorialStep
-    data object Drag : TutorialStep
+    data object Gesture : TutorialStep
+    data object Merge : TutorialStep
+    data object Traits : TutorialStep
 }
 
 internal interface FruitMergeComponent {
     val model: Value<Model>
+    val presentationEvents: Flow<PresentationEvent>
 
     fun frame(elapsedSeconds: Float)
     fun movePreview(x: Float)
@@ -46,7 +53,26 @@ internal interface FruitMergeComponent {
     fun completePaidAction(token: PaidActionToken)
     fun newGame()
     fun skipTutorial()
+    fun completeTutorial()
     fun handleBack(): Boolean
+
+    sealed interface ScreenState {
+        val game: FruitMergeState
+
+        data class Playing(override val game: FruitMergeState) : ScreenState
+
+        data class GameOver(
+            override val game: FruitMergeState,
+            val largestFruit: FruitLevel,
+        ) : ScreenState
+    }
+
+    sealed interface PresentationEvent {
+        data class Landing(val level: FruitLevel, val position: ge.yet.game.fruitmerge.engine.Vec2) : PresentationEvent
+        data class Merge(val level: FruitLevel, val position: ge.yet.game.fruitmerge.engine.Vec2) : PresentationEvent
+        data class Clear(val level: FruitLevel, val position: ge.yet.game.fruitmerge.engine.Vec2) : PresentationEvent
+        data class ShakePulse(val index: Int) : PresentationEvent
+    }
 
     data class Model(
         val game: FruitMergeState = FruitMergeState(),
@@ -54,7 +80,9 @@ internal interface FruitMergeComponent {
         val visible: Boolean = true,
         val tutorialReady: Boolean = false,
         val tutorialStep: TutorialStep? = null,
-    )
+    ) {
+        val screen: ScreenState get() = game.toScreenState()
+    }
 }
 
 @OptIn(DelicateDecomposeApi::class)
@@ -73,6 +101,8 @@ internal class DefaultFruitMergeComponent(
         ),
     )
     override val model: Value<FruitMergeComponent.Model> = mutableModel
+    private val presentationChannel = Channel<FruitMergeComponent.PresentationEvent>(capacity = Channel.BUFFERED)
+    override val presentationEvents: Flow<FruitMergeComponent.PresentationEvent> = presentationChannel.receiveAsFlow()
 
     private val sessionKey = componentContext.hashCode().toLong()
     private var nextTokenId = 1L
@@ -102,13 +132,14 @@ internal class DefaultFruitMergeComponent(
             if (alive) {
                 mutableModel.value = mutableModel.value.copy(
                     tutorialReady = true,
-                    tutorialStep = if (seen) null else TutorialStep.Tap,
+                    tutorialStep = if (seen) null else TutorialStep.Gesture,
                 )
             }
         }
         lifecycle.doOnDestroy {
             alive = false
             pendingToken = null
+            presentationChannel.close()
         }
     }
 
@@ -124,7 +155,7 @@ internal class DefaultFruitMergeComponent(
         if (!alive || !model.value.tutorialReady) return
         val previousNextBodyId = store.state.game.nextBodyId
         store.accept(FruitMergeStore.Intent.Drop)
-        if (store.state.game.nextBodyId != previousNextBodyId) onDropAccepted(dragged)
+        if (store.state.game.nextBodyId != previousNextBodyId) onDropAccepted()
     }
 
     override fun requestClearGate(): PaidActionToken? {
@@ -187,6 +218,30 @@ internal class DefaultFruitMergeComponent(
         finishTutorial()
     }
 
+    override fun completeTutorial() {
+        if (!alive || model.value.tutorialStep != TutorialStep.Traits) return
+        finishTutorial()
+    }
+
+    internal fun onStoreLabel(label: FruitMergeStore.Label) {
+        if (alive && label is FruitMergeStore.Label.MergeResolved && model.value.tutorialStep == TutorialStep.Merge) {
+            mutableModel.value = mutableModel.value.copy(tutorialStep = TutorialStep.Traits)
+        }
+        if (!alive || !model.value.visible) return
+        val event = when (label) {
+            is FruitMergeStore.Label.FruitLanded -> FruitMergeComponent.PresentationEvent.Landing(label.level, label.position)
+            is FruitMergeStore.Label.MergeResolved -> FruitMergeComponent.PresentationEvent.Merge(label.level, label.position)
+            is FruitMergeStore.Label.ClearApplied -> FruitMergeComponent.PresentationEvent.Clear(label.level, label.position)
+            is FruitMergeStore.Label.ShakePulse -> FruitMergeComponent.PresentationEvent.ShakePulse(label.index)
+            is FruitMergeStore.Label.DropReleased,
+            FruitMergeStore.Label.ShakeStarted,
+            FruitMergeStore.Label.DangerEntered,
+            FruitMergeStore.Label.ResultReached,
+            -> null
+        }
+        if (event != null) presentationChannel.trySend(event)
+    }
+
     override fun handleBack(): Boolean = if (model.value.game.targetingMode == TargetingMode.CLEAR) {
         cancelClear()
         true
@@ -206,13 +261,9 @@ internal class DefaultFruitMergeComponent(
         return token
     }
 
-    private fun onDropAccepted(dragged: Boolean) {
-        when (model.value.tutorialStep) {
-            TutorialStep.Tap -> if (!dragged) {
-                mutableModel.value = mutableModel.value.copy(tutorialStep = TutorialStep.Drag)
-            }
-            TutorialStep.Drag -> if (dragged) finishTutorial()
-            null -> Unit
+    private fun onDropAccepted() {
+        if (model.value.tutorialStep == TutorialStep.Gesture) {
+            mutableModel.value = mutableModel.value.copy(tutorialStep = TutorialStep.Merge)
         }
     }
 
@@ -220,4 +271,12 @@ internal class DefaultFruitMergeComponent(
         mutableModel.value = mutableModel.value.copy(tutorialStep = null)
         coroutineScope().launch { persistence.markTutorialSeen() }
     }
+}
+
+private fun FruitMergeState.toScreenState(): FruitMergeComponent.ScreenState = when (phase) {
+    RunPhase.PLAYING -> FruitMergeComponent.ScreenState.Playing(this)
+    RunPhase.RESULT -> FruitMergeComponent.ScreenState.GameOver(
+        game = this,
+        largestFruit = bodies.maxByOrNull { body -> body.level.ordinal }?.level ?: previewLevel,
+    )
 }

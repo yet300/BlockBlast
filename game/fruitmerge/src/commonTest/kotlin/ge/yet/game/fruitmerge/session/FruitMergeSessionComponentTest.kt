@@ -4,15 +4,23 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import ge.yet.game.fruitmerge.TestFruitMergeRules
 import ge.yet.game.fruitmerge.audio.FruitMergeAudioAdapter
 import ge.yet.game.fruitmerge.engine.FruitMergeState
+import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.RunPhase
+import ge.yet.game.fruitmerge.engine.Vec2
 import ge.yet.game.fruitmerge.persistence.FruitMergePersistence
 import ge.yet.game.fruitmerge.store.FruitMergeStoreFactory
+import ge.yet.game.fruitmerge.store.FruitMergeStore
 import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppStorage
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.NoopMiniAppAudio
+import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -24,6 +32,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FruitMergeSessionComponentTest {
@@ -34,7 +44,7 @@ class FruitMergeSessionComponentTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `restored terminal run opens Result and committed new game returns to Playing`() = runTest {
+    fun `terminal restore and restart reuse the same game component`() = runTest {
         val storage = MutableMiniAppStorage()
         val persistence = FruitMergePersistence(storage)
         persistence.checkpoint(FruitMergeState(runOrdinal = 7L, phase = RunPhase.RESULT))
@@ -53,17 +63,22 @@ class FruitMergeSessionComponentTest {
         )
 
         advanceUntilIdle()
-        val result = assertIs<FruitMergeSessionComponent.Child.Result>(component.stack.value.active.instance)
+        val game = component.game
+        assertIs<FruitMergeComponent.ScreenState.GameOver>(game.model.value.screen)
+        assertEquals(MiniAppFrameMode.ContentOnly, component.frameMode.value)
+        assertEquals(false, game.handleBack())
 
-        result.component.newGame()
+        game.newGame()
         advanceUntilIdle()
 
-        assertIs<FruitMergeSessionComponent.Child.Playing>(component.stack.value.active.instance)
+        assertSame(game, component.game)
+        assertIs<FruitMergeComponent.ScreenState.Playing>(game.model.value.screen)
+        assertEquals(MiniAppFrameMode.Standard, component.frameMode.value)
         lifecycle.destroy()
     }
 
     @Test
-    fun `first accepted tap advances tutorial and skip persists completion`() = runTest {
+    fun `tutorial follows an accepted drop merge and finite trait reveal`() = runTest {
         val storage = MutableMiniAppStorage()
         val persistence = FruitMergePersistence(storage)
         val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
@@ -79,16 +94,21 @@ class FruitMergeSessionComponentTest {
             audio = FruitMergeAudioAdapter(NoopMiniAppAudio),
         )
         advanceUntilIdle()
-        val playing = assertIs<FruitMergeSessionComponent.Child.Playing>(component.stack.value.active.instance)
+        val playing = component.game
 
-        assertIs<TutorialStep.Tap>(playing.component.model.value.tutorialStep)
-        playing.component.drop(dragged = false)
+        assertIs<TutorialStep.Gesture>(playing.model.value.tutorialStep)
+        playing.drop(dragged = false)
         advanceUntilIdle()
-        assertIs<TutorialStep.Drag>(playing.component.model.value.tutorialStep)
-        playing.component.skipTutorial()
+        assertIs<TutorialStep.Merge>(playing.model.value.tutorialStep)
+
+        component.gameComponent.onStoreLabel(
+            FruitMergeStore.Label.MergeResolved(FruitLevel.RASPBERRY, Vec2(0.5f, 0.6f)),
+        )
+        assertIs<TutorialStep.Traits>(playing.model.value.tutorialStep)
+        playing.completeTutorial()
         advanceUntilIdle()
 
-        kotlin.test.assertEquals(null, playing.component.model.value.tutorialStep)
+        kotlin.test.assertEquals(null, playing.model.value.tutorialStep)
         kotlin.test.assertTrue(FruitMergePersistence(storage).isTutorialSeen())
         lifecycle.destroy()
     }
@@ -123,16 +143,52 @@ class FruitMergeSessionComponentTest {
             audio = FruitMergeAudioAdapter(NoopMiniAppAudio),
         )
         advanceUntilIdle()
-        val playing = assertIs<FruitMergeSessionComponent.Child.Playing>(component.stack.value.active.instance)
+        val playing = component.game
 
-        assertNull(playing.component.requestShakeGate())
+        assertNull(playing.requestShakeGate())
         advanceUntilIdle()
-        val active = playing.component.model.value.game
-        assertNull(playing.component.requestShakeGate())
+        val active = playing.model.value.game
+        assertNull(playing.requestShakeGate())
 
         assertEquals(FruitMergeState.FREE_SHAKE_COUNT - 1, active.freeShakes)
-        assertEquals(active, playing.component.model.value.game)
+        assertEquals(active, playing.model.value.game)
         assertEquals(1, rules.shakeCalls)
+        lifecycle.destroy()
+    }
+
+    @Test
+    fun `visible committed labels bridge to bounded presentation events`() = runTest {
+        val storage = MutableMiniAppStorage()
+        val persistence = FruitMergePersistence(storage)
+        val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val component = DefaultFruitMergeSessionComponent(
+            componentContext = lifecycle.componentContext,
+            storeFactory = FruitMergeStoreFactory(DefaultStoreFactory(), TestFruitMergeRules(), persistence),
+            persistence = persistence,
+            visibility = MutableMiniAppVisibilitySource(),
+            audio = FruitMergeAudioAdapter(NoopMiniAppAudio),
+        )
+        advanceUntilIdle()
+        assertTrue(component.game.model.value.visible)
+        val collector = async(start = CoroutineStart.UNDISPATCHED) {
+            component.game.presentationEvents.take(4).toList()
+        }
+
+        component.gameComponent.onStoreLabel(FruitMergeStore.Label.FruitLanded(FruitLevel.LIME, Vec2(0.2f, 0.8f)))
+        component.gameComponent.onStoreLabel(FruitMergeStore.Label.MergeResolved(FruitLevel.MANDARIN, Vec2(0.4f, 0.7f)))
+        component.gameComponent.onStoreLabel(FruitMergeStore.Label.ClearApplied(FruitLevel.APPLE, Vec2(0.6f, 0.7f)))
+        component.gameComponent.onStoreLabel(FruitMergeStore.Label.ShakePulse(3))
+        val received = collector.await()
+
+        assertEquals(
+            listOf(
+                FruitMergeComponent.PresentationEvent.Landing(FruitLevel.LIME, Vec2(0.2f, 0.8f)),
+                FruitMergeComponent.PresentationEvent.Merge(FruitLevel.MANDARIN, Vec2(0.4f, 0.7f)),
+                FruitMergeComponent.PresentationEvent.Clear(FruitLevel.APPLE, Vec2(0.6f, 0.7f)),
+                FruitMergeComponent.PresentationEvent.ShakePulse(3),
+            ),
+            received,
+        )
         lifecycle.destroy()
     }
 }

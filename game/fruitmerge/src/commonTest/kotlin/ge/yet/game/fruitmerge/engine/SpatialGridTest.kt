@@ -28,8 +28,8 @@ class SpatialGridTest {
     @Test
     fun `candidate pair objects are pooled across fixed steps`() {
         val bodies = listOf(
-            FruitBody(1, FruitLevel.MELON, Vec2(0.4f, 0.7f)),
-            FruitBody(2, FruitLevel.MELON, Vec2(0.6f, 0.7f)),
+            FruitBody(1, FruitLevel.WATERMELON, Vec2(0.4f, 0.7f)),
+            FruitBody(2, FruitLevel.WATERMELON, Vec2(0.6f, 0.7f)),
         )
         val grid = SpatialGrid()
         val first = grid.candidatePairs(bodies).single()

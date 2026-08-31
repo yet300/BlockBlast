@@ -14,12 +14,17 @@ import ge.yet.game.pattern.degrade
 import ge.yet.game.pattern.sequence
 
 internal object FruitMergeAudio {
-    val Drop = SfxName("drop")
+    val Release = SfxName("release")
+    val LandingSmall = SfxName("landing_small")
+    val LandingMedium = SfxName("landing_medium")
+    val LandingHeavy = SfxName("landing_heavy")
     val MergeLow = SfxName("merge_low")
     val MergeMid = SfxName("merge_mid")
     val MergeHigh = SfxName("merge_high")
-    val Clear = SfxName("clear")
-    val Shake = SfxName("shake")
+    val ClearSlice = SfxName("clear_slice")
+    val ShakeLeft = SfxName("shake_left")
+    val ShakeRight = SfxName("shake_right")
+    val DangerEnter = SfxName("danger_enter")
     val GameOver = SfxName("game_over")
 
     val program = audioProgram {
@@ -77,36 +82,57 @@ internal object FruitMergeAudio {
             reverb(send = 0.12f)
         }
 
-        sfx(Drop.value) {
-            oscillator(OscillatorShape.SINE, gain = 0.19f)
-            oscillator(OscillatorShape.TRIANGLE, gain = 0.035f, detuneCents = -7f)
-            noise(NoiseColor.BROWN, gain = 0.055f, seed = 6_170_310L)
-            noise(NoiseColor.PINK, gain = 0.025f, seed = 6_170_311L)
-            pitch(from = 168.hz, to = 86.hz, duration = 145.ms)
-            envelope(attack = 1.ms, decay = 46.ms, sustain = 0.10f, release = 180.ms)
-            lowPass(cutoff = 950.hz, resonance = 0.16f)
+        sfx(Release.value) {
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.035f)
+            noise(NoiseColor.PINK, gain = 0.050f, seed = 6_170_310L)
+            pitch(from = 520.hz, to = 210.hz, duration = 105.ms)
+            envelope(attack = 2.ms, decay = 35.ms, sustain = 0.06f, release = 95.ms)
+            bandPass(center = 1_050.hz, resonance = 0.10f)
         }
-        sfx(Clear.value) {
-            oscillator(OscillatorShape.SINE, gain = 0.075f)
-            oscillator(OscillatorShape.TRIANGLE, gain = 0.045f, detuneCents = 11f)
-            noise(NoiseColor.WHITE, gain = 0.085f, seed = 6_170_312L)
-            noise(NoiseColor.PINK, gain = 0.035f, seed = 6_170_313L)
-            pitch(from = 980.hz, to = 190.hz, duration = 118.ms)
-            envelope(attack = 1.ms, decay = 52.ms, sustain = 0.07f, release = 165.ms)
-            bandPass(center = 1_320.hz, resonance = 0.24f)
+        sfx(LandingSmall.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.105f)
+            noise(NoiseColor.BROWN, gain = 0.030f, seed = 6_170_311L)
+            pitch(from = 210.hz, to = 138.hz, duration = 90.ms)
+            envelope(attack = 1.ms, decay = 44.ms, sustain = 0.10f, release = 105.ms)
+            lowPass(cutoff = 980.hz, resonance = 0.12f)
+        }
+        sfx(LandingMedium.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.145f)
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.028f, detuneCents = -8f)
+            noise(NoiseColor.BROWN, gain = 0.044f, seed = 6_170_312L)
+            pitch(from = 165.hz, to = 88.hz, duration = 125.ms)
+            envelope(attack = 1.ms, decay = 54.ms, sustain = 0.12f, release = 175.ms)
+            lowPass(cutoff = 820.hz, resonance = 0.16f)
+        }
+        sfx(LandingHeavy.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.185f)
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.040f, detuneCents = -12f)
+            noise(NoiseColor.BROWN, gain = 0.062f, seed = 6_170_313L)
+            pitch(from = 128.hz, to = 58.hz, duration = 170.ms)
+            envelope(attack = 1.ms, decay = 68.ms, sustain = 0.15f, release = 230.ms)
+            lowPass(cutoff = 690.hz, resonance = 0.18f)
+        }
+        sfx(ClearSlice.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.055f)
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.032f, detuneCents = 14f)
+            noise(NoiseColor.WHITE, gain = 0.100f, seed = 6_170_314L)
+            noise(NoiseColor.PINK, gain = 0.028f, seed = 6_170_315L)
+            pitch(from = 1_480.hz, to = 360.hz, duration = 105.ms)
+            envelope(attack = 1.ms, decay = 42.ms, sustain = 0.045f, release = 135.ms)
+            bandPass(center = 2_100.hz, resonance = 0.18f)
         }
 
         sfx(MergeLow.value) {
             oscillator(OscillatorShape.SINE, gain = 0.16f)
             oscillator(OscillatorShape.TRIANGLE, gain = 0.055f, detuneCents = 5f)
-            pitch(from = 180.hz, to = 136.hz, duration = 105.ms)
+            pitch(from = 136.hz, to = 196.hz, duration = 105.ms)
             envelope(attack = 2.ms, decay = 34.ms, sustain = 0.22f, release = 95.ms)
             lowPass(cutoff = 1_150.hz, resonance = 0.14f)
         }
         sfx(MergeMid.value) {
             oscillator(OscillatorShape.SINE, gain = 0.18f)
             oscillator(OscillatorShape.TRIANGLE, gain = 0.065f, detuneCents = 7f)
-            pitch(from = 270.hz, to = 190.hz, duration = 125.ms)
+            pitch(from = 184.hz, to = 276.hz, duration = 125.ms)
             envelope(attack = 2.ms, decay = 38.ms, sustain = 0.25f, release = 125.ms)
             lowPass(cutoff = 1_650.hz, resonance = 0.15f)
         }
@@ -114,22 +140,37 @@ internal object FruitMergeAudio {
             oscillator(OscillatorShape.SINE, gain = 0.18f)
             oscillator(OscillatorShape.TRIANGLE, gain = 0.075f, detuneCents = 9f)
             partial(ratio = 2.01f, gain = 0.025f)
-            pitch(from = 390.hz, to = 275.hz, duration = 155.ms)
+            pitch(from = 264.hz, to = 410.hz, duration = 155.ms)
             envelope(attack = 3.ms, decay = 44.ms, sustain = 0.28f, release = 175.ms)
             lowPass(cutoff = 2_200.hz, resonance = 0.16f)
         }
-        sfx(Shake.value) {
-            noise(NoiseColor.BROWN, gain = 0.17f, seed = 6_170_301L)
-            noise(NoiseColor.PINK, gain = 0.08f, seed = 6_170_302L)
-            oscillator(OscillatorShape.SINE, gain = 0.05f)
-            pitch(from = 118.hz, to = 82.hz, duration = 260.ms)
-            envelope(attack = 2.ms, decay = 90.ms, sustain = 0.36f, release = 240.ms)
-            lowPass(cutoff = 1_400.hz, resonance = 0.20f)
+        sfx(ShakeLeft.value) {
+            noise(NoiseColor.BROWN, gain = 0.110f, seed = 6_170_301L)
+            noise(NoiseColor.PINK, gain = 0.060f, seed = 6_170_302L)
+            oscillator(OscillatorShape.SINE, gain = 0.045f)
+            pitch(from = 132.hz, to = 84.hz, duration = 118.ms)
+            envelope(attack = 2.ms, decay = 48.ms, sustain = 0.18f, release = 125.ms)
+            lowPass(cutoff = 1_250.hz, resonance = 0.18f)
+        }
+        sfx(ShakeRight.value) {
+            noise(NoiseColor.BROWN, gain = 0.110f, seed = 6_170_303L)
+            noise(NoiseColor.PINK, gain = 0.060f, seed = 6_170_304L)
+            oscillator(OscillatorShape.SINE, gain = 0.045f)
+            pitch(from = 102.hz, to = 148.hz, duration = 118.ms)
+            envelope(attack = 2.ms, decay = 48.ms, sustain = 0.18f, release = 125.ms)
+            lowPass(cutoff = 1_250.hz, resonance = 0.18f)
+        }
+        sfx(DangerEnter.value) {
+            oscillator(OscillatorShape.SINE, gain = 0.115f)
+            oscillator(OscillatorShape.TRIANGLE, gain = 0.034f, detuneCents = 9f)
+            pitch(from = 430.hz, to = 335.hz, duration = 155.ms)
+            envelope(attack = 4.ms, decay = 52.ms, sustain = 0.22f, release = 190.ms)
+            lowPass(cutoff = 1_600.hz, resonance = 0.18f)
         }
         sfx(GameOver.value) {
             oscillator(OscillatorShape.SINE, gain = 0.14f)
             oscillator(OscillatorShape.TRIANGLE, gain = 0.05f, detuneCents = -8f)
-            noise(NoiseColor.BROWN, gain = 0.022f, seed = 6_170_303L)
+            noise(NoiseColor.BROWN, gain = 0.022f, seed = 6_170_305L)
             pitch(from = 220.hz, to = 92.hz, duration = 360.ms)
             envelope(attack = 4.ms, decay = 110.ms, sustain = 0.35f, release = 320.ms)
             lowPass(cutoff = 900.hz, resonance = 0.12f)

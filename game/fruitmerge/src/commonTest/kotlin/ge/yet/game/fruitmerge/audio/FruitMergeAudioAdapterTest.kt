@@ -1,6 +1,7 @@
 package ge.yet.game.fruitmerge.audio
 
 import ge.yet.game.fruitmerge.engine.FruitLevel
+import ge.yet.game.fruitmerge.engine.Vec2
 import ge.yet.game.fruitmerge.store.FruitMergeStore
 import ge.yet.game.miniapp.audio.AudioCommandResult
 import ge.yet.game.miniapp.audio.AudioControlName
@@ -19,17 +20,37 @@ class FruitMergeAudioAdapterTest {
 
         adapter.start()
         adapter.start()
-        adapter.play(FruitMergeStore.Label.DropAccepted)
-        adapter.play(FruitMergeStore.Label.MergeResolved(FruitLevel.BLUEBERRY))
-        adapter.play(FruitMergeStore.Label.MergeResolved(FruitLevel.APPLE))
-        adapter.play(FruitMergeStore.Label.MergeResolved(FruitLevel.MELON))
-        adapter.play(FruitMergeStore.Label.ClearApplied)
-        adapter.play(FruitMergeStore.Label.ShakeApplied)
+        adapter.play(FruitMergeStore.Label.DropReleased(FruitLevel.BLUEBERRY))
+        adapter.play(FruitMergeStore.Label.FruitLanded(FruitLevel.BLUEBERRY, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.FruitLanded(FruitLevel.APPLE, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.FruitLanded(FruitLevel.WATERMELON, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.MergeResolved(FruitLevel.BLUEBERRY, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.MergeResolved(FruitLevel.APPLE, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.MergeResolved(FruitLevel.WATERMELON, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.ClearApplied(FruitLevel.BLUEBERRY, Vec2.ZERO))
+        adapter.play(FruitMergeStore.Label.ShakeStarted)
+        adapter.play(FruitMergeStore.Label.ShakePulse(0))
+        adapter.play(FruitMergeStore.Label.ShakePulse(1))
+        adapter.play(FruitMergeStore.Label.DangerEntered)
         adapter.play(FruitMergeStore.Label.ResultReached)
 
         assertEquals(1, audio.musicCalls)
         assertEquals(
-            listOf("drop", "merge_low", "merge_mid", "merge_high", "clear", "shake", "game_over"),
+            listOf(
+                "release",
+                "landing_small",
+                "landing_medium",
+                "landing_heavy",
+                "merge_low",
+                "merge_mid",
+                "merge_high",
+                "clear_slice",
+                "shake_left",
+                "shake_right",
+                "shake_left",
+                "danger_enter",
+                "game_over",
+            ),
             audio.sfxNames,
         )
     }

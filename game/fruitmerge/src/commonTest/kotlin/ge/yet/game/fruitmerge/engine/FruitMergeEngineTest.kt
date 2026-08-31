@@ -2,6 +2,7 @@ package ge.yet.game.fruitmerge.engine
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -11,18 +12,36 @@ class FruitMergeEngineTest {
 
     @Test
     fun `equal contact merges once and scores the created level`() {
-        val next = engine.step(stateWithTouching(FruitLevel.CHERRY, FruitLevel.CHERRY), 1f / 60f)
+        val next = engine.step(stateWithTouching(FruitLevel.RASPBERRY, FruitLevel.RASPBERRY), 1f / 60f)
 
         assertEquals(listOf(FruitLevel.STRAWBERRY), next.bodies.map(FruitBody::level))
         assertEquals(FruitLevel.STRAWBERRY.mergeScore, next.score)
+        assertTrue(next.bodies.single().hasJoinedPile)
+    }
+
+    @Test
+    fun `record marker requires a strict improvement and resets for a new run`() {
+        val score = FruitLevel.STRAWBERRY.mergeScore
+        val tied = engine.step(
+            stateWithTouching(FruitLevel.RASPBERRY, FruitLevel.RASPBERRY).copy(bestScore = score),
+            1f / 60f,
+        )
+        val improved = engine.step(
+            stateWithTouching(FruitLevel.RASPBERRY, FruitLevel.RASPBERRY).copy(bestScore = score - 1),
+            1f / 60f,
+        )
+
+        assertFalse(tied.bestImprovedInRun)
+        assertTrue(improved.bestImprovedInRun)
+        assertFalse(engine.newRun(improved).bestImprovedInRun)
     }
 
     @Test
     fun `two melons disappear for maximum award`() {
-        val next = engine.step(stateWithTouching(FruitLevel.MELON, FruitLevel.MELON), 1f / 60f)
+        val next = engine.step(stateWithTouching(FruitLevel.WATERMELON, FruitLevel.WATERMELON), 1f / 60f)
 
         assertTrue(next.bodies.isEmpty())
-        assertEquals(FruitLevel.MELON.mergeScore * 2, next.score)
+        assertEquals(FruitLevel.WATERMELON.mergeScore * 2, next.score)
     }
 
     @Test
@@ -118,6 +137,7 @@ class FruitMergeEngineTest {
         val dropped = engine.drop(original).state
 
         assertEquals(FruitLevel.BLUEBERRY, dropped.bodies.single().level)
+        assertFalse(dropped.bodies.single().hasJoinedPile)
         assertEquals(FruitLevel.STRAWBERRY, dropped.previewLevel)
         assertTrue(dropped.nextPreviewLevel in FruitLevel.spawnable)
         assertNotEquals(original.random, dropped.random)
@@ -160,6 +180,29 @@ class FruitMergeEngineTest {
             .drop(FruitMergeEngine.SHAKE_DURATION_STEPS - 1)
             .first()
         assertEquals(0, completed.shakeStepsRemaining)
+    }
+
+    @Test
+    fun `shake lasts two point two seconds with eleven sustained pulses`() {
+        assertEquals(132, FruitMergeEngine.SHAKE_DURATION_STEPS)
+        assertEquals(12, FruitMergeEngine.SHAKE_IMPULSE_INTERVAL_STEPS)
+
+        val body = FruitBody(1, FruitLevel.APPLE, Vec2(0.5f, 0.45f))
+        val baseline = FruitMergeState(bodies = listOf(body), nextBodyId = 2)
+        val withoutImpulse = engine.step(baseline, 1f / 60f).bodies.single().velocity
+        val firstPulse = engine.step(
+            baseline.copy(shakeStepsRemaining = FruitMergeEngine.SHAKE_DURATION_STEPS),
+            1f / 60f,
+        ).bodies.single().velocity
+        val lastPulse = engine.step(
+            baseline.copy(shakeStepsRemaining = FruitMergeEngine.SHAKE_IMPULSE_INTERVAL_STEPS),
+            1f / 60f,
+        ).bodies.single().velocity
+
+        val firstStrength = (firstPulse - withoutImpulse).length()
+        val lastStrength = (lastPulse - withoutImpulse).length()
+        assertTrue(firstStrength > 0.45f)
+        assertTrue(lastStrength > firstStrength * 0.35f)
     }
 
     @Test
@@ -224,7 +267,7 @@ class FruitMergeEngineTest {
         bodies = listOf(
             FruitBody(
                 id = 1,
-                level = FruitLevel.MELON,
+                level = FruitLevel.WATERMELON,
                 position = Vec2(0.5f, FruitMergeEngine.DANGER_Y - 0.12f),
             ),
         ),

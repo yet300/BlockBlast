@@ -55,6 +55,7 @@ class FruitMergeEngine(
             id = state.nextBodyId,
             level = state.previewLevel,
             position = Vec2(state.previewX.coerceIn(radius, 1f - radius), SPAWN_Y),
+            hasJoinedPile = false,
         )
         val nextRandom = state.random.nextInt()
         return ActionResult(
@@ -170,22 +171,34 @@ class FruitMergeEngine(
 
     private fun applyShakeImpulse(state: FruitMergeState): FruitMergeState {
         var random = state.random
+        val envelope = shakeEnvelope(state.shakeStepsRemaining)
+        val pulseIndex = (SHAKE_DURATION_STEPS - state.shakeStepsRemaining) / SHAKE_IMPULSE_INTERVAL_STEPS
+        val direction = if (pulseIndex % 2 == 0) -1f else 1f
         val shaken = state.bodies.map { body ->
-            val horizontal = random.nextInt().also { random = it.state }.value
+            val horizontalJitter = random.nextInt().also { random = it.state }.value
             val upward = random.nextInt().also { random = it.state }.value
             val spin = random.nextInt().also { random = it.state }.value
             body.copy(
                 velocity = (body.velocity + Vec2(
-                    x = signedUnit(horizontal) * MAX_SHAKE_HORIZONTAL,
-                    y = -(MIN_SHAKE_UPWARD + unit(upward) * (MAX_SHAKE_UPWARD - MIN_SHAKE_UPWARD)),
+                    x = direction * (MIN_SHAKE_HORIZONTAL + unit(horizontalJitter) *
+                        (MAX_SHAKE_HORIZONTAL - MIN_SHAKE_HORIZONTAL)) * envelope,
+                    y = -(
+                        MIN_SHAKE_UPWARD + unit(upward) * (MAX_SHAKE_UPWARD - MIN_SHAKE_UPWARD)
+                    ) * envelope,
                 )).clampLength(MAX_SHAKE_SPEED),
-                angularVelocity = (body.angularVelocity + signedUnit(spin) * MAX_SHAKE_ANGULAR)
+                angularVelocity = (
+                    body.angularVelocity + signedUnit(spin) * MAX_SHAKE_ANGULAR * envelope
+                )
                     .coerceIn(-MAX_SHAKE_ANGULAR_SPEED, MAX_SHAKE_ANGULAR_SPEED),
-                impact = max(body.impact, 0.35f),
+                impact = max(body.impact, 0.35f * envelope),
             )
         }
         return state.copy(bodies = shaken, random = random)
     }
+
+    private fun shakeEnvelope(stepsRemaining: Int): Float =
+        MIN_SHAKE_ENVELOPE + (1f - MIN_SHAKE_ENVELOPE) *
+            (stepsRemaining.toFloat() / SHAKE_DURATION_STEPS).coerceIn(0f, 1f)
 
     override fun newRun(state: FruitMergeState): FruitMergeState {
         val previewRandom = state.random.nextInt()
@@ -195,6 +208,7 @@ class FruitMergeEngine(
             nextPreviewLevel = selectSpawnLevel(nextRandom.value),
             random = nextRandom.state,
             bestScore = max(state.bestScore, state.score),
+            bestImprovedInRun = false,
             runOrdinal = if (state.runOrdinal == Long.MAX_VALUE) Long.MAX_VALUE else state.runOrdinal + 1,
         )
     }
@@ -220,8 +234,8 @@ class FruitMergeEngine(
             consumedIds += first.id
             consumedIds += second.id
             mergedAny = true
-            if (first.level == FruitLevel.MELON) {
-                score = saturatingAdd(score, FruitLevel.MELON.mergeScore * 2)
+            if (first.level == FruitLevel.WATERMELON) {
+                score = saturatingAdd(score, FruitLevel.WATERMELON.mergeScore * 2)
                 continue
             }
             val nextLevel = first.level.nextOrNull() ?: continue
@@ -237,6 +251,7 @@ class FruitMergeEngine(
                 angularVelocity = ((first.angularVelocity + second.angularVelocity) * 0.5f)
                     .coerceIn(-MAX_MERGE_ANGULAR_SPEED, MAX_MERGE_ANGULAR_SPEED),
                 impact = 1f,
+                hasJoinedPile = true,
             )
             nextBodyId += 1
             score = saturatingAdd(score, nextLevel.mergeScore)
@@ -247,6 +262,7 @@ class FruitMergeEngine(
             nextBodyId = nextBodyId,
             score = score,
             bestScore = max(state.bestScore, score),
+            bestImprovedInRun = state.bestImprovedInRun || score > state.bestScore,
             dangerSeconds = 0f,
             graceSeconds = MERGE_GRACE_SECONDS,
         )
@@ -281,20 +297,22 @@ class FruitMergeEngine(
     companion object {
         const val DANGER_Y: Float = 0.18f
         const val DROP_COOLDOWN_SECONDS: Float = 0.45f
-        const val SHAKE_DURATION_STEPS: Int = 135
-        const val SHAKE_IMPULSE_INTERVAL_STEPS: Int = 27
+        const val SHAKE_DURATION_STEPS: Int = 132
+        const val SHAKE_IMPULSE_INTERVAL_STEPS: Int = 12
 
         private const val SPAWN_Y: Float = 0.08f
         private const val DANGER_DURATION_SECONDS: Float = 1.5f
         private const val DANGER_EPSILON: Float = 0.000_1f
         private const val ACTION_GRACE_SECONDS: Float = 0.75f
         private const val MERGE_GRACE_SECONDS: Float = 0.75f
-        private const val MAX_SHAKE_HORIZONTAL: Float = 0.55f
-        private const val MIN_SHAKE_UPWARD: Float = 0.16f
-        private const val MAX_SHAKE_UPWARD: Float = 0.38f
-        private const val MAX_SHAKE_ANGULAR: Float = 4f
-        private const val MAX_SHAKE_SPEED: Float = 1.15f
-        private const val MAX_SHAKE_ANGULAR_SPEED: Float = 7f
+        private const val MIN_SHAKE_HORIZONTAL: Float = 0.72f
+        private const val MAX_SHAKE_HORIZONTAL: Float = 1.05f
+        private const val MIN_SHAKE_UPWARD: Float = 0.26f
+        private const val MAX_SHAKE_UPWARD: Float = 0.54f
+        private const val MAX_SHAKE_ANGULAR: Float = 5.5f
+        private const val MAX_SHAKE_SPEED: Float = 1.75f
+        private const val MAX_SHAKE_ANGULAR_SPEED: Float = 8f
+        private const val MIN_SHAKE_ENVELOPE: Float = 0.45f
         private const val MAX_MERGE_SPEED: Float = 2f
         private const val MAX_MERGE_ANGULAR_SPEED: Float = 6f
     }

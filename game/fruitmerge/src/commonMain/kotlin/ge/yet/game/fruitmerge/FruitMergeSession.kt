@@ -6,9 +6,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.value.Value
 import ge.yet.game.fruitmerge.session.FruitMergeSessionComponent
+import ge.yet.game.fruitmerge.ui.FruitMergeTestTags
+import ge.yet.game.fruitmerge.ui.MarketPriceTag
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
 import ge.yet.game.miniapp.compose.MiniAppInterstitialPlacement
@@ -23,13 +27,21 @@ class FruitMergeSession internal constructor(
     override fun handleBack(): Boolean = component.handleBack()
 
     @Composable
-    override fun Background(modifier: Modifier) {
-        val mode by frameMode.subscribeAsState()
-        val color = when (fruitMergeBackgroundRole(mode)) {
-            FruitMergeBackgroundRole.PLAYING -> MaterialTheme.colorScheme.background
-            FruitMergeBackgroundRole.RESULT -> MaterialTheme.colorScheme.primaryContainer
+    override fun TopBarContent() {
+        val model by component.game.model.subscribeAsState()
+        if (model.initialized) {
+            MarketPriceTag(
+                score = model.game.score,
+                bestScore = model.game.bestScore,
+                bestImprovedInRun = model.game.bestImprovedInRun,
+                modifier = Modifier.semantics { testTag = FruitMergeTestTags.PriceTag },
+            )
         }
-        Box(modifier = modifier.background(color))
+    }
+
+    @Composable
+    override fun Background(modifier: Modifier) {
+        Box(modifier = modifier.background(MaterialTheme.colorScheme.background))
     }
 
     @Composable
@@ -50,11 +62,8 @@ class FruitMergeSession internal constructor(
 }
 
 internal enum class FruitMergeBackgroundRole {
-    PLAYING,
-    RESULT,
+    MARKET,
 }
 
-internal fun fruitMergeBackgroundRole(mode: MiniAppFrameMode): FruitMergeBackgroundRole = when (mode) {
-    MiniAppFrameMode.Standard -> FruitMergeBackgroundRole.PLAYING
-    MiniAppFrameMode.ContentOnly -> FruitMergeBackgroundRole.RESULT
-}
+internal fun fruitMergeBackgroundRole(@Suppress("UNUSED_PARAMETER") mode: MiniAppFrameMode):
+    FruitMergeBackgroundRole = FruitMergeBackgroundRole.MARKET

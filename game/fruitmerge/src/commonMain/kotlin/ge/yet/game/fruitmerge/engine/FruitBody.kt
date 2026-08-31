@@ -29,4 +29,7 @@ data class FruitBody(
     val angle: Float = 0f,
     val angularVelocity: Float = 0f,
     val impact: Float = 0f,
+    val hasJoinedPile: Boolean = false,
+    val wallGripSecondsRemaining: Float = 0f,
+    val shockAvailable: Boolean = level == FruitLevel.WATERMELON,
 )

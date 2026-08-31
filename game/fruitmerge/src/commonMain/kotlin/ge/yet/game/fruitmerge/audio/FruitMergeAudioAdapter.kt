@@ -20,28 +20,51 @@ internal class FruitMergeAudioAdapter(
 
     fun play(label: FruitMergeStore.Label) {
         val name = when (label) {
-            FruitMergeStore.Label.DropAccepted -> FruitMergeAudio.Drop
+            is FruitMergeStore.Label.DropReleased -> FruitMergeAudio.Release
+            is FruitMergeStore.Label.FruitLanded -> landingSfx(label.level)
             is FruitMergeStore.Label.MergeResolved -> mergeSfx(label.level)
-            FruitMergeStore.Label.ClearApplied -> FruitMergeAudio.Clear
-            FruitMergeStore.Label.ShakeApplied -> FruitMergeAudio.Shake
+            is FruitMergeStore.Label.ClearApplied -> FruitMergeAudio.ClearSlice
+            FruitMergeStore.Label.ShakeStarted -> FruitMergeAudio.ShakeLeft
+            is FruitMergeStore.Label.ShakePulse -> if (label.index % 2 == 0) {
+                FruitMergeAudio.ShakeRight
+            } else {
+                FruitMergeAudio.ShakeLeft
+            }
+            FruitMergeStore.Label.DangerEntered -> FruitMergeAudio.DangerEnter
             FruitMergeStore.Label.ResultReached -> FruitMergeAudio.GameOver
         }
         playSfx(name)
     }
 
+    private fun landingSfx(level: FruitLevel): SfxName = when (level) {
+        FruitLevel.BLUEBERRY,
+        FruitLevel.RASPBERRY,
+        FruitLevel.STRAWBERRY,
+        FruitLevel.LIME,
+        -> FruitMergeAudio.LandingSmall
+        FruitLevel.MANDARIN,
+        FruitLevel.APPLE,
+        FruitLevel.PEAR,
+        -> FruitMergeAudio.LandingMedium
+        FruitLevel.PEACH,
+        FruitLevel.PINEAPPLE,
+        FruitLevel.WATERMELON,
+        -> FruitMergeAudio.LandingHeavy
+    }
+
     private fun mergeSfx(level: FruitLevel): SfxName = when (level) {
         FruitLevel.BLUEBERRY,
-        FruitLevel.CHERRY,
+        FruitLevel.RASPBERRY,
         FruitLevel.STRAWBERRY,
         -> FruitMergeAudio.MergeLow
-        FruitLevel.PLUM,
+        FruitLevel.LIME,
         FruitLevel.MANDARIN,
         FruitLevel.APPLE,
         FruitLevel.PEAR,
         -> FruitMergeAudio.MergeMid
         FruitLevel.PEACH,
         FruitLevel.PINEAPPLE,
-        FruitLevel.MELON,
+        FruitLevel.WATERMELON,
         -> FruitMergeAudio.MergeHigh
     }
 

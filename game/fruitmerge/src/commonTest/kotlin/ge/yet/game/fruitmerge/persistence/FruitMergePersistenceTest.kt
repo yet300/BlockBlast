@@ -22,7 +22,7 @@ class FruitMergePersistenceTest {
         val storage = MutableMiniAppStorage()
         val persistence = FruitMergePersistence(storage)
         val state = FruitMergeState(
-            previewLevel = FruitLevel.PLUM,
+            previewLevel = FruitLevel.LIME,
             score = 400,
             bestScore = 900,
             freeClears = 1,
@@ -54,5 +54,11 @@ class FruitMergePersistenceTest {
         FruitMergePersistence(storage).markTutorialSeen()
 
         assertTrue(FruitMergePersistence(storage).isTutorialSeen())
+    }
+
+    @Test
+    fun `schema two accepts a version one identity migration`() {
+        assertEquals(2, FruitMergeSnapshotSpec.currentVersion)
+        assertTrue(1 in FruitMergeSnapshotSpec.migrations)
     }
 }

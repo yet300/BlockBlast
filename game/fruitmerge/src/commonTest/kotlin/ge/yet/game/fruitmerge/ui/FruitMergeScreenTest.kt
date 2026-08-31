@@ -8,7 +8,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -18,12 +20,15 @@ import com.arkivanov.decompose.value.Value
 import ge.yet.game.fruitmerge.engine.FruitBody
 import ge.yet.game.fruitmerge.engine.FruitLevel
 import ge.yet.game.fruitmerge.engine.FruitMergeState
+import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.engine.Vec2
 import ge.yet.game.fruitmerge.session.FruitMergeComponent
 import ge.yet.game.fruitmerge.session.PaidAction
 import ge.yet.game.fruitmerge.session.PaidActionToken
 import ge.yet.game.fruitmerge.session.TutorialStep
 import ge.yet.game.uikit.theme.LogicaTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -48,6 +53,7 @@ class FruitMergeScreenTest {
         onNodeWithTag(FruitMergeTestTags.Next).assertIsDisplayed()
         onNodeWithTag(FruitMergeTestTags.Shake).performClick()
         assertEquals(1, component.shakeRequests)
+        assertEquals(0, component.dropCalls)
     }
 
     @Test
@@ -66,6 +72,50 @@ class FruitMergeScreenTest {
         }
 
         onNodeWithTag(FruitMergeTestTags.Shake).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `market price tag is compact and exact for accessibility`() = runComposeUiTest {
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(Modifier.size(390.dp, 760.dp)) {
+                    MarketPriceTag(score = 1_250, bestScore = 2_000_000)
+                }
+            }
+        }
+
+        onNodeWithText("1.2K").assertIsDisplayed()
+        onNodeWithText("2M").assertIsDisplayed()
+        onNodeWithContentDescription("Score 1250").assertIsDisplayed()
+        onNodeWithContentDescription("Best 2000000").assertIsDisplayed()
+    }
+
+    @Test
+    fun `game over is an in screen state and new game stays owned by the game component`() = runComposeUiTest {
+        val base = playingModel()
+        val component = FakeFruitMergeComponent(
+            base.copy(
+                game = base.game.copy(
+                    score = 12_500,
+                    bestScore = 20_000,
+                    phase = RunPhase.RESULT,
+                ),
+            ),
+        )
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(Modifier.size(390.dp, 760.dp)) {
+                    FruitMergeScreen(component, {}, {})
+                }
+            }
+        }
+
+        onNodeWithTag(FruitMergeTestTags.Result).assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.ResultScore).assertIsDisplayed()
+        onNodeWithTag(FruitMergeTestTags.NewGame).performClick()
+
+        assertEquals(1, component.newGameCalls)
+        assertEquals(0, component.dropCalls)
     }
 
     @Test
@@ -126,9 +176,30 @@ class FruitMergeScreenTest {
     }
 
     @Test
+    fun `drop input is disabled while the engine cooldown is active`() = runComposeUiTest {
+        val base = playingModel()
+        val component = FakeFruitMergeComponent(
+            base.copy(game = base.game.copy(dropCooldownSeconds = 0.20f)),
+        )
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(Modifier.size(390.dp, 760.dp)) {
+                    FruitMergeScreen(component, {}, {})
+                }
+            }
+        }
+
+        onNodeWithTag(FruitMergeTestTags.Viewport).performTouchInput {
+            click(Offset(20f, 20f))
+        }
+
+        assertEquals(0, component.dropCalls)
+    }
+
+    @Test
     fun `tutorial stays pass through while skip remains actionable`() = runComposeUiTest {
         val component = FakeFruitMergeComponent(
-            playingModel().copy(tutorialStep = TutorialStep.Tap),
+            playingModel().copy(tutorialStep = TutorialStep.Gesture),
         )
         setContent {
             LogicaTheme(darkTheme = false) {
@@ -165,6 +236,7 @@ private class FakeFruitMergeComponent(
 ) : FruitMergeComponent {
     private val mutableModel = MutableValue(initial)
     override val model: Value<FruitMergeComponent.Model> = mutableModel
+    override val presentationEvents: Flow<FruitMergeComponent.PresentationEvent> = emptyFlow()
 
     var clearRequests = 0
     var shakeRequests = 0
@@ -200,6 +272,8 @@ private class FakeFruitMergeComponent(
     override fun skipTutorial() {
         skipTutorialCalls += 1
     }
+
+    override fun completeTutorial() = Unit
 
     override fun handleBack(): Boolean = false
 }

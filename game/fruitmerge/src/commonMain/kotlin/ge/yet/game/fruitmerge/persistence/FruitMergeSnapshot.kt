@@ -23,13 +23,15 @@ internal data class FruitBodySnapshot(
     val velocityY: Float,
     val angle: Float,
     val angularVelocity: Float,
+    val wallGripSecondsRemaining: Float = 0f,
+    val shockAvailable: Boolean = false,
 )
 
 @Serializable
 internal data class FruitMergeSnapshot(
     val bodies: List<FruitBodySnapshot>,
     val previewLevel: String,
-    val nextPreviewLevel: String = FruitLevel.CHERRY.name,
+    val nextPreviewLevel: String = FruitLevel.RASPBERRY.name,
     val previewX: Float,
     val randomBits: Long,
     val nextBodyId: Long,
@@ -41,6 +43,7 @@ internal data class FruitMergeSnapshot(
     val runOrdinal: Long,
     val phase: String,
     val shakeStepsRemaining: Int = 0,
+    val bestImprovedInRun: Boolean = false,
 ) {
     fun toState(bestScore: Long): FruitMergeState {
         require(bodies.size <= MAX_BODIES)
@@ -51,8 +54,8 @@ internal data class FruitMergeSnapshot(
         require(graceSeconds.isFinite() && graceSeconds in 0f..MAX_GRACE_SECONDS)
         require(shakeStepsRemaining in 0..FruitMergeEngine.SHAKE_DURATION_STEPS)
         require(runOrdinal > 0L)
-        val restoredPreview = requireNotNull(FruitLevel.entries.firstOrNull { it.name == previewLevel })
-        val restoredNextPreview = requireNotNull(FruitLevel.entries.firstOrNull { it.name == nextPreviewLevel })
+        val restoredPreview = requireNotNull(FruitLevel.fromPersistedName(previewLevel))
+        val restoredNextPreview = requireNotNull(FruitLevel.fromPersistedName(nextPreviewLevel))
         require(restoredPreview in FruitLevel.spawnable)
         require(restoredNextPreview in FruitLevel.spawnable)
         require(previewX.isFinite())
@@ -72,6 +75,7 @@ internal data class FruitMergeSnapshot(
             nextBodyId = nextBodyId,
             score = score,
             bestScore = max(bestScore, score),
+            bestImprovedInRun = bestImprovedInRun,
             freeClears = freeClears,
             freeShakes = freeShakes,
             dangerSeconds = dangerSeconds,
@@ -99,16 +103,19 @@ internal data class FruitMergeSnapshot(
             shakeStepsRemaining = state.shakeStepsRemaining,
             runOrdinal = state.runOrdinal,
             phase = state.phase.name,
+            bestImprovedInRun = state.bestImprovedInRun,
         )
     }
 }
 
 private fun FruitBodySnapshot.toBody(): FruitBody {
     require(id > 0L)
-    val restoredLevel = requireNotNull(FruitLevel.entries.firstOrNull { it.name == level })
+    val restoredLevel = requireNotNull(FruitLevel.fromPersistedName(level))
     require(x.isFinite() && y.isFinite())
     require(velocityX.isFinite() && velocityY.isFinite())
     require(angle.isFinite() && angularVelocity.isFinite())
+    require(wallGripSecondsRemaining.isFinite())
+    require(wallGripSecondsRemaining in 0f..MAX_WALL_GRIP_SECONDS)
     require(x in restoredLevel.radius - WORLD_TOLERANCE..1f - restoredLevel.radius + WORLD_TOLERANCE)
     require(y in -MAX_LEVEL_RADIUS - WORLD_TOLERANCE..1f - restoredLevel.radius + WORLD_TOLERANCE)
     require(abs(velocityX) <= MAX_RESTORE_SPEED && abs(velocityY) <= MAX_RESTORE_SPEED)
@@ -120,6 +127,9 @@ private fun FruitBodySnapshot.toBody(): FruitBody {
         velocity = Vec2(velocityX, velocityY),
         angle = angle,
         angularVelocity = angularVelocity,
+        hasJoinedPile = true,
+        wallGripSecondsRemaining = wallGripSecondsRemaining,
+        shockAvailable = shockAvailable,
     )
 }
 
@@ -132,11 +142,14 @@ private fun FruitBody.toSnapshot(): FruitBodySnapshot = FruitBodySnapshot(
     velocityY = velocity.y,
     angle = angle,
     angularVelocity = angularVelocity,
+    wallGripSecondsRemaining = wallGripSecondsRemaining,
+    shockAvailable = shockAvailable,
 )
 
 private const val WORLD_TOLERANCE: Float = 0.02f
 private const val MAX_LEVEL_RADIUS: Float = 0.21f
 private const val MAX_RESTORE_SPEED: Float = 4f
 private const val MAX_RESTORE_ANGULAR_SPEED: Float = 10f
+private const val MAX_WALL_GRIP_SECONDS: Float = 0.5f
 private const val MAX_DANGER_SECONDS: Float = 1.6f
 private const val MAX_GRACE_SECONDS: Float = 0.8f
