@@ -53,6 +53,8 @@ class CreateMiniAppTaskTest {
         val component = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeComponent.kt").readText()
         assertContains(component, "componentContext.lifecycle.doOnDestroy")
         assertContains(target.resolve("AGENTS.md").readText(), "not shipped until a maintainer adds it to the production allowlist")
+        assertContains(target.resolve("AGENTS.md").readText(), "docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md")
+        assertContains(target.resolve("AGENTS.md").readText(), ":game:snake:verifyMiniApp")
     }
 
     @Test
@@ -63,6 +65,10 @@ class CreateMiniAppTaskTest {
             true,
             target.resolve("src/commonMain/kotlin/ge/yet/sample/counter/CounterPlugin.kt").readText()
                 .contains("import ge.yet.miniapp.samples.counter.generated.resources.Res"),
+        )
+        assertContains(
+            target.resolve("AGENTS.md").readText(),
+            "../../../docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md",
         )
     }
 
@@ -84,8 +90,64 @@ class CreateMiniAppTaskTest {
         assertContains(contract, "MiniAppContractAssertions.assertRetainedGraphSession")
         assertContains(contract, "import ge.yet.game.miniapp.audio.presets.PlacementClick")
         assertContains(contract, "val sharedSfx = PlacementClick()")
-        assertContains(contract, "assertNotNull(context.audio)")
+        assertContains(contract, "import ge.yet.game.miniapp.testkit.withMiniAppSession")
+        assertContains(contract, "assertNotNull(harness.context.audio)")
         assertEquals(false, contract.contains("playSfx("))
+    }
+
+    @Test
+    fun `game profile renders a typed state action engine and component tests`() {
+        val target = temporaryFolder.newFolder("snake-game-profile")
+        MiniAppScaffoldRenderer(
+            id = "game.snake",
+            displayName = "Snake",
+            projectPath = ":game:snake",
+            profile = MiniAppScaffoldProfile.GAME,
+        ).writeTo(target)
+
+        assertEquals(
+            setOf(
+                "src/commonMain/kotlin/ge/yet/game/snake/SnakeGameState.kt",
+                "src/commonMain/kotlin/ge/yet/game/snake/SnakeGameEngine.kt",
+                "src/commonTest/kotlin/ge/yet/game/snake/SnakeGameEngineTest.kt",
+                "src/commonTest/kotlin/ge/yet/game/snake/SnakeComponentTest.kt",
+            ),
+            target.walkTopDown().filter(File::isFile).mapNotNull { file ->
+                file.relativeTo(target).invariantSeparatorsPath.takeIf {
+                    it.contains("SnakeGame") || it.contains("SnakeComponentTest")
+                }
+            }.toSet(),
+        )
+
+        val state = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeGameState.kt").readText()
+        assertContains(state, "data class SnakeGameState")
+        assertContains(state, "sealed interface SnakeGameAction")
+        assertContains(state, "data object Reset")
+
+        val engine = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeGameEngine.kt").readText()
+        assertContains(engine, "interface SnakeGameEngine")
+        assertContains(engine, "fun reduce(state: SnakeGameState, action: SnakeGameAction)")
+        assertContains(engine, "SnakeGameAction.Reset -> SnakeGameState()")
+        assertContains(engine, "SnakeGameAction.Tick -> state")
+
+        val component = target.resolve("src/commonMain/kotlin/ge/yet/game/snake/SnakeComponent.kt").readText()
+        assertContains(component, "fun dispatch(action: SnakeGameAction)")
+        assertContains(component, "private val engine: SnakeGameEngine")
+        assertContains(component, "engine.reduce(current.state, action)")
+
+        assertContains(
+            target.resolve("AGENTS.md").readText(),
+            "pure state/action/engine seam",
+        )
+    }
+
+    @Test
+    fun `unknown scaffold profile is rejected with the supported values`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            MiniAppScaffoldProfile.from("arcade")
+        }
+
+        assertContains(failure.message.orEmpty(), "basic or game")
     }
 
     @Test
@@ -97,8 +159,10 @@ class CreateMiniAppTaskTest {
         """)
         fixture.run(
             "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
+            "-PminiAppProfile=game",
             "--configuration-cache", "--configuration-cache-problems=fail",
         )
+        fixture.run(":verifyMiniApp", "--configuration-cache", "--configuration-cache-problems=fail")
         val projects = fixture.run("projects")
         assertContains(projects.output, ":game:snake")
         val bundle = fixture.run(":miniapp:bundle:verifyMiniAppBundle")
@@ -140,6 +204,7 @@ class CreateMiniAppTaskTest {
         """)
         fixture.run(
             "createMiniApp", "-PminiAppId=game.snake", "-PminiAppName=Snake",
+            "-PminiAppProfile=game",
             "--configuration-cache", "--configuration-cache-problems=fail",
         )
         val compile = fixture.run(

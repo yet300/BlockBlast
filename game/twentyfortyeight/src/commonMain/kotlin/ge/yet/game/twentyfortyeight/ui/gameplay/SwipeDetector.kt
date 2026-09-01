@@ -24,13 +24,11 @@ internal data class SwipeConfig(
     val distanceThresholdPx: Float,
     val velocityThresholdPxPerSecond: Float,
     val touchSlopPx: Float,
-    val axisDominanceRatio: Float,
 ) {
     init {
         require(distanceThresholdPx.isFinite() && distanceThresholdPx > 0f)
         require(velocityThresholdPxPerSecond.isFinite() && velocityThresholdPxPerSecond > 0f)
         require(touchSlopPx.isFinite() && touchSlopPx >= 0f)
-        require(axisDominanceRatio.isFinite() && axisDominanceRatio > 1f)
     }
 }
 
@@ -64,11 +62,7 @@ internal fun resolveGesture(
     val locked = crossedDistance || (crossedTouchSlop && crossedVelocity)
     if (!locked) return GestureDecision.PendingTap
     val resolved = if (crossedDistance) delta else Offset(velocity.x, velocity.y)
-    val horizontal = when {
-        abs(resolved.x) >= abs(resolved.y) * config.axisDominanceRatio -> true
-        abs(resolved.y) >= abs(resolved.x) * config.axisDominanceRatio -> false
-        else -> return GestureDecision.PendingTap
-    }
+    val horizontal = abs(resolved.x) >= abs(resolved.y)
     if (!horizontal && startRegion == SwipeStartRegion.VerticalScrollSupport) {
         return GestureDecision.DelegateVerticalScroll
     }
@@ -130,7 +124,6 @@ internal fun Modifier.detectTwentyFortyEightSwipes(
                 ),
                 velocityThresholdPxPerSecond = velocityThreshold,
                 touchSlopPx = touchSlop,
-                axisDominanceRatio = AXIS_DOMINANCE_RATIO,
             )
             val tracker = VelocityTracker()
             tracker.addPosition(down.uptimeMillis, down.position)
@@ -172,4 +165,3 @@ internal fun Modifier.detectTwentyFortyEightSwipes(
 }
 
 private const val DISTANCE_FRACTION = 0.05f
-private const val AXIS_DOMINANCE_RATIO = 1.2f

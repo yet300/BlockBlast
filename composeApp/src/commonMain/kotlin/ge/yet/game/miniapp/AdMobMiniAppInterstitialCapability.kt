@@ -19,7 +19,12 @@ internal class AdMobMiniAppInterstitialCapability : MiniAppInterstitialCapabilit
     override fun rememberGate(
         placement: MiniAppInterstitialPlacement,
     ): MiniAppInterstitialGate {
-        require(placement == MiniAppInterstitialPlacement.CONTINUE_AFTER_GAME_OVER)
+        when (placement) {
+            MiniAppInterstitialPlacement.CONTINUE_AFTER_GAME_OVER,
+            MiniAppInterstitialPlacement.FRUIT_MERGE_CLEAR,
+            MiniAppInterstitialPlacement.FRUIT_MERGE_SHAKE,
+            -> Unit
+        }
         val state = LocalMonetizationState.current
         val presenter = rememberGameOverInterstitial()
         return remember(state.canShowAds, presenter) {

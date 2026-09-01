@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "game.fruitmerge",
+  "displayName": "Fruit Merge",
+  "category": "game",
+  "authors": ["Logica contributors", "OpenAI Codex"],
+  "summary": "Drop expressive fruit, combine matching pairs, and manage the pile without crossing the danger line.",
+  "rules": "Drop fruit into a bounded container. Equal fruit merge into the next original level and award score. Two maximum-level melons disappear for a bonus. A fruit continuously above the danger line for 1.5 seconds ends the run.",
+  "controls": [
+    {"input": "Tap anywhere in the game viewport", "action": "Drop at that horizontal position"},
+    {"input": "Drag anywhere in the game viewport, then release", "action": "Choose the horizontal position and drop"},
+    {"input": "Clear, then fruit", "action": "Remove one fruit"},
+    {"input": "Shake", "action": "Apply bounded impulses to the settled pile"}
+  ],
+  "sessionFlow": ["Show the persisted two-step tutorial on first launch", "Start or restore a run", "Drop and merge fruit", "Use bounded actions", "Navigate to the Decompose result screen after sustained overflow", "Start a new run"],
+  "platforms": {"android": true, "ios": true, "orientations": ["portrait", "landscape"], "deviceClasses": ["phone", "tablet"]},
+  "accessibility": {
+    "announcements": "Expose the changing score, body count, danger state, clear instruction, and result through semantics.",
+    "focus": "Preserve pane identity across adaptive rearrangement and keep every action in the supporting scroll path.",
+    "labels": "Label the board summary, next fruit, action counts, advertising actions, loading state, and result controls.",
+    "reducedMotion": "Disable optional blinking, targeting pulses, tutorial gesture loops, completion particles, and ambient result motion while retaining deterministic gameplay physics."
+  },
+  "visualStyle": {"description": "Original warm orchard palette with matte vector fruit, highlights, leaves, blush, and expressive faces.", "references": []},
+  "audioStyle": {"description": "Original 84 BPM procedural fruit-crate groove with wooden knocks, rolling textures, glass accents, and deterministic event SFX.", "references": []},
+  "storage": {"values": [{"name": "best_score", "type": "long", "default": 0}, {"name": "game_snapshot", "type": "snapshot", "default": null}, {"name": "tutorial_seen", "type": "boolean", "default": false}], "resetBehavior": "All values are removed by the host-owned MiniApp namespace reset."},
+  "capabilities": ["interstitial"],
+  "rights": {"classification": "new_expression", "evidence": ["All code and Canvas art are original to this repository; only genre-level rules were referenced."]},
+  "provenance": {
+    "code": ["Original Kotlin and Compose implementation in :game:fruitmerge"],
+    "art": ["Original runtime Canvas primitives and original vector icon"],
+    "audio": ["Original immutable procedural declarations rendered through the public MiniApp audio API; no recorded assets"],
+    "fonts": [],
+    "references": [],
+    "licenses": [],
+    "ai": {"used": true, "tools": ["OpenAI Codex"], "promptArchive": "../../docs/superpowers/specs/2026-08-30-fruit-merge-ux-polish-design.md"}
+  },
+  "acceptanceScenarios": [
+    {"name": "Merge", "given": "Two equal fruit touch", "when": "The fixed step resolves", "then": "They become one next-level fruit and score increases once"},
+    {"name": "Overflow grace", "given": "A fruit briefly crosses the danger line", "when": "It falls below before 1.5 seconds", "then": "The run continues"},
+    {"name": "Clear gate", "given": "Five free clears are spent", "when": "Clear is requested again", "then": "The ad gate completes before one target opportunity"},
+    {"name": "Shake gate", "given": "Three free shakes are spent", "when": "Shake is requested again", "then": "The ad gate completes before one bounded shake"},
+    {"name": "Drop pacing", "given": "A fruit drop was accepted", "when": "Another drop is requested within 450 ms of fixed simulation time", "then": "The second drop is rejected without consuming or spawning a fruit"},
+    {"name": "First-launch tutorial", "given": "Tutorial state has not been persisted", "when": "One accepted tap drop and one accepted drag drop are completed", "then": "The overlay disappears and tutorial_seen is persisted"}
+  ],
+  "knownLimitations": ["Circle-based collision geometry", "No online leaderboard or multiplayer", "Procedural synthesis only; no user-selectable music tracks"]
+}

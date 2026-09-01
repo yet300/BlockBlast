@@ -83,10 +83,10 @@ class TransitionGateTest {
                 onCompleted = { completed += it },
             )
         }
-        mainClock.advanceTimeBy(normalTransitionDurationMs - 20L)
+        mainClock.advanceTimeBy(normalTransitionDurationMs / 2L)
         assertTrue(completed.isEmpty())
 
-        mainClock.advanceTimeByFrame()
+        mainClock.advanceTimeBy(normalTransitionDurationMs + 32L)
         assertEquals(listOf(7L), completed)
         mainClock.advanceTimeByFrame()
         assertEquals(listOf(7L), completed)

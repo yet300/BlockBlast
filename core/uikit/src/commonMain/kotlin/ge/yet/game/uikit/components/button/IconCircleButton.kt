@@ -14,10 +14,12 @@ fun IconCircleButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     IconButton(
         onClick = onClick,
         modifier = modifier,
+        enabled = enabled,
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,

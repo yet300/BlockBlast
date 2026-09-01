@@ -5,6 +5,8 @@ import androidx.compose.runtime.Immutable
 
 enum class MiniAppInterstitialPlacement {
     CONTINUE_AFTER_GAME_OVER,
+    FRUIT_MERGE_CLEAR,
+    FRUIT_MERGE_SHAKE,
 }
 
 @Immutable

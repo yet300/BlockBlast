@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "submission.schema.json",
+  "title": "Logica MiniApp submission",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "displayName",
+    "category",
+    "authors",
+    "summary",
+    "rules",
+    "controls",
+    "sessionFlow",
+    "platforms",
+    "accessibility",
+    "visualStyle",
+    "audioStyle",
+    "storage",
+    "capabilities",
+    "rights",
+    "provenance",
+    "acceptanceScenarios",
+    "knownLimitations"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$"
+    },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "category": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "rules": { "type": "string", "minLength": 1 },
+    "controls": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/control" }
+    },
+    "sessionFlow": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "platforms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["android", "ios", "orientations", "deviceClasses"],
+      "properties": {
+        "android": { "type": "boolean" },
+        "ios": { "type": "boolean" },
+        "orientations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["portrait", "landscape"] }
+        },
+        "deviceClasses": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["phone", "tablet", "desktop"] }
+        }
+      }
+    },
+    "accessibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["announcements", "focus", "labels", "reducedMotion"],
+      "properties": {
+        "announcements": { "type": "string", "minLength": 1 },
+        "focus": { "type": "string", "minLength": 1 },
+        "labels": { "type": "string", "minLength": 1 },
+        "reducedMotion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "visualStyle": { "$ref": "#/$defs/style" },
+    "audioStyle": { "$ref": "#/$defs/style" },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["values", "resetBehavior"],
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/storageValue" }
+        },
+        "resetBehavior": { "type": "string", "minLength": 1 }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "enum": ["interstitial", "reviewOpportunity", "hostToolbarContent"]
+      },
+      "uniqueItems": true
+    },
+    "rights": { "$ref": "#/$defs/rights" },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "art", "audio", "fonts", "references", "licenses", "ai"],
+      "properties": {
+        "code": { "type": "array", "items": { "type": "string" } },
+        "art": { "type": "array", "items": { "type": "string" } },
+        "audio": { "type": "array", "items": { "type": "string" } },
+        "fonts": { "type": "array", "items": { "type": "string" } },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "licenses": { "type": "array", "items": { "type": "string" } },
+        "ai": { "$ref": "#/$defs/aiProvenance" }
+      }
+    },
+    "acceptanceScenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scenario" }
+    },
+    "knownLimitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "action"],
+      "properties": {
+        "input": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 }
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "references"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "references": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "storageValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "default"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "type": { "enum": ["boolean", "int", "long", "string", "snapshot"] },
+        "default": {}
+      }
+    },
+    "aiProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["used", "tools", "promptArchive"],
+      "properties": {
+        "used": { "type": "boolean" },
+        "tools": { "type": "array", "items": { "type": "string" } },
+        "promptArchive": { "type": "string" }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "evidence"],
+      "properties": {
+        "classification": {
+          "enum": ["original", "new_expression", "existing_or_licensed"]
+        },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "proposalIssue": { "type": "string", "format": "uri" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "classification": { "const": "existing_or_licensed" }
+            },
+            "required": ["classification"]
+          },
+          "then": { "required": ["proposalIssue"] }
+        }
+      ]
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "given", "when", "then"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "given": { "type": "string", "minLength": 1 },
+        "when": { "type": "string", "minLength": 1 },
+        "then": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

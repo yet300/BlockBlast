@@ -3,8 +3,8 @@
 <img src="picture/app_icon.png" width="180" alt="App icon" />
 
 A Kotlin Multiplatform MiniApp catalog for Android and iOS. The production
-build currently ships Block Blast; additional games and apps are independent
-Gradle modules reviewed and allowlisted at build time.
+bundle currently includes Block Blast and 2048; additional games and apps are
+independent Gradle modules reviewed and allowlisted at build time.
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue.svg)
 ![Compose](https://img.shields.io/badge/Compose-1.11.1-green.svg)
@@ -76,8 +76,8 @@ BlockBlast/
 │   ├── review/      # App review policy
 │   └── settings/    # Host settings
 ├── game/
-│   ├── blockblast/       # Shipped Block Blast MiniApp
-│   └── twentyfortyeight/ # Discovered, unshipped 2048 MiniApp
+│   ├── blockblast/       # Allowlisted Block Blast MiniApp
+│   └── twentyfortyeight/ # Allowlisted 2048 MiniApp
 ├── miniapp/
 │   ├── api/         # Stable Compose-free contracts
 │   ├── compose/     # Plugin, manifest, session and frame contracts
@@ -137,20 +137,28 @@ allowlist automatically.
 
 ```bash
 ./gradlew createMiniApp -PminiAppId=game.snake -PminiAppName=Snake
-./gradlew :game:snake:allTests :game:snake:validateMiniAppDependencies
+./gradlew :game:snake:verifyMiniApp
 ```
+
+For a game-oriented starting point with immutable state, typed actions, a pure
+engine seam and focused component tests, add `-PminiAppProfile=game` to the
+first command. The default profile is intentionally smaller and keeps the
+existing basic scaffold behavior.
 
 The first command creates reviewable source. The next Gradle invocation
 discovers `game/*` and `miniapp/samples/*`, but discovery does not ship a
-plugin. After review, a maintainer adds exactly one matching entry to the root
-`miniApps` allowlist. The catalog is compiled into the app; there is no server,
-runtime download or remote code loading.
+plugin. `verifyMiniApp` checks the module boundary, tests and Android/iOS
+compilation. After review, a maintainer adds exactly one matching entry to the
+root `miniApps` allowlist. The catalog is compiled into the app; there is no
+server, runtime download or remote code loading.
 
 The stable policy and rationale are recorded in
 [ADR-0001: MiniApp Contribution and Shipping Workflow](docs/adr/0001-miniapp-contribution-and-shipping.md).
-The current agent-level architecture and verification rules are in
-[AGENTS.md](AGENTS.md). Detailed human and AI contributor guides will follow
-the approved [contributor pipeline design](docs/superpowers/specs/2026-08-23-miniapp-contributor-pipeline-design.md).
+Use the [human MiniApp contributor guide](CONTRIBUTING_MINIAPP.md) for the
+end-to-end workflow and the [AI contributor protocol](docs/miniapp/AI_CONTRIBUTOR_PROTOCOL.md)
+for deterministic agent behavior. The current agent-level architecture and
+verification rules are in [AGENTS.md](AGENTS.md). The guides implement the
+approved [contributor pipeline design](docs/superpowers/specs/2026-08-23-miniapp-contributor-pipeline-design.md).
 
 Plugins depend only on MiniApp contracts, approved inward core contracts and
 typed host capabilities. Root owns Catalog/Running navigation, Back,

@@ -66,6 +66,7 @@ class MiniAppConventionPluginTest {
                             configurations.getByName("commonTestImplementation").dependencies.filterIsInstance<org.gradle.api.artifacts.ProjectDependency>().map { it.path }.sorted(),
                             tasks.getByName("check").taskDependencies.getDependencies(tasks.getByName("check")).map { it.name }.contains("validateMiniAppDependencies"),
                             tasks.getByName("allTests").taskDependencies.getDependencies(tasks.getByName("allTests")).map { it.name }.contains("validateMiniAppDependencies"),
+                            tasks.getByName("verifyMiniApp").taskDependencies.getDependencies(tasks.getByName("verifyMiniApp")).map { it.name }.sorted(),
                 )
                 tasks.register("probeConvention") { doLast { println("PROBE=" + probe) } }
             """,
@@ -73,7 +74,7 @@ class MiniAppConventionPluginTest {
         val first = project.run(":game:blockblast:probeConvention")
         project.run(":game:blockblast:validateMiniAppDependencies", "--configuration-cache", "--configuration-cache-problems=fail")
         val second = project.run(":game:blockblast:validateMiniAppDependencies", "--configuration-cache", "--configuration-cache-problems=fail")
-        assertContains(first.output, "PROBE=[true, true, true, true, true, true, true, true, true, false, ge.yet.game.blockblast.generated.resources, [:miniapp:metro], [:miniapp:audio-presets], true, true, true, true, [:miniapp:testkit], true, true]")
+        assertContains(first.output, "PROBE=[true, true, true, true, true, true, true, true, true, false, ge.yet.game.blockblast.generated.resources, [:miniapp:metro], [:miniapp:audio-presets], true, true, true, true, [:miniapp:testkit], true, true, [allTests, compileAndroidMain, compileKotlinIosSimulatorArm64, validateMiniAppDependencies]]")
         assertContains(second.output, "Reusing configuration cache")
     }
 }

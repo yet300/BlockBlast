@@ -45,6 +45,11 @@ internal enum class AdaptiveGameArrangement {
     CompactHeightTwoPane,
 }
 
+enum class AdaptiveGameLayoutPolicy {
+    Adaptive,
+    CenteredVertical,
+}
+
 internal data class AdaptiveGameMetrics(
     val arrangement: AdaptiveGameArrangement,
     val primaryMaxDp: Int,
@@ -106,9 +111,15 @@ internal fun adaptiveGameMetrics(
 fun AdaptiveGameScaffold(
     modifier: Modifier = Modifier,
     supportingPaneModifier: Modifier = Modifier,
+    layoutPolicy: AdaptiveGameLayoutPolicy = AdaptiveGameLayoutPolicy.Adaptive,
+    verticalPrimaryWeight: Float = 2f,
+    verticalSupportingWeight: Float = 1f,
+    header: @Composable ColumnScope.() -> Unit = {},
     primary: @Composable BoxScope.() -> Unit,
     supporting: @Composable ColumnScope.() -> Unit,
 ) {
+    require(verticalPrimaryWeight > 0f && verticalSupportingWeight > 0f)
+    val latestHeader = rememberUpdatedState(header)
     val latestPrimary = rememberUpdatedState(primary)
     val latestSupporting = rememberUpdatedState(supporting)
     val latestSupportingPaneModifier = rememberUpdatedState(supportingPaneModifier)
@@ -120,6 +131,11 @@ fun AdaptiveGameScaffold(
                 contentAlignment = Alignment.Center,
                 content = latestPrimary.value,
             )
+        }
+    }
+    val movableHeader = remember {
+        movableContentOf<Modifier> { paneModifier ->
+            Column(modifier = paneModifier, content = latestHeader.value)
         }
     }
     val movableSupporting = remember {
@@ -141,9 +157,16 @@ fun AdaptiveGameScaffold(
             availableWidthDp = maxWidth.value,
             availableHeightDp = maxHeight.value,
         )
-        when (metrics.arrangement) {
+        val arrangement = when (layoutPolicy) {
+            AdaptiveGameLayoutPolicy.Adaptive -> metrics.arrangement
+            AdaptiveGameLayoutPolicy.CenteredVertical -> AdaptiveGameArrangement.Vertical
+        }
+        when (arrangement) {
             AdaptiveGameArrangement.Vertical -> VerticalGameLayout(
                 metrics = metrics,
+                primaryWeight = verticalPrimaryWeight,
+                supportingWeight = verticalSupportingWeight,
+                header = movableHeader,
                 primary = movablePrimary,
                 supporting = movableSupporting,
             )
@@ -151,6 +174,7 @@ fun AdaptiveGameScaffold(
             AdaptiveGameArrangement.TwoPane -> TwoPaneGameLayout(
                 metrics = metrics,
                 horizontalSpacingDp = 24,
+                header = movableHeader,
                 primary = movablePrimary,
                 supporting = movableSupporting,
             )
@@ -158,6 +182,7 @@ fun AdaptiveGameScaffold(
             AdaptiveGameArrangement.CompactHeightTwoPane -> TwoPaneGameLayout(
                 metrics = metrics,
                 horizontalSpacingDp = 16,
+                header = movableHeader,
                 primary = movablePrimary,
                 supporting = movableSupporting,
             )
@@ -168,6 +193,9 @@ fun AdaptiveGameScaffold(
 @Composable
 private fun VerticalGameLayout(
     metrics: AdaptiveGameMetrics,
+    primaryWeight: Float,
+    supportingWeight: Float,
+    header: @Composable (Modifier) -> Unit,
     primary: @Composable (Modifier) -> Unit,
     supporting: @Composable (Modifier) -> Unit,
 ) {
@@ -178,9 +206,14 @@ private fun VerticalGameLayout(
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        header(
+            Modifier
+                .widthIn(max = metrics.primaryMaxDp.dp)
+                .fillMaxWidth(),
+        )
         Box(
             modifier = Modifier
-                .weight(2f)
+                .weight(primaryWeight)
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
@@ -196,7 +229,7 @@ private fun VerticalGameLayout(
         }
         supporting(
             Modifier
-                .weight(1f)
+                .weight(supportingWeight)
                 .widthIn(max = metrics.primaryMaxDp.dp)
                 .fillMaxWidth(),
         )
@@ -207,6 +240,7 @@ private fun VerticalGameLayout(
 private fun TwoPaneGameLayout(
     metrics: AdaptiveGameMetrics,
     horizontalSpacingDp: Int,
+    header: @Composable (Modifier) -> Unit,
     primary: @Composable (Modifier) -> Unit,
     supporting: @Composable (Modifier) -> Unit,
 ) {
@@ -234,16 +268,18 @@ private fun TwoPaneGameLayout(
                     .fillMaxSize(),
             )
         }
-        supporting(
-            (if (metrics.arrangement == AdaptiveGameArrangement.CompactHeightTwoPane) {
+        Column(
+            modifier = (if (metrics.arrangement == AdaptiveGameArrangement.CompactHeightTwoPane) {
                 Modifier.width(metrics.supportingMinDp.dp)
             } else {
                 Modifier.widthIn(
                     min = metrics.supportingMinDp.dp,
                     max = metrics.supportingMaxDp.dp,
                 )
-            })
-                .fillMaxHeight(),
-        )
+            }).fillMaxHeight(),
+        ) {
+            header(Modifier.fillMaxWidth())
+            supporting(Modifier.weight(1f).fillMaxWidth())
+        }
     }
 }

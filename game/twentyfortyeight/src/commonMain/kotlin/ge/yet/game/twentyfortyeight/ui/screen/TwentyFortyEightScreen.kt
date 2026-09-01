@@ -105,7 +105,6 @@ private fun PlayingRoute(
         onDirection = component::onMove,
         onUndo = component::onUndoRequested,
         onRestart = component::onRestartRequested,
-        onSkipTutorial = component::onTutorialSkipped,
         onTransitionCompleted = component::onAnimationCompleted,
         boardFocusRequester = boardFocusRequester,
         modifier = modifier,

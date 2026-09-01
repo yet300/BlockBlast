@@ -12,27 +12,16 @@ class SwipeDetectorTest {
         distanceThresholdPx = 40f,
         velocityThresholdPxPerSecond = 480f,
         touchSlopPx = 8f,
-        axisDominanceRatio = 1.2f,
     )
 
     @Test
-    fun `dominant axis resolves direction while ambiguous diagonals remain pending`() {
+    fun `dominant axis resolves direction`() {
         assertMove(Offset(41f, 5f), Direction.Right)
         assertMove(Offset(-41f, 5f), Direction.Left)
         assertMove(Offset(5f, 41f), Direction.Down)
         assertMove(Offset(5f, -41f), Direction.Up)
         assertMove(Offset(50f, 40f), Direction.Right)
-        assertEquals(
-            GestureDecision.PendingTap,
-            resolveGesture(
-                delta = Offset(40f, 40f),
-                velocity = Velocity.Zero,
-                cancelled = false,
-                enabled = true,
-                startRegion = SwipeStartRegion.Gameplay,
-                config = config,
-            ),
-        )
+        assertMove(Offset(40f, 40f), Direction.Right)
     }
 
     @Test
@@ -62,12 +51,27 @@ class SwipeDetectorTest {
     }
 
     @Test
-    fun `ambiguous fast diagonal waits for a dominant axis`() {
+    fun `fast diagonal resolves using its dominant axis`() {
         assertEquals(
-            GestureDecision.PendingTap,
+            GestureDecision.GameMove(Direction.Right),
             resolveGesture(
                 delta = Offset(9f, 9f),
                 velocity = Velocity(500f, 500f),
+                cancelled = false,
+                enabled = true,
+                startRegion = SwipeStartRegion.Gameplay,
+                config = config,
+            ),
+        )
+    }
+
+    @Test
+    fun `near diagonal still resolves to the dominant physical axis`() {
+        assertEquals(
+            GestureDecision.GameMove(Direction.Right),
+            resolveGesture(
+                delta = Offset(50f, 49f),
+                velocity = Velocity.Zero,
                 cancelled = false,
                 enabled = true,
                 startRegion = SwipeStartRegion.Gameplay,
@@ -167,8 +171,6 @@ class SwipeDetectorTest {
         assertFailsWith<IllegalArgumentException> { config.copy(distanceThresholdPx = 0f) }
         assertFailsWith<IllegalArgumentException> { config.copy(velocityThresholdPxPerSecond = -1f) }
         assertFailsWith<IllegalArgumentException> { config.copy(touchSlopPx = Float.POSITIVE_INFINITY) }
-        assertFailsWith<IllegalArgumentException> { config.copy(axisDominanceRatio = 1f) }
-        assertFailsWith<IllegalArgumentException> { config.copy(axisDominanceRatio = Float.NaN) }
     }
 
     private fun assertMove(delta: Offset, expected: Direction) {

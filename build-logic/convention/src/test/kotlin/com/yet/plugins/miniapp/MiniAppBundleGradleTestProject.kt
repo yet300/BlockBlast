@@ -211,7 +211,7 @@ internal class MiniAppBundleGradleTestProject(
                     id("org.jetbrains.kotlin.multiplatform") version "2.4.10"
                     id("com.android.kotlin.multiplatform.library") version "9.2.1"
                     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.10"
-                    id("org.jetbrains.compose") version "1.11.1"
+                    id("org.jetbrains.compose") version "1.12.0"
                     id("org.jetbrains.kotlin.plugin.compose") version "2.4.10"
                     id("dev.zacsweers.metro") version "1.4.1"
                 }
@@ -282,7 +282,7 @@ internal class MiniAppBundleGradleTestProject(
             coroutines = "1.11.0"
             datetime = "0.8.0"
             serialization = "1.11.0"
-            compose = "1.11.1"
+            compose = "1.12.0"
             material3 = "1.10.0-alpha05"
             material3Adaptive = "1.3.0-beta02"
             decompose = "3.5.0"
