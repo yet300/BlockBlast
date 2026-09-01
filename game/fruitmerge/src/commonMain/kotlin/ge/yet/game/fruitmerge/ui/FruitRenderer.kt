@@ -63,38 +63,40 @@ internal fun DrawScope.drawFruit(
         )
     }
 
-    // 2. Fruit Body: Volume Gradient, Silhouette, Details & Glossy Highlights
-    drawFruitSquishyBody(
-        level = level,
-        center = center,
-        radius = radius,
-        fruitSize = fruitSize,
-        topLeft = topLeft,
-        spec = spec,
-        alpha = alpha,
-    )
+    val angleDegrees = angleRadians * (180f / PI.toFloat())
+    rotate(degrees = angleDegrees, pivot = center) {
+        // 2. Fruit Body: Volume Gradient, Silhouette, Details & Glossy Highlights
+        drawFruitSquishyBody(
+            level = level,
+            center = center,
+            radius = radius,
+            fruitSize = fruitSize,
+            topLeft = topLeft,
+            spec = spec,
+            alpha = alpha,
+        )
 
-    // 3. Stems, Leaves, Calyx Crowns & Vines (Rotated by angleRadians)
-    drawFruitCrownAndStem(
-        level = level,
-        center = center,
-        radius = radius,
-        angleRadians = angleRadians,
-        spec = spec,
-        alpha = alpha,
-    )
+        // 3. Stems, Leaves, Calyx Crowns & Vines
+        drawFruitCrownAndStem(
+            level = level,
+            center = center,
+            radius = radius,
+            spec = spec,
+            alpha = alpha,
+        )
 
-    // 4. Character Faces with Emotional Expressions & Dynamic Reactions
-    drawFruitFace(
-        level = level,
-        center = center,
-        radius = radius,
-        spec = spec,
-        expression = expression,
-        facePhase = facePhase,
-        danger = danger,
-        alpha = alpha,
-    )
+        // 4. Character Faces with Emotional Expressions & Dynamic Reactions
+        drawFruitFace(
+            level = level,
+            center = center,
+            radius = radius,
+            spec = spec,
+            expression = expression,
+            facePhase = facePhase,
+            danger = danger,
+            alpha = alpha,
+        )
+    }
 }
 
 /**
@@ -706,13 +708,10 @@ private fun DrawScope.drawFruitCrownAndStem(
     level: FruitLevel,
     center: Offset,
     radius: Float,
-    angleRadians: Float,
     spec: FruitVisualSpec,
     alpha: Float,
 ) {
-    val angleDegrees = angleRadians * (180f / PI.toFloat())
-    rotate(degrees = angleDegrees, pivot = center) {
-        when (level) {
+    when (level) {
             FruitLevel.BLUEBERRY -> {
                 // 5-Point Star Calyx Crown
                 val crownCenter = center + Offset(0f, -radius * 0.74f)
@@ -853,7 +852,6 @@ private fun DrawScope.drawFruitCrownAndStem(
                     style = Stroke(width = (radius * 0.065f).coerceAtLeast(1f), cap = StrokeCap.Round),
                 )
             }
-        }
     }
 }
 
