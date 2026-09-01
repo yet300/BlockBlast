@@ -45,6 +45,11 @@ internal enum class AdaptiveGameArrangement {
     CompactHeightTwoPane,
 }
 
+enum class AdaptiveGameLayoutPolicy {
+    Adaptive,
+    CenteredVertical,
+}
+
 internal data class AdaptiveGameMetrics(
     val arrangement: AdaptiveGameArrangement,
     val primaryMaxDp: Int,
@@ -106,6 +111,7 @@ internal fun adaptiveGameMetrics(
 fun AdaptiveGameScaffold(
     modifier: Modifier = Modifier,
     supportingPaneModifier: Modifier = Modifier,
+    layoutPolicy: AdaptiveGameLayoutPolicy = AdaptiveGameLayoutPolicy.Adaptive,
     verticalPrimaryWeight: Float = 2f,
     verticalSupportingWeight: Float = 1f,
     header: @Composable ColumnScope.() -> Unit = {},
@@ -151,7 +157,11 @@ fun AdaptiveGameScaffold(
             availableWidthDp = maxWidth.value,
             availableHeightDp = maxHeight.value,
         )
-        when (metrics.arrangement) {
+        val arrangement = when (layoutPolicy) {
+            AdaptiveGameLayoutPolicy.Adaptive -> metrics.arrangement
+            AdaptiveGameLayoutPolicy.CenteredVertical -> AdaptiveGameArrangement.Vertical
+        }
+        when (arrangement) {
             AdaptiveGameArrangement.Vertical -> VerticalGameLayout(
                 metrics = metrics,
                 primaryWeight = verticalPrimaryWeight,

@@ -178,19 +178,25 @@ class FruitMergeScreenTest {
     }
 
     @Test
-    fun `wide layout places supporting actions beside the board`() = runComposeUiTest {
+    fun `wide layout keeps the phone composition centered and width constrained`() = runComposeUiTest {
         val component = FakeFruitMergeComponent(playingModel())
         setContent {
             LogicaTheme(darkTheme = false) {
-                Box(Modifier.size(1000.dp, 620.dp)) {
+                Box(Modifier.size(1000.dp, 900.dp)) {
                     FruitMergeScreen(component, {}, {})
                 }
             }
         }
 
+        val viewport = onNodeWithTag(FruitMergeTestTags.Viewport).fetchSemanticsNode().boundsInRoot
         val board = onNodeWithTag(FruitMergeTestTags.Board).fetchSemanticsNode().boundsInRoot
         val support = onNodeWithTag(FruitMergeTestTags.Support).fetchSemanticsNode().boundsInRoot
-        assertTrue(board.center.x < support.center.x)
+        val maximumBoardWidth = with(density) { 560.dp.toPx() }
+
+        assertEquals(viewport.center.x, board.center.x, absoluteTolerance = 1f)
+        assertEquals(board.center.x, support.center.x, absoluteTolerance = 1f)
+        assertTrue(support.center.y > board.center.y)
+        assertTrue(board.width <= maximumBoardWidth + 1f)
     }
 
     @Test

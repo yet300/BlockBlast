@@ -77,6 +77,7 @@ import ge.yet.game.fruitmerge.generated.resources.shake_with_count
 import ge.yet.game.fruitmerge.generated.resources.strawberry
 import ge.yet.game.fruitmerge.session.FruitMergeComponent
 import ge.yet.game.fruitmerge.session.PaidActionToken
+import ge.yet.game.uikit.adaptive.AdaptiveGameLayoutPolicy
 import ge.yet.game.uikit.adaptive.AdaptiveGameScaffold
 import ge.yet.game.uikit.components.icon.BombFilled
 import ge.yet.game.uikit.components.icon.Vibration
@@ -202,6 +203,7 @@ internal fun FruitMergeScreen(
         AdaptiveGameScaffold(
             modifier = Modifier.fillMaxSize(),
             supportingPaneModifier = Modifier.semantics { testTag = FruitMergeTestTags.Support },
+            layoutPolicy = AdaptiveGameLayoutPolicy.CenteredVertical,
             verticalPrimaryWeight = 5f,
             header = {
                 GameHeader(
