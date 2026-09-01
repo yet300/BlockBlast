@@ -2,6 +2,7 @@ package ge.yet.game.fruitmerge.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -33,14 +34,42 @@ import ge.yet.game.fruitmerge.session.PaidAction
 import ge.yet.game.fruitmerge.session.PaidActionToken
 import ge.yet.game.fruitmerge.session.TutorialStep
 import ge.yet.game.uikit.theme.LogicaTheme
+import ge.yet.game.uikit.theme.PieceColors
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class FruitMergeScreenTest {
+    @Test
+    fun `light market palette is derived from the shared Logica design system`() = runComposeUiTest {
+        var capturedPalette: FruitMergePalette? = null
+        var capturedScheme: androidx.compose.material3.ColorScheme? = null
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                capturedScheme = MaterialTheme.colorScheme
+                capturedPalette = rememberFruitMergePalette()
+            }
+        }
+        waitForIdle()
+
+        val palette = assertNotNull(capturedPalette)
+        val scheme = assertNotNull(capturedScheme)
+        assertEquals(scheme.background, palette.canvas)
+        assertEquals(scheme.surfaceVariant, palette.canvasShade)
+        assertEquals(scheme.primary, palette.wood)
+        assertEquals(scheme.primaryContainer, palette.woodLight)
+        assertEquals(scheme.onPrimaryContainer, palette.woodDark)
+        assertEquals(scheme.surface, palette.paper)
+        assertEquals(scheme.onSurface, palette.ink)
+        assertEquals(scheme.tertiary, palette.coral)
+        assertEquals(PieceColors[1], palette.leaf)
+        assertEquals(scheme.surface, palette.boardCream)
+    }
+
     @Test
     fun `compact layout keeps board and consumable actions reachable`() = runComposeUiTest {
         val component = FakeFruitMergeComponent(playingModel())

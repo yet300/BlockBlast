@@ -36,6 +36,7 @@ internal fun FruitMergePresentation(
     modifier: Modifier = Modifier,
 ) {
     if (events.isEmpty() || boardBoundsInViewport == Rect.Zero) return
+    val palette = rememberFruitMergePalette()
     Canvas(modifier) {
         val side = min(boardBoundsInViewport.width, boardBoundsInViewport.height)
         val origin = Offset(
@@ -55,7 +56,7 @@ internal fun FruitMergePresentation(
                     val radius = event.level.radius * side
                     val alpha = 1f - progress
                     drawArc(
-                        color = MarketWoodDark.copy(alpha = 0.55f * alpha),
+                        color = palette.woodDark.copy(alpha = 0.55f * alpha),
                         startAngle = 205f,
                         sweepAngle = 130f,
                         useCenter = false,
@@ -69,7 +70,7 @@ internal fun FruitMergePresentation(
                     val squeeze = mergeSqueeze(mergePresentationProgress(elapsed))
                     val radius = event.level.radius * side
                     drawOval(
-                        color = MarketCoral.copy(alpha = (1f - progress) * 0.16f),
+                        color = palette.coral.copy(alpha = (1f - progress) * 0.16f),
                         topLeft = center - Offset(radius * squeeze.scaleX, radius * squeeze.scaleY),
                         size = Size(radius * 2f * squeeze.scaleX, radius * 2f * squeeze.scaleY),
                     )
@@ -92,14 +93,14 @@ internal fun FruitMergePresentation(
                     val travel = radius * progress * 0.85f
                     val alpha = 1f - progress
                     drawLine(
-                        color = MarketPaper.copy(alpha = alpha),
+                        color = palette.paper.copy(alpha = alpha),
                         start = center + Offset(-radius + travel, radius - travel),
                         end = center + Offset(radius + travel, -radius - travel),
                         strokeWidth = (side * 0.014f).coerceAtLeast(2f),
                         cap = StrokeCap.Round,
                     )
                     drawLine(
-                        color = MarketCoral.copy(alpha = alpha),
+                        color = palette.coral.copy(alpha = alpha),
                         start = center + Offset(-radius * 0.88f + travel, radius * 0.88f - travel),
                         end = center + Offset(radius * 0.88f + travel, -radius * 0.88f - travel),
                         strokeWidth = (side * 0.005f).coerceAtLeast(1f),
@@ -110,7 +111,7 @@ internal fun FruitMergePresentation(
                     val wave = sin(progress * kotlin.math.PI.toFloat())
                     val inset = side * (0.018f + wave * 0.012f)
                     drawRoundRect(
-                        color = MarketWoodLight.copy(alpha = (1f - progress) * 0.58f),
+                        color = palette.woodLight.copy(alpha = (1f - progress) * 0.58f),
                         topLeft = origin - Offset(inset, inset),
                         size = Size(side + inset * 2f, side + inset * 2f),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(side * 0.055f),

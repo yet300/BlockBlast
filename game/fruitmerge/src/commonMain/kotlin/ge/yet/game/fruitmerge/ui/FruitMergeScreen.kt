@@ -5,7 +5,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -85,6 +84,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 internal object FruitMergeTestTags {
+    const val Background = "fruit_merge_market_background"
     const val Viewport = "fruit_merge_viewport"
     const val Board = "fruit_merge_board"
     const val Support = "fruit_merge_support"
@@ -116,7 +116,6 @@ internal fun FruitMergeScreen(
     modifier: Modifier = Modifier,
 ) {
     val model by component.model.subscribeAsState()
-    val palette = rememberFruitMergePalette()
     val reducedMotion = rememberCoroutineScope().coroutineContext[MotionDurationScale]?.scaleFactor == 0f
     var faceTimeSeconds by remember(component) { mutableFloatStateOf(0f) }
     var presentationTimeSeconds by remember(component) { mutableFloatStateOf(0f) }
@@ -182,7 +181,6 @@ internal fun FruitMergeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.canvas)
             .onGloballyPositioned { coordinates ->
                 viewportOriginInRoot = coordinates.positionInRoot()
             }
@@ -194,7 +192,6 @@ internal fun FruitMergeScreen(
             .semantics { testTag = FruitMergeTestTags.Viewport },
         contentAlignment = Alignment.Center,
     ) {
-        MarketStallBackground()
         if (!model.initialized || !model.tutorialReady) {
             LoadingContent()
             return@Box

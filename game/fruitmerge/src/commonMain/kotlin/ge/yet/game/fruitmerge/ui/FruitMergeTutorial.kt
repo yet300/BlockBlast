@@ -111,6 +111,7 @@ private fun TutorialLayer(
     modifier: Modifier = Modifier,
 ) {
     val progress = remember { Animatable(if (reducedMotion) 0.58f else 0f) }
+    val palette = rememberFruitMergePalette()
     LaunchedEffect(step, boardBounds, reducedMotion) {
         if (reducedMotion) {
             progress.snapTo(0.58f)
@@ -133,7 +134,7 @@ private fun TutorialLayer(
     val skipDescription = stringResource(Res.string.tutorial_skip)
     Box(modifier = modifier) {
         Canvas(Modifier.fillMaxSize()) {
-            drawTutorialCard(step, boardBounds, previewX, progress.value)
+            drawTutorialCard(step, boardBounds, previewX, progress.value, palette)
         }
         Surface(
             modifier = Modifier
@@ -146,16 +147,16 @@ private fun TutorialLayer(
                 }
                 .clickable(onClick = onSkip),
             shape = CircleShape,
-            color = MarketPaper,
-            contentColor = MarketCoral,
+            color = palette.paper,
+            contentColor = palette.coral,
             shadowElevation = 3.dp,
         ) {
             Canvas(Modifier.fillMaxSize().padding(13.dp)) {
                 val width = 3.dp.toPx()
                 repeat(2) { index ->
                     val x = size.width * (0.25f + index * 0.34f)
-                    drawLine(MarketCoral, Offset(x, size.height * 0.20f), Offset(x + size.width * 0.28f, size.height * 0.50f), width, StrokeCap.Round)
-                    drawLine(MarketCoral, Offset(x + size.width * 0.28f, size.height * 0.50f), Offset(x, size.height * 0.80f), width, StrokeCap.Round)
+                    drawLine(palette.coral, Offset(x, size.height * 0.20f), Offset(x + size.width * 0.28f, size.height * 0.50f), width, StrokeCap.Round)
+                    drawLine(palette.coral, Offset(x + size.width * 0.28f, size.height * 0.50f), Offset(x, size.height * 0.80f), width, StrokeCap.Round)
                 }
             }
         }
@@ -167,6 +168,7 @@ private fun DrawScope.drawTutorialCard(
     board: Rect,
     previewX: Float,
     progress: Float,
+    palette: FruitMergePalette,
 ) {
     val cardWidth = board.width * 0.78f
     val cardHeight = board.height * 0.34f
@@ -178,14 +180,14 @@ private fun DrawScope.drawTutorialCard(
     )
     val radius = cardHeight * 0.12f
     drawRoundRect(
-        color = MarketInk.copy(alpha = 0.14f),
+        color = palette.ink.copy(alpha = 0.14f),
         topLeft = card.topLeft + Offset(0f, cardHeight * 0.035f),
         size = card.size,
         cornerRadius = CornerRadius(radius),
     )
-    drawRoundRect(MarketPaper, card.topLeft, card.size, CornerRadius(radius))
+    drawRoundRect(palette.paper, card.topLeft, card.size, CornerRadius(radius))
     drawRoundRect(
-        color = MarketWoodDark.copy(alpha = 0.68f),
+        color = palette.woodDark.copy(alpha = 0.68f),
         topLeft = card.topLeft,
         size = card.size,
         cornerRadius = CornerRadius(radius),
@@ -199,30 +201,35 @@ private fun DrawScope.drawTutorialCard(
     }
     repeat(3) { index ->
         drawCircle(
-            color = if (index == activeIndex) MarketCoral else MarketWoodDark.copy(alpha = 0.24f),
+            color = if (index == activeIndex) palette.coral else palette.woodDark.copy(alpha = 0.24f),
             radius = cardHeight * if (index == activeIndex) 0.027f else 0.020f,
             center = Offset(card.center.x + (index - 1) * cardWidth * 0.08f, card.top + cardHeight * 0.12f),
         )
     }
 
     when (step) {
-        TutorialStep.Gesture -> drawGestureTutorial(card, previewX, progress)
-        TutorialStep.Merge -> drawMergeTutorial(card, progress)
-        TutorialStep.Traits -> drawTraitTutorial(card, progress)
+        TutorialStep.Gesture -> drawGestureTutorial(card, previewX, progress, palette)
+        TutorialStep.Merge -> drawMergeTutorial(card, progress, palette)
+        TutorialStep.Traits -> drawTraitTutorial(card, progress, palette)
     }
 }
 
-private fun DrawScope.drawGestureTutorial(card: Rect, previewX: Float, progress: Float) {
+private fun DrawScope.drawGestureTutorial(
+    card: Rect,
+    previewX: Float,
+    progress: Float,
+    palette: FruitMergePalette,
+) {
     val railY = card.top + card.height * 0.35f
     val railStart = card.left + card.width * 0.16f
     val railEnd = card.right - card.width * 0.16f
-    drawLine(MarketCoral.copy(alpha = 0.46f), Offset(railStart, railY), Offset(railEnd, railY), card.height * 0.025f, StrokeCap.Round)
+    drawLine(palette.coral.copy(alpha = 0.46f), Offset(railStart, railY), Offset(railEnd, railY), card.height * 0.025f, StrokeCap.Round)
     val xProgress = (previewX.coerceIn(0.15f, 0.85f) * 0.35f + progress * 0.65f).coerceIn(0f, 1f)
     val fruitX = railStart + (railEnd - railStart) * xProgress
     drawFruit(FruitLevel.BLUEBERRY, Offset(fruitX, railY), card.height * 0.13f, 0f, 0f, 0f, progress, DangerVisual(0f, false), 1f)
     repeat(5) { index ->
         drawCircle(
-            color = MarketCoral.copy(alpha = 0.58f - index * 0.07f),
+            color = palette.coral.copy(alpha = 0.58f - index * 0.07f),
             radius = card.height * 0.012f,
             center = Offset(fruitX, railY + card.height * (0.16f + index * 0.08f)),
         )
@@ -230,11 +237,15 @@ private fun DrawScope.drawGestureTutorial(card: Rect, previewX: Float, progress:
     val handSize = Size(card.height * 0.24f, card.height * 0.29f)
     val handTip = Offset(fruitX, card.bottom - card.height * 0.12f)
     translate(handTip.x - handSize.width * HAND_TIP_X, handTip.y - handSize.height * HAND_TIP_Y) {
-        drawTutorialHand(handSize)
+        drawTutorialHand(handSize, palette.ink)
     }
 }
 
-private fun DrawScope.drawMergeTutorial(card: Rect, progress: Float) {
+private fun DrawScope.drawMergeTutorial(
+    card: Rect,
+    progress: Float,
+    palette: FruitMergePalette,
+) {
     val center = Offset(card.center.x, card.top + card.height * 0.57f)
     val travel = card.width * 0.23f * (1f - progress)
     val sourceRadius = card.height * 0.14f
@@ -243,12 +254,16 @@ private fun DrawScope.drawMergeTutorial(card: Rect, progress: Float) {
     drawFruit(FruitLevel.RASPBERRY, center - Offset(travel, 0f), sourceRadius, 0f, 0f, progress, 0f, DangerVisual(0f, false), sourceAlpha)
     drawFruit(FruitLevel.RASPBERRY, center + Offset(travel, 0f), sourceRadius, 0f, 0f, progress, 1f, DangerVisual(0f, false), sourceAlpha)
     if (resultAlpha > 0f) {
-        drawCircle(MarketCoral.copy(alpha = 0.16f * resultAlpha), sourceRadius * 1.55f, center)
+        drawCircle(palette.coral.copy(alpha = 0.16f * resultAlpha), sourceRadius * 1.55f, center)
         drawFruit(FruitLevel.STRAWBERRY, center, sourceRadius * (0.9f + resultAlpha * 0.25f), 0f, 0f, 1f - resultAlpha, progress, DangerVisual(0f, false), resultAlpha)
     }
 }
 
-private fun DrawScope.drawTraitTutorial(card: Rect, progress: Float) {
+private fun DrawScope.drawTraitTutorial(
+    card: Rect,
+    progress: Float,
+    palette: FruitMergePalette,
+) {
     val y = card.top + card.height * 0.58f
     val radius = card.height * 0.12f
     val centers = listOf(
@@ -257,27 +272,27 @@ private fun DrawScope.drawTraitTutorial(card: Rect, progress: Float) {
         Offset(card.right - card.width * 0.23f, y),
     )
     drawFruit(FruitLevel.STRAWBERRY, centers[0], radius, 0f, 0f, 0f, progress, DangerVisual(0f, false), 1f)
-    drawLine(MarketWoodDark, Offset(centers[0].x - radius * 1.25f, y - radius), Offset(centers[0].x - radius * 1.25f, y + radius), radius * 0.16f, StrokeCap.Round)
+    drawLine(palette.woodDark, Offset(centers[0].x - radius * 1.25f, y - radius), Offset(centers[0].x - radius * 1.25f, y + radius), radius * 0.16f, StrokeCap.Round)
     repeat(3) { index ->
-        drawCircle(MarketCoral.copy(alpha = 0.55f), radius * 0.07f, Offset(centers[0].x - radius * (0.96f + index * 0.10f), y + (index - 1) * radius * 0.34f))
+        drawCircle(palette.coral.copy(alpha = 0.55f), radius * 0.07f, Offset(centers[0].x - radius * (0.96f + index * 0.10f), y + (index - 1) * radius * 0.34f))
     }
 
     drawFruit(FruitLevel.APPLE, centers[1], radius * 1.08f, 0f, progress * 0.3f, progress, progress, DangerVisual(0f, false), 1f)
-    drawLine(MarketWoodDark.copy(alpha = 0.66f), Offset(centers[1].x, y - radius * 1.70f), Offset(centers[1].x, y - radius * 1.20f), radius * 0.12f, StrokeCap.Round)
-    drawLine(MarketWoodDark.copy(alpha = 0.66f), Offset(centers[1].x, y - radius * 1.20f), Offset(centers[1].x - radius * 0.22f, y - radius * 1.42f), radius * 0.12f, StrokeCap.Round)
-    drawLine(MarketWoodDark.copy(alpha = 0.66f), Offset(centers[1].x, y - radius * 1.20f), Offset(centers[1].x + radius * 0.22f, y - radius * 1.42f), radius * 0.12f, StrokeCap.Round)
+    drawLine(palette.woodDark.copy(alpha = 0.66f), Offset(centers[1].x, y - radius * 1.70f), Offset(centers[1].x, y - radius * 1.20f), radius * 0.12f, StrokeCap.Round)
+    drawLine(palette.woodDark.copy(alpha = 0.66f), Offset(centers[1].x, y - radius * 1.20f), Offset(centers[1].x - radius * 0.22f, y - radius * 1.42f), radius * 0.12f, StrokeCap.Round)
+    drawLine(palette.woodDark.copy(alpha = 0.66f), Offset(centers[1].x, y - radius * 1.20f), Offset(centers[1].x + radius * 0.22f, y - radius * 1.42f), radius * 0.12f, StrokeCap.Round)
 
     val pulse = 1f + progress * 0.16f
-    drawCircle(MarketLeaf.copy(alpha = 0.16f * (1f - progress * 0.35f)), radius * 1.55f * pulse, centers[2])
+    drawCircle(palette.leaf.copy(alpha = 0.16f * (1f - progress * 0.35f)), radius * 1.55f * pulse, centers[2])
     drawFruit(FruitLevel.WATERMELON, centers[2], radius * 1.15f, 0f, 0f, progress, progress, DangerVisual(0f, false), 1f)
 }
 
-private fun DrawScope.drawTutorialHand(handSize: Size) {
+private fun DrawScope.drawTutorialHand(handSize: Size, ink: Color) {
     val w = handSize.width
     val h = handSize.height
-    drawTutorialHandShapes(w, h, MarketInk.copy(alpha = 0.20f), Offset(w * 0.04f, h * 0.05f))
+    drawTutorialHandShapes(w, h, ink.copy(alpha = 0.20f), Offset(w * 0.04f, h * 0.05f))
     drawTutorialHandShapes(w, h, Color.White, Offset.Zero)
-    drawTutorialHandShapes(w, h, MarketInk.copy(alpha = 0.62f), Offset.Zero, outline = true)
+    drawTutorialHandShapes(w, h, ink.copy(alpha = 0.62f), Offset.Zero, outline = true)
 }
 
 private fun DrawScope.drawTutorialHandShapes(
@@ -309,7 +324,8 @@ internal fun tutorialMotionMode(
 
 @Composable
 private fun TutorialCompletionBurst(progress: Float, modifier: Modifier = Modifier) {
-    val colors = listOf(MarketCoral, MarketLeaf, MarketWood, Color(0xFFF5B642))
+    val palette = rememberFruitMergePalette()
+    val colors = listOf(palette.coral, palette.leaf, palette.wood, Color(0xFFF5B642))
     Canvas(modifier) {
         repeat(12) { index ->
             val direction = index - 5.5f

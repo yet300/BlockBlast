@@ -32,6 +32,7 @@ import ge.yet.game.fruitmerge.engine.FruitMergeEngine
 import ge.yet.game.fruitmerge.engine.FruitMergeState
 import ge.yet.game.fruitmerge.engine.RunPhase
 import ge.yet.game.fruitmerge.engine.TargetingMode
+import ge.yet.game.uikit.theme.CoralAccent
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.min
@@ -367,7 +368,7 @@ internal fun DrawScope.drawFruit(
                 style = Stroke(width = (radius * 0.055f).coerceAtLeast(1f)),
             )
             drawCircle(
-                color = MarketCoral.copy(alpha = alpha),
+                color = CoralAccent.copy(alpha = alpha),
                 radius = radius * 0.055f,
                 center = mouthCenter + Offset(radius * 0.08f, radius * 0.10f),
             )

@@ -1,6 +1,19 @@
 package ge.yet.game.fruitmerge
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.dp
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -24,6 +37,7 @@ import ge.yet.game.miniapp.testkit.MiniAppLifecycleHarness
 import ge.yet.game.miniapp.testkit.MutableMiniAppVisibilitySource
 import ge.yet.game.miniapp.testkit.RecordingMiniAppSessionHost
 import ge.yet.game.miniapp.testkit.TestMiniAppSessionContext
+import ge.yet.game.uikit.theme.LogicaTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -48,6 +62,7 @@ internal object FruitMergeGraphTestBindings {
     fun provideInterstitials(): MiniAppInterstitialCapability = NoOpInterstitialCapability
 }
 
+@OptIn(ExperimentalTestApi::class)
 class FruitMergePluginContractTest {
     @Test
     fun `manifest access does not create a child graph`() {
@@ -104,6 +119,39 @@ class FruitMergePluginContractTest {
 
         MiniAppContractAssertions.assertRetainedGraphSession(session)
         MiniAppContractAssertions.assertBackNotConsumed(session)
+        lifecycle.destroy()
+    }
+
+    @Test
+    fun `session market background fills the host owned layer`() = runComposeUiTest {
+        val graph = createGraph<FruitMergePluginTestGraph>()
+        val plugin = assertNotNull(graph.registry[MiniAppId("game.fruitmerge")])
+        val lifecycle = MiniAppLifecycleHarness().also { it.resume() }
+        val session = plugin.createSession(
+            TestMiniAppSessionContext(
+                componentContext = lifecycle.componentContext,
+                visibility = MutableMiniAppVisibilitySource(),
+                host = RecordingMiniAppSessionHost(),
+            ),
+        )
+        setContent {
+            LogicaTheme(darkTheme = false) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 320.dp, height = 480.dp)
+                        .testTag("fruit_merge_session_host"),
+                ) {
+                    session.Background(Modifier.fillMaxSize())
+                }
+            }
+        }
+
+        onAllNodesWithTag("fruit_merge_market_background").assertCountEquals(1)
+        onNodeWithTag("fruit_merge_market_background").assertIsDisplayed()
+        assertEquals(
+            onNodeWithTag("fruit_merge_session_host").getUnclippedBoundsInRoot(),
+            onNodeWithTag("fruit_merge_market_background").getUnclippedBoundsInRoot(),
+        )
         lifecycle.destroy()
     }
 

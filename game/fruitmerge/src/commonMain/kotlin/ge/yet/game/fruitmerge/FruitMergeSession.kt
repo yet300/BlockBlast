@@ -1,8 +1,5 @@
 package ge.yet.game.fruitmerge
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -12,6 +9,7 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.value.Value
 import ge.yet.game.fruitmerge.session.FruitMergeSessionComponent
 import ge.yet.game.fruitmerge.ui.FruitMergeTestTags
+import ge.yet.game.fruitmerge.ui.MarketStallBackground
 import ge.yet.game.fruitmerge.ui.MarketPriceTag
 import ge.yet.game.miniapp.compose.MiniAppFrameMode
 import ge.yet.game.miniapp.compose.MiniAppInterstitialCapability
@@ -41,7 +39,7 @@ class FruitMergeSession internal constructor(
 
     @Composable
     override fun Background(modifier: Modifier) {
-        Box(modifier = modifier.background(MaterialTheme.colorScheme.background))
+        MarketStallBackground(modifier = modifier)
     }
 
     @Composable
