@@ -49,6 +49,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import ge.yet.game.fruitmerge.engine.FruitLevel
@@ -422,9 +423,12 @@ private fun NextFruitCard(
             }
                 Text(
                     text = label.uppercase(),
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = palette.ink,
                     fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

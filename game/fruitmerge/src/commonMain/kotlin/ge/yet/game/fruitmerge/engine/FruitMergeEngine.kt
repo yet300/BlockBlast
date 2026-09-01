@@ -176,16 +176,18 @@ class FruitMergeEngine(
         val direction = if (pulseIndex % 2 == 0) -1f else 1f
         val shaken = state.bodies.map { body ->
             val horizontalJitter = random.nextInt().also { random = it.state }.value
-            val upward = random.nextInt().also { random = it.state }.value
+            val verticalJitter = random.nextInt().also { random = it.state }.value
             val spin = random.nextInt().also { random = it.state }.value
+            val velocity = body.velocity + Vec2(
+                x = direction * (MIN_SHAKE_HORIZONTAL + unit(horizontalJitter) *
+                    (MAX_SHAKE_HORIZONTAL - MIN_SHAKE_HORIZONTAL)) * envelope,
+                y = signedUnit(verticalJitter) * MAX_SHAKE_VERTICAL_JITTER * envelope,
+            )
             body.copy(
-                velocity = (body.velocity + Vec2(
-                    x = direction * (MIN_SHAKE_HORIZONTAL + unit(horizontalJitter) *
-                        (MAX_SHAKE_HORIZONTAL - MIN_SHAKE_HORIZONTAL)) * envelope,
-                    y = -(
-                        MIN_SHAKE_UPWARD + unit(upward) * (MAX_SHAKE_UPWARD - MIN_SHAKE_UPWARD)
-                    ) * envelope,
-                )).clampLength(MAX_SHAKE_SPEED),
+                velocity = Vec2(
+                    x = velocity.x,
+                    y = velocity.y.coerceAtLeast(-MAX_SHAKE_ASCENT_SPEED),
+                ).clampLength(MAX_SHAKE_SPEED),
                 angularVelocity = (
                     body.angularVelocity + signedUnit(spin) * MAX_SHAKE_ANGULAR * envelope
                 )
@@ -307,8 +309,8 @@ class FruitMergeEngine(
         private const val MERGE_GRACE_SECONDS: Float = 0.75f
         private const val MIN_SHAKE_HORIZONTAL: Float = 0.72f
         private const val MAX_SHAKE_HORIZONTAL: Float = 1.05f
-        private const val MIN_SHAKE_UPWARD: Float = 0.26f
-        private const val MAX_SHAKE_UPWARD: Float = 0.54f
+        private const val MAX_SHAKE_VERTICAL_JITTER: Float = 0.12f
+        private const val MAX_SHAKE_ASCENT_SPEED: Float = 0.22f
         private const val MAX_SHAKE_ANGULAR: Float = 5.5f
         private const val MAX_SHAKE_SPEED: Float = 1.75f
         private const val MAX_SHAKE_ANGULAR_SPEED: Float = 8f

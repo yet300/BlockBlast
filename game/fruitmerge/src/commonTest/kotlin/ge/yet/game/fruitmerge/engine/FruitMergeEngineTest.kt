@@ -206,6 +206,37 @@ class FruitMergeEngineTest {
     }
 
     @Test
+    fun `shake never launches a settled fruit by more than its radius`() {
+        var state = engine.shake(
+            stateWithBody(FruitLevel.APPLE).copy(
+                bodies = listOf(
+                    FruitBody(
+                        id = 1,
+                        level = FruitLevel.APPLE,
+                        position = Vec2(0.5f, 0.8f),
+                        hasJoinedPile = true,
+                    ),
+                ),
+            ),
+        ).state
+        val initialBottom = state.bodies.single().position.y - FruitLevel.APPLE.radius
+        var minimumBottom = initialBottom
+
+        repeat(FruitMergeEngine.SHAKE_DURATION_STEPS) {
+            state = engine.step(state, 1f / 60f)
+            minimumBottom = minOf(
+                minimumBottom,
+                state.bodies.single().position.y - FruitLevel.APPLE.radius,
+            )
+        }
+
+        assertTrue(
+            minimumBottom >= initialBottom - FruitLevel.APPLE.radius,
+            "shake lifted the fruit from $initialBottom to $minimumBottom",
+        )
+    }
+
+    @Test
     fun `active shake rejects duplicate without consuming a use or advancing rng`() {
         val active = engine.shake(stateWithBody(FruitLevel.APPLE)).state
 
